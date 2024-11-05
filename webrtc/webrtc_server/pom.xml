@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.imsproject</groupId>
-    <artifactId>webrtc_signaling_server</artifactId>
+    <artifactId>webrtc_server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>webrtc_signaling_server</name>
-    <description>webrtc_signaling_server</description>
+    <name>webrtc_server</name>
+    <description>webrtc_server</description>
     <url/>
     <licenses>
         <license/>
