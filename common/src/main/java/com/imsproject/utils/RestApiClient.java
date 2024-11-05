@@ -19,21 +19,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("UnusedReturnValue")
-public class APIFetcher {
+public class RestApiClient {
 
     private String uri;
     private final Map<String, String> headers;
     private final Map<String, String> params;
     private String body;
     private boolean isPost;
+    private boolean trustAllCertificates;
 
-    private APIFetcher() {
+    private RestApiClient() {
         headers = new HashMap<>();
         params = new HashMap<>();
         body = "";
     }
 
-    public String fetch() throws IOException, InterruptedException {
+    public String send() throws IOException, InterruptedException {
 
         assert uri != null : "URI is required";
 
@@ -60,7 +61,8 @@ public class APIFetcher {
 
         // send request
         HttpResponse<String> response;
-        try (HttpClient client = createHttpClient()) {
+        try (HttpClient client = trustAllCertificates ?
+                createHttpClientTrustAllCertificates() : HttpClient.newHttpClient()) {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         }
         return response.body();
@@ -70,7 +72,7 @@ public class APIFetcher {
      * Set the body of the request. Must be used with {@link #withPost()} to have
      * any effect
      */
-    public APIFetcher withBody(String body) {
+    public RestApiClient withBody(String body) {
         this.body = body;
         return this;
     }
@@ -79,12 +81,12 @@ public class APIFetcher {
      * Set the request method to POST. If {@link #withBody(String)} is not called,
      * the body will be empty
      */
-    public APIFetcher withPost() {
+    public RestApiClient withPost() {
         isPost = true;
         return this;
     }
 
-    public APIFetcher withUri(String uri) {
+    public RestApiClient withUri(String uri) {
         assert !uri.isBlank() : "URI should not be blank";
         assert !uri.contains("?") : "URI should not contain query parameters";
         assert !uri.contains("&") : "URI should not contain query parameters";
@@ -95,14 +97,14 @@ public class APIFetcher {
         return this;
     }
 
-    public APIFetcher withHeader(String key, String value) {
+    public RestApiClient withHeader(String key, String value) {
         assert !headers.containsKey(key) : "Header %s set more than once".formatted(key);
 
         headers.put(key, value);
         return this;
     }
 
-    public APIFetcher withParam(String key, String value) {
+    public RestApiClient withParam(String key, String value) {
         assert !params.containsKey(key) : "Param %s set more than once".formatted(key);
 
         value = value.replaceAll(" ", "%20");
@@ -110,22 +112,27 @@ public class APIFetcher {
         return this;
     }
 
-    public APIFetcher withParams(Map<String, String> params) {
+    public RestApiClient withParams(Map<String, String> params) {
         params.forEach(this::withParam);
         return this;
     }
 
     @SafeVarargs
-    public final APIFetcher withParams(Pair<String, String>... params) {
+    public final RestApiClient withParams(Pair<String, String>... params) {
         Arrays.stream(params).forEach(p -> this.withParam(p.first(), p.second()));
         return this;
     }
 
-    public static APIFetcher create() {
-        return new APIFetcher();
+    public RestApiClient trustAllCertificates() {
+        trustAllCertificates = true;
+        return this;
     }
 
-    private HttpClient createHttpClient(){
+    public static RestApiClient create() {
+        return new RestApiClient();
+    }
+
+    private HttpClient createHttpClientTrustAllCertificates(){
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             TrustManager[] trustAllCerts = new TrustManager[]{new TrustAllCertificates()};
