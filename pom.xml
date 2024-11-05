@@ -15,7 +15,6 @@
 	<modules>
 		<module>common</module>
 		<module>webrtc/webrtc_server</module>
-		<module>webrtc/webrtc_client</module>
 	</modules>
 
 	<dependencies>

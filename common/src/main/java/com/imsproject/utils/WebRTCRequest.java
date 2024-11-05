@@ -1,11 +1,16 @@
 package com.imsproject.utils;
 
-public record WebRTCRequest(Type type, String from, String to, String data, Candidate candidate) {
+public record WebRTCRequest(Type type, String from, String to, String data) {
 
     public enum Type {
+        ENTER("enter"),
+        EXIT("exit"),
         OFFER("offer"),
         ANSWER("answer"),
-        CANDIDATE("candidate");
+        ICE_CANDIDATES("ice_candidates"),
+        USER_FOUND("user_found"),
+        USER_NOT_FOUND("user_not_found"),
+        ;
 
         private final String value;
 

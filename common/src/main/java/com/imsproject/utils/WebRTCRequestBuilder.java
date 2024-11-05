@@ -6,7 +6,6 @@ public class WebRTCRequestBuilder {
     private String from;
     private String to;
     private String data;
-    private WebRTCRequest.Candidate candidate;
 
     public WebRTCRequestBuilder setType(WebRTCRequest.Type type) {
         this.type = type;
@@ -28,12 +27,7 @@ public class WebRTCRequestBuilder {
         return this;
     }
 
-    public WebRTCRequestBuilder setCandidate(WebRTCRequest.Candidate candidate) {
-        this.candidate = candidate;
-        return this;
-    }
-
     public WebRTCRequest build() {
-        return new WebRTCRequest(type, from, to, data, candidate);
+        return new WebRTCRequest(type, from, to, data);
     }
 }
