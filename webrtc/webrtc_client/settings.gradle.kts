@@ -22,4 +22,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "webrtc_client"
-include(":app")
+include(":webrtc_client")
