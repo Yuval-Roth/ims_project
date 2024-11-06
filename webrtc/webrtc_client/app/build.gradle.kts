@@ -7,10 +7,6 @@ plugins {
 group = "com.imsproject"
 version = "0.0.1-SNAPSHOT"
 
-repositories{
-    mavenLocal()
-}
-
 android {
     namespace = "com.imsproject.webrtc.webrtc_client"
     compileSdk = 34
@@ -65,4 +61,5 @@ dependencies {
     // my dependencies:
     implementation(libs.webrtc)
     implementation(libs.java.websocket)
+    implementation(libs.imsproject.common)
 }

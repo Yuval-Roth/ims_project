@@ -27,6 +27,7 @@ activity-compose = { group = "androidx.activity", name = "activity-compose", ver
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 webrtc = { group = "com.mesibo.api", name = "webrtc", version.ref = "webrtc" }
 java-websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "javaWebsocket" }
+imsproject-common = { group = "com.imsproject", name = "common", version = "1.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
