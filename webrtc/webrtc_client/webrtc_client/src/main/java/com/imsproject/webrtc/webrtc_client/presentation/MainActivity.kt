@@ -23,6 +23,7 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.tooling.preview.devices.WearDevices
+import com.imsproject.utils.Pair
 
 import com.imsproject.webrtc.webrtc_client.R
 import com.imsproject.webrtc.webrtc_client.presentation.theme.Webrtc_clientTheme
@@ -39,12 +40,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WearApp("Android")
         }
-
-        var v = PeerConnectionFactory.builder()
-
     }
-
-
 }
 
 @Composable

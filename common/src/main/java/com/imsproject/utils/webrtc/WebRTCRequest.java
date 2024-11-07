@@ -1,16 +1,21 @@
-package com.imsproject.utils;
+package com.imsproject.utils.webrtc;
+
+import com.google.gson.annotations.SerializedName;
+import com.imsproject.utils.JsonUtils;
 
 public record WebRTCRequest(Type type, String from, String to, String data) {
 
     public enum Type {
+        @SerializedName("enter")
         ENTER("enter"),
+        @SerializedName("exit")
         EXIT("exit"),
+        @SerializedName("offer")
         OFFER("offer"),
+        @SerializedName("answer")
         ANSWER("answer"),
-        ICE_CANDIDATES("ice_candidates"),
-        USER_FOUND("user_found"),
-        USER_NOT_FOUND("user_not_found"),
-        ;
+        @SerializedName("ice_candidates")
+        ICE_CANDIDATES("ice_candidates");
 
         private final String value;
 
@@ -22,8 +27,6 @@ public record WebRTCRequest(Type type, String from, String to, String data) {
             return value;
         }
     }
-
-    public record Candidate (String candidate, String sdpMid, int sdpMLineIndex) { }
 
     public static WebRTCRequest fromJson(String json) {
         return JsonUtils.deserialize(json, WebRTCRequest.class);

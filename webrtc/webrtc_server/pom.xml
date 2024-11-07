@@ -11,7 +11,7 @@
     <groupId>com.imsproject</groupId>
     <artifactId>webrtc_server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>webrtc_signaling_server</name>
+    <name>webrtc_server</name>
     <description>webrtc_server</description>
     <url/>
     <licenses>

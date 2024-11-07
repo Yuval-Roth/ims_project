@@ -1,4 +1,4 @@
-package com.imsproject.utils;
+package com.imsproject.utils.webrtc;
 
 public class WebRTCRequestBuilder {
 
