@@ -23,13 +23,36 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.tooling.preview.devices.WearDevices
-import com.imsproject.utils.Pair
 
 import com.imsproject.webrtc.webrtc_client.R
+import com.imsproject.webrtc.webrtc_client.WebSocketClient
 import com.imsproject.webrtc.webrtc_client.presentation.theme.Webrtc_clientTheme
-import org.webrtc.PeerConnectionFactory
+import org.java_websocket.handshake.Handshakedata
+import java.net.URI
+
+private const val LOCALHOST = "10.0.2.2"
 
 class MainActivity : ComponentActivity() {
+
+    val ws : WebSocketClient = WebSocketClient(URI("ws://$LOCALHOST:8080/signaling"))
+
+    init{
+        ws.onOpenListener = { hs : Handshakedata? -> println(hs?.content)}
+        ws.onMessageListener = {println(it)}
+        ws.onErrorListener = {println(it)}
+        println("Connecting")
+        try{
+            if(ws.connectBlocking()){
+                println("Connected")
+            } else {
+                println("Not connected")
+            }
+        } catch (e : Exception){
+            println(e)
+        }
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
 
@@ -40,10 +63,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             WearApp("Android")
         }
+
+        ws.send("Hello!")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ws.close()
     }
 }
 
-@Composable
+    @Composable
 fun WearApp(greetingName: String) {
     Webrtc_clientTheme {
         Box(

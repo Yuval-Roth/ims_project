@@ -21,13 +21,21 @@ public class SignalingSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) throws Exception {
         sessions.put(session.getId(), session);
+        System.out.println("New connection: " + session.getId());
     }
 
     @Override
     protected void handleTextMessage(@NonNull WebSocketSession session, TextMessage message) throws Exception {
         // Parse the message
         String rawPayload = message.getPayload();
-        WebRTCRequest request = WebRTCRequest.fromJson(rawPayload);
+
+        WebRTCRequest request;
+        try{
+            request = WebRTCRequest.fromJson(rawPayload);
+        } catch (Exception ignored){
+            System.out.println("message: "+rawPayload);
+            return;
+        }
 
         WebSocketSession targetSession = null;
         String messageToTarget = null;
