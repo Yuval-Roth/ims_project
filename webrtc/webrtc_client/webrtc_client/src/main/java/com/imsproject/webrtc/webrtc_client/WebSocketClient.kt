@@ -17,9 +17,8 @@ import java.util.concurrent.Executors
 class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
 
     private val messagesQueue : MutableList<String> = mutableListOf()
-    private var isOverridden : Boolean = false
-    private var interrupted : Boolean = false
     private val lock = Object()
+    private var interrupted : Boolean = false
 
     // TODO: check if this is necessary
     // used to prevent blocking of the calling thread when actions are received
@@ -109,6 +108,9 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
 
         if(interrupted){
             interrupted = false
+            if(message != null){
+                messagesQueue.add(0, message)
+            }
             throw InterruptedException("nextMessageBlocking was interrupted")
         }
 

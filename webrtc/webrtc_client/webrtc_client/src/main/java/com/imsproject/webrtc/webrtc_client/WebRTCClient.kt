@@ -48,9 +48,6 @@ class WebRTCClient(val endpoint: String, val appContext: Context) {
 
         // create a new WebSocketClient instance
         webSocket = WebSocketClient(URI("ws://$endpoint"))
-        webSocket.onMessageListener = {
-            peerMessageObserver(it ?: "")
-        }
 
         // connect to the signaling server
         if (! webSocket.connectBlocking()){
