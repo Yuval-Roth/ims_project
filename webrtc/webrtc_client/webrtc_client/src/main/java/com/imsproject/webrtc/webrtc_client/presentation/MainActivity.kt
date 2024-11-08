@@ -35,7 +35,7 @@ private const val LOCALHOST = "10.0.2.2"
 
 class MainActivity : ComponentActivity() {
 
-    val wrtc : WebRTCClient = WebRTCClient(LOCALHOST, 8080)
+    val wrtc : WebRTCClient = WebRTCClient(LOCALHOST, 8080, "signaling")
 
     init{
         println("Connecting")

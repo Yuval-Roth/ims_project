@@ -60,6 +60,10 @@ public class Response {
         return list;
     }
 
+    public List<String> payload() {
+        return payload;
+    }
+
     /**
      * This method will serialize the response object using {@link JsonUtils#serialize(Object)}
      */

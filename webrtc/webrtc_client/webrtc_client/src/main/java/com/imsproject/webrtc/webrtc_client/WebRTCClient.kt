@@ -5,7 +5,7 @@ import com.imsproject.utils.webrtc.WebRTCRequest
 import java.net.URI
 import java.util.concurrent.ConcurrentLinkedDeque
 
-class WebRTCClient(private val serverIp: String, private val serverPort: Int) {
+class WebRTCClient(private val serverIp: String, private val serverPort: Int, private val signalingEndpoint : String) {
 
     private lateinit var ws : WebSocketClient
     private lateinit var clientId : String
@@ -17,7 +17,7 @@ class WebRTCClient(private val serverIp: String, private val serverPort: Int) {
             throw IllegalStateException("Already connected to signaling server")
         }
 
-        ws = WebSocketClient(URI("ws://$serverIp:$serverPort"))
+        ws = WebSocketClient(URI("ws://$serverIp:$serverPort/$signalingEndpoint"))
         ws.onMessageListener = { messagesQueue.add(it) }
 
         if (! ws.connectBlocking()){
@@ -39,12 +39,13 @@ class WebRTCClient(private val serverIp: String, private val serverPort: Int) {
         try{
             val responseObj = Response.fromJson(response)
             if (responseObj.success()){
-                clientId = responseObj.payload<String>(String.javaClass).first()
+                clientId = responseObj.payload().first()
                 connected = true
                 return true
             }
-        } catch (ignored : Exception){
+        } catch (e : Exception){
             // TODO: Handle this exception and log it
+            e.printStackTrace()
         }
         ws.close()
         return false
