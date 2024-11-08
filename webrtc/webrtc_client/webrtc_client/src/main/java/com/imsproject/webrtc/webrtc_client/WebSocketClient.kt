@@ -26,13 +26,11 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
     private val executor : ExecutorService = Executors.newSingleThreadExecutor()
 
     /**
-     * This listener will be called when a message is received from the server
-     * By default, it will take the message and store it in a queue that can be accessed by
+     * This listener will be called when a message is received from the server.
+     * it will take the message and store it in a queue that can be accessed by
      * the [nextMessage] or [nextMessageBlocking] methods.
-     * NOTE: overriding this listener will allow you to handle the message in a different way
-     * but will not allow you to access the message using the [nextMessage] or [nextMessageBlocking] methods
      */
-    var onMessageListener : (String?) -> Unit = {
+    private val onMessageListener : (String?) -> Unit = {
         if(it != null){
             synchronized(lock){
                 messagesQueue.add(it)
@@ -40,19 +38,30 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
             }
         }
     }
-        set(value){
-            field = value
-            isOverridden = true
-        }
 
+    /**
+     * This listener will be called when the WebSocket connection is opened.
+     * By default, it does nothing
+     */
     var onOpenListener : (ServerHandshake?) -> Unit = {}
+
+    /**
+     * This listener will be called when the WebSocket connection is closed.
+     * By default, it does nothing
+     */
     var onCloseListener : (Int, String?, Boolean) -> Unit = {_, _, _ ->}
+
+    /**
+     * This listener will be called when an error occurs in the WebSocket connection.
+     * By default, it does nothing
+     */
     var onErrorListener : (Exception?) -> Unit = {}
 
 
+    /**
+     * Check if there are messages in the queue
+     */
     fun hasMessages() : Boolean {
-        checkIfOverridden()
-
         synchronized(lock){
             return messagesQueue.isNotEmpty()
         }
@@ -62,8 +71,6 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
      * interrupt the blocking [nextMessageBlocking] method
      */
     fun interrupt(){
-        checkIfOverridden()
-
         synchronized(lock){
             interrupted = true
             lock.notifyAll()
@@ -74,8 +81,6 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
      * Get the next message in the queue non-blocking
      */
     fun nextMessage() : String? {
-        checkIfOverridden()
-
         synchronized(lock){
             return if(messagesQueue.isNotEmpty()){
                 messagesQueue.first();
@@ -91,8 +96,6 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
      * @throws InterruptedException if the method is interrupted
      */
     fun nextMessageBlocking() : String {
-        checkIfOverridden()
-
         var message : String? = null
         synchronized(lock){
             while(! interrupted && message == null){
@@ -114,12 +117,6 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
         }
 
         return message
-    }
-
-    private fun checkIfOverridden() {
-        if (isOverridden) {
-            throw IllegalStateException("Cannot access messages queue when onMessageListener is overridden")
-        }
     }
 
     override fun onOpen(handshakedata: ServerHandshake?) {
