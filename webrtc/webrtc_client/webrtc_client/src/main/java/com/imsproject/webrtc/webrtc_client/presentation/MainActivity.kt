@@ -1,14 +1,9 @@
-/* While this template provides a good starting point for using Wear Compose, you can always
- * take a look at https://github.com/android/wear-os-samples/tree/main/ComposeStarter to find the
- * most up to date changes to the libraries and their usages.
- */
 
 package com.imsproject.webrtc.webrtc_client.presentation
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,36 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.tooling.preview.devices.WearDevices
-
 import com.imsproject.webrtc.webrtc_client.R
-import com.imsproject.webrtc.webrtc_client.WebRTCClient
-import com.imsproject.webrtc.webrtc_client.WebSocketClient
 import com.imsproject.webrtc.webrtc_client.presentation.theme.Webrtc_clientTheme
-import org.java_websocket.handshake.Handshakedata
-import java.net.URI
-
-private const val LOCALHOST = "10.0.2.2"
 
 class MainActivity : ComponentActivity() {
 
-    val wrtc : WebRTCClient = WebRTCClient(LOCALHOST, 8080, "signaling")
-
-    init{
-        println("Connecting")
-        try{
-            if(wrtc.connectToServer()){
-                println("Connected")
-            } else {
-                println("Not connected")
-            }
-        } catch (e : Exception){
-            println(e)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
