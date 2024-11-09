@@ -11,25 +11,13 @@ class Main : Application() {
     private val context : Context = this
     val wrtc : WebRTCClient = WebRTCClient("$LOCALHOST:8080/signaling", context)
 
-    init{
-        wrtc.peerMessageObserver = {
-            println(it)
-        }
-
-        println("Connecting")
-        try{
-            if(wrtc.connectToServer()){
-                println("Connected")
-            } else {
-                println("Not connected")
-            }
-        } catch (e : Exception){
-            println(e)
-        }
-    }
-
     override fun onCreate() {
         super.onCreate()
 
+        println("connected: ${wrtc.connectToServer()}")
+        Thread{
+            Thread.sleep(15000)
+            wrtc.offer("test")
+        }.start()
     }
 }
