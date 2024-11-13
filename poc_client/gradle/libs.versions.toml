@@ -8,8 +8,6 @@ composeFoundation = "1.2.1"
 wearToolingPreview = "1.0.0"
 activityCompose = "1.9.3"
 coreSplashscreen = "1.0.1"
-webrtc = "1.2.2"
-javaWebsocket = "1.5.7"
 
 [libraries]
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
@@ -25,8 +23,7 @@ compose-foundation = { group = "androidx.wear.compose", name = "compose-foundati
 wear-tooling-preview = { group = "androidx.wear", name = "wear-tooling-preview", version.ref = "wearToolingPreview" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
-webrtc = { group = "io.getstream", name = "stream-webrtc-android", version.ref = "webrtc" }
-ims-common = {group = "com.imsproject", name = "common", version = "1.0"}
+imsproject-common = { group = "com.imsproject", name = "common" , version = "1.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

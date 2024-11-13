@@ -4,15 +4,12 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-group = "com.imsproject"
-version = "0.0.1-SNAPSHOT"
-
 android {
-    namespace = "com.imsproject.webrtc.webrtc_client"
+    namespace = "com.imsproject.poc_client"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.imsproject.webrtc.webrtc_client"
+        applicationId = "com.imsproject.poc_client"
         minSdk = 33
         targetSdk = 34
         versionCode = 1
@@ -30,11 +27,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "21"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -58,7 +55,5 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
 
-    // my dependencies:
-    implementation(libs.webrtc)
-    implementation(libs.ims.common)
+    implementation(libs.imsproject.common)
 }

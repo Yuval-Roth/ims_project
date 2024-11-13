@@ -1,28 +1,26 @@
-package com.imsproject.webrtc.webrtc_client
 
-import org.java_websocket.client.WebSocketClient
+
+package com.imsproject.utils
+
 import org.java_websocket.handshake.ServerHandshake
-import java.lang.Exception
 import java.net.URI
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-
 
 /**
  * A simple WebSocketClient that can be used to connect to a WebSocket server
  * and send and receive messages
- * By default, the client automatically saves the messages received from the server in a queue
+ *
+ * The client automatically saves the messages received from the server in a queue
  * that can be accessed using the [nextMessage] or [nextMessageBlocking] methods
  */
-class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
+class WebSocketClient (serverUri: URI) : org.java_websocket.client.WebSocketClient(serverUri) {
 
     private val messagesQueue : MutableList<String> = mutableListOf()
     private val lock = Object()
     private var interrupted : Boolean = false
 
-    // TODO: check if this is necessary
-    // used to prevent blocking of the calling thread when actions are received
-    private val executor : ExecutorService = Executors.newSingleThreadExecutor()
+    // This executor guarantees sequential processing of the messages
+    private val executor = Executors.newSingleThreadExecutor()
 
     /**
      * This listener will be called when a message is received from the server.
@@ -61,9 +59,7 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
      * Check if there are messages in the queue
      */
     fun hasMessages() : Boolean {
-        synchronized(lock){
-            return messagesQueue.isNotEmpty()
-        }
+        return messagesQueue.isNotEmpty()
     }
 
     /**
@@ -77,12 +73,29 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
     }
 
     /**
+     * Get the next message in the queue blocking for a specified time.
+     * If no message is received in the specified time, it will return null
+     *
+     * @param timeout the time to wait for a message in milliseconds
+     */
+    fun nextMessage(timeout : Long)  : String? {
+        synchronized(lock) {
+            if (messagesQueue.isNotEmpty()) {
+                return messagesQueue.removeAt(0)
+            } else {
+                lock.wait(timeout)
+                return messagesQueue.removeFirstOrNull()
+            }
+        }
+    }
+
+    /**
      * Get the next message in the queue non-blocking
      */
     fun nextMessage() : String? {
         synchronized(lock){
             return if(messagesQueue.isNotEmpty()){
-                messagesQueue.first();
+                messagesQueue.removeAt(0);
             } else {
                 null
             }
@@ -109,7 +122,9 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
         if(interrupted){
             interrupted = false
             if(message != null){
-                messagesQueue.add(0, message)
+                synchronized(lock){
+                    messagesQueue.add(0, message!!)
+                }
             }
             throw InterruptedException("nextMessageBlocking was interrupted")
         }
@@ -118,22 +133,22 @@ class WebSocketClient (serverUri: URI) : WebSocketClient(serverUri) {
             throw IllegalStateException("Should not happen")
         }
 
-        return message
-    }
-
-    override fun onOpen(handshakedata: ServerHandshake?) {
-        executor.submit { onOpenListener.invoke(handshakedata) }
+        return message!!
     }
 
     override fun onMessage(message: String?) {
-        executor.submit { onMessageListener.invoke(message) }
+        executor.submit { onMessageListener(message) }
+    }
+
+    override fun onOpen(handshakedata: ServerHandshake?) {
+        executor.submit { onOpenListener(handshakedata) }
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
-        executor.submit { onCloseListener.invoke(code, reason, remote) }
+        executor.submit { onCloseListener(code, reason, remote) }
     }
 
     override fun onError(ex: Exception?) {
-        executor.submit { onErrorListener.invoke(ex) }
+        executor.submit { onErrorListener(ex) }
     }
 }

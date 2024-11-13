@@ -3,7 +3,7 @@ package com.imsproject.webrtc.webrtc_client
 import android.content.Context
 import android.util.Log
 import com.imsproject.utils.JsonUtils
-import com.imsproject.utils.Response
+import com.imsproject.utils.WebSocketClient
 import com.imsproject.utils.webrtc.Candidate
 import com.imsproject.utils.webrtc.WebRTCRequest
 import com.imsproject.utils.webrtc.WebRTCRequest.Type

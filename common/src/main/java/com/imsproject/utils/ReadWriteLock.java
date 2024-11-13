@@ -76,7 +76,7 @@ public class ReadWriteLock {
 
         // wait for your turn
         writeQueueLock.acquire();
-        if(writeQueue.getFirst() != obj){
+        if(writeQueue.get(0) != obj){
             // you are not next in line
             synchronized (obj){
                 writeQueueLock.release();
@@ -94,7 +94,7 @@ public class ReadWriteLock {
         decrement(waitingToWrite);
 
         writeQueueLock.acquire();
-        writeQueue.removeFirst();
+        writeQueue.remove(0);
 
         if(waitingToWrite.get() == 0){
             // no one is waiting to write
@@ -104,7 +104,7 @@ public class ReadWriteLock {
             }
         } else if(!writeQueue.isEmpty()) {
             // waitingToWrite > 0 && writeQueue.size() > 0
-            Object next = writeQueue.getFirst();
+            Object next = writeQueue.get(0);
             writeQueueLock.release();
             synchronized(next){
                 next.notify();

@@ -61,10 +61,11 @@ public class RestApiClient {
 
         // send request
         HttpResponse<String> response;
-        try (HttpClient client = trustAllCertificates ?
-                createHttpClientTrustAllCertificates() : HttpClient.newHttpClient()) {
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        }
+        HttpClient client = null;
+
+        client = trustAllCertificates ?
+            createHttpClientTrustAllCertificates() : HttpClient.newHttpClient();
+        response = client.send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
 
