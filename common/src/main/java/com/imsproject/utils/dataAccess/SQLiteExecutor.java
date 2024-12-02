@@ -1,0 +1,136 @@
+package com.imsproject.utils.dataAccess;
+
+import com.imsproject.utils.dataAccess.abstracts.SQLExecutor;
+import org.sqlite.SQLiteConfig;
+
+import java.sql.*;
+import java.util.Properties;
+
+public class SQLiteExecutor implements SQLExecutor {
+    private static final String URL_PREFIX = "jdbc:sqlite:";
+    private final String URL;
+    private final Properties properties;
+    private volatile Connection transactionConnection;
+
+    /**
+     * @param dbUrl the url of the database to connect to
+     */
+    public SQLiteExecutor(String dbUrl) {
+        URL = URL_PREFIX + dbUrl;
+        properties = getProperties();
+    }
+
+    private Properties getProperties() {
+        SQLiteConfig config = new SQLiteConfig();
+        config.enforceForeignKeys(true);
+        return config.toProperties();
+    }
+
+    @Override
+    public void beginTransaction() throws SQLException {
+        transactionConnection = DriverManager.getConnection(URL, properties);
+        transactionConnection.setAutoCommit(false);
+    }
+
+    @Override
+    public void commit() throws SQLException {
+        if (transactionConnection == null || transactionConnection.isClosed()){
+            throw new IllegalStateException("commit() called when not in a transaction");
+        }
+        try{
+            transactionConnection.commit();
+        } finally {
+            transactionConnection.close();
+        }
+    }
+
+    @Override
+    public void rollback() throws SQLException {
+
+        if (transactionConnection == null || transactionConnection.isClosed()) {
+            throw new IllegalStateException("rollback() called when not in a transaction");
+        }
+        try{
+            transactionConnection.rollback();
+        } finally {
+            transactionConnection.close();
+        }
+    }
+
+    @Override
+    public OfflineResultSet executeRead(String query) throws SQLException {
+
+        if(query == null || query.isBlank()){
+            if(inTransaction()){
+                rollback();
+            }
+            throw new SQLException("query is null or empty");
+        }
+
+        query = cleanQuery(query);
+
+        if(inTransaction()){
+            return new OfflineResultSet(transactionConnection.createStatement().executeQuery(query));
+        } else {
+            try (Connection connection = DriverManager.getConnection(URL)) {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(query);
+                return new OfflineResultSet(resultSet);
+            }
+        }
+    }
+
+    @Override
+    public int executeWrite(String query) throws SQLException {
+
+        if(query == null || query.isBlank()){
+            if(inTransaction()){
+                rollback();
+            }
+            throw new SQLException("query is null or empty");
+        }
+
+        query = cleanQuery(query);
+
+        if(inTransaction()){
+            try{
+                return transactionConnection.createStatement().executeUpdate(query);
+            } catch (SQLException e) {
+                rollback();
+                throw e;
+            }
+        } else {
+            try (Connection connection = DriverManager.getConnection(URL, properties)) {
+                connection.setAutoCommit(false);
+                Statement statement = connection.createStatement();
+                try{
+                    int rowsChanged = statement.executeUpdate(query);
+                    connection.commit();
+                    return rowsChanged;
+                }catch (SQLException e){
+                    connection.rollback();
+                    throw e;
+                }
+            }
+        }
+    }
+
+    private boolean inTransaction() throws SQLException {
+        return transactionConnection != null && transactionConnection.isClosed() == false;
+    }
+
+    @Override
+    public SQLExecutor clone() {
+        try {
+            return (SQLExecutor) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException("Something went wrong while cloning SQLExecutor"); // should never happen
+        }
+    }
+
+    private static String cleanQuery(String query) {
+        query = query.strip();
+        query = query.charAt(query.length()-1) == ';' ? query : query + ";";
+        return query;
+    }
+}

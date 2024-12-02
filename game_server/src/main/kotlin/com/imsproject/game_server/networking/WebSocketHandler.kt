@@ -21,15 +21,13 @@ import java.util.*
 class WebSocketHandler(
     private val gameController: GameController,
     private val udpSocketHandler: UdpSocketHandler,
-    private val clientController: ClientController,
-    controller: ClientController,
+    private val clientController: ClientController
 ) : TextWebSocketHandler() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(WebSocketHandler::class.java)
     }
 
-    //    private val clients : MutableMap<String, ClientHandler> = ConcurrentHashMap()
     private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(2)
 
     override fun afterConnectionEstablished(@NonNull session: WebSocketSession) {
