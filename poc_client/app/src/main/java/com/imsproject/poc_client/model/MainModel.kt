@@ -1,10 +1,10 @@
 package com.imsproject.poc_client.model
 
 import android.util.Log
-import com.imsproject.utils.UdpClient
-import com.imsproject.utils.WebSocketClient
-import com.imsproject.utils.gameServer.GameAction
-import com.imsproject.utils.gameServer.GameRequest
+import com.imsproject.common.gameServer.GameAction
+import com.imsproject.common.gameServer.GameRequest
+import com.imsproject.common.networking.UdpClient
+import com.imsproject.common.networking.WebSocketClient
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.util.concurrent.TimeUnit

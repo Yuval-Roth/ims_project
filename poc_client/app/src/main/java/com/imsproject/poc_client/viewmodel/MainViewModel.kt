@@ -3,8 +3,8 @@ package com.imsproject.poc_client.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.imsproject.common.networking.PingTracker
 import com.imsproject.poc_client.model.MainModel
-import com.imsproject.utils.PingTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
