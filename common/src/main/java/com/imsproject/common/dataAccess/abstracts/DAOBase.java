@@ -5,17 +5,15 @@ import com.imsproject.common.dataAccess.*;
 
 import java.sql.SQLException;
 
-public abstract class DAOBase<T extends Cacheable, PK extends PrimaryKey> implements DAO<T, PK> {
+public abstract class DAOBase<T, PK extends PrimaryKey> implements DAO<T, PK> {
 
     protected final SQLExecutor cursor;
     protected final String TABLE_NAME;
-    protected final Cache<T> cache;
     protected CreateTableQueryBuilder createTableQueryBuilder;
 
     protected DAOBase(SQLExecutor cursor, String tableName) throws DaoException {
         this.cursor = cursor;
         this.TABLE_NAME = tableName;
-        this.cache = new Cache<>();
         this.createTableQueryBuilder = CreateTableQueryBuilder.create(tableName);
         initTable();
     }
@@ -41,20 +39,4 @@ public abstract class DAOBase<T extends Cacheable, PK extends PrimaryKey> implem
 
     protected abstract PK getObjectFromResultSet(OfflineResultSet resultSet);
 
-    /**
-     * used for testing
-     */
-    public void clearTable() {
-        String query = String.format("DELETE FROM %s", TABLE_NAME);
-        try {
-            cursor.executeWrite(query);
-            clearCache();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void clearCache() {
-        cache.clear();
-    }
 }

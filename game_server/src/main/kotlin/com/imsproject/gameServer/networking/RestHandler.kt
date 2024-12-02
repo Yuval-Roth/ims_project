@@ -50,5 +50,4 @@ class RestHandler(private val gameController: GameController) {
                      @RequestParam(value = "gametype", required = true) gameType : String): String {
         return gameController.setLobbyType(lobbyId,gameType)
     }
-
 }
