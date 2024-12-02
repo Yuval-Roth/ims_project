@@ -23,9 +23,9 @@ public interface DAO<T, PK extends PrimaryKey> {
 
     void updateAll(List<T> objects) throws DaoException;
 
-    void delete(PK object) throws DaoException;
+    void delete(PK key) throws DaoException;
 
-    void deleteAll(List<PK> objects) throws DaoException;
+    void deleteAll(List<PK> keys) throws DaoException;
 
-    boolean exists(PK object) throws DaoException;
+    boolean exists(PK key) throws DaoException;
 }
