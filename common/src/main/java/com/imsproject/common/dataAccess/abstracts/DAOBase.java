@@ -1,14 +1,11 @@
 package com.imsproject.common.dataAccess.abstracts;
 
 
-import com.imsproject.common.dataAccess.Cache;
-import com.imsproject.common.dataAccess.CreateTableQueryBuilder;
-import com.imsproject.common.dataAccess.DaoException;
-import com.imsproject.common.dataAccess.OfflineResultSet;
+import com.imsproject.common.dataAccess.*;
 
 import java.sql.SQLException;
 
-public abstract class DAOBase<T, PK extends PrimaryKey> implements DAO<T, PK> {
+public abstract class DAOBase<T extends Cacheable, PK extends PrimaryKey> implements DAO<T, PK> {
 
     protected final SQLExecutor cursor;
     protected final String TABLE_NAME;
