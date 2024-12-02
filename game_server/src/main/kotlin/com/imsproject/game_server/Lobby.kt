@@ -4,15 +4,24 @@ import com.imsproject.utils.gameServer.GameType
 import com.imsproject.utils.gameServer.LobbyInfo
 import com.imsproject.utils.gameServer.LobbyState
 
-class Lobby(val id : String, val gameType: GameType) {
+class Lobby(val id : String, gameType: GameType) {
 
-    var host : ClientHandler? = null
+    var gameType = gameType
+        set(value) {
+            if (field != value) {
+                field = value
+                player1Ready = false
+                player2Ready = false
+            }
+        }
+
+    var player1Id : String? = null
         private set
-    var guest : ClientHandler? = null
+    var player2Id : String? = null
         private set
 
-    private var hostReady = false
-    private var guestReady = false
+    private var player1Ready = false
+    private var player2Ready = false
 
     var state = LobbyState.WAITING
 
@@ -20,14 +29,14 @@ class Lobby(val id : String, val gameType: GameType) {
      * returns true if the player was added successfully, false if the lobby is full
      */
     @Synchronized
-    fun add(player: ClientHandler) : Boolean {
+    fun add(player: String) : Boolean {
         return when {
-            host == null -> {
-                host = player
+            player1Id == null -> {
+                player1Id = player
                 true
             }
-            guest == null -> {
-                guest = player
+            player2Id == null -> {
+                player2Id = player
                 true
             }
             else -> false
@@ -35,56 +44,64 @@ class Lobby(val id : String, val gameType: GameType) {
     }
 
     /**
-     * @throws IllegalArgumentException if the player is not in the lobby
+     * @return true if the player was removed successfully, false if the player was not in the lobby
      */
     @Synchronized
-    fun remove(player: ClientHandler) {
-        when (player) {
-            host -> {
-                if(guest != null){
-                    host = guest
-                    guest = null
+    fun remove(player: String) : Boolean {
+        val success = when (player) {
+            player1Id -> {
+                if(player2Id != null){
+                    player1Id = player2Id
+                    player2Id = null
                 } else {
-                    host = null
+                    player1Id = null
                 }
+                true
             }
-            guest -> {
-                guest = null
+            player2Id -> {
+                player2Id = null
+                true
             }
-            else -> throw IllegalArgumentException("Player not in the lobby")
+            else -> false
         }
-        guestReady = false
-        hostReady = false
+        if (success){
+            player2Ready = false
+            player1Ready = false
+        }
+
+        return success
     }
 
     /**
-     * @throws IllegalArgumentException if the player is not in the lobby
+     * @return true if the player was toggled successfully, false if the player was not in the lobby
      */
     @Synchronized
-    fun toggleReady(player: ClientHandler) {
-        when (player) {
-            host -> {
-                hostReady = !hostReady
+    fun toggleReady(player: String) : Boolean {
+        return when (player) {
+            player1Id -> {
+                player1Ready = !player1Ready
+                true
             }
-            guest -> {
-                guestReady = !guestReady
+            player2Id -> {
+                player2Ready = !player2Ready
+                true
             }
-            else -> throw IllegalArgumentException("Player not in the lobby")
+            else -> false
         }
     }
 
-    fun isFull() = host != null && guest != null
+    fun isFull() = player1Id != null && player2Id != null
 
-    fun isEmpty() = host == null && guest == null
+    fun isEmpty() = player1Id == null && player2Id == null
 
-    fun isReady() = isFull() && hostReady && guestReady
+    fun isReady() = isFull() && player1Ready && player2Ready
 
-    operator fun contains(player: ClientHandler) = player == host || player == guest
+    operator fun contains(player: String) = player == player1Id || player == player2Id
 
-    fun getPlayers() = setOfNotNull(host, guest)
+    fun getPlayers() = setOfNotNull(player1Id, player2Id)
 
     fun getInfo() : LobbyInfo {
-        val ids = getPlayers().map { it.id }
+        val ids = getPlayers()
         val players : List<String> = ids.toList()
         return LobbyInfo(id, gameType, state, players)
     }

@@ -1,5 +1,9 @@
-package com.imsproject.game_server
+package com.imsproject.game_server.networking
 
+import com.imsproject.game_server.ClientController
+import com.imsproject.game_server.ClientHandler
+import com.imsproject.game_server.GameController
+import com.imsproject.game_server.send
 import com.imsproject.utils.SimpleIdGenerator
 import com.imsproject.utils.gameServer.GameRequest
 import com.imsproject.utils.gameServer.GameRequest.Type
@@ -12,19 +16,20 @@ import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.TextWebSocketHandler
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class WebSocketHandler(
     private val gameController: GameController,
     private val udpSocketHandler: UdpSocketHandler,
+    private val clientController: ClientController,
+    controller: ClientController,
 ) : TextWebSocketHandler() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(WebSocketHandler::class.java)
     }
 
-    private val clients : MutableMap<String, ClientHandler> = ConcurrentHashMap()
+    //    private val clients : MutableMap<String, ClientHandler> = ConcurrentHashMap()
     private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(2)
 
     override fun afterConnectionEstablished(@NonNull session: WebSocketSession) {
@@ -53,14 +58,14 @@ class WebSocketHandler(
             Type.ENTER -> {
 
                 // Check if the client already exists
-                if (clients[session.id] != null) {
+                if (clientController.containsByWsSessionId(session.id)) {
                     log.error("Client already exists for session: {}", session.id)
                     return
                 }
 
                 // create a new client handler for the session
                 val client = newClientHandler(session)
-                clients[session.id] = client
+                clientController.addClientHandler(session.id,client)
 
                 log.debug("New client: {}",client.id)
 
@@ -82,7 +87,7 @@ class WebSocketHandler(
 
             else -> {
                 // get the client handler for the session if it exists
-                val client = clients[session.id] ?: run {
+                val client = clientController.getByWsSessionId(session.id) ?: run {
                     log.error("Client not found for session: {}", session.id)
                     return
                 }
@@ -103,9 +108,9 @@ class WebSocketHandler(
     }
 
     override fun afterConnectionClosed(session: WebSocketSession, @NonNull status: CloseStatus) {
-        val client = clients[session.id] ?: return
+        val client = clientController.getByWsSessionId(session.id) ?: return
         log.debug("Client disconnected: {}", client.id)
-        clients.remove(session.id)
+        clientController.removeClientHandler(client.id)
     }
 
     private fun newClientHandler(wsSession: WebSocketSession) : ClientHandler {

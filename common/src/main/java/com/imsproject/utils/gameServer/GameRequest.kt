@@ -8,7 +8,6 @@ data class GameRequest(
     val playerId: String?,
     val lobbyId : String?,
     val gameType : GameType?,
-    val port : Int?,
     val success : Boolean?,
     val message : String?,
     val data : List<String>?,
@@ -20,14 +19,8 @@ data class GameRequest(
         @SerializedName("pong") PONG("pong"),
         @SerializedName("enter") ENTER("enter"),
         @SerializedName("exit") EXIT("exit"),
-        @SerializedName("get_lobbies") GET_LOBBIES("get_lobbies"),
-        @SerializedName("create_lobby") CREATE_LOBBY("create_lobby"),
-        @SerializedName("join_lobby") JOIN_LOBBY("join_lobby"),
-        @SerializedName("leave_lobby") LEAVE_LOBBY("leave_lobby"),
         @SerializedName("start_game") START_GAME("start_game"),
         @SerializedName("end_game") END_GAME("end_game"),
-        @SerializedName("pause_game") PAUSE_GAME("pause_game"),
-        @SerializedName("resume_game") RESUME_GAME("resume_game"),
         @SerializedName("toggle_ready") TOGGLE_READY("toggle_ready"),
         @SerializedName("error") ERROR("error");
     }

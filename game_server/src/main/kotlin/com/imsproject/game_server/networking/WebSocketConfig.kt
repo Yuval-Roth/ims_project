@@ -1,4 +1,4 @@
-package com.imsproject.game_server
+package com.imsproject.game_server.networking
 
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.socket.config.annotation.EnableWebSocket

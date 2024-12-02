@@ -1,150 +1,171 @@
 package com.imsproject.game_server
 
+import com.imsproject.utils.Response
 import com.imsproject.utils.SimpleIdGenerator
 import com.imsproject.utils.gameServer.GameAction
 import com.imsproject.utils.gameServer.GameRequest
 import com.imsproject.utils.gameServer.GameRequest.Type
 import com.imsproject.utils.gameServer.GameType
 import com.imsproject.utils.gameServer.LobbyState
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
 
 @Component
-class GameController {
+class GameController(private val clientController: ClientController) {
 
-    private val lobbies = mutableMapOf<String,Lobby>()
-    private val games = mutableMapOf<String, Game>()
+    private val lobbies = ConcurrentHashMap<String,Lobby>()
+    private val games = ConcurrentHashMap<String, Game>()
+    private val clientIdToGame = ConcurrentHashMap<String, Game>()
     private val idGenerator = SimpleIdGenerator(2)
+
 
     /**
      * @throws IllegalArgumentException if anything is wrong with the message
      */
     fun handleGameRequest(clientHandler: ClientHandler, request: GameRequest) {
         when (request.type) {
-            Type.GET_LOBBIES -> handleGetLobbies(clientHandler, request)
-            Type.CREATE_LOBBY -> handleCreateLobby(clientHandler, request)
-            Type.JOIN_LOBBY -> handleJoinLobby(clientHandler, request)
-            Type.LEAVE_LOBBY -> handleLeaveLobby(clientHandler, request)
-            Type.START_GAME -> handleStartGame(clientHandler, request)
-            Type.END_GAME -> handleEndGame(clientHandler, request)
-            Type.PAUSE_GAME -> handlePauseGame(clientHandler, request)
-            Type.RESUME_GAME -> handleResumeGame(clientHandler, request)
+            Type.TOGGLE_READY -> handleToggleReady(clientHandler, request)
             else -> throw IllegalArgumentException("Invalid message type: ${request.type}")
         }
+    }
+
+    private fun handleToggleReady(clientHandler: ClientHandler, request: GameRequest) {
+        val lobby = lobbies[request.lobbyId] ?: throw IllegalArgumentException("Lobby not found")
+        val success = lobby.toggleReady(clientHandler.id)
+        clientHandler.sendTcp(
+            GameRequest.builder(Type.TOGGLE_READY)
+                .success(success)
+                .build().toJson()
+        )
     }
 
     fun handleGameAction(clientHandler: ClientHandler, action: GameAction) {
         TODO("Not yet implemented")
     }
 
-    private fun handleGetLobbies(clientHandler: ClientHandler, message: GameRequest) {
+    fun getAllLobbies() : String {
         val lobbiesInfo = lobbies.values.map { it.getInfo().toJson() }
-        clientHandler.sendTcp(
-            GameRequest.builder(Type.GET_LOBBIES)
-                .success(true)
-                .data(lobbiesInfo)
-                .build().toJson()
-        )
+        return Response.getOk(lobbiesInfo)
     }
 
-    private fun handleLeaveLobby(clientHandler: ClientHandler, message: GameRequest) {
-        val lobby = getLobby(message.lobbyId)
-
-        lobby.remove(clientHandler) // this throws an exception if the player is not in the lobby
-
-        clientHandler.sendTcp(
-            GameRequest.builder(Type.LEAVE_LOBBY)
-                .success(true)
-                .build().toJson()
-        )
+    fun getLobby(lobbyId: String) : String {
+        val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
+        return Response.getOk(lobby.getInfo().toJson())
     }
 
-    private fun handleJoinLobby(clientHandler: ClientHandler, message: GameRequest) {
-        val lobby = getLobby(message.lobbyId)
-
-        // Try to add the player to the lobby
-        val success = lobby.add(clientHandler)
-        val messageBuilder = GameRequest.builder(Type.JOIN_LOBBY).success(success)
-
-        // if the player was added, send the lobby info to the player
-        if(success){
-            messageBuilder.data(listOf(lobby.getInfo().toJson()))
+    fun leaveLobby(lobbyId : String, clientId : String): String {
+        val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
+        if (clientController.containsByClientId(clientId).not()) {
+            return Response.getError("Player not found")
         }
 
-        clientHandler.sendTcp(messageBuilder.build().toJson())
+        val success = lobby.remove(clientId)
+        return if(success){
+            Response.getOk()
+        } else {
+            Response.getError("Player not in lobby")
+        }
     }
 
-    private fun handleCreateLobby(clientHandler: ClientHandler, message: GameRequest) {
-        val type = message.gameType ?: throw IllegalArgumentException("Game type is required")
+    fun joinLobby(lobbyId: String, clientId: String) : String {
+        val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
+        if (clientController.containsByClientId(clientId).not()) {
+            return Response.getError("Player not found")
+        }
+
+        // Try to add the player to the lobby
+        val success = lobby.add(clientId)
+        return if(success){
+            Response.getOk()
+        } else {
+            Response.getError("Lobby is full")
+        }
+    }
+
+    fun createLobby(gameType: String) : String {
+        val _gameType: GameType
+        try{
+            _gameType = GameType.valueOf(gameType)
+        } catch (e: IllegalArgumentException){
+            return Response.getError("Invalid game type")
+        }
+
         val lobbyId = idGenerator.generate()
-        val lobby = Lobby(lobbyId,type)
-        lobby.add(clientHandler)
+        val lobby = Lobby(lobbyId,_gameType)
         lobbies[lobbyId] = lobby
-        clientHandler.sendTcp(
-            GameRequest.builder(Type.CREATE_LOBBY)
-                .lobbyId(lobbyId)
-                .success(true)
-                .build().toJson()
-        )
+        return Response.getOk(lobbyId)
     }
 
-    private fun handleEndGame(clientHandler: ClientHandler, message: GameRequest) {
-        val lobby = getLobby(message.lobbyId)
-        val game = games[lobby.id] ?: throw IllegalArgumentException("Game not found")
+    fun endGame(lobbyId: String) : String {
+        val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
+        val game = games[lobbyId] ?: return Response.getError("Game not found")
         game.endGame()
         games.remove(lobby.id)
         lobby.state = LobbyState.WAITING
-        lobby.getPlayers().forEach {
-            it.sendTcp(
+        lobby.getPlayers()
+            .map {clientController.getByClientId(it)}
+            .forEach {
+                it?.sendTcp(
                 GameRequest.builder(Type.END_GAME)
-                    .success(true)
                     .build().toJson()
             )
         }
+        return Response.getOk()
     }
 
-    private fun handleStartGame(host: ClientHandler, message: GameRequest) {
-        val lobby = getLobby(message.lobbyId)
-
-        // Check if the host is the one starting the game
-        if(lobby.host != host){
-            throw IllegalArgumentException("Only the host can start the game")
-        }
+    fun startGame(lobbyId: String) : String {
+        val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
 
         // Check if the lobby is ready
         if(lobby.isReady().not()) {
-            throw IllegalArgumentException("Lobby is not ready")
+            return Response.getError("Lobby is not ready")
         }
 
+        val bad = Response.getError("Failed to start game")
+
         // Start the game
+        val player1Id = lobby.player1Id!!
+        val player2Id = lobby.player2Id!!
+        val player1Handler = clientController.getByClientId(player1Id) ?: run{
+            log.error("Player 1 handler is null in lobby: $lobbyId")
+            return bad
+        }
+        val player2Handler = clientController.getByClientId(player2Id) ?: run{
+            log.error("Player 2 handler is null in lobby: $lobbyId")
+            return bad
+        }
         val game = when(lobby.gameType){
                 GameType.WATER_RIPPLES -> TODO("Not yet implemented")
-                GameType.POC -> PocGame(lobby.host!!, lobby.guest!!)
+                GameType.POC -> PocGame(player1Handler, player2Handler)
             }
         lobby.state = LobbyState.PLAYING
         games[lobby.id] = game
+        clientIdToGame[player1Id] = game
+        clientIdToGame[player2Id] = game
         game.startGame()
 
         // Notify the players
-        lobby.getPlayers().forEach {
-            it.sendTcp(
-                GameRequest.builder(Type.START_GAME)
-                    .success(true)
-                    .build().toJson()
-            )
+        val msg = GameRequest.builder(Type.START_GAME).build().toJson()
+        player1Handler.sendTcp(msg)
+        player2Handler.sendTcp(msg)
+
+        return Response.getOk()
+    }
+
+    fun setLobbyType(lobbyId: String, gameType: String): String {
+        val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
+        val _gameType: GameType
+        try{
+            _gameType = GameType.valueOf(gameType)
+        } catch (e: IllegalArgumentException){
+            return Response.getError("Invalid game type")
         }
+        lobby.gameType = _gameType
+        return Response.getOk()
     }
 
-    private fun handleResumeGame(clientHandler: ClientHandler, message: GameRequest) {
-        TODO("Not yet implemented")
-    }
-
-    private fun handlePauseGame(clientHandler: ClientHandler, message: GameRequest) {
-        TODO("Not yet implemented")
-    }
-
-    private fun getLobby(message: String?): Lobby {
-        val lobbyId = message ?: throw IllegalArgumentException("Lobby id is required")
-        val lobby = lobbies[lobbyId] ?: throw IllegalArgumentException("Lobby not found")
-        return lobby
+    companion object{
+        private val log = LoggerFactory.getLogger(GameController::class.java)
     }
 }

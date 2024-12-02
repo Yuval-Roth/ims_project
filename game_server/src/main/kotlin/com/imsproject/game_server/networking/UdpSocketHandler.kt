@@ -1,5 +1,7 @@
-package com.imsproject.game_server
+package com.imsproject.game_server.networking
 
+import com.imsproject.game_server.ClientHandler
+import com.imsproject.game_server.GameController
 import com.imsproject.utils.UdpClient
 import com.imsproject.utils.gameServer.GameAction
 import org.slf4j.LoggerFactory

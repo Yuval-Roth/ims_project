@@ -81,7 +81,7 @@ public class Response {
     /**
      * Equivalent to {@code new Response("",true,List.of()).toJson()}
      */
-    public static <T> String getOk(){
+    public static String getOk(){
         return getOk(List.of());
     }
 
