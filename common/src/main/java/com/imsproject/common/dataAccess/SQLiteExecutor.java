@@ -6,6 +6,9 @@ import org.sqlite.SQLiteConfig;
 import java.sql.*;
 import java.util.Properties;
 
+/**
+ * An implementation of {@link SQLExecutor} for SQLite databases
+ */
 public class SQLiteExecutor implements SQLExecutor {
     private static final String URL_PREFIX = "jdbc:sqlite:";
     private final String URL;
@@ -58,7 +61,7 @@ public class SQLiteExecutor implements SQLExecutor {
     }
 
     @Override
-    public OfflineResultSet executeRead(String query) throws SQLException {
+    public OfflineResultSet executeRead(String query, Object ... params) throws SQLException {
 
         if(query == null || query.isBlank()){
             if(inTransaction()){
@@ -70,18 +73,21 @@ public class SQLiteExecutor implements SQLExecutor {
         query = cleanQuery(query);
 
         if(inTransaction()){
-            return new OfflineResultSet(transactionConnection.createStatement().executeQuery(query));
+            PreparedStatement statement = transactionConnection.prepareStatement(query);
+            prepareStatement(params, statement);
+            return new OfflineResultSet(statement.executeQuery());
         } else {
             try (Connection connection = DriverManager.getConnection(URL)) {
-                Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery(query);
+                PreparedStatement statement = connection.prepareStatement(query);
+                prepareStatement(params, statement);
+                ResultSet resultSet = statement.executeQuery();
                 return new OfflineResultSet(resultSet);
             }
         }
     }
 
     @Override
-    public int executeWrite(String query) throws SQLException {
+    public int executeWrite(String query, Object ... params) throws SQLException {
 
         if(query == null || query.isBlank()){
             if(inTransaction()){
@@ -94,7 +100,9 @@ public class SQLiteExecutor implements SQLExecutor {
 
         if(inTransaction()){
             try{
-                return transactionConnection.createStatement().executeUpdate(query);
+                PreparedStatement statement = transactionConnection.prepareStatement(query);
+                prepareStatement(params, statement);
+                return statement.executeUpdate();
             } catch (SQLException e) {
                 rollback();
                 throw e;
@@ -102,9 +110,10 @@ public class SQLiteExecutor implements SQLExecutor {
         } else {
             try (Connection connection = DriverManager.getConnection(URL, properties)) {
                 connection.setAutoCommit(false);
-                Statement statement = connection.createStatement();
+                PreparedStatement statement = connection.prepareStatement(query);
+                prepareStatement(params, statement);
                 try{
-                    int rowsChanged = statement.executeUpdate(query);
+                    int rowsChanged = statement.executeUpdate();
                     connection.commit();
                     return rowsChanged;
                 }catch (SQLException e){
@@ -119,18 +128,15 @@ public class SQLiteExecutor implements SQLExecutor {
         return transactionConnection != null && transactionConnection.isClosed() == false;
     }
 
-    @Override
-    public SQLExecutor clone() {
-        try {
-            return (SQLExecutor) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException("Something went wrong while cloning SQLExecutor"); // should never happen
-        }
-    }
-
-    private static String cleanQuery(String query) {
+    private String cleanQuery(String query) {
         query = query.strip();
         query = query.charAt(query.length()-1) == ';' ? query : query + ";";
         return query;
+    }
+
+    private void prepareStatement(Object[] params, PreparedStatement s) throws SQLException {
+        for(int i = 0; i < params.length; i++){
+            s.setObject(i+1, params[i]);
+        }
     }
 }
