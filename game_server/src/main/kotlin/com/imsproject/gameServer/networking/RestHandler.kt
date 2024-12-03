@@ -16,9 +16,13 @@ class RestHandler(private val gameController: GameController) {
         try{
             request = GameRequest.fromJson(body)
         } catch(e: Exception){
-            return Response.getError(e)
+            return Response.getError("Error parsing request")
         }
-        return gameController.handleGameRequest(request)
+        return try{
+            gameController.handleGameRequest(request)
+        } catch(e: Exception){
+            Response.getError(e)
+        }
     }
 
     @PostMapping("/data")
