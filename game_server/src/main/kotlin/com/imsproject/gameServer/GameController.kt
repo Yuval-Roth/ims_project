@@ -19,10 +19,24 @@ class GameController(private val clientController: ClientController) {
     private val clientIdToGame = ConcurrentHashMap<String, Game>()
     private val idGenerator = SimpleIdGenerator(2)
 
+    fun handleGameRequest(request: GameRequest) : String {
+        return when(request.type){
+            Type.GET_ALL_LOBBIES -> handleGetAllLobbies()
+            Type.GET_LOBBY -> handleGetLobby(request)
+            Type.CREATE_LOBBY -> handleCreateLobby(request)
+            Type.SET_LOBBY_TYPE -> handleSetLobbyType(request)
+            Type.JOIN_LOBBY -> handleJoinLobby(request)
+            Type.LEAVE_LOBBY -> handleLeaveLobby(request)
+            Type.START_GAME -> handleStartGame(request)
+            Type.END_GAME -> handleEndGame(request)
+            else -> Response.getError("Invalid message type")
+        }
+    }
 
     /**
      * @throws IllegalArgumentException if anything is wrong with the message
      */
+    @Throws(IllegalArgumentException::class)
     fun handleGameRequest(clientHandler: ClientHandler, request: GameRequest) {
         when (request.type) {
             Type.TOGGLE_READY -> handleToggleReady(clientHandler, request)
@@ -44,17 +58,20 @@ class GameController(private val clientController: ClientController) {
         TODO("Not yet implemented")
     }
 
-    fun getAllLobbies() : String {
+    private fun handleGetAllLobbies() : String {
         val lobbiesInfo = lobbies.values.map { it.getInfo().toJson() }
         return Response.getOk(lobbiesInfo)
     }
 
-    fun getLobby(lobbyId: String) : String {
+    private fun handleGetLobby(request: GameRequest) : String {
+        val lobbyId = request.lobbyId ?: return Response.getError("Lobby ID not given in request")
         val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
         return Response.getOk(lobby.getInfo().toJson())
     }
 
-    fun leaveLobby(lobbyId : String, clientId : String): String {
+    private fun handleLeaveLobby(request: GameRequest): String {
+        val lobbyId = request.lobbyId ?: return Response.getError("Lobby ID not given in request")
+        val clientId = request.playerId ?: return Response.getError("Player ID not given in request")
         val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
         if (clientController.containsByClientId(clientId).not()) {
             return Response.getError("Player not found")
@@ -68,7 +85,9 @@ class GameController(private val clientController: ClientController) {
         }
     }
 
-    fun joinLobby(lobbyId: String, clientId: String) : String {
+    private fun handleJoinLobby(request: GameRequest) : String {
+        val lobbyId = request.lobbyId ?: return Response.getError("Lobby ID not given in request")
+        val clientId = request.playerId ?: return Response.getError("Player ID not given in request")
         val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
         if (clientController.containsByClientId(clientId).not()) {
             return Response.getError("Player not found")
@@ -83,21 +102,16 @@ class GameController(private val clientController: ClientController) {
         }
     }
 
-    fun createLobby(gameType: String) : String {
-        val _gameType: GameType
-        try{
-            _gameType = GameType.valueOf(gameType)
-        } catch (e: IllegalArgumentException){
-            return Response.getError("Invalid game type")
-        }
-
+    private fun handleCreateLobby(request: GameRequest) : String {
+        val gameType = request.gameType ?: return Response.getError("Game type not given in request")
         val lobbyId = idGenerator.generate()
-        val lobby = Lobby(lobbyId,_gameType)
+        val lobby = Lobby(lobbyId,gameType)
         lobbies[lobbyId] = lobby
         return Response.getOk(lobbyId)
     }
 
-    fun endGame(lobbyId: String) : String {
+    private fun handleEndGame(request: GameRequest) : String {
+        val lobbyId = request.lobbyId ?: return Response.getError("Lobby ID not given in request")
         val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
         val game = games[lobbyId] ?: return Response.getError("Game not found")
         game.endGame()
@@ -114,7 +128,8 @@ class GameController(private val clientController: ClientController) {
         return Response.getOk()
     }
 
-    fun startGame(lobbyId: String) : String {
+    private fun handleStartGame(request: GameRequest) : String {
+        val lobbyId = request.lobbyId ?: return Response.getError("Lobby ID not given in request")
         val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
 
         // Check if the lobby is ready
@@ -153,15 +168,11 @@ class GameController(private val clientController: ClientController) {
         return Response.getOk()
     }
 
-    fun setLobbyType(lobbyId: String, gameType: String): String {
+    private fun handleSetLobbyType(request: GameRequest): String {
+        val lobbyId = request.lobbyId ?: return Response.getError("Lobby ID not given in request")
+        val gameType = request.gameType ?: return Response.getError("Game type not given in request")
         val lobby = lobbies[lobbyId] ?: return Response.getError("Lobby not found")
-        val _gameType: GameType
-        try{
-            _gameType = GameType.valueOf(gameType)
-        } catch (e: IllegalArgumentException){
-            return Response.getError("Invalid game type")
-        }
-        lobby.gameType = _gameType
+        lobby.gameType = gameType
         return Response.getOk()
     }
 
