@@ -1,0 +1,26 @@
+version: '3.8'
+name: imsproject
+
+networks:
+  ims-network:
+    name: ims-network
+    driver: bridge
+
+services:
+
+  game-server:
+    image: yuvalroth123/imsproject_game_server:latest
+    container_name: ims-game-server
+    networks:
+      - ims-network
+    ports:
+        - "8640:8640"
+        - "8641:8641/udp"
+
+  manager:
+    image: yuvalroth123/imsproject_manager:latest
+    container_name: ims-manager
+    networks:
+      - ims-network
+    ports:
+      - "80:80"

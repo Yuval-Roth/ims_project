@@ -1,0 +1,30 @@
+version: '3.8'
+name: imsproject
+
+networks:
+  ims-network:
+    name: ims-network
+    driver: bridge
+
+services:
+
+  game-server:
+    build:
+      context: game_server
+      dockerfile: Dockerfile
+    container_name: ims-game-server
+    networks:
+      - ims-network
+    ports:
+        - "8640:8640"
+        - "8641:8641/udp"
+
+  manager:
+    build:
+      context: manager
+      dockerfile: Dockerfile
+    container_name: ims-manager
+    networks:
+      - ims-network
+    ports:
+      - "80:80"
