@@ -148,7 +148,7 @@ public class CreateTableQueryBuilder {
      * @param parentTableName the name of the parent table
      * @param referenceColumns the columns' names in the parent table
      * @param onDelete       the action to be taken when the parent column is deleted
-     * @param onUpdate       the action to be taken when the parent column is updated                      
+     * @param onUpdate       the action to be taken when the parent column is updated
      */
     public CreateTableQueryBuilder addCompositeForeignKey(String[] columnNames, String parentTableName, String[] referenceColumns, ON_DELETE onDelete, ON_UPDATE onUpdate){
         foreignKeys.add(new ForeignKey(parentTableName, columnNames, referenceColumns, onDelete, onUpdate));
