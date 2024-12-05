@@ -43,15 +43,13 @@ Handles general game server requests, routing the payload to the appropriate log
     "playerId": "string",
     "lobbyId": "string",
     "gameType": "string",
-    "success": "boolean",
-    "message": "string",
-    "data": ["string"]
   }
 ### Fields:
 
 #### `type` (required):
 Specifies the type of operation.  
 **Possible values:**
+- `get_online_player_ids`
 - `get_lobbies`
 - `get_lobby`
 - `create_lobby`
@@ -70,18 +68,18 @@ ID of the target lobby.
 #### `gameType` (situational):
 The game type (e.g., `POC`, `WATER_RIPPLES`).
 
-#### `success` (situational):
-Indicates success or failure.
-
-#### `message` (situational):
-Message content for requests or responses.
-
-#### `data` (situational):
-Extra information related to the request.
-
 <br/>
 
 ### Request types and their required fields: <br/><br/>
+
+### `get_online_player_ids`
+**Required fields:**
+- None
+
+**Description:**
+Retrieves the list with ids of online players. No additional fields are required for this request type.
+
+<br/>
 
 ### `get_lobbies`
 **Required fields:**
