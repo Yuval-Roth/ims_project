@@ -1,6 +1,8 @@
 package com.imsproject.common.gameServer
 
+import com.google.gson.annotations.SerializedName
+
 enum class GameType {
-    POC,
-    WATER_RIPPLES
+    @SerializedName("poc") POC,
+    @SerializedName("water_ripples") WATER_RIPPLES
 }

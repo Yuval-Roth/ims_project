@@ -38,4 +38,8 @@ class ClientController {
     fun containsByWsSessionId(sessionId: String): Boolean {
         return wsSessionIdToHandler.containsKey(sessionId)
     }
+
+    fun getAllClientIds(): List<String> {
+        return clientIdToHandler.keys.toList()
+    }
 }

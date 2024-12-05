@@ -28,7 +28,7 @@ It validates the credentials provided in the `Authorization` header and returns 
 ### 2. **POST** `/manager`
 
 #### Description
-Handles general game server requests, routing the payload to the appropriate logic in the `GameController`.
+Handles all game server requests
 
 #### Request
 
@@ -66,7 +66,7 @@ ID of a player involved in the operation.
 ID of the target lobby.
 
 #### `gameType` (situational):
-The game type (e.g., `POC`, `WATER_RIPPLES`).
+The game type (e.g., `poc`, `water_ripples`).
 
 <br/>
 
