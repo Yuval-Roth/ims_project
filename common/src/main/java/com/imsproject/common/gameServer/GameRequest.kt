@@ -19,6 +19,7 @@ data class GameRequest(
         @SerializedName("pong") PONG("pong"),
         @SerializedName("enter") ENTER("enter"),
         @SerializedName("exit") EXIT("exit"),
+        @SerializedName("get_online_player_ids") GET_ONLINE_PLAYER_IDS("get_online_player_ids"),
         @SerializedName("get_lobbies") GET_ALL_LOBBIES("get_lobbies"),
         @SerializedName("get_lobby") GET_LOBBY("get_lobby"),
         @SerializedName("create_lobby") CREATE_LOBBY("create_lobby"),

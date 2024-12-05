@@ -21,6 +21,7 @@ class GameController(private val clientController: ClientController) {
 
     fun handleGameRequest(request: GameRequest) : String {
         return when(request.type){
+            Type.GET_ONLINE_PLAYER_IDS -> handleGetOnlinePlayerIds()
             Type.GET_ALL_LOBBIES -> handleGetAllLobbies()
             Type.GET_LOBBY -> handleGetLobby(request)
             Type.CREATE_LOBBY -> handleCreateLobby(request)
@@ -31,6 +32,11 @@ class GameController(private val clientController: ClientController) {
             Type.END_GAME -> handleEndGame(request)
             else -> Response.getError("Invalid message type")
         }
+    }
+
+    private fun handleGetOnlinePlayerIds(): String {
+        val playerIds = clientController.getAllClientIds()
+        return Response.getOk(playerIds)
     }
 
     /**
