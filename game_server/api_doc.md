@@ -66,7 +66,7 @@ ID of a player involved in the operation.
 ID of the target lobby.
 
 #### `gameType` (situational):
-The game type (e.g., `POC`, `WATER_RIPPLES`).
+The game type (e.g., `poc`, `water_ripples`).
 
 <br/>
 
