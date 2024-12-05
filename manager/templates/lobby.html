@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}">
+</head>
+<body>
+    <div class="lobby-container">
+        <h1>Lobby</h1>
+        <p>Selected Watches:</p>
+        <ul>
+            {% for watch in selected_watches %}
+            <li>{{ watch }}</li>
+            {% endfor %}
+        </ul>
+
+        <form method="post">
+            <input type="hidden" name="selected_watches" value="{{ ','.join(selected_watches) }}">
+            <button type="submit" name="action" value="start" class="toggle-session-button">Start Session</button>
+            <button type="submit" name="action" value="stop" class="toggle-session-button">Stop Session</button>
+        </form>
+    </div>
+</body>
+</html>

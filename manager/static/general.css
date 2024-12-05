@@ -1,0 +1,213 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow-y: hidden; /* Disable vertical scroll on the whole page */
+}
+
+h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.arrow::before {
+    content: "→";
+    margin: 0 5px;
+    font-size: 20px;
+    color: #333;
+}
+
+.center-link {
+    text-align: center;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.center-link a {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.center-link a:hover {
+    background-color: #0056b3;
+}
+
+.logout-link {
+    display: inline-block;
+    margin-top: 20px;
+    color: #dc3545;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s;
+    text-align: center;
+}
+
+.logout-link:hover {
+    color: #c82333;
+}
+
+/* Button Styles */
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #3e8e41;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+    text-align: left;
+    padding-left: 5px;
+}
+
+.input-group {
+    width: 100%;
+    padding: 0 5px;
+}
+
+input {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* Home button styling */
+.home-button {
+    position: absolute;
+    top: 20px; /* Position it from the top of the page */
+    left: 20px; /* Position it from the left of the page */
+    z-index: 10; /* Ensure it appears above other content */
+    animation: fadeIn 0.8s ease-in-out; /* Apply the fade-in animation */
+}
+
+/* Home icon image styling */
+.home-icon {
+    width: 40px; /* Adjust width as needed */
+    height: auto; /* Maintain aspect ratio */
+    transition: transform 0.1s ease, opacity 0.3s ease; /* Smooth pressing and hover effects */
+}
+
+/* Appearance animation for the button */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8); /* Start smaller for a pop effect */
+    }
+    to {
+        opacity: 1;
+        transform: scale(1); /* End at normal size */
+    }
+}
+
+/* Hover effect to slightly reduce opacity */
+.home-button:hover .home-icon {
+    opacity: 0.8;
+}
+
+/* Pressing (click) animation */
+.home-button:active .home-icon {
+    transform: scale(0.9); /* Slightly reduce size for pressing effect */
+}
+
+
+
+.settings-container  {
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    justify-content: flex-start;
+    max-height: 90vh; /* Use up to 90% of viewport height */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden;
+    transition: max-height 0.3s ease;
+}
+
+/* Pretty scrollbar styling for settings-container */
+.settings-container::-webkit-scrollbar,
+.login-container::-webkit-scrollbar {
+    width: 3px;
+}
+
+.settings-container::-webkit-scrollbar-track,
+.login-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.settings-container::-webkit-scrollbar-thumb,
+.login-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.settings-container::-webkit-scrollbar-thumb:hover,
+.login-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Network Status Icon and Text */
+.network-status-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-icon {
+    width: 24px;
+    height: 24px;
+    transition: opacity 0.3s ease;
+}
+
+.online {
+    opacity: 1;
+}
+
+.offline {
+    opacity: 0.5;
+}
+
+
