@@ -56,7 +56,7 @@ class Response {
      * @param typeOfT Type of the object for deserialization
      * @return Deserialized object of type T. If the payload is null, an empty list will be returned
      */
-    fun <T> payload(typeOfT: Type?): List<T> {
+    fun <T> payload(typeOfT: Type): List<T> {
         if (payload == null) {
             return listOf()
         }

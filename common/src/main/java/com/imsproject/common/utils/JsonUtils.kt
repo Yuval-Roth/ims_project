@@ -22,7 +22,7 @@ object JsonUtils {
     }
 
     @JvmStatic
-    fun <T> deserialize(json: String?, typeOfT: Type?): T {
+    fun <T> deserialize(json: String, typeOfT: Type): T {
         return gson.fromJson(json, typeOfT)
     }
 
