@@ -52,10 +52,19 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         }
     }
 
+    /**
+     * default value for the column is `null`
+     */
     fun addColumn(
         columnName: String,
         type: ColumnType,
-        defaultValue: String? = null,
+        vararg modifiers: ColumnModifier
+    ) = addColumn(columnName, type, null, *modifiers)
+
+    fun addColumn(
+        columnName: String,
+        type: ColumnType,
+        defaultValue: String?,
         vararg modifiers: ColumnModifier
     ) = apply {
         val isPrimaryKey = modifiers.contains(ColumnModifier.PRIMARY_KEY)
