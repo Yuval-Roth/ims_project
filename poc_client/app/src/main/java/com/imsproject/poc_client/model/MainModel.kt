@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
-private const val SERVER_IP = "10.0.2.2"
+private const val SERVER_IP = "132.72.116.91"
 private const val SERVER_WS_PORT = 8640
 private const val SERVER_UDP_PORT = 8641
 // ================================|
