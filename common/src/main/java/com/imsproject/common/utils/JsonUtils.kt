@@ -15,13 +15,11 @@ object JsonUtils {
         .enableComplexMapKeySerialization()
         .create()
 
-    @JvmStatic
     fun <T> serialize(obj: T): String {
         if (obj is String) return obj
         return gson.toJson(obj)
     }
 
-    @JvmStatic
     fun <T> deserialize(json: String, typeOfT: Type): T {
         return gson.fromJson(json, typeOfT)
     }
