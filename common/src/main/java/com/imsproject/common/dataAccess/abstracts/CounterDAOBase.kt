@@ -52,7 +52,7 @@ abstract class CounterDAOBase protected constructor(
             throw DaoException("Failed to select $COLUMN_NAME", e)
         }
         if (resultSet.next()) {
-            return resultSet.getInt(COLUMN_NAME)
+            return resultSet.getInt(COLUMN_NAME) ?: throw DaoException("Failed to select $COLUMN_NAME")
         } else {
             throw DaoException("Failed to select $COLUMN_NAME")
         }

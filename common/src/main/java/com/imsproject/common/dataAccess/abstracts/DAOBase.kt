@@ -43,7 +43,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     @Throws(DaoException::class)
     override fun select(key: PK): T {
         val values = keyToValues(key)
-        val unpreparedQuery = StringBuilder("SELECT * FROM %s WHERE ".formatted(TABLE_NAME))
+        val unpreparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
         expandWhereClause(key, unpreparedQuery)
 
         val resultSet: OfflineResultSet
@@ -62,7 +62,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
 
     @Throws(DaoException::class)
     override fun selectAll(): List<T> {
-        val query = "SELECT * FROM %s;".formatted(TABLE_NAME)
+        val query = "SELECT * FROM %s;".format(TABLE_NAME)
         val resultSet: OfflineResultSet
         try {
             resultSet = cursor.executeRead(query)
@@ -79,7 +79,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     @Throws(DaoException::class)
     override fun delete(key: PK) {
         val values = keyToValues(key)
-        val unpreparedQuery = StringBuilder("DELETE FROM %s WHERE ".formatted(TABLE_NAME))
+        val unpreparedQuery = StringBuilder("DELETE FROM %s WHERE ".format(TABLE_NAME))
         expandWhereClause(key, unpreparedQuery)
 
         try {
@@ -118,7 +118,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     @Throws(DaoException::class)
     override fun exists(key: PK): Boolean {
         val values = keyToValues(key)
-        val unpreparedQuery = StringBuilder("SELECT * FROM %s WHERE ".formatted(TABLE_NAME))
+        val unpreparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
         expandWhereClause(key, unpreparedQuery)
 
         val resultSet: OfflineResultSet
@@ -134,7 +134,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     private fun expandWhereClause(key: PK, unpreparedQuery: StringBuilder) {
         val columnNames = key.columnNames()
         for (i in columnNames.indices) {
-            unpreparedQuery.append("%s = ?".formatted(columnNames[i]))
+            unpreparedQuery.append("%s = ?".format(columnNames[i]))
             if (i != columnNames.size - 1) {
                 unpreparedQuery.append(" AND ")
             } else {

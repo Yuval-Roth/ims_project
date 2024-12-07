@@ -6,6 +6,8 @@ import java.sql.*
 import java.util.*
 import kotlin.concurrent.Volatile
 
+private const val URL_PREFIX = "jdbc:sqlite:"
+
 /**
  * An implementation of [SQLExecutor] for SQLite databases
  * @param dbUrl the path to the SQLite database file
@@ -19,12 +21,6 @@ class SQLiteExecutor (dbUrl: String) : SQLExecutor {
 
     init {
         properties = getProperties()
-    }
-
-    private fun getProperties(): Properties {
-        val config = SQLiteConfig()
-        config.enforceForeignKeys(true)
-        return config.toProperties()
     }
 
     @Throws(SQLException::class)
@@ -132,7 +128,9 @@ class SQLiteExecutor (dbUrl: String) : SQLExecutor {
         }
     }
 
-    companion object {
-        private const val URL_PREFIX = "jdbc:sqlite:"
+    private fun getProperties(): Properties {
+        val config = SQLiteConfig()
+        config.enforceForeignKeys(true)
+        return config.toProperties()
     }
 }
