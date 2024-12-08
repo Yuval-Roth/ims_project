@@ -6,6 +6,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -39,7 +48,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Main(viewModel: MainViewModel){
+private fun Main(viewModel: MainViewModel){
 
     val state = viewModel.state.collectAsState().value
 
@@ -63,7 +72,7 @@ fun Main(viewModel: MainViewModel){
 }
 
 @Composable
-fun ConnectingScreen() {
+private fun ConnectingScreen() {
     MaterialTheme {
         Box(
             modifier = Modifier
@@ -90,7 +99,7 @@ fun ConnectingScreen() {
 }
 
 @Composable
-fun ConnectedScreen(id: String) {
+private fun ConnectedScreen(id: String) {
     MaterialTheme {
         Box(
             modifier = Modifier
@@ -107,7 +116,7 @@ fun ConnectedScreen(id: String) {
 }
 
 @Composable
-fun ErrorScreen(error: String, onDismiss: () -> Unit) {
+private fun ErrorScreen(error: String, onDismiss: () -> Unit) {
     MaterialTheme {
         Box(
             modifier = Modifier
@@ -127,6 +136,8 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.CenterHorizontally)
+                        .padding(top=20.dp),
+
 
                 )
                 Spacer(modifier = Modifier.height(30.dp))
