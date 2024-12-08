@@ -19,28 +19,16 @@ import org.springframework.security.provisioning.UserDetailsManager
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Semaphore
 import javax.crypto.SecretKey
 
 @Component
 class AuthController : UserDetailsManager, AuthenticationManager {
     private val userIdToUUID: MutableMap<String, String> = ConcurrentHashMap()
     private val encoder: PasswordEncoder = BCryptPasswordEncoder()
-    private val lock: Semaphore = Semaphore(1, true)
     private var key: SecretKey = Jwts.SIG.HS512.key().build()
 
     // userId -> UserCredentials (userId, hashedPassword)
     private val credentials: MutableMap<String, UserCredentials> = ConcurrentHashMap()
-
-    fun authenticateGuest(userId: String): Response {
-        val cleanUserId = userId.lowercase()
-        log.debug("Generating token for guest user {}", cleanUserId)
-        if (!userExists(cleanUserId)) {
-            log.debug("User {} already exists", cleanUserId)
-            return Response(false)
-        }
-        return Response(null, true, getToken(cleanUserId))
-    }
 
     fun authenticateUser(userId: String, password: String): Response {
         val cleanUserId = userId.lowercase()
@@ -52,9 +40,7 @@ class AuthController : UserDetailsManager, AuthenticationManager {
     fun revokeAuthentication(userId: String): Boolean {
         val cleanUserId = userId.lowercase()
         log.debug("Revoking authentication for user {}", cleanUserId)
-        lock.acquire()
         val uuid = userIdToUUID.remove(cleanUserId)
-        lock.release()
         return uuid != null
     }
 
@@ -67,9 +53,7 @@ class AuthController : UserDetailsManager, AuthenticationManager {
             val userIdFromToken = payload.first
 
             log.trace("Checking if the UUID from the token matches the stored UUID for user {}", cleanUserId)
-            lock.acquire()
             val uuid = userIdToUUID[cleanUserId]
-            lock.release()
             answer = uuid != null && cleanUserId == userIdFromToken
         } catch (ignored: Exception) {
             answer = false
@@ -84,9 +68,7 @@ class AuthController : UserDetailsManager, AuthenticationManager {
             val payload = extractPayload(token)
             val userIdFromToken = payload.first
             val uuidFromToken = payload.second
-            lock.acquire()
             val UUIDFromDB = userIdToUUID[userIdFromToken]
-            lock.release()
             answer = userExists(userIdFromToken) && UUIDFromDB != null && UUIDFromDB == uuidFromToken
         } catch (ignored: Exception) {
             answer = false
@@ -99,10 +81,8 @@ class AuthController : UserDetailsManager, AuthenticationManager {
      */
     fun resetSecretKey() {
         log.debug("Resetting secret key")
-        lock.acquire()
         key = Jwts.SIG.HS512.key().build()
         userIdToUUID.clear()
-        lock.release()
     }
 
     //================================================================================= |
@@ -229,13 +209,7 @@ class AuthController : UserDetailsManager, AuthenticationManager {
 
         //store the UUID and associate it with the user
         log.trace("Storing new UUID for user {}", userId)
-        try {
-            lock.acquire()
-        } catch (e: InterruptedException) {
-            throw RuntimeException(e)
-        }
         userIdToUUID[userId] = uuid
-        lock.release()
         return generateJwt(payload)
     }
 
