@@ -10,19 +10,17 @@ import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.provisioning.UserDetailsManager
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.SecretKey
 
 @Component
-class AuthController : UserDetailsManager, AuthenticationManager {
+class AuthController : AuthenticationManager {
     private val userIdToUUID: MutableMap<String, String> = ConcurrentHashMap()
     private val encoder: PasswordEncoder = BCryptPasswordEncoder()
     private var key: SecretKey = Jwts.SIG.HS512.key().build()
@@ -88,21 +86,24 @@ class AuthController : UserDetailsManager, AuthenticationManager {
     //================================================================================= |
     //=========================== AUTHENTICATION MANAGER ============================== |
     //================================================================================= |
+    
     @Throws(AuthenticationException::class)
     override fun authenticate(authentication: Authentication): Authentication {
-        val userDetails = loadUserByUsername(authentication.name)
+        val cleanUserId = authentication.name.lowercase()
+        val user = credentials[cleanUserId] ?: throw UsernameNotFoundException("User not found")
         val credentials = authentication.credentials as String
-        if (authenticate(userDetails.username.lowercase(), credentials)) {
-            return UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
+        if (authenticate(cleanUserId, credentials)) {
+            return UsernamePasswordAuthenticationToken(user, null, null)
         } else {
             throw AccessDeniedException("Bad credentials")
         }
     }
 
     //================================================================================= |
-    //=========================== USER DETAILS MANAGER ================================ |
+    //============================== USER MANAGEMENT ================================== |
     //================================================================================= |
-    override fun createUser(user: UserDetails) {
+
+    fun createUser(user: UserDetails) {
         val userId = user.username.lowercase()
         if (userExists(userId)) {
             throw AccessDeniedException("user already exists")
@@ -114,18 +115,18 @@ class AuthController : UserDetailsManager, AuthenticationManager {
         credentials[user.username] = userCredentials
     }
 
-    override fun updateUser(user: UserDetails) {
+    fun updateUser(user: UserDetails) {
         val userId = user.username.lowercase()
         if (!userExists(userId)) {
             throw UsernameNotFoundException("User not found")
         }
 
         val hashedPassword = encoder.encode(user.password)
-        val updatedUser = UserCredentials(userId, hashedPassword)
-        credentials[user.username] = updatedUser
+        val updatedUserCredentials = UserCredentials(userId, hashedPassword)
+        credentials[user.username] = updatedUserCredentials
     }
 
-    override fun deleteUser(userId: String) {
+    fun deleteUser(userId: String) {
         val cleanUserId = userId.lowercase()
         if (!userExists(cleanUserId)) {
             throw UsernameNotFoundException("User not found")
@@ -134,34 +135,8 @@ class AuthController : UserDetailsManager, AuthenticationManager {
         credentials.remove(cleanUserId)
     }
 
-    override fun changePassword(oldPassword: String, newPassword: String) {
-        val currentUser = SecurityContextHolder.getContext().authentication
-        if (currentUser == null) {
-            throw AccessDeniedException("Can't change password as no Authentication object found in context for current user.")
-        } else {
-            val username = currentUser.name
-            val currentUserFromDB = credentials[username]
-            if (isPasswordsMatch(oldPassword, currentUserFromDB!!.password)) {
-                val hashedPassword = encoder.encode(newPassword)
-                val updatedUser = UserCredentials(username, hashedPassword)
-                credentials[username] = updatedUser
-            } else {
-                throw AccessDeniedException("Can't change password as old password is incorrect.")
-            }
-        }
-    }
-
-    override fun userExists(username: String): Boolean {
+    fun userExists(username: String): Boolean {
         return credentials.containsKey(username)
-    }
-
-    @Throws(UsernameNotFoundException::class)
-    override fun loadUserByUsername(username: String): UserDetails {
-        val cleanUserName = username.lowercase()
-        if (!userExists(cleanUserName)) {
-            throw UsernameNotFoundException("User not found")
-        }
-        return credentials[cleanUserName]!!
     }
 
     //============================================================================ |
@@ -170,7 +145,7 @@ class AuthController : UserDetailsManager, AuthenticationManager {
     private fun authenticate(userId: String, password: String): Boolean {
         log.debug("Authenticating user: {}", userId)
         val user = credentials[userId] ?: return false
-        val hashedPassword = user.password
+        val hashedPassword = user.hashedPassword
 
         // check if the user exists
         if (hashedPassword == null) {

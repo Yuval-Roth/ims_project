@@ -14,7 +14,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.access.intercept.AuthorizationFilter
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 
@@ -42,9 +42,8 @@ class SecurityConfig(private val authController: AuthController) {
                     SessionCreationPolicy.STATELESS
                 )
             }
-            .addFilterBefore(JWTFilter(), UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(JWTFilter(), AuthorizationFilter::class.java)
             .authenticationManager(authController)
-            .userDetailsService(authController) //TODO: Check if this is necessary
         return http.build()
     }
 
