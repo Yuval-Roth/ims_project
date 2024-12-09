@@ -28,9 +28,8 @@ class SecurityConfig(private val authController: AuthController) {
             .authorizeHttpRequests { authorize ->
                 authorize
 
-                    //TODO: Remove this line when we want to enable security
-                    .requestMatchers("*").permitAll()
-
+                    //TODO: Remove this when we want to enable security
+                    .requestMatchers("manager","auth","data").permitAll()
 
                     .anyRequest().authenticated()
             }
