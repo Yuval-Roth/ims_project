@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lobby</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}">
 </head>
 <body>
+    <a href="/main_menu" class="home-button">
+        <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
+    </a>
     <div class="lobby-container">
         <h1>Lobby</h1>
         <p>Selected Watches:</p>

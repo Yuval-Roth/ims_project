@@ -12,11 +12,13 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
+
 }
 
 .create-lobby-button {
     width: 100%;
     max-width: 200px;
+    margin-top: 20px;
     margin-bottom: 20px;
     padding: 10px;
     background-color: #007bff;
@@ -52,20 +54,38 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.online-watches-table {
+.table-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.online-participants-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.online-watches-table th,
-.online-watches-table td {
+.online-participants-table th,
+.online-participants-table td {
     border: 1px solid #ddd;
     padding: 10px;
     text-align: center;
 }
 
 /* Sticky Table Header */
-.online-watches-table th {
+.online-participants-table th {
     background-color: #f4f4f4;
     font-weight: bold;
     position: sticky; /* Make the header sticky */
@@ -73,15 +93,15 @@
     z-index: 2; /* Ensure it stays above the other rows */
 }
 
-.online-watches-table tr:nth-child(even) {
+.online-participants-table tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
-.online-watches-table tr:hover {
+.online-participants-table tr:hover {
     background-color: #f1f1f1;
 }
 
-.online-watches-table td input[type="checkbox"] {
+.online-participants-table td input[type="checkbox"] {
     transform: scale(1.2);
     cursor: pointer;
 }

@@ -33,21 +33,21 @@
 </head>
 <body>
     <div class="main-menu-container">
-        <h1>Online Watches</h1>
-        <form action="{{ url_for('main_menu') }}" method="post">
+        <h1>Online Participants</h1>
+        <form action="{{ url_for('main_menu') }}" method="post" style="width:100%">
             <div class="table-container">
-                <table class="online-watches-table">
+                <table class="online-participants-table">
                     <thead>
                         <tr>
-                            <th>Watch ID</th>
+                            <th>Participant Name</th>
                             <th>Select</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for watch in watches %}
+                        {% for participant in participants %}
                         <tr>
-                            <td>{{ watch.name }}</td>
-                            <td><input type="checkbox" name="selected_watches" value="{{ watch.id }}"></td>
+                            <td>{{ participant.name }}</td>
+                            <td><input type="checkbox" name="selected_participants" value="{{ participant.id }}"></td>
                         </tr>
                         {% endfor %}
                     </tbody>

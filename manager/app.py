@@ -1,7 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import requests
-
+from managers.participants import get_participants
+from managers.lobby import *
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -31,58 +32,47 @@ def main_menu():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        selected_watches = request.form.getlist('selected_watches')
-        # Redirect to the lobby route with selected watches as query parameters
-        return redirect(url_for('lobby', selected_watches=",".join(selected_watches)))
-    else:
-        watches = [
-            {"id": 1, "name": "Watch 1"},
-            {"id": 2, "name": "Watch 2"},
-            {"id": 3, "name": "Watch 3"},
-            {"id": 4, "name": "Watch 4"},
-            {"id": 5, "name": "Watch 5"},
-            # Add more watches dynamically or fetch from a database
-        ]
-        return render_template('main_menu.html', watches=watches)
 
-EXTERNAL_SERVER_URL = "http://external-server:5000"
+        selected_participants = request.form.getlist('selected_participants')  #list of str
+
+        if not selected_participants:
+            flash("Please select at least one participant.")
+            return redirect(url_for('main_menu'))
+
+        lobby_id = create_lobby(selected_participants)
+        if not lobby_id:
+            lobby_id = 1
+        return redirect(url_for('lobby', selected_participants=",".join(selected_participants), lobby_id=lobby_id))
+
+    else:
+        participants = get_participants()
+        if not participants:
+            participants = [
+                {"id": 1, "name": "Player 1"},
+                {"id": 2, "name": "Player 2"},
+                {"id": 3, "name": "Player 3"},
+                {"id": 4, "name": "Player 4"},
+                {"id": 5, "name": "Player 5"},
+            ]
+        return render_template('main_menu.html', participants=participants)
+
+
 @app.route('/lobby', methods=['GET', 'POST'])
 def lobby():
     if 'username' not in session:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
+        lobby_id = request.form.get('lobby_id')
         action = request.form.get('action')
-        selected_watches = request.form.get('selected_watches', '')
-
-        # Validate if watches are selected
-        selected_watches_list = selected_watches.split(",") if selected_watches else []
-        if not selected_watches_list:
-            flash("Please select at least one watch.")
-            return redirect(url_for('lobby'))
-
-        # Prepare the payload to send to the external server
-        payload = {
-            "action": action,
-            "watches": selected_watches_list,
-        }
-
-        try:
-            # Send data to the external server
-            response = requests.post(EXTERNAL_SERVER_URL, json=payload)
-            response.raise_for_status()  # Raise exception for HTTP errors
-
-            flash(f"Session '{action}' successfully sent to the server.")
-        except requests.RequestException as e:
-            flash(f"Error communicating with the external server: {e}")
 
         return redirect(url_for('lobby'))
 
-    # For GET requests, retrieve selected watches from the query parameters
-    selected_watches = request.args.get('selected_watches', '')
-    selected_watches_list = selected_watches.split(",") if selected_watches else []
+    selected_participants = request.args.get('selected_participants', '')
+    selected_participants_list = selected_participants.split(",") if selected_participants else []
+    lobby_id = request.args.get('lobby_id', '')
 
-    return render_template('lobby.html', selected_watches=selected_watches_list)
+    return render_template('lobby.html', selected_participants=selected_participants_list, lobby_id=lobby_id)
 
 
 if __name__ == '__main__':
