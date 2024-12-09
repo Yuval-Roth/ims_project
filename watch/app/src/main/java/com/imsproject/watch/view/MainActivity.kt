@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,15 +58,65 @@ private fun Main(viewModel: MainViewModel){
 
         State.CONNECTING -> ConnectingScreen()
 
-        State.CONNECTED -> {
-            val id = viewModel.id.collectAsState().value
-            ConnectedScreen(id)
+        State.CONNECTED_NOT_IN_LOBBY -> {
+            val userId = viewModel.id.collectAsState().value
+            ConnectedScreen(userId)
+        }
+
+        State.CONNECTED_IN_LOBBY -> {
+            val userId = viewModel.id.collectAsState().value
+            val lobbyId = viewModel.lobbyId.collectAsState().value
+            val ready = viewModel.ready.collectAsState().value
+            LobbyScreen(userId, lobbyId, ready){
+                viewModel.toggleReady()
+            }
         }
 
         State.ERROR -> {
             val error = viewModel.error.collectAsState().value ?: "No error message"
             ErrorScreen(error) {
                 viewModel.clearError()
+            }
+        }
+    }
+}
+
+@Composable
+private fun LobbyScreen(userId: String, lobbyId: String, ready: Boolean, onReady: () -> Unit) {
+    MaterialTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(DARK_BACKGROUND_COLOR)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(30.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ){
+                BasicText(
+                    text = "Your ID: $userId",
+                    style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                BasicText(
+                    text = "Lobby ID: $lobbyId",
+                    style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = { /*TODO*/ },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    BasicText(
+                        text = if (ready) "Ready" else "Not Ready",
+                        style = TextStyle(color = Color.White, fontSize = 14.sp)
+                    )
+                }
             }
         }
     }
@@ -85,8 +136,8 @@ private fun ConnectingScreen() {
                 verticalArrangement = Arrangement.Center
             ) {
                 CircularProgressIndicator(
-                    strokeWidth = 4.dp,
-                    modifier = Modifier.size(50.dp)
+                    strokeWidth = 10.dp,
+                    modifier = Modifier.size(75.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 BasicText(
@@ -107,10 +158,23 @@ private fun ConnectedScreen(id: String) {
                 .background(Color(DARK_BACKGROUND_COLOR)),
             contentAlignment = Alignment.Center,
         ) {
-            BasicText(
-                text = "Your ID: $id",
-                style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
-            )
+            Column(
+                modifier = Modifier
+                    .padding(30.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ){
+                BasicText(
+                    text = "Your ID: $id",
+                    style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                BasicText(
+                    text = "Waiting to be assigned\nto a lobby...",
+                    style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
+                )
+            }
         }
     }
 }
@@ -131,14 +195,20 @@ private fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 BasicText(
-                    text = "Error: $error",
+                    text = "ERROR",
+                    style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center, textDecoration = TextDecoration.Underline, letterSpacing = 1.sp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top=20.dp)
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                BasicText(
+                    text = error,
                     style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.CenterHorizontally)
-                        .padding(top=20.dp),
-
-
                 )
                 Spacer(modifier = Modifier.height(30.dp))
                 Button(
@@ -173,6 +243,13 @@ fun PreviewConnectingScreen() {
 fun PreviewConnectedScreen() {
     ConnectedScreen("123456")
 }
+
+@Preview(device = "id:wearos_large_round", apiLevel = 34)
+@Composable
+fun PreviewLobbyScreen() {
+    LobbyScreen("123456", "ABC", false)
+}
+
 
 
 
