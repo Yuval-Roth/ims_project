@@ -12,18 +12,19 @@
         <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
     </a>
     <div class="lobby-container">
-        <h1>Lobby</h1>
-        <p>Selected Watches:</p>
+{#        add lobby id, sent from render_template in main_menu function#}
+        <h1>Lobby {{ lobby_id }}</h1>
+        <p>Selected Participants:</p>
         <ul>
-            {% for watch in selected_watches %}
-            <li>{{ watch }}</li>
+            {% for participant in selected_participants %}
+            <li>{{ participant }}</li>
             {% endfor %}
         </ul>
 
         <form method="post">
-            <input type="hidden" name="selected_watches" value="{{ ','.join(selected_watches) }}">
-            <button type="submit" name="action" value="start" class="toggle-session-button">Start Session</button>
-            <button type="submit" name="action" value="stop" class="toggle-session-button">Stop Session</button>
+            <input type="hidden" name="selected_participants" value="{{ ','.join(selected_participants) }}">
+            <button type="submit" name="action" value="start" class="toggle-session-button">Start Game</button>
+            <button type="submit" name="action" value="stop" class="toggle-session-button">Stop Game</button>
         </form>
     </div>
 </body>
