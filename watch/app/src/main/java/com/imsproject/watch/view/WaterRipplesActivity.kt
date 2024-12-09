@@ -42,8 +42,9 @@ class WaterRipplesActivity : ComponentActivity() {
 @Composable
 fun WaterRipples(viewModel: WaterRipplesViewModel) {
 
-    var ripples = viewModel.ripples
-    val scope = rememberCoroutineScope()
+    var ripples = remember { viewModel.ripples }
+    val sizeAnimStep = remember { (RIPPLE_MAX_SIZE - BUTTON_SIZE) / (ANIMATION_DURATION / 16f) }
+    val alphaAnimStep = remember { 1f / (ANIMATION_DURATION / 16f) }
     val counter by viewModel.counter.collectAsState()
 
     Box(
@@ -59,19 +60,12 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
                 viewModel.addRipple()
             },
         ){
-            // no content
+            // button content
         }
 
         // ================================================= |
         // =============== Ripple Effect =================== |
         // ================================================= |
-
-        val startSize = BUTTON_SIZE.toFloat()
-        val endSize = RIPPLE_MAX_SIZE.toFloat()
-        val duration = ANIMATION_DURATION
-
-        val sizeAnimStep = (endSize - startSize) / (duration / 16f)
-        val alphaAnimStep = 1f / (duration / 16f)
 
         LaunchedEffect(counter) {
             for (ripple in ripples) {
@@ -86,7 +80,7 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
 
                 // animate the ripples that are not at max size
                 launch {
-                    while (ripple.size.floatValue < endSize) {
+                    while (ripple.size.floatValue < RIPPLE_MAX_SIZE) {
                         ripple.size.floatValue += sizeAnimStep
                         ripple.alpha.floatValue = (ripple.alpha.floatValue-alphaAnimStep).coerceAtLeast(0f)
                         delay(16)
@@ -110,45 +104,5 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
                 )
             }
         }
-
-    }
-}
-
-private const val VIVID_ORANGE_COLOR = 0xFFFF5722
-
-@Composable
-private fun Ripple(
-    color: Color
-) {
-
-    val startSize = BUTTON_SIZE.toFloat()
-    val endSize = RIPPLE_MAX_SIZE.toFloat()
-    val duration = ANIMATION_DURATION
-
-    var currentSize by remember { mutableFloatStateOf(startSize) }
-    var alpha by remember { mutableFloatStateOf(1f) }
-    var color by remember { mutableStateOf(color) }
-
-    LaunchedEffect(Unit) {
-        launch {
-            val sizeAnimStep = (endSize - startSize) / (duration / 16f)
-            val alphaAnimStep = 1f / (duration / 16f)
-
-            while (currentSize < endSize) {
-                currentSize += sizeAnimStep
-                alpha = (alpha-alphaAnimStep).coerceAtLeast(0f)
-                delay(16)
-            }
-        }
-    }
-
-    Canvas(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        drawCircle(
-            color = color.copy(alpha = alpha),
-            radius = currentSize,
-            style = Stroke(width = 4.dp.toPx())
-        )
     }
 }
