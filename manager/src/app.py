@@ -1,8 +1,8 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import requests
-from src.managers.participants import get_participants
-from src.managers.lobby import *
+from .managers.participants import get_participants
+from .managers.lobby import *
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)

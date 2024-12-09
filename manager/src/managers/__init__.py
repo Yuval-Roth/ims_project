@@ -1,4 +1,4 @@
 import requests
 import json
-from src.ENUMS import *
+from ..ENUMS import *
 URL = "http://game_server:8640"
