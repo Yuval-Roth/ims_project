@@ -1,8 +1,9 @@
 FROM python:3.11
 
 COPY src/ /manager/
+COPY requirements.txt /manager/requirements.txt
 
-RUN pip install -r requirements.txt
+RUN pip install -r /manager/requirements.txt
 
 EXPOSE 80
 
