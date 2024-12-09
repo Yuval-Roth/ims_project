@@ -13,6 +13,7 @@ class WaterRipplesViewModel : ViewModel() {
     var ripples = mutableStateListOf<Boolean>()
 
     fun addRipple() {
-        ripples.add(0,true)
+        val inSync = ripples.size % 5 == 0
+        ripples.add(0,inSync)
     }
 }

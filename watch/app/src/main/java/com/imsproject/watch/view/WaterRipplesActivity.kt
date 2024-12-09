@@ -50,6 +50,8 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
     }
 }
 
+private const val VIVID_ORANGE_COLOR = 0xFFFF5722
+
 @Composable
 private fun RippleEffect(viewModel: WaterRipplesViewModel) {
     var ripples = viewModel.ripples
@@ -60,7 +62,10 @@ private fun RippleEffect(viewModel: WaterRipplesViewModel) {
     ) {
 
         // i have actually no fucking clue why this works
-        ripples.forEach { Ripple() }
+        ripples.forEach { isInSync ->
+            Ripple(
+                if(isInSync) Color(VIVID_ORANGE_COLOR) else Color(LIGHT_BLUE_COLOR)
+        ) }
 
         Button(
             modifier = Modifier.size(80.dp),
@@ -74,7 +79,9 @@ private fun RippleEffect(viewModel: WaterRipplesViewModel) {
 }
 
 @Composable
-private fun Ripple() {
+private fun Ripple(
+    color: Color
+) {
 
     val startSize = BUTTON_SIZE.toFloat()
     val endSize = RIPPLE_MAX_SIZE.toFloat()
@@ -100,7 +107,7 @@ private fun Ripple() {
         modifier = Modifier.fillMaxSize()
     ) {
         drawCircle(
-            color = Color(LIGHT_BLUE_COLOR).copy(alpha = alpha),
+            color = color.copy(alpha = alpha),
             radius = currentSize,
             style = Stroke(width = 4.dp.toPx())
         )
