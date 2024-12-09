@@ -44,6 +44,7 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
 
     var ripples = viewModel.ripples
     val scope = rememberCoroutineScope()
+    val counter by viewModel.counter.collectAsState()
 
     Box(
         modifier = Modifier
@@ -72,8 +73,18 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
         val sizeAnimStep = (endSize - startSize) / (duration / 16f)
         val alphaAnimStep = 1f / (duration / 16f)
 
-        LaunchedEffect(ripples.size.toString()) {
+        LaunchedEffect(counter) {
             for (ripple in ripples) {
+
+                // ================================================= |
+                // we add new ripples at the beginning of the list
+                // in this code, we reached ripples that are already at max size
+                // and we don't want to animate them anymore
+                // so we break the loop
+                if(ripple.size.floatValue >= RIPPLE_MAX_SIZE) break
+                // ================================================= |
+
+                // animate the ripples that are not at max size
                 launch {
                     while (ripple.size.floatValue < endSize) {
                         ripple.size.floatValue += sizeAnimStep

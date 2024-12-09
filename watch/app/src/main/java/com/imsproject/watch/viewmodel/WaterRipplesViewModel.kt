@@ -20,16 +20,17 @@ class WaterRipplesViewModel : ViewModel() {
     fun addRipple() {
         val color = if (counter.value != 0 && counter.value % 5 == 0) VIVID_ORANGE_COLOR else LIGHT_BLUE_COLOR
         val ripple = Ripple(BUTTON_SIZE.toFloat(), color)
-        ripples.add(ripple)
+        ripples.add(0,ripple)
         counter.value++
+    }
+
+    class Ripple(
+        initialSize : Float,
+        color : Long,
+    ) {
+        var size = mutableFloatStateOf(initialSize)
+        var color = mutableLongStateOf(color)
+        var alpha = mutableFloatStateOf(1f)
     }
 }
 
-class Ripple(
-    initialSize : Float,
-    color : Long,
-) {
-    var size = mutableFloatStateOf(initialSize)
-    var color = mutableLongStateOf(color)
-    var alpha = mutableFloatStateOf(1f)
-}
