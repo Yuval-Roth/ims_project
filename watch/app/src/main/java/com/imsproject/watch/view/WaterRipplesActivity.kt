@@ -21,6 +21,9 @@ import kotlinx.coroutines.launch
 
 private const val DARK_BACKGROUND_COLOR = 0xFF333842
 private const val LIGHT_BLUE_COLOR = 0xFFACC7F6
+private const val BUTTON_SIZE = 80
+private const val RIPPLE_MAX_SIZE = 225
+private const val ANIMATION_DURATION = 2000
 
 class WaterRipplesActivity : ComponentActivity() {
 
@@ -46,62 +49,36 @@ fun WaterRipples() {
 
 @Composable
 private fun RippleEffect() {
-    val ripples = remember { mutableStateListOf<RippleData>() } // Store ripples
-    val idCounter = remember { mutableIntStateOf(0) } // Counter for unique ids
+    var ripples = remember { mutableStateListOf<Boolean>() } // Store ripples
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.fillMaxSize()
     ) {
-        // Draw all ripples
-        ripples.forEach { ripple ->
-            Ripple(
-                id = ripple.id,
-                startSize = ripple.startSize,
-                endSize = ripple.endSize,
-                duration = ripple.durationMillis,
-                onAnimationEnd = {
-                    synchronized(ripples) {
-                        ripples.removeAt(0)
-                    }
-                },
-            )
-        }
 
+        // i have actually no fucking clue why this works
+        ripples.forEach { Ripple() }
 
-        // Button at the center
         Button(
             modifier = Modifier.size(80.dp),
             onClick = {
-                val id = idCounter.intValue++
-                // Add a new ripple to the list
-                ripples.add(
-                    RippleData(
-                        id = id,
-                        startSize = 80f,
-                        endSize = 200f,
-                        durationMillis = 2000
-                    )
-                )
+                ripples.add(true) // Again, no clue why this works
             },
-        ) {
-            // Optional: Add content inside the button if needed
+        ){
+            // No content as of now
         }
     }
 }
 
 @Composable
-private fun Ripple(
-    id : Int,
-    startSize: Float,
-    endSize: Float,
-    duration: Int,
-    onAnimationEnd: () -> Unit
-) {
+private fun Ripple() {
+
+    val startSize = BUTTON_SIZE.toFloat()
+    val endSize = RIPPLE_MAX_SIZE.toFloat()
+    val duration = ANIMATION_DURATION
+
     var currentSize by remember { mutableFloatStateOf(startSize) }
     var alpha by remember { mutableFloatStateOf(1f) }
-
-//    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         launch {
@@ -113,8 +90,6 @@ private fun Ripple(
                 alpha = (alpha-alphaAnimStep).coerceAtLeast(0f)
                 delay(16)
             }
-            onAnimationEnd()
-            println("Ripple $id animation end")
         }
     }
 
@@ -128,13 +103,6 @@ private fun Ripple(
         )
     }
 }
-
-data class RippleData(
-    val id: Int,
-    val startSize: Float,
-    val endSize: Float,
-    val durationMillis: Int
-)
 
 @Preview(device = "id:wearos_large_round", apiLevel = 34)
 @Composable
