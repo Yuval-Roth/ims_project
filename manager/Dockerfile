@@ -2,8 +2,7 @@ FROM python:3.11
 
 COPY src/ /manager/
 
-RUN pip install flask  \
-    && pip install requests
+RUN pip install -r requirements.txt
 
 EXPOSE 80
 
