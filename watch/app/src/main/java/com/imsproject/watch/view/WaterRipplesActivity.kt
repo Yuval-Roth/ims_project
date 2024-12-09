@@ -1,5 +1,6 @@
 package com.imsproject.watch.view
 
+import android.R.attr.duration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -40,32 +41,16 @@ class WaterRipplesActivity : ComponentActivity() {
 
 @Composable
 fun WaterRipples(viewModel: WaterRipplesViewModel) {
+
+    var ripples = viewModel.ripples
+    val scope = rememberCoroutineScope()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color(DARK_BACKGROUND_COLOR)),
         contentAlignment = Alignment.Center
     ) {
-        RippleEffect(viewModel)
-    }
-}
-
-private const val VIVID_ORANGE_COLOR = 0xFFFF5722
-
-@Composable
-private fun RippleEffect(viewModel: WaterRipplesViewModel) {
-    var ripples = viewModel.ripples
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize()
-    ) {
-
-        // i have actually no fucking clue why this works
-        ripples.forEach { isInSync ->
-            Ripple(
-                if(isInSync) Color(VIVID_ORANGE_COLOR) else Color(LIGHT_BLUE_COLOR)
-        ) }
 
         Button(
             modifier = Modifier.size(80.dp),
@@ -75,8 +60,50 @@ private fun RippleEffect(viewModel: WaterRipplesViewModel) {
         ){
             // no content
         }
+
+        // ================================================= |
+        // =============== Ripple Effect =================== |
+        // ================================================= |
+
+        val startSize = BUTTON_SIZE.toFloat()
+        val endSize = RIPPLE_MAX_SIZE.toFloat()
+        val duration = ANIMATION_DURATION
+
+        val sizeAnimStep = (endSize - startSize) / (duration / 16f)
+        val alphaAnimStep = 1f / (duration / 16f)
+
+        LaunchedEffect(ripples.size.toString()) {
+            for (ripple in ripples) {
+                launch {
+                    while (ripple.size.floatValue < endSize) {
+                        ripple.size.floatValue += sizeAnimStep
+                        ripple.alpha.floatValue = (ripple.alpha.floatValue-alphaAnimStep).coerceAtLeast(0f)
+                        delay(16)
+                    }
+                }
+            }
+        }
+
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            for(ripple in ripples){
+                val color = Color(ripple.color.longValue)
+                val size = ripple.size.floatValue
+                val alpha = ripple.alpha.floatValue
+
+                drawCircle(
+                    color = color.copy(alpha = alpha),
+                    radius = size,
+                    style = Stroke(width = 4.dp.toPx())
+                )
+            }
+        }
+
     }
 }
+
+private const val VIVID_ORANGE_COLOR = 0xFFFF5722
 
 @Composable
 private fun Ripple(
@@ -89,6 +116,7 @@ private fun Ripple(
 
     var currentSize by remember { mutableFloatStateOf(startSize) }
     var alpha by remember { mutableFloatStateOf(1f) }
+    var color by remember { mutableStateOf(color) }
 
     LaunchedEffect(Unit) {
         launch {

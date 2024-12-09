@@ -1,19 +1,35 @@
 package com.imsproject.watch.viewmodel
 
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+
+private const val DARK_BACKGROUND_COLOR = 0xFF333842
+private const val VIVID_ORANGE_COLOR = 0xFFFF5722
+private const val LIGHT_BLUE_COLOR = 0xFFACC7F6
+
+private const val BUTTON_SIZE = 80
 
 class WaterRipplesViewModel : ViewModel() {
 
-    var ripples = mutableStateListOf<Boolean>()
+    var ripples = mutableStateListOf<Ripple>()
+    var counter = MutableStateFlow(0)
 
     fun addRipple() {
-        val inSync = ripples.size % 5 == 0
-        ripples.add(0,inSync)
+        val color = if (counter.value != 0 && counter.value % 5 == 0) VIVID_ORANGE_COLOR else LIGHT_BLUE_COLOR
+        val ripple = Ripple(BUTTON_SIZE.toFloat(), color)
+        ripples.add(ripple)
+        counter.value++
     }
+}
+
+class Ripple(
+    initialSize : Float,
+    color : Long,
+) {
+    var size = mutableFloatStateOf(initialSize)
+    var color = mutableLongStateOf(color)
+    var alpha = mutableFloatStateOf(1f)
 }
