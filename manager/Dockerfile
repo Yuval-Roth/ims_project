@@ -1,8 +1,9 @@
 FROM python:3.11
 
-COPY app.py /manager/app.py
+COPY src/ /manager/
 
-RUN pip install flask
+RUN pip install flask  \
+    && pip install requests
 
 EXPOSE 80
 
