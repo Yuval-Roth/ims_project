@@ -3,6 +3,7 @@ package com.imsproject.watch.view
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -13,9 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
+import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -27,29 +28,31 @@ private const val ANIMATION_DURATION = 2000
 
 class WaterRipplesActivity : ComponentActivity() {
 
+    val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            WaterRipples()
+            WaterRipples(viewModel)
         }
     }
 }
 
 @Composable
-fun WaterRipples() {
+fun WaterRipples(viewModel: WaterRipplesViewModel) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(color = Color(DARK_BACKGROUND_COLOR)),
         contentAlignment = Alignment.Center
     ) {
-        RippleEffect()
+        RippleEffect(viewModel)
     }
 }
 
 @Composable
-private fun RippleEffect() {
-    var ripples = remember { mutableStateListOf<Boolean>() } // Store ripples
+private fun RippleEffect(viewModel: WaterRipplesViewModel) {
+    var ripples = viewModel.ripples
 
     Box(
         contentAlignment = Alignment.Center,
@@ -62,10 +65,10 @@ private fun RippleEffect() {
         Button(
             modifier = Modifier.size(80.dp),
             onClick = {
-                ripples.add(true) // Again, no clue why this works
+                viewModel.addRipple()
             },
         ){
-            // No content as of now
+            // no content
         }
     }
 }
@@ -103,11 +106,3 @@ private fun Ripple() {
         )
     }
 }
-
-@Preview(device = "id:wearos_large_round", apiLevel = 34)
-@Composable
-fun PreviewWaterRipples() {
-    WaterRipples()
-}
-
-
