@@ -38,8 +38,8 @@ class MainViewModel() : ViewModel() {
     private var _state = MutableStateFlow(State.DISCONNECTED)
     val state : StateFlow<State> = _state
 
-    private var _id = MutableStateFlow("")
-    val id : StateFlow<String> = _id
+    private var _playerId = MutableStateFlow("")
+    val playerId : StateFlow<String> = _playerId
 
     private var _error = MutableStateFlow<String?>(null)
     val error : StateFlow<String?> = _error
@@ -58,7 +58,7 @@ class MainViewModel() : ViewModel() {
             _state.value = State.CONNECTING
             val id = model.connectToServer()
             if (id != null) {
-                _id.value = id
+                _playerId.value = id
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
                 model.onTcpMessage({handleGameRequest(it)})
             } else {
@@ -104,7 +104,7 @@ class MainViewModel() : ViewModel() {
 
         if(_lobbyId.value.isNotEmpty()){
             _state.value = State.CONNECTED_IN_LOBBY
-        } else if(_id.value.isNotEmpty()){
+        } else if(_playerId.value.isNotEmpty()){
             _state.value = State.CONNECTED_NOT_IN_LOBBY
         } else {
             _state.value = State.DISCONNECTED

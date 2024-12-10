@@ -1,7 +1,5 @@
 package com.imsproject.watch.view
 
-import android.R.attr.duration
-import android.app.admin.DevicePolicyManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,12 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,15 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
+import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
+import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
+import com.imsproject.watch.DARK_BACKGROUND_COLOR
+import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-private const val DARK_BACKGROUND_COLOR = 0xFF333842
-private const val LIGHT_BLUE_COLOR = 0xFFACC7F6
-private const val BUTTON_SIZE = 80
-private const val RIPPLE_MAX_SIZE = 225
-private const val ANIMATION_DURATION = 2000
 
 class WaterRipplesActivity : ComponentActivity() {
 
@@ -57,9 +51,12 @@ class WaterRipplesActivity : ComponentActivity() {
     @Composable
     fun WaterRipples(viewModel: WaterRipplesViewModel) {
 
+        // if the game is not playing, finish the activity
+        if(! viewModel.playing.collectAsState().value){
+            finish()
+        }
+
         var ripples = remember { viewModel.ripples }
-        val sizeAnimStep = remember { (RIPPLE_MAX_SIZE - BUTTON_SIZE) / (ANIMATION_DURATION / 16f) }
-        val alphaAnimStep = remember { 1f / (ANIMATION_DURATION / 16f) }
         val counter by viewModel.counter.collectAsState()
 
         Box(
@@ -72,7 +69,7 @@ class WaterRipplesActivity : ComponentActivity() {
             Button(
                 modifier = Modifier.size(80.dp),
                 onClick = {
-                    viewModel.addRipple()
+                    viewModel.click()
                 },
             ){
                 // button content
@@ -83,21 +80,30 @@ class WaterRipplesActivity : ComponentActivity() {
             // ================================================= |
 
             LaunchedEffect(counter) {
-                for (ripple in ripples) {
+                val rippleIterator = ripples.listIterator()
+                while (rippleIterator.hasNext()) {
+                    val ripple = rippleIterator.next()
 
                     // ================================================= |
                     // we add new ripples at the beginning of the list
                     // in this code, we reached ripples that are already at max size
                     // and we don't want to animate them anymore
-                    // so we break the loop
-                    if(ripple.size.floatValue >= RIPPLE_MAX_SIZE) break
+                    // so we remove them from the list
+                    if(ripple.size.floatValue >= RIPPLE_MAX_SIZE) {
+                        rippleIterator.remove()
+                        continue
+                    }
                     // ================================================= |
 
-                    // animate the ripples that are not at max size
+                    // animate the ripple that is not at max size
+
+                    val sizeAnimStep = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+                    val alphaAnimStep =  ripple.startingAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+
                     launch {
                         while (ripple.size.floatValue < RIPPLE_MAX_SIZE) {
                             ripple.size.floatValue += sizeAnimStep
-                            ripple.alpha.floatValue = (ripple.alpha.floatValue-alphaAnimStep).coerceAtLeast(0f)
+                            ripple.currentAlpha.floatValue = (ripple.currentAlpha.floatValue-alphaAnimStep).coerceAtLeast(0f)
                             delay(16)
                         }
                     }
@@ -110,7 +116,7 @@ class WaterRipplesActivity : ComponentActivity() {
                 for(ripple in ripples){
                     val color = Color(ripple.color.longValue)
                     val size = ripple.size.floatValue
-                    val alpha = ripple.alpha.floatValue
+                    val alpha = ripple.currentAlpha.floatValue
 
                     drawCircle(
                         color = color.copy(alpha = alpha),

@@ -1,10 +1,13 @@
 package com.imsproject.common.gameServer
 
 import com.google.gson.annotations.SerializedName
+import com.imsproject.common.utils.JsonUtils
 
 data class GameAction(
     val type : Type,
-    val data : String?
+    val actor : String?,
+    val data : String?,
+    val inSync : Boolean?
     //TODO: Add more fields if needed
 ) {
     enum class Type(private val value: String) {
@@ -25,38 +28,54 @@ data class GameAction(
     }
 
     override fun toString(): String {
-        return type.name + (data?.let {"\n$it"} ?: "")
+        return JsonUtils.serialize(this)
+
+        //TODO: in the future, we need to write a custom serializer
+        // because json serialization is not efficient
+//        return type.name +
+//            (actor?.let {"\n$it"} ?: "") +
+//            (data?.let {"\n$it"} ?: "") +
+//            (inSync?.let {"\n$it"} ?: "")
     }
 
     companion object {
 
         private val pingString = builder(Type.PING).build().toString()
         private val pongString = builder(Type.PONG).build().toString()
-        private val clickString = builder(Type.CLICK).build().toString()
-        private val posBuilder = builder(Type.POSITION)
 
         private val ping = builder(Type.PING).build()
         private val pong = builder(Type.PONG).build()
-        private val click = builder(Type.CLICK).build()
 
         fun fromString(message: String): GameAction {
-            val lines = message.split('\n')
-            return when(lines[0]){
-                "PING" -> ping
-                "PONG" -> pong
-                "CLICK" -> click
-                "POSITION" -> {
-                    if(lines.size != 2) throw IllegalArgumentException("Invalid POSITION message: $message")
-                    val ret = posBuilder.data(lines[1]).build()
-                    posBuilder.data(null)
-                    ret
-                }
-                "ENTER" -> {
-                    val data = if(lines.size > 1) lines[1] else null
-                    builder(Type.ENTER).data(data).build()
-                }
-                else -> throw IllegalArgumentException("Unknown gameAction type: ${lines[0]}")
-            }
+            return JsonUtils.deserialize(message, GameAction::class.java)
+
+            //TODO: in the future, we need to write a custom deserializer
+            // because json serialization is not efficient
+//            val lines = message.split('\n')
+//            return when(lines[0]){
+//                "PING" -> ping
+//                "PONG" -> pong
+//                "CLICK" -> {
+//                    if(lines.size != 3) throw IllegalArgumentException("Invalid CLICK message: $message")
+//                    builder(Type.CLICK)
+//                        .actor(lines[1])
+//                        .inSync(lines[2] == "true")
+//                        .build()
+//                }
+//                "POSITION" -> {
+//                    if(lines.size != 4) throw IllegalArgumentException("Invalid POSITION message: $message")
+//                    builder(Type.POSITION)
+//                        .actor(lines[1])
+//                        .data(lines[2])
+//                        .inSync(lines[3] == "true")
+//                        .build()
+//                }
+//                "ENTER" -> {
+//                    val data = if(lines.size > 1) lines[1] else null
+//                    builder(Type.ENTER).data(data).build()
+//                }
+//                else -> throw IllegalArgumentException("Unknown gameAction type: ${lines[0]}")
+//            }
         }
 
         fun builder(type: Type): GameActionBuilder {
@@ -72,11 +91,6 @@ data class GameAction(
          * returns a cached value for efficiency
          */
         fun pong() = pongString
-
-        /**
-         * returns a cached value for efficiency
-         */
-        fun click() = clickString
     }
 
 }

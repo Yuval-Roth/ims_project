@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "com.imsproject.watch"
         minSdk = 33
-        targetSdk = 34
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
 

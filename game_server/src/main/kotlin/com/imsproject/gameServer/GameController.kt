@@ -51,7 +51,8 @@ class GameController(private val clientController: ClientController) {
     }
 
     fun handleGameAction(clientHandler: ClientHandler, action: GameAction) {
-        TODO("Not yet implemented")
+        val game = clientIdToGame[clientHandler.id] ?: throw IllegalArgumentException("Game not found")
+        game.handleGameAction(clientHandler, action)
     }
 
     private fun handleToggleReady(clientHandler: ClientHandler, request: GameRequest) {
@@ -164,8 +165,8 @@ class GameController(private val clientController: ClientController) {
             return bad
         }
         val game = when(lobby.gameType){
-                GameType.WATER_RIPPLES -> TODO("Not yet implemented")
-                GameType.POC -> PocGame(player1Handler, player2Handler)
+                GameType.WATER_RIPPLES -> WaterRipplesGame(player1Handler, player2Handler)
+                else -> return Response.getError("Invalid game type")
             }
         lobby.state = LobbyState.PLAYING
         games[lobby.id] = game

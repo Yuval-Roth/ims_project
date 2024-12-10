@@ -24,7 +24,7 @@ private const val SERVER_WS_PORT = 8640
 private const val SERVER_UDP_PORT = 8641
 // ================================|
 
-class MainModel (private val vmScope : CoroutineScope) {
+class MainModel (private val scope : CoroutineScope) {
 
     init{
         instance = this
@@ -153,7 +153,7 @@ class MainModel (private val vmScope : CoroutineScope) {
             oldListener.cancel()
             Log.d(TAG, "onUdpMessage: Canceling previous listener, creating new one")
         }
-        val newListener = vmScope.launch(Dispatchers.IO){
+        val newListener = scope.launch(Dispatchers.IO){
             while(true){
                 try{
                     val message = udp.receive()
@@ -193,7 +193,7 @@ class MainModel (private val vmScope : CoroutineScope) {
             oldListener.cancel()
             Log.d(TAG, "onTcpMessage: Canceling previous listener, creating new one")
         }
-        val newListener = vmScope.launch(Dispatchers.IO){
+        val newListener = scope.launch(Dispatchers.IO){
             while(true){
                 try{
                     val message = ws.nextMessageBlocking()
@@ -218,7 +218,7 @@ class MainModel (private val vmScope : CoroutineScope) {
      */
     fun onTcpError(callback: (Exception) -> Unit) {
         ws.onErrorListener = {
-            vmScope.launch(Dispatchers.IO){
+            scope.launch(Dispatchers.IO){
                 callback(it ?: Exception("Unknown error"))
             }
         }
@@ -227,6 +227,21 @@ class MainModel (private val vmScope : CoroutineScope) {
     fun toggleReady() {
         val request = GameRequest.builder(GameRequest.Type.TOGGLE_READY).build().toJson()
         ws.send(request)
+    }
+
+    fun sendClick() {
+        val request = GameAction.builder(GameAction.Type.CLICK)
+            // add more things here if needed
+            .build().toString()
+        udp.send(request)
+    }
+
+    fun sendPosition(x: Float, y: Float) {
+        val request = GameAction.builder(GameAction.Type.POSITION)
+            // add more things here if needed
+            .data("$x,$y")
+            .build().toString()
+        udp.send(request)
     }
 
     companion object {

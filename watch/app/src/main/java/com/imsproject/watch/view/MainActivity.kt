@@ -31,11 +31,11 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 
-private const val DARK_BACKGROUND_COLOR = 0xFF333842
-private const val LIGHT_BLUE_COLOR = 0xFFACC7F6
+
 
 class MainActivity : ComponentActivity() {
     
@@ -76,14 +76,14 @@ class MainActivity : ComponentActivity() {
             State.CONNECTING -> ConnectingScreen()
 
             State.CONNECTED_NOT_IN_LOBBY -> {
-                val userId = viewModel.id.collectAsState().value
+                val userId = viewModel.playerId.collectAsState().value
                 ConnectedNotInLobbyScreen(userId)
             }
 
             State.CONNECTED_IN_LOBBY -> {
-                val userId = viewModel.id.collectAsState().value
+                val userId = viewModel.playerId.collectAsState().value
                 val lobbyId = viewModel.lobbyId.collectAsState().value
-                val gameType = viewModel.gameType.collectAsState().value!!.prettyName()
+                val gameType = viewModel.gameType.collectAsState().value?.prettyName() ?: "Unknown game"
                 val ready = viewModel.ready.collectAsState().value
                 ConnectedInLobbyScreen(userId, lobbyId,gameType, ready){
                     viewModel.toggleReady()

@@ -1,37 +1,101 @@
 package com.imsproject.watch.viewmodel
 
-import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.imsproject.common.gameServer.GameAction
+import com.imsproject.common.gameServer.GameRequest
+import com.imsproject.watch.model.MainModel
+import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
+import com.imsproject.watch.GRAY_COLOR
+import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.VIVID_ORANGE_COLOR
 import kotlinx.coroutines.flow.MutableStateFlow
-
-private const val DARK_BACKGROUND_COLOR = 0xFF333842
-private const val VIVID_ORANGE_COLOR = 0xFFFF5722
-private const val LIGHT_BLUE_COLOR = 0xFFACC7F6
-
-private const val BUTTON_SIZE = 80
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 
 class WaterRipplesViewModel() : ViewModel() {
 
+    val model = MainModel.instance
+    val playerId : String = model.playerId ?: run {
+        Log.e(TAG, "init: missing player ID")
+        "unknown player ID"
+    }
     var ripples = mutableStateListOf<Ripple>()
     var counter = MutableStateFlow(0)
 
-    fun addRipple() {
-        val color = if (counter.value != 0 && counter.value % 5 == 0) VIVID_ORANGE_COLOR else LIGHT_BLUE_COLOR
-        val ripple = Ripple(BUTTON_SIZE.toFloat(), color)
+    var _playing = MutableStateFlow(true)
+    val playing : StateFlow<Boolean> = _playing
+
+    init {
+        viewModelScope.launch{
+            while(true){
+                delay(1000)
+                showRipple("other",false)
+            }
+        }
+    }
+
+    private fun handleGameAction(action: GameAction) {
+        when (action.type) {
+            GameAction.Type.CLICK -> {
+                val actor = action.actor ?: run{
+                    Log.e(TAG, "handleGameAction: missing actor in click action")
+                    return
+                }
+                showRipple(actor)
+            }
+            else -> {
+                Log.e(TAG, "handleGameAction: invalid action type: ${action.type}")
+            }
+        }
+    }
+
+    private fun handleGameRequest(request: GameRequest) {
+        when (request.type) {
+            GameRequest.Type.END_GAME -> {
+                _playing.value = false
+            }
+            else -> {
+                Log.e(TAG, "handleGameRequest: invalid request type: ${request.type}")
+            }
+        }
+    }
+
+    fun click() {
+//        model.sendClick() // TODO: uncomment this line when the server is ready
+        showRipple(playerId) // TODO: remove this line when the server is ready
+    }
+
+    // TODO, remove the inSync default value when the server is ready
+    fun showRipple(actor: String, inSync : Boolean = counter.value != 0 && counter.value % 5 == 0) {
+
+        val ripple = if (inSync){
+            Ripple(VIVID_ORANGE_COLOR)
+        } else if(actor == playerId){
+            Ripple(LIGHT_BLUE_COLOR)
+        } else  {
+            Ripple(GRAY_COLOR,0.5f)
+        }
         ripples.add(0,ripple)
         counter.value++
     }
 
     class Ripple(
-        initialSize : Float,
-        color : Long,
+        color: Long,
+        val startingAlpha: Float = 1f,
     ) {
-        var size = mutableFloatStateOf(initialSize)
         var color = mutableLongStateOf(color)
-        var alpha = mutableFloatStateOf(1f)
+        var size = mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
+        var currentAlpha = mutableFloatStateOf(startingAlpha)
+    }
+
+    companion object {
+        private const val TAG = "WaterRipplesViewModel"
     }
 }
 
