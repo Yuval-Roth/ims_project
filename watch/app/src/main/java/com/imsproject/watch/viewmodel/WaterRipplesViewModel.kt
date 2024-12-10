@@ -1,5 +1,6 @@
 package com.imsproject.watch.viewmodel
 
+import android.content.Context
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -12,7 +13,7 @@ private const val LIGHT_BLUE_COLOR = 0xFFACC7F6
 
 private const val BUTTON_SIZE = 80
 
-class WaterRipplesViewModel : ViewModel() {
+class WaterRipplesViewModel() : ViewModel() {
 
     var ripples = mutableStateListOf<Ripple>()
     var counter = MutableStateFlow(0)

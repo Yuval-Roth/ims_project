@@ -26,6 +26,10 @@ private const val SERVER_UDP_PORT = 8641
 
 class MainModel (private val vmScope : CoroutineScope) {
 
+    init{
+        instance = this
+    }
+
     private lateinit var ws: WebSocketClient
     private lateinit var udp : UdpClient
 
@@ -220,7 +224,14 @@ class MainModel (private val vmScope : CoroutineScope) {
         }
     }
 
+    fun toggleReady() {
+        val request = GameRequest.builder(GameRequest.Type.TOGGLE_READY).build().toJson()
+        ws.send(request)
+    }
+
     companion object {
         private const val TAG = "MainModel"
+        lateinit var instance : MainModel
+            private set
     }
 }

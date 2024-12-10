@@ -21,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,6 +41,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.contextGetter = { applicationContext }
         setContent {
             Main(viewModel)
         }
@@ -66,8 +66,9 @@ private fun Main(viewModel: MainViewModel){
         State.CONNECTED_IN_LOBBY -> {
             val userId = viewModel.id.collectAsState().value
             val lobbyId = viewModel.lobbyId.collectAsState().value
+            val gameType = viewModel.gameType.collectAsState().value!!.prettyName()
             val ready = viewModel.ready.collectAsState().value
-            LobbyScreen(userId, lobbyId, ready){
+            LobbyScreen(userId, lobbyId,gameType, ready){
                 viewModel.toggleReady()
             }
         }
@@ -82,7 +83,13 @@ private fun Main(viewModel: MainViewModel){
 }
 
 @Composable
-private fun LobbyScreen(userId: String, lobbyId: String, ready: Boolean, onReady: () -> Unit) {
+private fun LobbyScreen(
+    userId: String,
+    lobbyId: String,
+    gameType: String,
+    ready: Boolean,
+    onReady: () -> Unit
+) {
     MaterialTheme {
         Box(
             modifier = Modifier
@@ -106,9 +113,14 @@ private fun LobbyScreen(userId: String, lobbyId: String, ready: Boolean, onReady
                     text = "Lobby ID: $lobbyId",
                     style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
                 )
+                Spacer(modifier = Modifier.height(5.dp))
+                BasicText(
+                    text = gameType,
+                    style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center),
+                )
                 Spacer(modifier = Modifier.height(20.dp))
                 Button(
-                    onClick = { /*TODO*/ },
+                    onClick = { onReady() },
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
@@ -247,7 +259,7 @@ fun PreviewConnectedScreen() {
 @Preview(device = "id:wearos_large_round", apiLevel = 34)
 @Composable
 fun PreviewLobbyScreen() {
-    LobbyScreen("123456", "ABC", false)
+    LobbyScreen("123456", "ABC", "gameType", false) {}
 }
 
 
