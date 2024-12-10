@@ -100,6 +100,7 @@ class WebSocketHandler(
                     client.sendTcp(
                         GameRequest.builder(Type.ERROR)
                             .message(e.message ?: "An error occurred")
+                            .data(listOf(rawPayload))
                             .build().toJson())
                 }
             }
