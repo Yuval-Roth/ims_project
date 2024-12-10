@@ -99,7 +99,7 @@ class WebSocketHandler(
                     // if the error message is null, send a generic error message
                     client.sendTcp(
                         GameRequest.builder(Type.ERROR)
-                            .message(e.message ?: "An error occurred")
+                            .message(e.message ?: "An error occurred:\n${e.stackTraceToString()}")
                             .data(listOf(rawPayload))
                             .build().toJson())
                 }

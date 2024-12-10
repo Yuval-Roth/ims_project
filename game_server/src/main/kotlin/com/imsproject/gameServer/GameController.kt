@@ -17,6 +17,7 @@ class GameController(private val clientController: ClientController) {
     private val lobbies = ConcurrentHashMap<String,Lobby>()
     private val games = ConcurrentHashMap<String, Game>()
     private val clientIdToGame = ConcurrentHashMap<String, Game>()
+    private val clientToLobby = ConcurrentHashMap<String, String>()
     private val idGenerator = SimpleIdGenerator(2)
 
     fun handleGameRequest(request: GameRequest) : String {
@@ -56,13 +57,11 @@ class GameController(private val clientController: ClientController) {
     }
 
     private fun handleToggleReady(clientHandler: ClientHandler, request: GameRequest) {
-        val lobby = lobbies[request.lobbyId] ?: throw IllegalArgumentException("Lobby not found")
+        val lobby = lobbies[clientHandler.id] ?: throw IllegalArgumentException("Player not in lobby")
         val success = lobby.toggleReady(clientHandler.id)
-        clientHandler.sendTcp(
-            GameRequest.builder(Type.TOGGLE_READY)
-                .success(success)
-                .build().toJson()
-        )
+        if(! success){
+            throw IllegalArgumentException("Toggle ready failed")
+        }
     }
 
     private fun handleGetAllLobbies() : String {
@@ -84,6 +83,8 @@ class GameController(private val clientController: ClientController) {
 
         val success = lobby.remove(clientId)
         return if(success){
+            clientToLobby.remove(clientId)
+
             // notify the client
             clientHandler.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
 
@@ -103,6 +104,8 @@ class GameController(private val clientController: ClientController) {
         val success = lobby.add(clientId)
 
         return if(success){
+            clientToLobby[clientId] = lobbyId
+
             // notify the client
             clientHandler.sendTcp(
                 GameRequest.builder(Type.JOIN_LOBBY)

@@ -17,7 +17,7 @@ def get_participants():
         "type": "get_online_player_ids"
     }
     try:
-        response = requests.post(URL, json=body)
+        response = requests.post(URL+"/manager", json=body)
         return response.json()
 
     except Exception as e:

@@ -28,10 +28,12 @@ class SecurityConfig(private val authController: AuthController) {
             .authorizeHttpRequests { authorize ->
                 authorize
 
-                    //TODO: Remove this when we want to enable security
-                    .requestMatchers("manager","auth","data").permitAll()
-
-                    .anyRequest().authenticated()
+                    .anyRequest().permitAll()
+//                    //TODO: Remove this when we want to enable security
+//                    .requestMatchers("manager","auth","data","ws").permitAll()
+//
+//
+//                    .anyRequest().authenticated()
             }
             .formLogin { obj -> obj.disable() }
             .csrf { obj -> obj.disable() }
@@ -55,14 +57,15 @@ class SecurityConfig(private val authController: AuthController) {
             @NonNull filterChain: FilterChain
         ) {
             var token = request.getHeader("Authorization")
-            if (token != null) {
-                if (token.startsWith("Bearer ")) {
-                    token = token.substring(7)
-                    if (authController.validateTokenAuthenticity(token)) {
-                        SecurityContextHolder.getContext().authentication = JWTAuthentication()
-                    }
-                }
-            }
+            SecurityContextHolder.getContext().authentication = JWTAuthentication() //TODO: Remove this when we want to enable security
+//            if (token != null) {
+//                if (token.startsWith("Bearer ")) {
+//                    token = token.substring(7)
+//                    if (authController.validateTokenAuthenticity(token)) {
+//                        SecurityContextHolder.getContext().authentication = JWTAuthentication()
+//                    }
+//                }
+//            }
             filterChain.doFilter(request, response)
         }
     }

@@ -31,14 +31,14 @@ class WaterRipplesViewModel() : ViewModel() {
     var _playing = MutableStateFlow(true)
     val playing : StateFlow<Boolean> = _playing
 
-    init {
-        viewModelScope.launch{
-            while(true){
-                delay(1000)
-                showRipple("other",false)
-            }
-        }
-    }
+//    init {
+//        viewModelScope.launch{
+//            while(true){
+//                delay(1000)
+//                showRipple("other",false)
+//            }
+//        }
+//    }
 
     private fun handleGameAction(action: GameAction) {
         when (action.type) {
