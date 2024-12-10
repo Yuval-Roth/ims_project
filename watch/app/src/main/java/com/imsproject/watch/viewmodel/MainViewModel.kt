@@ -1,7 +1,5 @@
 package com.imsproject.watch.viewmodel
 
-import android.content.Context
-import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,25 +7,31 @@ import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.model.MainModel
-import com.imsproject.watch.view.WaterRipplesActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 private const val TAG = "MainViewModel"
 
 class MainViewModel() : ViewModel() {
+
+    init{
+        viewModelScope.launch(Dispatchers.IO){
+                delay(5000)
+                launchGame()
+        }
+    }
 
     enum class State {
         DISCONNECTED,
         CONNECTING,
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
+        IN_GAME,
         ERROR
     }
-
-    var contextGetter : (() -> Context)? = null
 
     private val model = MainModel(viewModelScope)
 
@@ -86,13 +90,7 @@ class MainViewModel() : ViewModel() {
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
             }
             Type.START_GAME -> {
-                val context = contextGetter?.invoke() ?: run {
-                    Log.e(TAG, "handleGameRequest: Missing context")
-                    showError("Failed to start game")
-                    return
-                }
-                val intent = Intent(context, WaterRipplesActivity::class.java)
-                context.startActivity(intent)
+                _state.value = State.IN_GAME
             }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
@@ -121,5 +119,13 @@ class MainViewModel() : ViewModel() {
     fun toggleReady() {
         model.toggleReady()
         _ready.value = !_ready.value
+    }
+
+    fun launchGame() {
+        _state.value = State.IN_GAME
+    }
+
+    fun afterGame(){
+        _state.value = State.CONNECTED_NOT_IN_LOBBY
     }
 }

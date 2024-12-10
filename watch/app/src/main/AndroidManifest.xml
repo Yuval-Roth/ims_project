@@ -41,6 +41,7 @@
             android:name=".view.WaterRipplesActivity"
             android:taskAffinity=""
             android:exported="true"
+            android:lockTaskMode="always"
             />
 
     </application>
