@@ -2,7 +2,12 @@ package com.imsproject.common.gameServer
 
 import com.imsproject.common.utils.JsonUtils
 
-data class LobbyInfo(val lobbyId: String, val gameType: GameType, val state: LobbyState, val players: List<String>){
+data class LobbyInfo(
+    val lobbyId: String,
+    val gameType: GameType,
+    val state: LobbyState,
+    val players: List<String>
+){
 
     fun toJson(): String {
         return JsonUtils.serialize(this)

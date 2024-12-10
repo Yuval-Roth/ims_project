@@ -1,6 +1,8 @@
 package com.imsproject.common.gameServer
 
+import com.google.gson.annotations.SerializedName
+
 enum class LobbyState {
-    WAITING,
-    PLAYING
+    @SerializedName("waiting") WAITING,
+    @SerializedName("playing") PLAYING
 }
