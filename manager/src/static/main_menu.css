@@ -1,0 +1,108 @@
+/* Main Menu Specific Styles */
+
+.main-menu-container {
+    width: 100%;
+    max-width: 600px;
+    background-color: #ffffff;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+}
+
+.create-lobby-button {
+    width: 100%;
+    max-width: 200px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s, opacity 0.3s;
+}
+
+.create-lobby-button:hover {
+    background-color: #0056b3;
+}
+
+.create-lobby-button:disabled {
+    background-color: #cccccc; /* Gray color for disabled state */
+    cursor: not-allowed; /* Change cursor to indicate it's disabled */
+    opacity: 0.6; /* Make it slightly transparent */
+}
+
+
+/* Scrollable Table Styles */
+.table-container {
+    width: 100%;
+    max-height: 200px; /* Set the fixed height for the table container */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Disable horizontal scrolling */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    padding-bottom: 10px;
+}
+
+.table-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.online-participants-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.online-participants-table th,
+.online-participants-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+}
+
+/* Sticky Table Header */
+.online-participants-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    position: sticky; /* Make the header sticky */
+    top: 0; /* Position it at the top of the table container */
+    z-index: 2; /* Ensure it stays above the other rows */
+}
+
+.online-participants-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.online-participants-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.online-participants-table td input[type="checkbox"] {
+    transform: scale(1.2);
+    cursor: pointer;
+}

@@ -1,0 +1,381 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Center vertically within viewport */
+}
+
+h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Container Styles */
+.login-container, .settings-container {
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.ocpp-settings-container {
+    width: 100%;
+    max-width: 350px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    justify-content: center;
+}
+
+/* Scrollbar Styling */
+.charge-point-table-container {
+    max-height: 150px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin-bottom: 10px;
+}
+
+.charge-point-table-container::-webkit-scrollbar {
+    width: 3px;
+}
+
+.charge-point-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.charge-point-table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.charge-point-table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.arrow::before {
+    content: "→";
+    margin: 0 5px;
+    font-size: 20px;
+    color: #333;
+}
+
+.charge-point-wrapper {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.center-link {
+    text-align: center;
+    width: 100%;
+    margin-top: 20px;
+}
+
+/* Form and Input Styles */
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+    text-align: left;
+    padding-left: 5px;
+}
+
+.input-group {
+    width: 100%;
+    padding: 0 5px;
+}
+
+input {
+    width: 100%;
+    max-width: 300px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* OCPP-Specific Form and Input Styles */
+.ocpp-checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.ocpp-checkbox-group label {
+    width: 150px;
+    font-weight: bold;
+    color: #333;
+    padding-right: 10px;
+}
+
+.ocpp-checkbox-group input[type="checkbox"] {}
+
+/* Vehicle List Container */
+.vehicle-list-container {
+    width: 95%;
+    max-width: 2500px;
+    height: 90vh;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+/* Header styling for vehicle list */
+.vehicle-list-container h1 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Scrollable Table Container for Vehicle List */
+.scrollable-vehicle-table-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+    max-height: 75vh;
+}
+
+/* Custom Scrollbar Styling for Vehicle List Table */
+.scrollable-vehicle-table-container::-webkit-scrollbar {
+    width: 3px;
+    height: 6px;
+}
+
+.scrollable-vehicle-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.scrollable-vehicle-table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.scrollable-vehicle-table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Vehicle List Table Styling */
+.vehicle-table {
+    width: 100%;
+    min-width: 1000px;
+    border-collapse: collapse;
+    background-color: #ffffff;
+}
+
+.vehicle-table th, .vehicle-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.vehicle-table th {
+    position: sticky;
+    top: 0;
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    z-index: 1;
+}
+
+.vehicle-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.vehicle-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* OCPP Table Styling */
+.ocpp-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.ocpp-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+}
+
+.ocpp-table th, .ocpp-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.ocpp-table th {
+    background-color: #333;
+    color: white;
+    font-weight: bold;
+}
+
+.ocpp-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* Center-aligned Back Link */
+.center-link {
+    text-align: center;
+}
+
+.center-link a {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.center-link a:hover {
+    background-color: #0056b3;
+}
+
+/* Button Styles */
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #3e8e41;
+}
+
+.ocpp-remove-btn {
+    padding: 4px 8px;
+    font-size: 14px;
+    background-color: #d9534f;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ocpp-remove-btn:hover {
+    background-color: #c9302c;
+}
+
+/* Utility Classes */
+.ocpp-hidden {
+    display: none;
+}
+
+/* Settings List and Links */
+.settings-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.settings-list li {
+    margin-bottom: 15px;
+}
+
+.settings-list li a {
+    display: block;
+    padding: 10px;
+    color: #007bff;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    border: 2px solid transparent;
+    transition: color 0.3s, border-color 0.3s;
+}
+
+.settings-list li a:hover {
+    color: #0056b3;
+    border-bottom: 2px solid #007bff;
+}
+
+.logout-link {
+    display: inline-block;
+    margin-top: 20px;
+    color: #dc3545;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s;
+    text-align: center;
+}
+
+.logout-link:hover {
+    color: #c82333;
+}
+
+/* Full-Width Form Wrapper */
+form {
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* IP Input Styles */
+.ip-inputs {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.ip-inputs input {
+    width: 50px;
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.ip-inputs span {
+    font-size: 18px;
+    color: #333;
+}
