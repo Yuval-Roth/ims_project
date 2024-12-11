@@ -14,16 +14,16 @@ All responses from the API adhere to the following structure:
 
 ```json
 {
-  "message": "string",
+  "message": "string?",
   "success": "boolean",
-  "payload": ["string"]
+  "payload": "[string]?"
 }
 ```
-Not all fields are present in every response.
+Note: Not all fields are present in every response. fields marked with `?` can be missing
 - `message` - provides a message to show to the client if there is any.
   Also can be used as an error message if the success field is `false`.
-- `success` indicates whether the operation was successful `READ: this field always exists`
-- `payload` if applicable, holds a list of data that is returned from the server.
+- `success` - indicates whether the operation was successful `READ: this field always exists`
+- `payload` - if applicable, holds a list of data that is returned from the server.
   If the expected data is otherwise not a simple string,
   it will be a serialized json object that needs to be parsed.
 
