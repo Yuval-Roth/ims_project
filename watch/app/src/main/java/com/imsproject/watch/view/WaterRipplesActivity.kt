@@ -1,5 +1,6 @@
 package com.imsproject.watch.view
 
+import android.R.attr.textStyle
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,17 +10,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
@@ -34,6 +46,7 @@ class WaterRipplesActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.onCreate()
         setContent {
             Row(
                 modifier = Modifier
@@ -41,9 +54,16 @@ class WaterRipplesActivity : ComponentActivity() {
                     .background(color = DARK_BACKGROUND_COLOR)
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.Center
-            )
-            {
-                WaterRipples(viewModel)
+            ) {
+                val error = viewModel.error.collectAsState().value
+                if (error == null) {
+                    WaterRipples(viewModel)
+                } else {
+                    ErrorScreen(error = error, onDismiss = {
+                        viewModel.onFinish()
+                        finish()
+                    })
+                }
             }
         }
     }

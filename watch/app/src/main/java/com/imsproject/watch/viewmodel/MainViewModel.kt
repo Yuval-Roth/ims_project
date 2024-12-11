@@ -17,22 +17,22 @@ private const val TAG = "MainViewModel"
 
 class MainViewModel() : ViewModel() {
 
-    init{
-        viewModelScope.launch(Dispatchers.IO){
-            delay(5000)
-            val joinLobby = GameRequest.builder(Type.JOIN_LOBBY)
-                .lobbyId("lobby1")
-                .gameType(GameType.WATER_RIPPLES)
-                .build()
-            handleGameRequest(joinLobby)
-            while(_ready.value == false){
-                delay(1000)
-            }
-            delay(5000)
-            val startGame = GameRequest.builder(Type.START_GAME).build()
-            handleGameRequest(startGame)
-        }
-    }
+//    init{
+//        viewModelScope.launch(Dispatchers.IO){
+//            delay(5000)
+//            val joinLobby = GameRequest.builder(Type.JOIN_LOBBY)
+//                .lobbyId("lobby1")
+//                .gameType(GameType.WATER_RIPPLES)
+//                .build()
+//            handleGameRequest(joinLobby)
+//            while(_ready.value == false){
+//                delay(1000)
+//            }
+//            delay(5000)
+//            val startGame = GameRequest.builder(Type.START_GAME).build()
+//            handleGameRequest(startGame)
+//        }
+//    }
 
     enum class State {
         DISCONNECTED,
@@ -63,16 +63,33 @@ class MainViewModel() : ViewModel() {
     private var _ready = MutableStateFlow(false)
     val ready : StateFlow<Boolean> = _ready
 
-    fun connect() {
+    fun onCreate(){
+        connect()
+        setupListeners()
+    }
+
+    private fun setupListeners() {
+        model.onTcpMessage({ handleGameRequest(it) }) {
+            Log.e(TAG, "tcp exception", it)
+            showError(it.message ?: "unknown tcp exception")
+        }
+        model.onTcpError {
+            Log.e(TAG, "tcp error", it)
+            showError(it.message ?: "unknown tcp error")
+        }
+    }
+
+    private fun connect() {
         viewModelScope.launch(Dispatchers.IO){
             _state.value = State.CONNECTING
-            val id = model.connectToServer()
-            if (id != null) {
-                _playerId.value = id
-                _state.value = State.CONNECTED_NOT_IN_LOBBY
-                model.onTcpMessage({handleGameRequest(it)})
-            } else {
-                showError("Failed to connect to server")
+            while(_state.value == State.CONNECTING){
+                val id = model.connectToServer()
+                if (id != null) {
+                    _playerId.value = id
+                    _state.value = State.CONNECTED_NOT_IN_LOBBY
+                } else {
+                    showError("Failed to connect to server")
+                }
             }
         }
     }
@@ -132,6 +149,8 @@ class MainViewModel() : ViewModel() {
     }
 
     fun afterGame(){
-        _state.value = State.CONNECTED_NOT_IN_LOBBY
+        setupListeners()
+//        _state.value = State.CONNECTED_IN_LOBBY //TODO: uncomment this line when the server is ready
+        _state.value = State.CONNECTED_NOT_IN_LOBBY //TODO: remove this line when the server is ready
     }
 }

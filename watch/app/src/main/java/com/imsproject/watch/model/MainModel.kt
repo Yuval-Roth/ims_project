@@ -40,6 +40,7 @@ class MainModel (private val scope : CoroutineScope) {
 
     private var udpMessageListener : Job? = null
     private var tcpMessageListener : Job? = null
+    private var tcpErrorListener : Job? = null
 
     /**
      * Connects to the game server using WebSocket and UDP protocols.
@@ -144,10 +145,17 @@ class MainModel (private val scope : CoroutineScope) {
      *
      * Either [IOException] or [JsonParseException] will be passed to the exception callback.
      *
-     * @param callback A function to be called with the received `GameAction` object.
+     * @param callback A function to be called with the received GameAction object. **If null, the listener is cancelled.**
      * @param onException A function to be called when an exception occurs. Defaults to an empty function.
      */
-    fun onUdpMessage(callback: (GameAction) -> Unit, onException: (Exception) -> Unit = {}) {
+    fun onUdpMessage(callback: ((GameAction) -> Unit)?, onException: (Exception) -> Unit = {}) {
+
+        if(callback == null){
+            udpMessageListener?.cancel()
+            Log.d(TAG, "onUdpMessage: Listener canceled")
+            return
+        }
+
         val oldListener = udpMessageListener
         if(oldListener != null){
             oldListener.cancel()
@@ -184,10 +192,17 @@ class MainModel (private val scope : CoroutineScope) {
      *
      * Only [JsonParseException] will be passed to the exception callback.
      *
-     * @param callback A function to be called with the received `GameRequest` object.
+     * @param callback A function to be called with the received GameRequest object. **If null, the listener is cancelled.**
      * @param onException A function to be called when an exception occurs. Defaults to an empty function.
      */
-    fun onTcpMessage(callback: (GameRequest) -> Unit, onException: (Exception) -> Unit = {}) {
+    fun onTcpMessage(callback: ((GameRequest) -> Unit)?, onException: (Exception) -> Unit = {}) {
+
+        if(callback == null){
+            tcpMessageListener?.cancel()
+            Log.d(TAG, "onTcpMessage: Listener canceled")
+            return
+        }
+
         val oldListener = tcpMessageListener
         if(oldListener != null){
             oldListener.cancel()
@@ -214,11 +229,19 @@ class MainModel (private val scope : CoroutineScope) {
      * This function assigns a listener to the WebSocket client's error events.
      * When an error occurs, the provided callback function is called with the exception.
      *
-     * @param callback A function to be called with the exception that occurred.
+     * @param callback A function to be called with the exception that occurred. **If null, the listener is cancelled.**
      */
-    fun onTcpError(callback: (Exception) -> Unit) {
+    fun onTcpError(callback: ((Exception) -> Unit)?) {
+
+        if(callback == null){
+            ws.onErrorListener = {}
+            tcpErrorListener?.cancel()
+            Log.d(TAG, "onTcpError: Listener canceled")
+            return
+        }
+
         ws.onErrorListener = {
-            scope.launch(Dispatchers.IO){
+            tcpErrorListener = scope.launch(Dispatchers.IO){
                 callback(it ?: Exception("Unknown error"))
             }
         }

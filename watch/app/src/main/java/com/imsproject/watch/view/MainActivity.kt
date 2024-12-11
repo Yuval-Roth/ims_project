@@ -47,18 +47,12 @@ import com.imsproject.watch.RED_COLOR
 
 
 class MainActivity : ComponentActivity() {
-    
-    val textStyle = TextStyle(
-        color = Color.White,
-        fontSize = 14.sp,
-        textAlign = TextAlign.Center,
-        textDirection = TextDirection.Ltr
-    )
 
     val viewModel : MainViewModel by viewModels<MainViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.onCreate()
         setContent {
             Main(viewModel)
         }
@@ -77,10 +71,7 @@ class MainActivity : ComponentActivity() {
         val state = viewModel.state.collectAsState().value
 
         when(state) {
-            State.DISCONNECTED -> {
-                BlankScreen()
-                viewModel.connect()
-            }
+            State.DISCONNECTED -> BlankScreen()
 
             State.CONNECTING -> ConnectingScreen()
 
@@ -249,64 +240,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    @Composable
-    private fun ErrorScreen(error: String, onDismiss: () -> Unit) {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(30.dp)
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    BasicText(
-                        text = "ERROR",
-                        style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center, textDecoration = TextDecoration.Underline, letterSpacing = 1.sp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = 20.dp)
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    BasicText(
-                        text = error,
-                        style = textStyle,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally)
-                    )
-                    Spacer(modifier = Modifier.height(30.dp))
-                    Button(
-                        onClick = { onDismiss() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        BasicText(
-                            text = "Dismiss",
-                            style = textStyle
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun SpinningGlowButton(
-        ready: Boolean,
-        onReady: () -> Unit,
-    ) {
-
-
-
-    }
-
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable

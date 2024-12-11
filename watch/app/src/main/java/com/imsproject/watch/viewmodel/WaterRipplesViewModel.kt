@@ -22,6 +22,15 @@ import kotlinx.coroutines.flow.StateFlow
 
 class WaterRipplesViewModel() : ViewModel() {
 
+//    init {
+//        viewModelScope.launch{
+//            while(true){
+//                delay(1000)
+//                showRipple("other",false)
+//            }
+//        }
+//    }
+
     val model = MainModel.instance
     val playerId : String = model.playerId ?: run {
         Log.e(TAG, "init: missing player ID")
@@ -33,13 +42,28 @@ class WaterRipplesViewModel() : ViewModel() {
     var _playing = MutableStateFlow(true)
     val playing : StateFlow<Boolean> = _playing
 
-    init {
-        viewModelScope.launch{
-            while(true){
-                delay(1000)
-                showRipple("other",false)
-            }
+    var _error = MutableStateFlow<String?>(null)
+    val error : StateFlow<String?> = _error
+
+    fun onCreate(){
+        model.onTcpMessage({handleGameRequest(it)}){
+            Log.e(TAG, "tcp exception", it)
+            showError(it.message?: "unknown tcp exception")
         }
+        model.onTcpError {
+            Log.e(TAG, "tcp error", it)
+            showError(it.message?: "unknown tcp error")
+        }
+        model.onUdpMessage( { handleGameAction(it) }){
+            Log.e(TAG, "udp error", it)
+            showError(it.message?: "unknown udp error")
+        }
+    }
+
+    fun onFinish(){
+        model.onTcpMessage(null)
+        model.onTcpError(null)
+        model.onUdpMessage(null)
     }
 
     private fun handleGameAction(action: GameAction) {
@@ -94,6 +118,14 @@ class WaterRipplesViewModel() : ViewModel() {
         var color = mutableStateOf(color)
         var size = mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
         var currentAlpha = mutableFloatStateOf(startingAlpha)
+    }
+
+    fun showError(string: String) {
+        _error.value = string
+    }
+
+    fun clearError() {
+        _error.value = null
     }
 
     companion object {
