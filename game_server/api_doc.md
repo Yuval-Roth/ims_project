@@ -66,10 +66,12 @@ Handles all game server requests
   ```json
   {
     "type": "string",
-    "playerId": "string",
-    "lobbyId": "string",
-    "gameType": "string",
+    "playerId": "string?",
+    "lobbyId": "string?",
+    "gameType": "string?",
   }
+  ```
+  Note: Not all fields are present in every request. fields marked with `?` can be missing
 ### Fields:
 
 #### `type` (required):
