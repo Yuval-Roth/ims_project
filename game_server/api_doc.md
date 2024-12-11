@@ -4,7 +4,7 @@
 
 ## Server URL
 
-http://game-server:8640
+http://ims-game-server:8640
 
 ---
 
