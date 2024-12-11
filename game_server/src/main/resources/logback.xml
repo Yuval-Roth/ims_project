@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <!-- Define properties -->
-    <property name="APP_NAME" value="webrtc_server" />
-    <property name="LOG_PATH" value="logs/${APP_NAME}" />
+    <property name="APP_NAME" value="game_server" />
+    <property name="LOG_PATH" value="/app/data/logs" />
     <property name="LOG_FILE" value="${LOG_PATH}/application.log" />
 
     <!-- Console appender configuration -->
