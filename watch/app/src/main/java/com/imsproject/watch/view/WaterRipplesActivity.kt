@@ -38,7 +38,7 @@ class WaterRipplesActivity : ComponentActivity() {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(color = Color(DARK_BACKGROUND_COLOR))
+                    .background(color = DARK_BACKGROUND_COLOR)
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.Center
             )
@@ -62,7 +62,7 @@ class WaterRipplesActivity : ComponentActivity() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color(DARK_BACKGROUND_COLOR)),
+                .background(color = DARK_BACKGROUND_COLOR),
             contentAlignment = Alignment.Center
         ) {
 
@@ -114,12 +114,12 @@ class WaterRipplesActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize()
             ) {
                 for(ripple in ripples){
-                    val color = Color(ripple.color.longValue)
+                    val color = ripple.color
                     val size = ripple.size.floatValue
                     val alpha = ripple.currentAlpha.floatValue
 
                     drawCircle(
-                        color = color.copy(alpha = alpha),
+                        color = color.value.copy(alpha = alpha),
                         radius = size,
                         style = Stroke(width = 4.dp.toPx())
                     )

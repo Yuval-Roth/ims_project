@@ -1,10 +1,14 @@
 package com.imsproject.watch
 
+import androidx.compose.ui.graphics.Color
+
 // ===================== Colors ===================== |
-const val DARK_BACKGROUND_COLOR = 0xFF333842
-const val LIGHT_BLUE_COLOR = 0xFFACC7F6
-const val VIVID_ORANGE_COLOR = 0xFFFF5722
-const val GRAY_COLOR = 0xFFBDBDBD
+val DARK_BACKGROUND_COLOR = Color(0xFF333842)
+val LIGHT_BLUE_COLOR = Color(0xFFACC7F6)
+val VIVID_ORANGE_COLOR = Color(0xFFFF5722)
+val GRAY_COLOR = Color(0xFFDEDBDB)
+val GREEN_COLOR = Color(0xFF4EFF00)
+val RED_COLOR = Color(0xFFFF0000)
 // ================================================== |
 
 // ================= Water Ripples ================== |

@@ -5,6 +5,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +41,9 @@ import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
-
+import androidx.wear.compose.material.ButtonDefaults
+import com.imsproject.watch.GREEN_COLOR
+import com.imsproject.watch.RED_COLOR
 
 
 class MainActivity : ComponentActivity() {
@@ -111,7 +120,7 @@ class MainActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(DARK_BACKGROUND_COLOR)),
+                    .background(DARK_BACKGROUND_COLOR),
                 contentAlignment = Alignment.Center
             ){
 
@@ -125,7 +134,7 @@ class MainActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(DARK_BACKGROUND_COLOR)),
+                    .background(DARK_BACKGROUND_COLOR),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -152,7 +161,7 @@ class MainActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(DARK_BACKGROUND_COLOR)),
+                    .background(DARK_BACKGROUND_COLOR),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
@@ -184,11 +193,21 @@ class MainActivity : ComponentActivity() {
         ready: Boolean,
         onReady: () -> Unit
     ) {
+        val infiniteTransition = rememberInfiniteTransition(label = "")
+        val alpha = infiniteTransition.animateFloat(
+            initialValue = 0.2f,
+            targetValue = 0.5f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 2000, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse
+            ), label = ""
+        )
+
         MaterialTheme {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(DARK_BACKGROUND_COLOR)),
+                    .background(DARK_BACKGROUND_COLOR),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
@@ -213,15 +232,18 @@ class MainActivity : ComponentActivity() {
                         style = textStyle,
                     )
                     Spacer(modifier = Modifier.height(20.dp))
+
+                    // Button
                     Button(
                         onClick = { onReady() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    ) {
-                        BasicText(
-                            text = if (ready) "Ready" else "Not Ready",
-                            style = textStyle
+                        modifier = Modifier.fillMaxWidth(),
+                        border = ButtonDefaults.buttonBorder(
+                            BorderStroke(2.dp,
+                                if (! ready) GREEN_COLOR.copy(alpha = alpha.value)
+                                else RED_COLOR.copy(alpha = alpha.value)),
                         )
+                    ) {
+                        BasicText(text = if (!ready) "Ready" else "Not Ready")
                     }
                 }
             }
@@ -234,7 +256,7 @@ class MainActivity : ComponentActivity() {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(DARK_BACKGROUND_COLOR)),
+                    .background(DARK_BACKGROUND_COLOR),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -274,6 +296,18 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    @Composable
+    fun SpinningGlowButton(
+        ready: Boolean,
+        onReady: () -> Unit,
+    ) {
+
+
+
+    }
+
+
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewErrorScreen() {

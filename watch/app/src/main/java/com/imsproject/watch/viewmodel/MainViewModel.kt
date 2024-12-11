@@ -17,22 +17,22 @@ private const val TAG = "MainViewModel"
 
 class MainViewModel() : ViewModel() {
 
-//    init{
-//        viewModelScope.launch(Dispatchers.IO){
-//            delay(5000)
-//            val joinLobby = GameRequest.builder(Type.JOIN_LOBBY)
-//                .lobbyId("lobby1")
-//                .gameType(GameType.WATER_RIPPLES)
-//                .build()
-//            handleGameRequest(joinLobby)
-//            while(_ready.value == false){
-//                delay(1000)
-//            }
-//            delay(2000)
-//            val startGame = GameRequest.builder(Type.START_GAME).build()
-//            handleGameRequest(startGame)
-//        }
-//    }
+    init{
+        viewModelScope.launch(Dispatchers.IO){
+            delay(5000)
+            val joinLobby = GameRequest.builder(Type.JOIN_LOBBY)
+                .lobbyId("lobby1")
+                .gameType(GameType.WATER_RIPPLES)
+                .build()
+            handleGameRequest(joinLobby)
+            while(_ready.value == false){
+                delay(1000)
+            }
+            delay(5000)
+            val startGame = GameRequest.builder(Type.START_GAME).build()
+            handleGameRequest(startGame)
+        }
+    }
 
     enum class State {
         DISCONNECTED,

@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameServer.GameAction
@@ -31,14 +33,14 @@ class WaterRipplesViewModel() : ViewModel() {
     var _playing = MutableStateFlow(true)
     val playing : StateFlow<Boolean> = _playing
 
-//    init {
-//        viewModelScope.launch{
-//            while(true){
-//                delay(1000)
-//                showRipple("other",false)
-//            }
-//        }
-//    }
+    init {
+        viewModelScope.launch{
+            while(true){
+                delay(1000)
+                showRipple("other",false)
+            }
+        }
+    }
 
     private fun handleGameAction(action: GameAction) {
         when (action.type) {
@@ -86,10 +88,10 @@ class WaterRipplesViewModel() : ViewModel() {
     }
 
     class Ripple(
-        color: Long,
+        color: Color,
         val startingAlpha: Float = 1f,
     ) {
-        var color = mutableLongStateOf(color)
+        var color = mutableStateOf(color)
         var size = mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
         var currentAlpha = mutableFloatStateOf(startingAlpha)
     }
