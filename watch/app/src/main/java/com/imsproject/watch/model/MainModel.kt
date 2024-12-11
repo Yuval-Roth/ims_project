@@ -148,7 +148,7 @@ class MainModel (private val scope : CoroutineScope) {
      * @param callback A function to be called with the received GameAction object. **If null, the listener is cancelled.**
      * @param onException A function to be called when an exception occurs. Defaults to an empty function.
      */
-    fun onUdpMessage(callback: ((GameAction) -> Unit)?, onException: (Exception) -> Unit = {}) {
+    fun onUdpMessage(callback: (suspend (GameAction) -> Unit)?, onException: (Exception) -> Unit = {}) {
 
         if(callback == null){
             udpMessageListener?.cancel()
@@ -195,7 +195,7 @@ class MainModel (private val scope : CoroutineScope) {
      * @param callback A function to be called with the received GameRequest object. **If null, the listener is cancelled.**
      * @param onException A function to be called when an exception occurs. Defaults to an empty function.
      */
-    fun onTcpMessage(callback: ((GameRequest) -> Unit)?, onException: (Exception) -> Unit = {}) {
+    fun onTcpMessage(callback:  (suspend (GameRequest) -> Unit)?, onException: (Exception) -> Unit = {}) {
 
         if(callback == null){
             tcpMessageListener?.cancel()
@@ -231,7 +231,7 @@ class MainModel (private val scope : CoroutineScope) {
      *
      * @param callback A function to be called with the exception that occurred. **If null, the listener is cancelled.**
      */
-    fun onTcpError(callback: ((Exception) -> Unit)?) {
+    fun onTcpError(callback: (suspend (Exception) -> Unit)?) {
 
         if(callback == null){
             ws.onErrorListener = {}

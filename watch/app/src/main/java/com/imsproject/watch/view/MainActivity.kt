@@ -52,7 +52,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel.onCreate()
         setContent {
             Main(viewModel)
         }
@@ -71,7 +70,10 @@ class MainActivity : ComponentActivity() {
         val state = viewModel.state.collectAsState().value
 
         when(state) {
-            State.DISCONNECTED -> BlankScreen()
+            State.DISCONNECTED -> {
+                BlankScreen()
+                viewModel.connect()
+            }
 
             State.CONNECTING -> ConnectingScreen()
 
