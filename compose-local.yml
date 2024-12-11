@@ -1,4 +1,3 @@
-version: '3.8'
 name: imsproject
 
 networks:
@@ -8,7 +7,7 @@ networks:
 
 services:
 
-  game-server:
+  ims-game-server:
     build:
       context: game_server
       dockerfile: Dockerfile
@@ -19,7 +18,7 @@ services:
         - "8640:8640"
         - "8641:8641/udp"
 
-  manager:
+  ims-manager:
     build:
       context: manager
       dockerfile: Dockerfile
