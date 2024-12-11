@@ -4,7 +4,7 @@
 
 ## Server URL
 
-http://game_server:8640
+http://game-server:8640
 
 ---
 
