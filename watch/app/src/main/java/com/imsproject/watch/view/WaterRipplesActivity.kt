@@ -1,6 +1,5 @@
 package com.imsproject.watch.view
 
-import android.R.attr.textStyle
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -37,6 +36,8 @@ import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.RIPPLE_MAX_SIZE
+import com.imsproject.watch.SCREEN_HEIGHT
+import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -89,7 +90,7 @@ class WaterRipplesActivity : ComponentActivity() {
         ) {
 
             Button(
-                modifier = Modifier.size(80.dp),
+                modifier = Modifier.size(WATER_RIPPLES_BUTTON_SIZE.dp),
                 onClick = {
                     viewModel.click()
                 },

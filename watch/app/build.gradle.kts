@@ -57,5 +57,4 @@ dependencies {
 
     implementation(libs.imsproject.common)
     implementation(libs.kotlinx.coroutines.android)
-//    implementation("androidx.compose.material:material-*:1.7.5")
 }

@@ -18,19 +18,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.watch.DISMISS_BUTTON_SPACING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
-
-val textStyle = TextStyle(
-    color = Color.White,
-    fontSize = 14.sp,
-    textAlign = TextAlign.Center,
-    textDirection = TextDirection.Ltr
-)
+import com.imsproject.watch.ERROR_TEXT_PADDING
+import com.imsproject.watch.TEXT_SIZE
+import com.imsproject.watch.textStyle
 
 @Composable
 fun ErrorScreen(error: String, onDismiss: () -> Unit) {
@@ -50,11 +46,11 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
             ) {
                 BasicText(
                     text = "ERROR",
-                    style = TextStyle(color = Color.White, fontSize = 14.sp, textAlign = TextAlign.Center, textDecoration = TextDecoration.Underline, letterSpacing = 1.sp),
+                    style = TextStyle(color = Color.White, fontSize = TEXT_SIZE, textAlign = TextAlign.Center, textDecoration = TextDecoration.Underline, letterSpacing = 1.sp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.CenterHorizontally)
-                        .padding(top = 20.dp)
+                        .padding(top = ERROR_TEXT_PADDING)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 BasicText(
@@ -64,7 +60,7 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                         .fillMaxWidth()
                         .align(Alignment.CenterHorizontally)
                 )
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(DISMISS_BUTTON_SPACING))
                 Button(
                     onClick = { onDismiss() },
                     modifier = Modifier

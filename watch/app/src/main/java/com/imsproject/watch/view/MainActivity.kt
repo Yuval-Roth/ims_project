@@ -28,14 +28,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -44,7 +38,12 @@ import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.watch.GREEN_COLOR
+import com.imsproject.watch.CONNECTING_SCREEN_CIRCLE_SIZE
+import com.imsproject.watch.CONNECTING_SCREEN_STROKE_WIDTH
+import com.imsproject.watch.READY_BUTTON_SPACING
 import com.imsproject.watch.RED_COLOR
+import com.imsproject.watch.initGlobalValues
+import com.imsproject.watch.textStyle
 
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +53,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        var metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        initGlobalValues(metrics.bounds.width(), metrics.bounds.height())
+
         setContent {
             Main(viewModel)
         }
@@ -137,8 +139,8 @@ class MainActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.Center
                 ) {
                     CircularProgressIndicator(
-                        strokeWidth = 10.dp,
-                        modifier = Modifier.size(75.dp)
+                        strokeWidth = CONNECTING_SCREEN_STROKE_WIDTH,
+                        modifier = Modifier.size(CONNECTING_SCREEN_CIRCLE_SIZE)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     BasicText(
@@ -226,8 +228,7 @@ class MainActivity : ComponentActivity() {
                         text = gameType,
                         style = textStyle,
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
-
+                    Spacer(modifier = Modifier.height(READY_BUTTON_SPACING))
                     // Button
                     Button(
                         onClick = { onReady() },
