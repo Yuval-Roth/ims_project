@@ -73,10 +73,12 @@ def lobby():
         if action == 'start':
 
             Logger.log_info(f"Starting game in lobby {lobby_id}")
+            suc = start_game(lobby_id)
+            action = 'stop' if suc else 'start'
             return render_template('lobby.html',
                                    selected_participants=selected_participants_list,
                                    lobby_id=lobby_id,
-                                   action='stop')
+                                   action=action)
         elif action == 'stop':
             Logger.log_info(f"Stopping game in lobby {lobby_id}")
             return redirect(url_for('main_menu'))
