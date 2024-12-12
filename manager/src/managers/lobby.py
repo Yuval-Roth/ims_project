@@ -2,6 +2,7 @@
 # Creates and manages the lobby for the game
 
 from . import *
+from .logger import Logger
 
 
 class lobbies_list_payload:
@@ -46,6 +47,32 @@ def join_lobby(lobby_id: str, player_id: str):
                 return True
             else:
                 Logger.log_error(f"Error joining lobby: {ser_res}")
+
+    except Exception as e:
+        return False
+
+
+# leave_lobby
+# Required fields:
+#
+# lobbyId
+# playerId
+# Description:
+# This request type is used when a player leaves a lobby. Both lobbyId (to identify the lobby) and playerId (to identify the player leaving the lobby) are required.
+#
+# Return value
+# The success field will be true if the game type was changed successfully, and false otherwise with an error message.
+
+def leave_lobby(lobby_id: str, player_id: str):
+    body = server_request(GAME_REQUEST_TYPE.leave_lobby.name, player_id, lobby_id).to_dict()
+    try:
+        res = requests.post(URL + "/manager", json=body)
+        if res.status_code in [200, 201]:
+            ser_res = server_response(res)
+            if ser_res.get_success():
+                return True
+            else:
+                Logger.log_error(f"Error leaving lobby: {ser_res}")
 
     except Exception as e:
         return False
