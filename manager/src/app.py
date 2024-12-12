@@ -54,7 +54,6 @@ def main_menu():
 
         if not participants:
             flash("No participants found.")
-            return redirect(url_for('login'))
 
         return render_template('main_menu.html', participants=participants)
 
