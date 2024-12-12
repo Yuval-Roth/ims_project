@@ -80,6 +80,12 @@ def lobby():
                                    action=action)
         elif action == 'stop':
             Logger.log_info(f"Stopping game in lobby {lobby_id}")
+            suc = stop_game(lobby_id)
+            if suc:
+                for participant in selected_participants_list:
+                    sec = leave_lobby(lobby_id, participant)
+                    if not sec:
+                        Logger.log_error(f"Failed to remove {participant} from lobby {lobby_id}")
             return redirect(url_for('main_menu'))
 
         return redirect(url_for('lobby',
