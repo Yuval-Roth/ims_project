@@ -20,7 +20,10 @@ data class GameAction(
         @SerializedName("position")
         POSITION("position"),
         @SerializedName("click")
-        CLICK("click");
+        CLICK("click"),
+        @SerializedName("heartbeat")
+        HEARTBEAT("heartbeat");
+
 
         override fun toString(): String{
             return this.value
@@ -40,11 +43,9 @@ data class GameAction(
 
     companion object {
 
-        private val pingString = builder(Type.PING).build().toString()
-        private val pongString = builder(Type.PONG).build().toString()
-
-        private val ping = builder(Type.PING).build()
-        private val pong = builder(Type.PONG).build()
+        val ping = builder(Type.PING).build().toString()
+        val pong = builder(Type.PONG).build().toString()
+        val heartbeat = builder(Type.HEARTBEAT).build().toString()
 
         fun fromString(message: String): GameAction {
             return JsonUtils.deserialize(message, GameAction::class.java)
@@ -81,16 +82,6 @@ data class GameAction(
         fun builder(type: Type): GameActionBuilder {
             return GameActionBuilder(type)
         }
-
-        /**
-         * returns a cached value for efficiency
-         */
-        fun ping() = pingString
-
-        /**
-         * returns a cached value for efficiency
-         */
-        fun pong() = pongString
     }
 
 }

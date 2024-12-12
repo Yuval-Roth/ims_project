@@ -137,6 +137,7 @@ class MainModel (private val scope : CoroutineScope) {
         // ================= Connection Established ============= |
 
         initListeners()
+        initHeartbeatTask()
 
         return playerId
     }
@@ -281,6 +282,16 @@ class MainModel (private val scope : CoroutineScope) {
         ws.onErrorListener = {
             scope.launch(Dispatchers.IO){
                 executeCallback { tcpOnErrorCallback(it ?: Exception("Unknown error"))}
+            }
+        }
+    }
+
+    private fun initHeartbeatTask() {
+        scope.launch(Dispatchers.IO){
+            while(true){
+                delay(1000)
+                ws.send(GameRequest.heartbeat)
+                udp.send(GameAction.heartbeat)
             }
         }
     }

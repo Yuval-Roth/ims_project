@@ -81,6 +81,7 @@ class WaterRipplesViewModel() : ViewModel() {
 
     private suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
+            GameAction.Type.HEARTBEAT -> {}
             GameAction.Type.CLICK -> {
                 val actor = action.actor ?: run{
                     Log.e(TAG, "handleGameAction: missing actor in click action")
@@ -107,6 +108,7 @@ class WaterRipplesViewModel() : ViewModel() {
 
     private fun handleGameRequest(request: GameRequest) {
         when (request.type) {
+            GameRequest.Type.HEARTBEAT -> {}
             GameRequest.Type.END_GAME -> {
                 onFinish()
                 _playing.value = false

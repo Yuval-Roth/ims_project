@@ -74,6 +74,7 @@ class MainViewModel() : ViewModel() {
 
     private fun handleGameRequest(request: GameRequest){
         when (request.type){
+            Type.HEARTBEAT -> {}
             Type.JOIN_LOBBY -> {
                 val lobbyId = request.lobbyId ?: run {
                     Log.e(TAG, "handleGameRequest: JOIN_LOBBY request missing lobbyId")

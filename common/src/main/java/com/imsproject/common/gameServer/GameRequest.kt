@@ -31,7 +31,8 @@ data class GameRequest(
         @SerializedName("pause_game") PAUSE_GAME("pause_game"),
         @SerializedName("resume_game") RESUME_GAME("resume_game"),
         @SerializedName("toggle_ready") TOGGLE_READY("toggle_ready"),
-        @SerializedName("error") ERROR("error");
+        @SerializedName("error") ERROR("error"),
+        @SerializedName("heartbeat") HEARTBEAT("heartbeat");
     }
 
     fun toJson() = JsonUtils.serialize(this)
@@ -39,8 +40,9 @@ data class GameRequest(
     companion object {
         fun builder(type: Type) = GameRequestBuilder(type)
 
-        fun pong() = builder(Type.PONG).build().toJson()
-        fun ping() = builder(Type.PING).build().toJson()
+        val ping = builder(Type.PING).build().toJson()
+        val pong = builder(Type.PONG).build().toJson()
+        val heartbeat = builder(Type.HEARTBEAT).build().toJson()
 
         fun fromJson(json: String) = JsonUtils.deserialize<GameRequest>(json, GameRequest::class.java)
     }
