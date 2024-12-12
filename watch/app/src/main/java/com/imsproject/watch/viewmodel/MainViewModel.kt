@@ -99,7 +99,10 @@ class MainViewModel() : ViewModel() {
             }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
-                showError("Unexpected request type received")
+                val errorMsg = "Unexpected request type received\n" +
+                        "request type: ${request.type}\n"+
+                        "request content:\n$request"
+                showError(errorMsg)
             }
         }
     }
