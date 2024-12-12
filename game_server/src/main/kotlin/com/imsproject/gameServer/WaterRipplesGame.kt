@@ -10,6 +10,7 @@ class WaterRipplesGame (player1 : ClientHandler, player2 : ClientHandler) : Game
 
         val toSend = GameAction.builder(GameAction.Type.CLICK)
             .actor(actor.id)
+            .inSync(false)
             // add more things if needed
             .build()
         sendGameAction(toSend)

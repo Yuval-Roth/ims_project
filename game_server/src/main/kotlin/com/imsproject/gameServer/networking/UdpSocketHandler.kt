@@ -59,7 +59,7 @@ class UdpSocketHandler(private val gameController: GameController) {
                     // validate enter code is provided
                     val enterCode = action.data
                     if (enterCode == null) {
-                        log.debug("Enter code not provided for client: ${packet.address.hostAddress}:${packet.port}")
+                        log.debug("Enter code not provided for client: ${packetToId(packet)}")
                         continue
                     }
 
@@ -77,22 +77,28 @@ class UdpSocketHandler(private val gameController: GameController) {
                         continue
                     }
 
+                    // replace the mapping of to the client handler
+                    // from the clientId to the address:port of the client
+                    clients.remove(clientId)
+                    clients[packetToId(packet)] = clientHandler
+
                     // set the client's remote address and port
                     clientHandler.udpRemoteAddress = packet.address.hostAddress
                     clientHandler.udpRemotePort = packet.port
 
                     // send confirmation to client
                     send(
-                        GameAction.builder(GameAction.Type.ENTER).build().toString()
-                        ,packet.address.hostAddress, packet.port)
+                        GameAction.builder(GameAction.Type.ENTER).build().toString(),
+                        packet.address.hostAddress, packet.port
+                    )
 
                     // remove the enter code
                     enterCodes.remove(enterCode)
                 }
                 else ->{
-                    val client = packetToClient(packet)
+                    val client = clients[packetToId(packet)]
                     if (client == null) {
-                        log.debug("Client not found for packet from ${packet.address.hostAddress}:${packet.port}")
+                        log.debug("Client not found for packet from ${packetToId(packet)}")
                         continue
                     }
                     gameController.handleGameAction(client, action)
@@ -101,8 +107,8 @@ class UdpSocketHandler(private val gameController: GameController) {
         }
     }
 
-    private fun packetToClient(packet: DatagramPacket) : ClientHandler? {
-        return clients["${packet.address.hostAddress}:${packet.port}"]
+    private fun packetToId(packet: DatagramPacket) : String {
+        return "${packet.address.hostAddress}:${packet.port}"
     }
 
     @EventListener

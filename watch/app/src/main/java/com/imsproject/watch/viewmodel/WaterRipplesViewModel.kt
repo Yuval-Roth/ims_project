@@ -70,7 +70,9 @@ class WaterRipplesViewModel() : ViewModel() {
     }
 
     fun click() {
-        model.sendClick()
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sendClick()
+        }
     }
 
     fun clearError() {
