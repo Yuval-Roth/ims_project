@@ -1,11 +1,15 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import requests
-from .managers.participants import get_participants
+from .managers.participants import *
 from .managers.lobby import *
+from .managers.game import *
+from .managers.logger import Logger
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+Logger()
 
 
 @app.route('/')
@@ -46,15 +50,12 @@ def main_menu():
 
     else:
         participants = get_participants()
+        participants = [{"id": participant, "name": f"Player {participant}"} for participant in participants]
+
         if not participants:
-            # TODO: Remove after implementing the participants manager
-            participants = [
-                {"id": 1, "name": "Player 1"},
-                {"id": 2, "name": "Player 2"},
-                {"id": 3, "name": "Player 3"},
-                {"id": 4, "name": "Player 4"},
-                {"id": 5, "name": "Player 5"},
-            ]
+            flash("No participants found.")
+            return redirect(url_for('login'))
+
         return render_template('main_menu.html', participants=participants)
 
 
@@ -70,13 +71,14 @@ def lobby():
         selected_participants_list = selected_participants.split(",") if selected_participants else []
 
         if action == 'start':
-            print(f"Starting game in lobby {lobby_id}")
+
+            Logger.log_info(f"Starting game in lobby {lobby_id}")
             return render_template('lobby.html',
                                    selected_participants=selected_participants_list,
                                    lobby_id=lobby_id,
                                    action='stop')
         elif action == 'stop':
-            print(f"Stopping game in lobby {lobby_id}")
+            Logger.log_info(f"Stopping game in lobby {lobby_id}")
             return redirect(url_for('main_menu'))
 
         return redirect(url_for('lobby',
