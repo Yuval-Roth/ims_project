@@ -3,6 +3,7 @@ package com.imsproject.watch.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
@@ -56,6 +57,10 @@ class MainViewModel() : ViewModel() {
             Log.e(TAG, "tcp error", it)
             showError(it.message ?: "unknown tcp error")
         }
+        model.onUdpMessage({ handleGameAction(it) }) {
+            Log.e(TAG, "udp exception", it)
+            showError(it.message ?: "unknown udp exception")
+        }
     }
 
     fun connect() {
@@ -105,6 +110,19 @@ class MainViewModel() : ViewModel() {
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${request.type}\n"+
                         "request content:\n$request"
+                showError(errorMsg)
+            }
+        }
+    }
+
+    private fun handleGameAction(action: GameAction){
+        when(action.type){
+            GameAction.Type.HEARTBEAT -> {}
+            else -> {
+                Log.e(TAG, "handleGameAction: Unexpected action type: ${action.type}")
+                val errorMsg = "Unexpected request type received\n" +
+                        "request type: ${action.type}\n"+
+                        "request content:\n$action"
                 showError(errorMsg)
             }
         }

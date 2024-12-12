@@ -50,7 +50,7 @@ class UdpSocketHandler(private val gameController: GameController) {
             }
 
             when(action.type){
-                GameAction.Type.PING -> send(GameAction.pong(), packet.address.hostAddress, packet.port)
+                GameAction.Type.PING -> send(GameAction.pong, packet.address.hostAddress, packet.port)
                 GameAction.Type.PONG -> {}
                 GameAction.Type.HEARTBEAT -> send(GameAction.heartbeat, packet.address.hostAddress, packet.port)
 
