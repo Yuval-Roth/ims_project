@@ -79,9 +79,14 @@ class GameController(private val clientController: ClientController) {
         log.debug("handleToggleReady() with clientId: {}",clientHandler.id)
 
         // ========= parameter validation ========= |
-        val lobby = lobbies[clientHandler.id] ?: run {
-            log.debug("handleToggleReady: Lobby not found for client: {}",clientHandler.id)
+        val lobbyId = clientToLobby[clientHandler.id] ?: run {
+            log.debug("handleToggleReady: Player not in lobby")
             throw IllegalArgumentException("Player not in lobby")
+        }
+        val lobby = lobbies[lobbyId] ?: run {
+            // should not happen
+            log.error("handleToggleReady: lobbyId found for client by Lobby not found. client: {}",clientHandler.id)
+            throw IllegalArgumentException("Lobby not found")
         }
         // ======================================== |
 
