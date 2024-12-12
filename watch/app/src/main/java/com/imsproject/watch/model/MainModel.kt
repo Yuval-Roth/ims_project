@@ -6,14 +6,15 @@ import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.common.networking.WebSocketClient
+import com.imsproject.watch.model.MainModel.CallbackNotSetException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.delay
 
 
 // ========== Constants ===========|
@@ -25,6 +26,8 @@ private const val SERVER_UDP_PORT = 8641
 // ================================|
 
 class MainModel (private val scope : CoroutineScope) {
+
+    class CallbackNotSetException : Exception("Listener not set")
 
     init{
         instance = this
@@ -38,9 +41,12 @@ class MainModel (private val scope : CoroutineScope) {
     var connected = false
         private set
 
-    private var udpMessageListener : Job? = null
-    private var tcpMessageListener : Job? = null
-    private var tcpErrorListener : Job? = null
+    private val defaultCallback  = { throw CallbackNotSetException() }
+    private var tcpOnMessageCallback :  suspend (GameRequest) -> Unit = { defaultCallback() }
+    private var tcpOnExceptionCallback : suspend (Exception) -> Unit = { defaultCallback() }
+    private var udpOnMessageCallback : suspend (GameAction) -> Unit = { defaultCallback() }
+    private var udpOnExceptionCallback : suspend (Exception) -> Unit = { defaultCallback() }
+    private var tcpOnErrorCallback : suspend (Exception) -> Unit = { defaultCallback() }
 
     /**
      * Connects to the game server using WebSocket and UDP protocols.
@@ -130,6 +136,8 @@ class MainModel (private val scope : CoroutineScope) {
         // \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/
         // ================= Connection Established ============= |
 
+        initListeners()
+
         return playerId
     }
 
@@ -148,36 +156,16 @@ class MainModel (private val scope : CoroutineScope) {
      * @param callback A function to be called with the received GameAction object. **If null, the listener is cancelled.**
      * @param onException A function to be called when an exception occurs. Defaults to an empty function.
      */
-    fun onUdpMessage(callback: (suspend (GameAction) -> Unit)?, onException: (Exception) -> Unit = {}) {
-
+    fun onUdpMessage(callback: (suspend (GameAction) -> Unit)?,  onException: suspend (Exception) -> Unit = {}) {
         if(callback == null){
-            udpMessageListener?.cancel()
-            Log.d(TAG, "onUdpMessage: Listener canceled")
-            return
+            udpOnMessageCallback = {defaultCallback()}
+            udpOnExceptionCallback = {}
+            Log.d(TAG, "onUdpMessage: callback removed")
+        } else {
+            udpOnMessageCallback = callback
+            udpOnExceptionCallback = onException
+            Log.d(TAG, "onUdpMessage: callback set")
         }
-
-        val oldListener = udpMessageListener
-        if(oldListener != null){
-            oldListener.cancel()
-            Log.d(TAG, "onUdpMessage: Canceling previous listener, creating new one")
-        }
-        val newListener = scope.launch(Dispatchers.IO){
-            while(true){
-                try{
-                    val message = udp.receive()
-                    val action = GameAction.fromString(message)
-                    callback(action)
-                } catch(e: IOException){
-                    Log.e(TAG, "Failed to receive UDP message", e)
-                    onException(e)
-                } catch (e: JsonParseException) {
-                    Log.e(TAG, "Failed to parse UDP message", e)
-                    onException(e)
-                }
-
-            }
-        }
-        udpMessageListener = newListener
     }
 
     /**
@@ -195,32 +183,17 @@ class MainModel (private val scope : CoroutineScope) {
      * @param callback A function to be called with the received GameRequest object. **If null, the listener is cancelled.**
      * @param onException A function to be called when an exception occurs. Defaults to an empty function.
      */
-    fun onTcpMessage(callback:  (suspend (GameRequest) -> Unit)?, onException: (Exception) -> Unit = {}) {
+    fun onTcpMessage(callback:  (suspend (GameRequest) -> Unit)?, onException: suspend (Exception) -> Unit = {}) {
 
         if(callback == null){
-            tcpMessageListener?.cancel()
-            Log.d(TAG, "onTcpMessage: Listener canceled")
-            return
+            tcpOnMessageCallback = {defaultCallback()}
+            tcpOnExceptionCallback = {}
+            Log.d(TAG, "onTcpMessage: callback removed")
+        } else {
+            tcpOnMessageCallback = callback
+            tcpOnExceptionCallback = onException
+            Log.d(TAG, "onTcpMessage: callback set")
         }
-
-        val oldListener = tcpMessageListener
-        if(oldListener != null){
-            oldListener.cancel()
-            Log.d(TAG, "onTcpMessage: Canceling previous listener, creating new one")
-        }
-        val newListener = scope.launch(Dispatchers.IO){
-            while(true){
-                try{
-                    val message = ws.nextMessageBlocking()
-                    val request = GameRequest.fromJson(message)
-                    callback(request)
-                } catch(e: JsonParseException){
-                    Log.e(TAG, "Failed to parse TCP message", e)
-                    onException(e)
-                }
-            }
-        }
-        tcpMessageListener = newListener
     }
 
     /**
@@ -234,16 +207,11 @@ class MainModel (private val scope : CoroutineScope) {
     fun onTcpError(callback: (suspend (Exception) -> Unit)?) {
 
         if(callback == null){
-            ws.onErrorListener = {}
-            tcpErrorListener?.cancel()
+            tcpOnErrorCallback = {defaultCallback()}
             Log.d(TAG, "onTcpError: Listener canceled")
-            return
-        }
-
-        ws.onErrorListener = {
-            tcpErrorListener = scope.launch(Dispatchers.IO){
-                callback(it ?: Exception("Unknown error"))
-            }
+        } else {
+            tcpOnErrorCallback = callback
+            Log.d(TAG, "onTcpError: Listener set")
         }
     }
 
@@ -265,6 +233,56 @@ class MainModel (private val scope : CoroutineScope) {
             .data("$x,$y")
             .build().toString()
         udp.send(request)
+    }
+
+    private suspend fun executeCallback(action: suspend () -> Unit){
+        while(true){
+            try{
+                action()
+                break
+            } catch(e: CallbackNotSetException){
+                delay(100)
+            }
+        }
+    }
+
+    private fun initListeners() {
+
+        scope.launch(Dispatchers.IO) {
+            while (true) {
+                var action: GameAction? = null
+                try {
+                    val message = udp.receive()
+                    action = GameAction.fromString(message)
+                    executeCallback { udpOnMessageCallback(action) }
+                } catch (e: IOException) {
+                    Log.e(TAG, "Failed to receive UDP message", e)
+                    executeCallback { udpOnExceptionCallback(e) }
+                } catch (e: JsonParseException) {
+                    Log.e(TAG, "Failed to parse UDP message", e)
+                    executeCallback { udpOnExceptionCallback(e) }
+                }
+            }
+        }
+
+        scope.launch(Dispatchers.IO){
+            while(true){
+                try{
+                    val message = ws.nextMessageBlocking()
+                    val request = GameRequest.fromJson(message)
+                    executeCallback { tcpOnMessageCallback(request) }
+                } catch(e: JsonParseException){
+                    Log.e(TAG, "Failed to parse TCP message", e)
+                    executeCallback { tcpOnExceptionCallback(e) }
+                }
+            }
+        }
+
+        ws.onErrorListener = {
+            scope.launch(Dispatchers.IO){
+                executeCallback { tcpOnErrorCallback(it ?: Exception("Unknown error"))}
+            }
+        }
     }
 
     companion object {

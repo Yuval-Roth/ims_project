@@ -276,6 +276,7 @@ class GameController(private val clientController: ClientController) {
 
         // Check if the lobby is ready
         if(! lobby.isReady()) {
+            log.debug("handleStartGame: Lobby is not ready")
             return Response.getError("Lobby is not ready")
         }
 
@@ -296,19 +297,22 @@ class GameController(private val clientController: ClientController) {
         // ======================================== |
 
         val game = when(lobby.gameType){
-                GameType.WATER_RIPPLES -> WaterRipplesGame(player1Handler, player2Handler)
-                else -> return Response.getError("Invalid game type")
+                GameType.WATER_RIPPLES -> {
+                    log.debug("handleStartGame: Selected WaterRipplesGame")
+                    WaterRipplesGame(player1Handler, player2Handler)
+                }
+                else -> {
+                    log.debug("handleStartGame: Invalid game type")
+                    return Response.getError("Invalid game type")
+                }
         }
         lobby.state = LobbyState.PLAYING
         games[lobby.id] = game
         clientIdToGame[player1Id] = game
         clientIdToGame[player2Id] = game
-        game.startGame()
 
-        // Notify the players
-        val msg = GameRequest.builder(Type.START_GAME).build().toJson()
-        player1Handler.sendTcp(msg)
-        player2Handler.sendTcp(msg)
+        // game.startGame() notifies the clients
+        game.startGame()
 
         log.debug("handleStartGame() successful")
         return Response.getOk()

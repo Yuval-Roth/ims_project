@@ -96,7 +96,11 @@ class WaterRipplesViewModel() : ViewModel() {
                 }
             }
             else -> {
-                Log.e(TAG, "handleGameAction: invalid action type: ${action.type}")
+                Log.e(TAG, "handleGameRequest: Unexpected action type: ${action.type}")
+                val errorMsg = "Unexpected request type received\n" +
+                        "request type: ${action.type}\n"+
+                        "request content:\n$action"
+                showError(errorMsg)
             }
         }
     }
@@ -104,10 +108,15 @@ class WaterRipplesViewModel() : ViewModel() {
     private fun handleGameRequest(request: GameRequest) {
         when (request.type) {
             GameRequest.Type.END_GAME -> {
+                onFinish()
                 _playing.value = false
             }
             else -> {
-                Log.e(TAG, "handleGameRequest: invalid request type: ${request.type}")
+                Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
+                val errorMsg = "Unexpected request type received\n" +
+                        "request type: ${request.type}\n"+
+                        "request content:\n$request"
+                showError(errorMsg)
             }
         }
     }

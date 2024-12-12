@@ -137,18 +137,18 @@ class WebSocketClient (serverUri: URI) : org.java_websocket.client.WebSocketClie
     }
 
     override fun onMessage(message: String?) {
-        executor.submit { onMessageListener(message) }
+        onMessageListener(message)
     }
 
     override fun onOpen(handshakedata: ServerHandshake?) {
-        executor.submit { onOpenListener(handshakedata) }
+        onOpenListener(handshakedata)
     }
 
     override fun onClose(code: Int, reason: String?, remote: Boolean) {
-        executor.submit { onCloseListener(code, reason, remote) }
+        onCloseListener(code, reason, remote)
     }
 
     override fun onError(ex: Exception?) {
-        executor.submit { onErrorListener(ex) }
+        onErrorListener(ex)
     }
 }

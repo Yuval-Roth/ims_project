@@ -95,6 +95,8 @@ class MainViewModel() : ViewModel() {
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
             }
             Type.START_GAME -> {
+                model.onTcpMessage(null)
+                model.onTcpError(null)
                 _state.value = State.IN_GAME
             }
             else -> {
@@ -131,6 +133,7 @@ class MainViewModel() : ViewModel() {
 
     fun afterGame(){
         setupListeners()
+        _ready.value = false
         _state.value = State.CONNECTED_IN_LOBBY
     }
 }
