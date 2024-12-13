@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 private const val TAG = "MainViewModel"
 
@@ -51,15 +52,21 @@ class MainViewModel() : ViewModel() {
     private fun setupListeners() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
-            showError(it.message ?: "unknown tcp exception")
+            if(it is WebsocketNotConnectedException){
+                _playerId.value = ""
+                _lobbyId.value = ""
+                showError("Connection lost")
+            } else {
+                showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
+            }
         }
         model.onTcpError {
             Log.e(TAG, "tcp error", it)
-            showError(it.message ?: "unknown tcp error")
+            showError(it.message ?: it.cause?.message ?: "unknown tcp error")
         }
         model.onUdpMessage({ handleGameAction(it) }) {
             Log.e(TAG, "udp exception", it)
-            showError(it.message ?: "unknown udp exception")
+            showError(it.message ?: it.cause?.message ?: "unknown udp exception")
         }
     }
 

@@ -44,7 +44,7 @@ import kotlinx.coroutines.launch
 
 class WaterRipplesActivity : ComponentActivity() {
 
-    val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
+    private val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

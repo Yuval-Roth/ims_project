@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.Semaphore
 import kotlinx.coroutines.withContext
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 class WaterRipplesViewModel() : ViewModel() {
 
@@ -49,18 +50,7 @@ class WaterRipplesViewModel() : ViewModel() {
     val error : StateFlow<String?> = _error
 
     fun onCreate(){
-        model.onTcpMessage({handleGameRequest(it)}){
-            Log.e(TAG, "tcp exception", it)
-            showError(it.message?: "unknown tcp exception")
-        }
-        model.onTcpError {
-            Log.e(TAG, "tcp error", it)
-            showError(it.message?: "unknown tcp error")
-        }
-        model.onUdpMessage( { handleGameAction(it) }){
-            Log.e(TAG, "udp error", it)
-            showError(it.message?: "unknown udp error")
-        }
+        setupListeners()
     }
 
     fun onFinish(){
@@ -120,6 +110,25 @@ class WaterRipplesViewModel() : ViewModel() {
                         "request content:\n$request"
                 showError(errorMsg)
             }
+        }
+    }
+
+    private fun setupListeners() {
+        model.onTcpMessage({ handleGameRequest(it) }) {
+            Log.e(TAG, "tcp exception", it)
+            if(it is WebsocketNotConnectedException){
+                showError("Connection lost")
+            } else {
+                showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
+            }
+        }
+        model.onTcpError {
+            Log.e(TAG, "tcp error", it)
+            showError(it.message ?: it.cause?.message ?: "unknown tcp error")
+        }
+        model.onUdpMessage({ handleGameAction(it) }) {
+            Log.e(TAG, "udp exception", it)
+            showError(it.message ?: it.cause?.message ?: "unknown udp exception")
         }
     }
 

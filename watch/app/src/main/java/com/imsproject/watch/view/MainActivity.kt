@@ -49,12 +49,12 @@ import com.imsproject.watch.textStyle
 
 class MainActivity : ComponentActivity() {
 
-    val viewModel : MainViewModel by viewModels<MainViewModel>()
+    private val viewModel : MainViewModel by viewModels<MainViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        var metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initGlobalValues(metrics.bounds.width(), metrics.bounds.height())
 
         setContent {
@@ -99,7 +99,11 @@ class MainActivity : ComponentActivity() {
 
             State.IN_GAME -> {
                 BlankScreen()
-                val intent = Intent(this, WaterRipplesActivity::class.java)
+                //TODO: register for activity result and call viewModel.afterGame()
+                val intent = Intent(this, WaterRipplesActivity::class.java,)
+//                registerForActivityResult() {
+//                    viewModel.afterGame()
+//                }
                 startActivity(intent)
             }
 

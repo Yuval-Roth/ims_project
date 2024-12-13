@@ -16,6 +16,7 @@ import java.net.SocketTimeoutException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.delay
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 
 // ========== Constants ===========|
@@ -265,8 +266,13 @@ class MainModel (private val scope : CoroutineScope) {
         heartBeatListener = scope.launch(Dispatchers.IO){
             while(true){
                 delay(1000)
-                sendTcp(GameRequest.heartbeat)
-                sendUdp(GameAction.heartbeat)
+                try{
+                    ws.send(GameRequest.heartbeat)
+                    udp.send(GameAction.heartbeat)
+                } catch(e: WebsocketNotConnectedException){
+                    executeCallback { tcpOnExceptionCallback(e) }
+                    return@launch
+                }
             }
         }
     }
