@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,11 +38,11 @@ import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import androidx.wear.compose.material.ButtonDefaults
+import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.GREEN_COLOR
-import com.imsproject.watch.CONNECTING_SCREEN_CIRCLE_SIZE
-import com.imsproject.watch.CONNECTING_SCREEN_STROKE_WIDTH
-import com.imsproject.watch.READY_BUTTON_SPACING
 import com.imsproject.watch.RED_COLOR
+import com.imsproject.watch.SCREEN_HEIGHT
+import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.initGlobalValues
 import com.imsproject.watch.textStyle
 
@@ -139,8 +140,8 @@ class MainActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.Center
                 ) {
                     CircularProgressIndicator(
-                        strokeWidth = CONNECTING_SCREEN_STROKE_WIDTH,
-                        modifier = Modifier.size(CONNECTING_SCREEN_CIRCLE_SIZE)
+                        strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
+                        modifier = Modifier.fillMaxSize(0.4f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     BasicText(
@@ -163,7 +164,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(30.dp)
+                        .padding(COLUMN_PADDING)
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -209,7 +210,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(30.dp)
+                        .padding(COLUMN_PADDING-10.dp)
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -218,21 +219,30 @@ class MainActivity : ComponentActivity() {
                         text = "Your ID: $userId",
                         style = textStyle,
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(9.dp))
                     BasicText(
                         text = "Lobby ID: $lobbyId",
                         style = textStyle,
                     )
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     BasicText(
                         text = gameType,
                         style = textStyle,
                     )
-                    Spacer(modifier = Modifier.height(READY_BUTTON_SPACING))
+                    Spacer(modifier = Modifier.height(9.dp))
+                    BasicText(
+                        text = "Status: ${if (ready) "Ready" else "Not Ready"}",
+                        style = textStyle,
+                    )
+                    Spacer(modifier = Modifier.fillMaxHeight(0.2f))
                     // Button
                     Button(
                         onClick = { onReady() },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .fillMaxHeight(0.65f)
+
+                        ,
                         border = ButtonDefaults.buttonBorder(
                             BorderStroke(2.dp,
                                 if (! ready) GREEN_COLOR.copy(alpha = alpha.value)
@@ -244,12 +254,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    @Preview(device = "id:wearos_large_round", apiLevel = 34)
-    @Composable
-    fun PreviewErrorScreen() {
-        ErrorScreen("Failed to connect to server"){}
     }
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)

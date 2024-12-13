@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,14 +19,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.MaterialTheme
-import com.imsproject.watch.DISMISS_BUTTON_SPACING
+import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
-import com.imsproject.watch.ERROR_TEXT_PADDING
+import com.imsproject.watch.SCREEN_HEIGHT
+import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.TEXT_SIZE
+import com.imsproject.watch.initGlobalValues
 import com.imsproject.watch.textStyle
 
 @Composable
@@ -39,7 +43,7 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
         ) {
             Column(
                 modifier = Modifier
-                    .padding(30.dp)
+                    .padding(COLUMN_PADDING)
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState(0)),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -50,7 +54,7 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.CenterHorizontally)
-                        .padding(top = ERROR_TEXT_PADDING)
+                        .padding(top = (SCREEN_HEIGHT * 0.04f).dp)
                 )
                 Spacer(modifier = Modifier.height(5.dp))
                 BasicText(
@@ -60,11 +64,12 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                         .fillMaxWidth()
                         .align(Alignment.CenterHorizontally)
                 )
-                Spacer(modifier = Modifier.height(DISMISS_BUTTON_SPACING))
+                Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
                 Button(
                     onClick = { onDismiss() },
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxWidth(0.8f)
+                        .fillMaxHeight(0.4f)
                 ) {
                     BasicText(
                         text = "Dismiss",
@@ -74,4 +79,19 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+
+@Preview(device = "id:wearos_large_round", apiLevel = 33)
+@Composable
+fun PreviewErrorScreenBig() {
+    initGlobalValues(454,454)
+    ErrorScreen("Failed to connect to server"){}
+}
+
+@Preview(device = "id:wearos_small_round", apiLevel = 33)
+@Composable
+fun PreviewErrorScreenSmall() {
+    initGlobalValues(384,384)
+    ErrorScreen("Failed to connect to server"){}
 }
