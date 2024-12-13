@@ -146,8 +146,10 @@ class MainViewModel() : ViewModel() {
     }
 
     fun toggleReady() {
-        model.toggleReady()
-        _ready.value = !_ready.value
+        viewModelScope.launch(Dispatchers.IO) {
+            model.toggleReady()
+            _ready.value = !_ready.value
+        }
     }
 
     fun afterGame(){

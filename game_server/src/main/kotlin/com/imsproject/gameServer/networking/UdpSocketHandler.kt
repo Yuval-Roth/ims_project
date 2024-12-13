@@ -45,7 +45,7 @@ class UdpSocketHandler(private val gameController: GameController) {
             try{
                 action = GameAction.fromString(message)
             } catch (e: Exception){
-                log.debug("Error parsing message: $message")
+                log.debug("Error parsing message: $message\n${e.stackTraceToString()}")
                 continue
             }
 

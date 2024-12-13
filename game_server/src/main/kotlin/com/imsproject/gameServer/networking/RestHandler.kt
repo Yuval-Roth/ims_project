@@ -3,10 +3,7 @@ package com.imsproject.gameServer.networking
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.utils.Response
 import com.imsproject.gameServer.GameController
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.io.File
 
 @RestController
@@ -38,10 +35,16 @@ class RestHandler(private val gameController: GameController) {
     }
 
     @GetMapping("/log")
-    fun log(): String {
+    fun log(@RequestParam(value = "rows", required = false, defaultValue = "-1") rows : Int): String {
         try{
             val logFile = File("/app/data/logs/application.log")
-            return logFile.readText().replace("\n", "<br/>")
+            val file = logFile.readText()
+            return if(rows > 0) {
+                val split = file.split("\n")
+                split.takeLast(rows).joinToString("<br/>")
+            } else {
+                file.replace("\n", "<br/>")
+            }
         } catch(e: Exception){
             return "404"
         }

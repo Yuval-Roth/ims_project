@@ -9,6 +9,7 @@ import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.watch.model.MainModel.CallbackNotSetException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -48,6 +49,11 @@ class MainModel (private val scope : CoroutineScope) {
     private var udpOnExceptionCallback : suspend (Exception) -> Unit = { defaultCallback() }
     private var tcpOnErrorCallback : suspend (Exception) -> Unit = { defaultCallback() }
 
+    private var tcpMessageListener : Job? = null
+    private var udpMessageListener : Job? = null
+    private var heartBeatListener : Job? = null
+
+
     /**
      * Connects to the game server using WebSocket and UDP protocols.
      * @return the player ID if the connection is successful, or null if any step fails.
@@ -79,7 +85,7 @@ class MainModel (private val scope : CoroutineScope) {
         // validate response type
         if(enterResponse.type != GameRequest.Type.ENTER){
             Log.e(TAG, "connectToServer: Invalid response type")
-            null // invalid response
+            return null // invalid response
         }
 
         // validate player id
@@ -142,21 +148,6 @@ class MainModel (private val scope : CoroutineScope) {
         return playerId
     }
 
-    /**
-     * Sets up a listener for incoming UDP messages.
-     *
-     * This function cancels any existing UDP message listener and creates a new one.
-     *
-     * When a message is received, it is parsed
-     * into a [GameAction] object and passed to the provided callback function.
-     * If an exception occurs during message reception or parsing, the provided
-     * exception callback function is called.
-     *
-     * Either [IOException] or [JsonParseException] will be passed to the exception callback.
-     *
-     * @param callback A function to be called with the received GameAction object. **If null, the listener is cancelled.**
-     * @param onException A function to be called when an exception occurs. Defaults to an empty function.
-     */
     fun onUdpMessage(callback: (suspend (GameAction) -> Unit)?,  onException: suspend (Exception) -> Unit = {}) {
         if(callback == null){
             udpOnMessageCallback = {defaultCallback()}
@@ -169,21 +160,6 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
-    /**
-     * Sets up a listener for incoming TCP messages.
-     *
-     * This function cancels any existing TCP message listener and creates a new one.
-     *
-     * When a message is received, it is parsed
-     * into a [GameRequest] object and passed to the provided callback function.
-     * If an exception occurs during message reception or parsing, the provided
-     * exception callback function is called.
-     *
-     * Only [JsonParseException] will be passed to the exception callback.
-     *
-     * @param callback A function to be called with the received GameRequest object. **If null, the listener is cancelled.**
-     * @param onException A function to be called when an exception occurs. Defaults to an empty function.
-     */
     fun onTcpMessage(callback:  (suspend (GameRequest) -> Unit)?, onException: suspend (Exception) -> Unit = {}) {
 
         if(callback == null){
@@ -197,14 +173,6 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
-    /**
-     * Sets up an error listener for the WebSocket client.
-     *
-     * This function assigns a listener to the WebSocket client's error events.
-     * When an error occurs, the provided callback function is called with the exception.
-     *
-     * @param callback A function to be called with the exception that occurred. **If null, the listener is cancelled.**
-     */
     fun onTcpError(callback: (suspend (Exception) -> Unit)?) {
 
         if(callback == null){
@@ -216,24 +184,24 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
-    fun toggleReady() {
+    suspend fun toggleReady() {
         val request = GameRequest.builder(GameRequest.Type.TOGGLE_READY).build().toJson()
-        ws.send(request)
+        sendTcp(request)
     }
 
-    fun sendClick() {
+    suspend fun sendClick() {
         val request = GameAction.builder(GameAction.Type.CLICK)
             // add more things here if needed
             .build().toString()
-        udp.send(request)
+        sendUdp(request)
     }
 
-    fun sendPosition(x: Float, y: Float) {
+    suspend fun sendPosition(x: Float, y: Float) {
         val request = GameAction.builder(GameAction.Type.POSITION)
             // add more things here if needed
             .data("$x,$y")
             .build().toString()
-        udp.send(request)
+        sendUdp(request)
     }
 
     private suspend fun executeCallback(action: suspend () -> Unit){
@@ -249,12 +217,17 @@ class MainModel (private val scope : CoroutineScope) {
 
     private fun initListeners() {
 
-        scope.launch(Dispatchers.IO) {
+        if(connected){
+            udpMessageListener?.cancel()
+            tcpMessageListener?.cancel()
+            heartBeatListener?.cancel()
+        }
+
+        udpMessageListener = scope.launch(Dispatchers.IO) {
             while (true) {
-                var action: GameAction? = null
                 try {
                     val message = udp.receive()
-                    action = GameAction.fromString(message)
+                    val action = GameAction.fromString(message)
                     executeCallback { udpOnMessageCallback(action) }
                 } catch (e: IOException) {
                     Log.e(TAG, "Failed to receive UDP message", e)
@@ -266,7 +239,7 @@ class MainModel (private val scope : CoroutineScope) {
             }
         }
 
-        scope.launch(Dispatchers.IO){
+        tcpMessageListener = scope.launch(Dispatchers.IO){
             while(true){
                 try{
                     val message = ws.nextMessageBlocking()
@@ -275,6 +248,8 @@ class MainModel (private val scope : CoroutineScope) {
                 } catch(e: JsonParseException){
                     Log.e(TAG, "Failed to parse TCP message", e)
                     executeCallback { tcpOnExceptionCallback(e) }
+                } catch(e: InterruptedException){
+                    Log.d(TAG, "WebSocket listener interrupted")
                 }
             }
         }
@@ -287,12 +262,30 @@ class MainModel (private val scope : CoroutineScope) {
     }
 
     private fun initHeartbeatTask() {
-        scope.launch(Dispatchers.IO){
+        heartBeatListener = scope.launch(Dispatchers.IO){
             while(true){
                 delay(1000)
-                ws.send(GameRequest.heartbeat)
-                udp.send(GameAction.heartbeat)
+                sendTcp(GameRequest.heartbeat)
+                sendUdp(GameAction.heartbeat)
             }
+        }
+    }
+
+    private suspend fun sendTcp(message: String){
+        try{
+            ws.send(message)
+        } catch (e : Exception){
+            Log.e(TAG, "Failed to send TCP message", e)
+            executeCallback { tcpOnExceptionCallback(e) }
+        }
+    }
+
+    private suspend fun sendUdp(message: String){
+        try{
+            udp.send(message)
+        } catch (e : Exception){
+            Log.e(TAG, "Failed to send UDP message", e)
+            executeCallback { udpOnExceptionCallback(e) }
         }
     }
 
