@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import java.io.File
 
 @RestController
 class RestHandler(private val gameController: GameController) {
@@ -34,5 +35,15 @@ class RestHandler(private val gameController: GameController) {
     @PostMapping("/data")
     fun data(@RequestBody body : String): String {
         return "Not implemented"
+    }
+
+    @GetMapping("/log")
+    fun log(): String {
+        try{
+            val logFile = File("/app/data/logs/application.log")
+            return logFile.readText().replace("\n", "<br/>")
+        } catch(e: Exception){
+            return "404"
+        }
     }
 }
