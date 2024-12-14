@@ -53,28 +53,28 @@ class WaterRipplesActivity : ComponentActivity() {
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.Center
             ) {
-                WaterRipples(viewModel)
+                // if the game is not playing, finish the activity
+                if(! viewModel.playing.collectAsState().value){
+                    val result = viewModel.resultCode.collectAsState().value
+                    val intent = IntentSanitizer.Builder()
+                        .allowComponent(componentName)
+                        .build().sanitize(intent) {
+                            Log.d(TAG, "WaterRipples: $it")
+                        }
+                    if(result != Result.Code.OK){
+                        intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
+                    }
+                    setResult(result.ordinal,intent)
+                    finish()
+                } else {
+                    WaterRipples(viewModel)
+                }
             }
         }
     }
 
     @Composable
     fun WaterRipples(viewModel: WaterRipplesViewModel) {
-
-        // if the game is not playing, finish the activity
-        if(! viewModel.playing.collectAsState().value){
-            val result = viewModel.resultCode.collectAsState().value
-            val intent = IntentSanitizer.Builder()
-                .allowComponent(componentName)
-                .build().sanitize(intent) {
-                Log.d(TAG, "WaterRipples: $it")
-            }
-            if(result != Result.Code.OK){
-                intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
-            }
-            setResult(result.ordinal,intent)
-            finish()
-        }
 
         var ripples = remember { viewModel.ripples }
         val counter by viewModel.counter.collectAsState()
