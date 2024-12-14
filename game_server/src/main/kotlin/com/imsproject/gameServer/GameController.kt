@@ -242,18 +242,9 @@ class GameController(private val clientController: ClientController) {
         }
         // ======================================== |
 
-        game.endGame()
+        game.endGame() // game.endGame() notifies the clients
         games.remove(lobby.id)
         lobby.state = LobbyState.WAITING
-        // notify the clients
-        lobby.getPlayers()
-            .map {clientController.getByClientId(it)}
-            .forEach {
-                it?.sendTcp(
-                GameRequest.builder(Type.END_GAME)
-                    .build().toJson()
-            )
-        }
         log.debug("handleEndGame() successful")
         return Response.getOk()
     }
@@ -310,9 +301,8 @@ class GameController(private val clientController: ClientController) {
         games[lobby.id] = game
         clientIdToGame[player1Id] = game
         clientIdToGame[player2Id] = game
-
-        // game.startGame() notifies the clients
-        game.startGame()
+        
+        game.startGame() // game.startGame() notifies the clients
 
         log.debug("handleStartGame() successful")
         return Response.getOk()
