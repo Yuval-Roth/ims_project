@@ -78,7 +78,7 @@ class MainViewModel() : ViewModel() {
         when(result.code){
             Result.Code.OK -> _state.value = State.CONNECTED_IN_LOBBY
             else -> {
-                val error = result.errorMessage ?: "unknown error"
+                val error = "${result.code.prettyName()}:\n${result.errorMessage ?: "no error message"}"
                 fatalError(error)
             }
         }
@@ -166,9 +166,7 @@ class MainViewModel() : ViewModel() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
-                _playerId.value = ""
-                _lobbyId.value = ""
-                showError("Connection lost")
+                fatalError("Connection lost")
             } else {
                 showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
             }

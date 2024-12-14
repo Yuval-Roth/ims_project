@@ -68,7 +68,7 @@ Handles all game server requests
     "type": "string",
     "playerId": "string?",
     "lobbyId": "string?",
-    "gameType": "string?",
+    "gameType": "string?"
   }
   ```
   Note: Not all fields are present in every request. fields marked with `?` can be missing
@@ -81,6 +81,7 @@ Specifies the type of operation.
 - `get_lobbies`
 - `get_lobby`
 - `create_lobby`
+- `remove_lobby`
 - `set_lobby_type`
 - `join_lobby`
 - `leave_lobby`
@@ -170,6 +171,16 @@ The success field will be true if the game type was changed successfully, and fa
 If the lobby was created successfully, the `payload` field the id of the newly created lobby. <br/>
 
 <br/>
+
+### `remove_lobby`
+**Required fields:**
+- `lobbyId`
+
+**Description:**
+This request type is used to remove a specific lobby. The `lobbyId` must be provided to identify the lobby to be removed.
+
+#### Return value
+The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
 
 ### `set_lobby_type`
 **Required fields:**

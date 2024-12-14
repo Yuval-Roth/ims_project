@@ -30,6 +30,7 @@ class GameController(private val clientController: ClientController) {
                 Type.GET_ALL_LOBBIES -> handleGetAllLobbies()
                 Type.GET_LOBBY -> handleGetLobby(request)
                 Type.CREATE_LOBBY -> handleCreateLobby(request)
+                Type.REMOVE_LOBBY -> handleRemoveLobby(request)
                 Type.SET_LOBBY_TYPE -> handleSetLobbyType(request)
                 Type.JOIN_LOBBY -> handleJoinLobby(request)
                 Type.LEAVE_LOBBY -> handleLeaveLobby(request)
@@ -219,6 +220,34 @@ class GameController(private val clientController: ClientController) {
         val lobby = Lobby(lobbyId,gameType)
         lobbies[lobbyId] = lobby
         log.debug("handleCreateLobby() successful")
+        return Response.getOk(lobbyId)
+    }
+
+    private fun handleRemoveLobby(request: GameRequest) : String {
+        log.debug("handleRemoveLobby() with lobbyId: {}", request.lobbyId)
+
+        // ========= parameter validation ========= |
+        val errorMsg = "Missing the following parameters: lobbyId"
+        val lobbyId = request.lobbyId ?: run {
+            log.debug("handleRemoveLobby: {}",errorMsg)
+            return Response.getError(errorMsg)
+        }
+        // === check if the lobby exists === |
+        val lobby = lobbies[lobbyId] ?: run {
+            log.debug("handleRemoveLobby: Lobby not found")
+            return Response.getError("Lobby not found")
+        }
+        // ======================================== |
+
+        lobbies.remove(lobbyId)
+        // Notify the clients
+        lobby.getPlayers()
+            .map {clientController.getByClientId(it)}
+            .forEach {
+                it?.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
+            }
+
+        log.debug("handleRemoveLobby() successful")
         return Response.getOk(lobbyId)
     }
 

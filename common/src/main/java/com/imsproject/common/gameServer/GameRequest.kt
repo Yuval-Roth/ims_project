@@ -26,6 +26,7 @@ data class GameRequest(
         @SerializedName("set_lobby_type") SET_LOBBY_TYPE("set_lobby_type"),
         @SerializedName("join_lobby") JOIN_LOBBY("join_lobby"),
         @SerializedName("leave_lobby") LEAVE_LOBBY("leave_lobby"),
+        @SerializedName("remove_lobby") REMOVE_LOBBY("remove_lobby"),
         @SerializedName("start_game") START_GAME("start_game"),
         @SerializedName("end_game") END_GAME("end_game"),
         @SerializedName("pause_game") PAUSE_GAME("pause_game"),
