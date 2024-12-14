@@ -2,7 +2,6 @@ package com.imsproject.watch.viewmodel
 
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
@@ -15,12 +14,11 @@ import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.VIVID_ORANGE_COLOR
+import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
-import java.util.concurrent.Semaphore
 import kotlinx.coroutines.withContext
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
@@ -40,6 +38,11 @@ class WaterRipplesViewModel() : ViewModel() {
         Log.e(TAG, "init: missing player ID")
         "unknown player ID"
     }
+
+    // ================================================================================ |
+    // ================================ STATE FIELDS ================================== |
+    // ================================================================================ |
+
     var ripples = mutableStateListOf<Ripple>()
     var counter = MutableStateFlow(0)
 
@@ -49,14 +52,15 @@ class WaterRipplesViewModel() : ViewModel() {
     var _error = MutableStateFlow<String?>(null)
     val error : StateFlow<String?> = _error
 
+    var _resultCode = MutableStateFlow(Result.Code.OK)
+    val resultCode : StateFlow<Result.Code> = _resultCode
+
+    // ================================================================================ |
+    // ============================ PUBLIC METHODS ==================================== |
+    // ================================================================================ |
+
     fun onCreate(){
         setupListeners()
-    }
-
-    fun onFinish(){
-        model.onTcpMessage(null)
-        model.onTcpError(null)
-        model.onUdpMessage(null)
     }
 
     fun click() {
@@ -65,9 +69,9 @@ class WaterRipplesViewModel() : ViewModel() {
         }
     }
 
-    fun clearError() {
-        _error.value = null
-    }
+    // ================================================================================ |
+    // ============================ PRIVATE METHODS =================================== |
+    // ================================================================================ |
 
     private suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
@@ -91,7 +95,7 @@ class WaterRipplesViewModel() : ViewModel() {
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${action.type}\n"+
                         "request content:\n$action"
-                showError(errorMsg)
+                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
             }
         }
     }
@@ -99,16 +103,13 @@ class WaterRipplesViewModel() : ViewModel() {
     private fun handleGameRequest(request: GameRequest) {
         when (request.type) {
             GameRequest.Type.HEARTBEAT -> {}
-            GameRequest.Type.END_GAME -> {
-                onFinish()
-                _playing.value = false
-            }
+            GameRequest.Type.END_GAME -> exitOk()
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${request.type}\n"+
                         "request content:\n$request"
-                showError(errorMsg)
+                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
             }
         }
     }
@@ -117,19 +118,25 @@ class WaterRipplesViewModel() : ViewModel() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
-                showError("Connection lost")
+                exitWithError("Connection lost",Result.Code.CONNECTION_LOST)
             } else {
-                showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
+                exitWithError(it.message ?: it.cause?.message ?: "unknown tcp exception",Result.Code.TCP_EXCEPTION)
             }
         }
         model.onTcpError {
             Log.e(TAG, "tcp error", it)
-            showError(it.message ?: it.cause?.message ?: "unknown tcp error")
+            exitWithError(it.message ?: it.cause?.message ?: "unknown tcp error",Result.Code.TCP_ERROR)
         }
         model.onUdpMessage({ handleGameAction(it) }) {
             Log.e(TAG, "udp exception", it)
-            showError(it.message ?: it.cause?.message ?: "unknown udp exception")
+            exitWithError(it.message ?: it.cause?.message ?: "unknown udp exception",Result.Code.UDP_EXCEPTION)
         }
+    }
+
+    private fun clearListeners(){
+        model.onTcpMessage(null)
+        model.onTcpError(null)
+        model.onUdpMessage(null)
     }
 
     private fun showRipple(actor: String, inSync : Boolean) {
@@ -145,8 +152,16 @@ class WaterRipplesViewModel() : ViewModel() {
         counter.value++
     }
 
-    private fun showError(string: String) {
+    private fun exitWithError(string: String, code: Result.Code) {
+        clearListeners()
         _error.value = string
+        _resultCode.value = code
+        _playing.value = false
+    }
+
+    private fun exitOk() {
+        clearListeners()
+        _playing.value = false
     }
 
     companion object {

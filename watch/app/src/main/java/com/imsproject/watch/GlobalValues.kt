@@ -8,6 +8,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imsproject.watch.SCREEN_HEIGHT
 
+const val PACKAGE_PREFIX = "com.imsproject.watch"
+
 // ===================== Colors ===================== |
 val DARK_BACKGROUND_COLOR = Color(0xFF333842)
 val LIGHT_BLUE_COLOR = Color(0xFFACC7F6)
