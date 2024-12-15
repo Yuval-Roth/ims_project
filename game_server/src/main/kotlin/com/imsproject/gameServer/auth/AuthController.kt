@@ -20,13 +20,10 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.SecretKey
 
 @Component
-class AuthController : AuthenticationManager {
+class AuthController(private val credentials: CredentialsController) : AuthenticationManager {
     private val userIdToUUID: MutableMap<String, String> = ConcurrentHashMap()
     private val encoder: PasswordEncoder = BCryptPasswordEncoder()
     private var key: SecretKey = Jwts.SIG.HS512.key().build()
-
-    // userId -> UserCredentials (userId, hashedPassword)
-    private val credentials: MutableMap<String, UserCredentials> = ConcurrentHashMap()
 
     fun authenticateUser(userId: String, password: String): Response {
         val cleanUserId = userId.lowercase()
@@ -111,7 +108,7 @@ class AuthController : AuthenticationManager {
 
         log.debug("Adding user credentials for user {}", userId)
         val hashedPassword = encoder.encode(user.password)
-        val userCredentials = UserCredentials(userId, hashedPassword)
+        val userCredentials = Credentials(userId, hashedPassword)
         credentials[user.username] = userCredentials
     }
 
@@ -122,7 +119,7 @@ class AuthController : AuthenticationManager {
         }
 
         val hashedPassword = encoder.encode(user.password)
-        val updatedUserCredentials = UserCredentials(userId, hashedPassword)
+        val updatedUserCredentials = Credentials(userId, hashedPassword)
         credentials[user.username] = updatedUserCredentials
     }
 
@@ -131,28 +128,29 @@ class AuthController : AuthenticationManager {
         if (!userExists(cleanUserId)) {
             throw UsernameNotFoundException("User not found")
         }
-
         credentials.remove(cleanUserId)
     }
 
     fun userExists(username: String): Boolean {
-        return credentials.containsKey(username)
+        return username in credentials
+    }
+
+    fun textToBCrypt(text: String): String {
+        return encoder.encode(text)
     }
 
     //============================================================================ |
     //========================= PRIVATE METHODS ================================== |
     //============================================================================ |
+
     private fun authenticate(userId: String, password: String): Boolean {
         log.debug("Authenticating user: {}", userId)
-        val user = credentials[userId] ?: return false
-        val hashedPassword = user.hashedPassword
-
-        // check if the user exists
-        if (hashedPassword == null) {
+        val user = credentials[userId] ?: run {
             log.debug("User {} does not exist", userId)
             return false
         }
         log.trace("User {} exists", userId)
+        val hashedPassword = user.hashedPassword
 
         // check if the password is correct
         if (!isPasswordsMatch(password, hashedPassword)) {

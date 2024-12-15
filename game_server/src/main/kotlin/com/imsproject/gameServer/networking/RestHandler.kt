@@ -3,11 +3,17 @@ package com.imsproject.gameServer.networking
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.utils.Response
 import com.imsproject.gameServer.GameController
+import com.imsproject.gameServer.auth.AuthController
+import org.springframework.core.io.ResourceLoader
 import org.springframework.web.bind.annotation.*
 import java.io.File
 
 @RestController
-class RestHandler(private val gameController: GameController) {
+class RestHandler(
+    private val gameController: GameController,
+    private val authController: AuthController,
+    private val resources : ResourceLoader
+    ) {
 
     @PostMapping("/manager")
     fun manager(@RequestBody body : String): String {
@@ -24,14 +30,23 @@ class RestHandler(private val gameController: GameController) {
         }
     }
 
-    @GetMapping("/auth")
-    fun auth(): String {
-        return "Not implemented"
-    }
-
     @PostMapping("/data")
     fun data(@RequestBody body : String): String {
         return "Not implemented"
+    }
+
+    @GetMapping("/login")
+    fun login(@RequestHeader(value = "Authorization") header : String?): String {
+        if(header == null){
+            return Response.getError("No Authorization header")
+        }
+        // base64 encoded user:password
+        val credentials = header.split(" ")[1]
+        val decoded = String(java.util.Base64.getDecoder().decode(credentials))
+        val split = decoded.split(":")
+        val userId = split[0]
+        val password = split[1]
+        return authController.authenticateUser(userId, password).toJson()
     }
 
     @GetMapping("/log")
@@ -46,7 +61,17 @@ class RestHandler(private val gameController: GameController) {
                 file.replace("\n", "<br/>")
             }
         } catch(e: Exception){
-            return "404"
+            return "Error while fetching log file:<br/>${e.stackTraceToString().replace("\n", "<br/>")}"
         }
+    }
+
+    @GetMapping("/bcrypt")
+    fun bcrypt(): String {
+        return resources.getResource("classpath:bcrypt.html").file.readText()
+    }
+
+    @PostMapping("/bcrypt/encrypt")
+    fun bcryptSend(@RequestBody password : String): String {
+        return authController.textToBCrypt(password)
     }
 }
