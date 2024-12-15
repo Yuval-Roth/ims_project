@@ -278,11 +278,12 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(top=COLUMN_PADDING,start=COLUMN_PADDING,end=COLUMN_PADDING)
+                        .padding(start=COLUMN_PADDING,end=COLUMN_PADDING)
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState(0)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
+                    Spacer(modifier = Modifier.height(COLUMN_PADDING))
                     BasicText(
                         text = "ERROR",
                         style = TextStyle(color = Color.White, fontSize = TEXT_SIZE, textAlign = TextAlign.Center, textDecoration = TextDecoration.Underline, letterSpacing = 1.sp),
