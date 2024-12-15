@@ -67,7 +67,7 @@ class RestHandler(
 
     @GetMapping("/bcrypt")
     fun bcrypt(): String {
-        return resources.getResource("classpath:bcrypt.html").file.readText()
+        return resources.getResource("classpath:bcrypt.html").inputStream.bufferedReader().use { it.readText() }
     }
 
     @PostMapping("/bcrypt/encrypt")

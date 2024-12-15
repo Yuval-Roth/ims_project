@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Match Form</title>
+    <title>Password to Bcrypt</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,6 +43,7 @@
 
         <button type="button" id="sendButton">Send</button>
         <p class="error" id="errorMessage" style="display:none;">Passwords do not match.</p>
+        <p class="response" id="responsePreMessage" style="display:none;">Your Bcrypt string is:</p>
         <p class="response" id="responseMessage" style="display:none;"></p>
     </form>
 </div>
@@ -53,6 +54,11 @@
         const password2 = document.getElementById('password2').value;
         const errorMessage = document.getElementById('errorMessage');
         const responseMessage = document.getElementById('responseMessage');
+        const responsePreMessage = document.getElementById('responsePreMessage');
+
+        if(password1 === "" || password2 === "") {
+            return;
+        }
 
         if (password1 !== password2) {
             errorMessage.style.display = 'block';
@@ -75,10 +81,11 @@
                 redirect: "follow"
             };
 
-            fetch("http://132.72.116.91:8640/bcrypt/encrypt", requestOptions)
+            fetch("http://localhost:8640/bcrypt/encrypt", requestOptions)
                 .then((response) => response.text())
                 .then((result) => {
                     responseMessage.style.display = 'block';
+                    responsePreMessage.style.display = 'block';
                     responseMessage.textContent = result;
                 })
                 .catch((error) => {
