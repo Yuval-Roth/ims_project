@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
-open class GameViewModel(gameType: GameType) : ViewModel() {
+abstract class GameViewModel(gameType: GameType) : ViewModel() {
 
     private val TAG = "$_TAG-${gameType.prettyName()}"
     val model = MainModel.instance
