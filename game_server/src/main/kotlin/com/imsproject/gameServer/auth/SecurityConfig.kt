@@ -54,11 +54,13 @@ class SecurityConfig(private val authController: AuthController) {
             @NonNull response: HttpServletResponse,
             @NonNull filterChain: FilterChain
         ) {
-            var token = request.getHeader("Authorization")
-            if (token != null) {
-                if (token.startsWith("Bearer ")) {
-                    token = token.substring(7)
-                    if (authController.validateTokenAuthenticity(token)) {
+            val auth = request.getHeader("Authorization")
+            val userId = request.getHeader("userId")
+            if (auth != null && userId != null) {
+                if (auth.startsWith("Bearer ")) {
+                    val token = auth.substring(7)
+                    if (authController.validateTokenAuthenticity(token) &&
+                        authController.validateTokenOwnership(userId, token)) {
                         SecurityContextHolder.getContext().authentication = JWTAuthentication()
                     }
                 }

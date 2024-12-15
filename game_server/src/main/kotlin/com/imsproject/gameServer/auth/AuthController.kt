@@ -6,10 +6,6 @@ import io.jsonwebtoken.security.MacAlgorithm
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.access.AccessDeniedException
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -20,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.SecretKey
 
 @Component
-class AuthController(private val credentials: CredentialsController) : AuthenticationManager {
+class AuthController(private val credentials: CredentialsController) {
     private val userIdToUUID: MutableMap<String, String> = ConcurrentHashMap()
     private val encoder: PasswordEncoder = BCryptPasswordEncoder()
     private var key: SecretKey = Jwts.SIG.HS512.key().build()
@@ -78,22 +74,6 @@ class AuthController(private val credentials: CredentialsController) : Authentic
         log.debug("Resetting secret key")
         key = Jwts.SIG.HS512.key().build()
         userIdToUUID.clear()
-    }
-
-    //================================================================================= |
-    //=========================== AUTHENTICATION MANAGER ============================== |
-    //================================================================================= |
-    
-    @Throws(AuthenticationException::class)
-    override fun authenticate(authentication: Authentication): Authentication {
-        val cleanUserId = authentication.name.lowercase()
-        val user = credentials[cleanUserId] ?: throw UsernameNotFoundException("User not found")
-        val credentials = authentication.credentials as String
-        if (authenticate(cleanUserId, credentials)) {
-            return UsernamePasswordAuthenticationToken(user, null, null)
-        } else {
-            throw AccessDeniedException("Bad credentials")
-        }
     }
 
     //================================================================================= |
