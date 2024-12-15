@@ -311,6 +311,7 @@ class MainActivity : ComponentActivity() {
                             style = textStyle
                         )
                     }
+                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
                 }
             }
         }
