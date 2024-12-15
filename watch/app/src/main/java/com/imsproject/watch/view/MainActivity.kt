@@ -38,13 +38,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
-import com.imsproject.watch.DARK_BACKGROUND_COLOR
-import com.imsproject.watch.viewmodel.MainViewModel
-import com.imsproject.watch.viewmodel.MainViewModel.State
-import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.watch.COLUMN_PADDING
+import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GREEN_COLOR
 import com.imsproject.watch.RED_COLOR
 import com.imsproject.watch.SCREEN_HEIGHT
@@ -52,8 +50,9 @@ import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initGlobalValues
 import com.imsproject.watch.textStyle
-import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.view.contracts.WaterRipplesResultContract
+import com.imsproject.watch.viewmodel.MainViewModel
+import com.imsproject.watch.viewmodel.MainViewModel.State
 
 
 class MainActivity : ComponentActivity() {

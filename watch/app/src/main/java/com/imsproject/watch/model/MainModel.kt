@@ -10,13 +10,13 @@ import com.imsproject.watch.model.MainModel.CallbackNotSetException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.delay
-import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 
 // ========== Constants ===========|
@@ -54,9 +54,12 @@ class MainModel (private val scope : CoroutineScope) {
     private var udpMessageListener : Job? = null
     private var heartBeatListener : Job? = null
 
+    // ======================================================================= |
+    // ======================== Public Methods =============================== |
+    // ======================================================================= |
 
     /**
-     * Connects to the game server using WebSocket and UDP protocols.
+     * Establishes a connection to the game server via both WebSocket and UDP protocols.
      * @return the player ID if the connection is successful, or null if any step fails.
      */
     fun connectToServer() : String? {
@@ -118,20 +121,20 @@ class MainModel (private val scope : CoroutineScope) {
         // message parsing error
         catch(e : IllegalArgumentException){
             Log.e(TAG,e.message,e)
-            return null // invalid message
+            return null
         }
         // timeout
         catch(e: SocketTimeoutException){
             Log.e(TAG, "connectToServer: UDP confirmation timeout")
-            return null // timeout
+            return null
         }
 
         // validate confirmation
         if(confirmation.type != GameAction.Type.ENTER){
             Log.e(TAG, "connectToServer: Invalid confirmation message")
-            return null // invalid confirmation
+            return null
         }
-        udp.setTimeout(0) // reset timeout
+        udp.setTimeout(0) // remove timeout
         // === end of confirmation === |
 
         this.ws = ws
@@ -144,11 +147,16 @@ class MainModel (private val scope : CoroutineScope) {
         // ================= Connection Established ============= |
 
         initListeners()
-        initHeartbeatTask()
 
         return playerId
     }
 
+    /**
+     * Sets or removes the callback for UDP message and exception events.
+     * By default, the exception callback is set to an empty function.
+     *
+     * @param callback If set to **null**, the callback is removed and no messages will be received.
+     */
     fun onUdpMessage(callback: (suspend (GameAction) -> Unit)?,  onException: suspend (Exception) -> Unit = {}) {
         if(callback == null){
             udpOnMessageCallback = {defaultCallback()}
@@ -161,6 +169,12 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
+    /**
+     * Sets or removes the callback for TCP message and exception events.
+     * By default, the exception callback is set to an empty function.
+     *
+     * @param callback If set to **null**, the callback is removed and no messages will be received.
+     */
     fun onTcpMessage(callback:  (suspend (GameRequest) -> Unit)?, onException: suspend (Exception) -> Unit = {}) {
 
         if(callback == null){
@@ -174,6 +188,11 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
+    /**
+     * Sets or removes the callback for TCP error events.
+     *
+     * @param callback If set to **null**, the callback is removed and no messages will be received.
+     */
     fun onTcpError(callback: (suspend (Exception) -> Unit)?) {
 
         if(callback == null){
@@ -216,6 +235,10 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
+    // ======================================================================= |
+    // ======================== Private Methods ============================== |
+    // ======================================================================= |
+
     private fun initListeners() {
 
         if(connected){
@@ -224,6 +247,7 @@ class MainModel (private val scope : CoroutineScope) {
             heartBeatListener?.cancel()
         }
 
+        // UDP
         udpMessageListener = scope.launch(Dispatchers.IO) {
             while (true) {
                 try {
@@ -255,14 +279,6 @@ class MainModel (private val scope : CoroutineScope) {
             }
         }
 
-        ws.onErrorListener = {
-            scope.launch(Dispatchers.IO){
-                executeCallback { tcpOnErrorCallback(it ?: Exception("Unknown error"))}
-            }
-        }
-    }
-
-    private fun initHeartbeatTask() {
         heartBeatListener = scope.launch(Dispatchers.IO){
             while(true){
                 delay(1000)
@@ -273,6 +289,12 @@ class MainModel (private val scope : CoroutineScope) {
                     executeCallback { tcpOnExceptionCallback(e) }
                     return@launch
                 }
+            }
+        }
+
+        ws.onErrorListener = {
+            scope.launch(Dispatchers.IO){
+                executeCallback { tcpOnErrorCallback(it ?: Exception("Unknown error"))}
             }
         }
     }

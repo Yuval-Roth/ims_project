@@ -1,14 +1,10 @@
 package com.imsproject.watch.view
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -26,12 +22,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
 import androidx.wear.compose.material.Button
-import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
-import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RIPPLE_MAX_SIZE
-import com.imsproject.watch.model.MainModel
+import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
+import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay

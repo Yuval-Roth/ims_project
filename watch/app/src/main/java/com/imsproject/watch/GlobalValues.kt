@@ -6,7 +6,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.imsproject.watch.SCREEN_HEIGHT
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 

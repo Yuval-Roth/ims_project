@@ -1,6 +1,5 @@
 package com.imsproject.watch.viewmodel
 
-import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,7 +7,6 @@ import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
-import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
@@ -30,11 +28,11 @@ class MainViewModel() : ViewModel() {
         ERROR
     }
 
+    private val model = MainModel(viewModelScope)
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
-
-    private val model = MainModel(viewModelScope)
 
     private var _state = MutableStateFlow(State.DISCONNECTED)
     val state : StateFlow<State> = _state
@@ -65,7 +63,7 @@ class MainViewModel() : ViewModel() {
             if (id != null) {
                 _playerId.value = id
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
-                setupListeners()
+                setupListeners() // setup the listeners to start receiving messages
             } else {
                 showError("Failed to connect to server")
             }
@@ -73,11 +71,15 @@ class MainViewModel() : ViewModel() {
     }
 
     fun afterGame(result: Result) {
-        setupListeners()
+        setupListeners() // take back control of the listeners
         _ready.value = false
         when(result.code){
             Result.Code.OK -> _state.value = State.CONNECTED_IN_LOBBY
             else -> {
+                // typically, when reaching here, the game ended due to a network error
+                // or some other issue that hasn't been discovered yet.
+                // so we want to display an error message to the user
+                // and restart the application.
                 val error = "${result.code.prettyName()}:\n${result.errorMessage ?: "no error message"}"
                 fatalError(error)
             }
@@ -88,10 +90,13 @@ class MainViewModel() : ViewModel() {
         _error.value = null
 
         if(_lobbyId.value.isNotEmpty()){
+            // if there is a lobbyId, then we're connected and in a lobby
             _state.value = State.CONNECTED_IN_LOBBY
         } else if(_playerId.value.isNotEmpty()){
+            // if there is only a playerId, then we're connected but not in a lobby
             _state.value = State.CONNECTED_NOT_IN_LOBBY
         } else {
+            // if there is no playerId, then we're disconnected
             _state.value = State.DISCONNECTED
         }
     }
@@ -136,7 +141,11 @@ class MainViewModel() : ViewModel() {
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
             }
             Type.START_GAME -> {
-                clearListeners()
+                // ===================================|
+                // clear the listeners to prevent any further messages from being processed.
+                // let the game activity handle the messages from here on out.
+                /*(!)*/ clearListeners()
+                // ===================================|
                 _state.value = State.IN_GAME
             }
             else -> {
