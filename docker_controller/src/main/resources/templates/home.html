@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Available Endpoints</title>
+    <title>Docker Controller Dashboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -20,29 +20,25 @@
         }
         main {
             padding: 20px;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
         }
-        h1 {
-            margin-top: 0;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        ul {
-            list-style: none;
-            padding: 0;
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
         }
-        li {
-            margin: 10px 0;
-        }
-        a {
-            text-decoration: none;
-            color: #0073e6;
-            font-weight: bold;
-        }
-        a:hover {
-            text-decoration: underline;
+        table th {
+            background-color: #0073e6;
+            color: white;
         }
         footer {
             text-align: center;
@@ -61,8 +57,25 @@
     <h2>Available Operations</h2>
     <ul>
         <li><a href="/docker/update" target="_blank">Pull changes from DockerHub</a></li>
-        <!-- Add more links for additional endpoints here -->
     </ul>
+    <h2>Docker Processes</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>State</th>
+            <th>Running for</th>
+        </tr>
+        </thead>
+        <tbody>
+        <!-- Loop through Docker process data -->
+        <tr th:each="process : ${processes}">
+            <td th:text="${process.names}">Name</td>
+            <td th:text="${process.state}">State</td>
+            <td th:text="${process.runningFor}">Running for</td>
+        </tr>
+        </tbody>
+    </table>
 </main>
 <footer>
     IMS Project
