@@ -76,7 +76,7 @@ class RestHandler(
 
     @GetMapping("/bcrypt")
     fun bcrypt(): ResponseEntity<String> {
-        return readHtmlFile("bcrypt.html").toResponseEntity()
+        return readHtmlFile("static/bcrypt.html").toResponseEntity()
     }
 
     @PostMapping("/bcrypt/encrypt")
@@ -87,7 +87,7 @@ class RestHandler(
     @GetMapping("/error")
     fun errorPage(): ResponseEntity<String> {
         val code = HttpStatus.BAD_REQUEST
-        return readHtmlFile("error_page.html")
+        return readHtmlFile("static/error_page.html")
             .replace("[MESSAGE]", "Something went wrong")
             .replace("[TIME_STAMP]", Date().toString())
             .replace("[STATUS]", code.toString())
