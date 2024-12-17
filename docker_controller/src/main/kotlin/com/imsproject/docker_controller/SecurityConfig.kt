@@ -20,11 +20,11 @@ class SecurityConfig {
     @Throws(Exception::class)
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .requiresChannel { requiresChannel ->
-                requiresChannel
-                    .anyRequest()
-                    .requiresSecure()
-            }
+//            .requiresChannel { requiresChannel ->
+//                requiresChannel
+//                    .anyRequest()
+//                    .requiresSecure()
+//            }
             .authorizeHttpRequests { authorize ->
                 authorize
                     .anyRequest()
