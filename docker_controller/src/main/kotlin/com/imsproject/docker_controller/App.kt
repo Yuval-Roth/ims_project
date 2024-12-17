@@ -47,7 +47,7 @@ class App (private val resources : ResourceLoader) : ErrorController {
             val msg = "Error updating docker: ${e.message}"
             return error(msg)
         }
-        return success("Docker updated successfully")
+        return success("Docker update initiated successfully")
     }
 
     @GetMapping("/success")
