@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
 //private const val SERVER_IP = "10.0.2.2" // <------- USE THIS FOR EMULATOR AND SERVER ON LOCAL HOST
-private const val SERVER_IP = "132.72.116.91" // <------- USE THIS FOR REMOTE SERVER
+private const val SERVER_IP = "ims-project.cs.bgu.ac.il" // <------- USE THIS FOR REMOTE SERVER
 private const val SERVER_WS_PORT = 8640
 private const val SERVER_UDP_PORT = 8641
 // ================================|

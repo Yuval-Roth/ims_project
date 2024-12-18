@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.imsproject.watch"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.imsproject.watch"

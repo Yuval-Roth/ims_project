@@ -318,77 +318,77 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Preview(device = "id:wearos_large_round", apiLevel = 33)
+    @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewConnectingScreenBig() {
         initGlobalValues(454, 454)
         ConnectingScreen()
     }
 
-    @Preview(device = "id:wearos_small_round", apiLevel = 33)
+    @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewConnectingScreenSmall() {
         initGlobalValues(384, 384)
         ConnectingScreen()
     }
 
-    @Preview(device = "id:wearos_large_round", apiLevel = 33)
+    @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewPreviewConnectedNotInLobbyBig() {
         initGlobalValues(454, 454)
         ConnectedNotInLobbyScreen("123456")
     }
 
-    @Preview(device = "id:wearos_small_round", apiLevel = 33)
+    @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewPreviewConnectedNotInLobbySmall() {
         initGlobalValues(384, 384)
         ConnectedNotInLobbyScreen("123456")
     }
 
-    @Preview(device = "id:wearos_large_round", apiLevel = 33)
+    @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedNotInLobbyScreenBig() {
         initGlobalValues(454, 454)
         ConnectedNotInLobbyScreen("123456")
     }
 
-    @Preview(device = "id:wearos_small_round", apiLevel = 33)
+    @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedNotInLobbyScreenSmall() {
         initGlobalValues(384, 384)
         ConnectedNotInLobbyScreen("123456")
     }
 
-    @Preview(device = "id:wearos_large_round", apiLevel = 33)
+    @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedInLobbyScreenBig() {
         initGlobalValues(454, 454)
         ConnectedInLobbyScreen("123456", "ABC", "gameType", false) {}
     }
 
-    @Preview(device = "id:wearos_small_round", apiLevel = 33)
+    @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedInLobbyScreenSmall() {
         initGlobalValues(384, 384)
         ConnectedInLobbyScreen("123456", "ABC", "gameType", false) {}
     }
 
-    @Preview(device = "id:wearos_large_round", apiLevel = 33)
+    @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewErrorScreenBig() {
         initGlobalValues(454, 454)
         ErrorScreen("Error message") {}
     }
 
-    @Preview(device = "id:wearos_small_round", apiLevel = 33)
+    @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewErrorScreenSmall() {
         initGlobalValues(384, 384)
         ErrorScreen("Error message") {}
     }
 
-    @Preview(device = "id:wearos_large_round", apiLevel = 33)
+    @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewLongErrorScreenBig() {
         initGlobalValues(454, 454)
@@ -396,7 +396,7 @@ class MainActivity : ComponentActivity() {
         ErrorScreen(msg) {}
     }
 
-    @Preview(device = "id:wearos_small_round", apiLevel = 33)
+    @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewLongErrorScreenSmall() {
         initGlobalValues(384, 384)
