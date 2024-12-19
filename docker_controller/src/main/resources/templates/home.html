@@ -6,46 +6,107 @@
     <title>Docker Controller Dashboard</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f9;
+            background-color: #f4f7fb;
             color: #333;
         }
         header {
             background-color: #0073e6;
             color: white;
-            padding: 20px 0;
+            padding: 30px 0;
             text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
         }
         main {
-            padding: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
+            padding: 30px;
+            max-width: 800px;
+            margin: 30px auto;
             background: white;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0073e6;
+            padding-bottom: 10px;
+        }
+        ul {
+            list-style: circle;
+            padding-left: 30px;
+            margin-bottom: 30px;
+        }
+        ul li {
+            margin-bottom: 12px;
+        }
+        ul li a {
+            text-decoration: none;
+            color: #0073e6;
+            font-size: 1.2em;
+            transition: color 0.3s, text-decoration 0.3s;
+        }
+        ul li a:hover {
+            color: #005bb5;
+            text-decoration: underline;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            table-layout: fixed; /* Ensure even column widths */
         }
         table th, table td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px;
             text-align: center;
+            border: 1px solid #ddd;
+            font-size: 1.1em;
+            overflow: hidden; /* Prevent text from overflowing */
+            white-space: nowrap; /* Prevent text wrapping */
+            text-overflow: ellipsis; /* Display ellipsis for overflowing text */
         }
         table th {
             background-color: #0073e6;
             color: white;
         }
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
         footer {
             text-align: center;
-            padding: 10px 0;
-            margin-top: 20px;
-            font-size: 0.9em;
+            padding: 15px 0;
+            margin-top: 40px;
+            font-size: 1em;
             color: #666;
+            border-top: 1px solid #ddd;
+        }
+
+        /* Responsive Table */
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            table th, table td {
+                display: inline-block;
+                padding: 10px;
+                text-align: left;
+                width: 100%;
+                border-bottom: 1px solid #ddd;
+            }
         }
     </style>
 </head>
@@ -57,6 +118,8 @@
     <h2>Available Operations</h2>
     <ul>
         <li><a href="/docker/update" target="_blank">Pull changes from DockerHub</a></li>
+        <li><a href="/docker/up" target="_blank">Start services</a></li>
+        <li><a href="/docker/down" target="_blank">Stop services</a></li>
     </ul>
     <h2>Docker Processes</h2>
     <table>
@@ -70,9 +133,9 @@
         <tbody>
         <!-- Loop through Docker process data -->
         <tr th:each="process : ${processes}">
-            <td th:text="${process.names}">Name</td>
-            <td th:text="${process.state}">State</td>
-            <td th:text="${process.runningFor}">Running for</td>
+            <td th:text="${process.names}"></td>
+            <td th:text="${process.state}"></td>
+            <td th:text="${process.runningFor}"></td>
         </tr>
         </tbody>
     </table>
