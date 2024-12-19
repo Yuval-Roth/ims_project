@@ -81,7 +81,7 @@
                 redirect: "follow"
             };
 
-            fetch("http://ims-project.cs.bgu.ac.il:8640/bcrypt/encrypt", requestOptions)
+            fetch("https://ims-project.cs.bgu.ac.il:8640/bcrypt/encrypt", requestOptions)
                 .then((response) => response.text())
                 .then((result) => {
                     responseMessage.style.display = 'block';

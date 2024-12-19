@@ -18,11 +18,15 @@ import java.net.SocketTimeoutException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
+// flip this to true when debugging locally
+const val RUNNING_LOCAL : Boolean = false
 
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
-//private const val SERVER_IP = "10.0.2.2" // <------- USE THIS FOR EMULATOR AND SERVER ON LOCAL HOST
-private const val SERVER_IP = "ims-project.cs.bgu.ac.il" // <------- USE THIS FOR REMOTE SERVER
+private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
+private const val LOCAL_IP = "10.0.2.2"
+private val SERVER_IP = if (RUNNING_LOCAL) LOCAL_IP else REMOTE_IP
+private val SCHEME = if (RUNNING_LOCAL) "ws" else "wss"
 private const val SERVER_WS_PORT = 8640
 private const val SERVER_UDP_PORT = 8641
 // ================================|
@@ -63,7 +67,7 @@ class MainModel (private val scope : CoroutineScope) {
      * @return the player ID if the connection is successful, or null if any step fails.
      */
     fun connectToServer() : String? {
-        val ws = WebSocketClient(URI("ws://$SERVER_IP:$SERVER_WS_PORT/ws"))
+        val ws = WebSocketClient(URI("$SCHEME://$SERVER_IP:$SERVER_WS_PORT/ws"))
         val udp = UdpClient()
         udp.remoteAddress = SERVER_IP
         udp.remotePort = SERVER_UDP_PORT
