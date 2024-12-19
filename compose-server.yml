@@ -17,6 +17,7 @@ services:
         - "8641:8641/udp"
     volumes:
         - /home/admin/volumes/game_server:/app/data
+        - /etc/letsencrypt/live/ims-project.cs.bgu.ac.il:/app/certificates
 
   ims-manager:
     image: yuvalroth123/imsproject_manager:latest
@@ -24,6 +25,7 @@ services:
     networks:
       - ims-network
     ports:
-      - "80:80"
+      - "5000:5000"
     volumes:
       - /home/admin/volumes/manager:/app/data
+      - /etc/letsencrypt/live/ims-project.cs.bgu.ac.il:/app/certificates

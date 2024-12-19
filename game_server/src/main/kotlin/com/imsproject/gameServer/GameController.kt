@@ -30,6 +30,7 @@ class GameController(private val clientController: ClientController) {
                 Type.GET_ALL_LOBBIES -> handleGetAllLobbies()
                 Type.GET_LOBBY -> handleGetLobby(request)
                 Type.CREATE_LOBBY -> handleCreateLobby(request)
+                Type.REMOVE_LOBBY -> handleRemoveLobby(request)
                 Type.SET_LOBBY_TYPE -> handleSetLobbyType(request)
                 Type.JOIN_LOBBY -> handleJoinLobby(request)
                 Type.LEAVE_LOBBY -> handleLeaveLobby(request)
@@ -222,6 +223,34 @@ class GameController(private val clientController: ClientController) {
         return Response.getOk(lobbyId)
     }
 
+    private fun handleRemoveLobby(request: GameRequest) : String {
+        log.debug("handleRemoveLobby() with lobbyId: {}", request.lobbyId)
+
+        // ========= parameter validation ========= |
+        val errorMsg = "Missing the following parameters: lobbyId"
+        val lobbyId = request.lobbyId ?: run {
+            log.debug("handleRemoveLobby: {}",errorMsg)
+            return Response.getError(errorMsg)
+        }
+        // === check if the lobby exists === |
+        val lobby = lobbies[lobbyId] ?: run {
+            log.debug("handleRemoveLobby: Lobby not found")
+            return Response.getError("Lobby not found")
+        }
+        // ======================================== |
+
+        lobbies.remove(lobbyId)
+        // Notify the clients
+        lobby.getPlayers()
+            .map {clientController.getByClientId(it)}
+            .forEach {
+                it?.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
+            }
+
+        log.debug("handleRemoveLobby() successful")
+        return Response.getOk(lobbyId)
+    }
+
     private fun handleEndGame(request: GameRequest) : String {
         log.debug("handleEndGame() with lobbyId: {}",request.lobbyId)
 
@@ -242,18 +271,9 @@ class GameController(private val clientController: ClientController) {
         }
         // ======================================== |
 
-        game.endGame()
+        game.endGame() // game.endGame() notifies the clients
         games.remove(lobby.id)
         lobby.state = LobbyState.WAITING
-        // notify the clients
-        lobby.getPlayers()
-            .map {clientController.getByClientId(it)}
-            .forEach {
-                it?.sendTcp(
-                GameRequest.builder(Type.END_GAME)
-                    .build().toJson()
-            )
-        }
         log.debug("handleEndGame() successful")
         return Response.getOk()
     }
@@ -310,9 +330,8 @@ class GameController(private val clientController: ClientController) {
         games[lobby.id] = game
         clientIdToGame[player1Id] = game
         clientIdToGame[player2Id] = game
-
-        // game.startGame() notifies the clients
-        game.startGame()
+        
+        game.startGame() // game.startGame() notifies the clients
 
         log.debug("handleStartGame() successful")
         return Response.getOk()

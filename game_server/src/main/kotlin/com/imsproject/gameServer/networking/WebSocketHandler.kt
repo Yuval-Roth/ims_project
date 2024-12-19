@@ -50,8 +50,9 @@ class WebSocketHandler(
         // Handle the message
         when (gameMessage.type) {
 
-            Type.PING -> session.send(GameRequest.pong())
+            Type.PING -> session.send(GameRequest.pong)
             Type.PONG -> {}
+            Type.HEARTBEAT -> session.send(GameRequest.heartbeat)
 
             Type.ENTER -> {
 

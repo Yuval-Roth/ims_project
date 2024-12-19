@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.imsproject.watch"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.imsproject.watch"
@@ -57,5 +57,4 @@ dependencies {
 
     implementation(libs.imsproject.common)
     implementation(libs.kotlinx.coroutines.android)
-//    implementation("androidx.compose.material:material-*:1.7.5")
 }

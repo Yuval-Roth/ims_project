@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password to Bcrypt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .response {
+            margin-top: 20px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Enter Your Password</h1>
+    <form id="passwordForm">
+        <label for="password1">Password:</label><br>
+        <input type="password" id="password1" name="password1" required><br><br>
+
+        <label for="password2">Confirm Password:</label><br>
+        <input type="password" id="password2" name="password2" required><br><br>
+
+        <button type="button" id="sendButton">Send</button>
+        <p class="error" id="errorMessage" style="display:none;">Passwords do not match.</p>
+        <p class="response" id="responsePreMessage" style="display:none;">Your Bcrypt string is:</p>
+        <p class="response" id="responseMessage" style="display:none;"></p>
+    </form>
+</div>
+
+<script>
+    document.getElementById('sendButton').addEventListener('click', function () {
+        const password1 = document.getElementById('password1').value;
+        const password2 = document.getElementById('password2').value;
+        const errorMessage = document.getElementById('errorMessage');
+        const responseMessage = document.getElementById('responseMessage');
+        const responsePreMessage = document.getElementById('responsePreMessage');
+
+        if(password1 === "" || password2 === "") {
+            return;
+        }
+
+        if (password1 !== password2) {
+            errorMessage.style.display = 'block';
+            responseMessage.style.display = 'none';
+        } else {
+            errorMessage.style.display = 'none';
+
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "text/plain");
+
+            const raw = password1;
+
+            document.getElementById('password1').value = '';
+            document.getElementById('password2').value = '';
+
+            const requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: raw,
+                redirect: "follow"
+            };
+
+            fetch("http://ims-project.cs.bgu.ac.il:8640/bcrypt/encrypt", requestOptions)
+                .then((response) => response.text())
+                .then((result) => {
+                    responseMessage.style.display = 'block';
+                    responsePreMessage.style.display = 'block';
+                    responseMessage.textContent = result;
+                })
+                .catch((error) => {
+                    console.error(error);
+                    responseMessage.style.display = 'block';
+                    responseMessage.textContent = 'An error occurred while sending the password.';
+                });
+        }
+    });
+</script>
+</body>
+</html>

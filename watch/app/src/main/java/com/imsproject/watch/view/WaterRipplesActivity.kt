@@ -1,7 +1,8 @@
 package com.imsproject.watch.view
 
-import android.R.attr.textStyle
 import android.os.Bundle
+import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -10,42 +11,34 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.IntentSanitizer
 import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.watch.DARK_BACKGROUND_COLOR
+import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
-import com.imsproject.watch.DARK_BACKGROUND_COLOR
-import com.imsproject.watch.RIPPLE_MAX_SIZE
+import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class WaterRipplesActivity : ComponentActivity() {
 
-    val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
+    private val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         viewModel.onCreate()
         setContent {
             Row(
@@ -55,14 +48,21 @@ class WaterRipplesActivity : ComponentActivity() {
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.Center
             ) {
-                val error = viewModel.error.collectAsState().value
-                if (error == null) {
-                    WaterRipples(viewModel)
+                // if the game is not playing, finish the activity
+                if(! viewModel.playing.collectAsState().value){
+                    val result = viewModel.resultCode.collectAsState().value
+                    val intent = IntentSanitizer.Builder()
+                        .allowComponent(componentName)
+                        .build().sanitize(intent) {
+                            Log.d(TAG, "WaterRipples: $it")
+                        }
+                    if(result != Result.Code.OK){
+                        intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
+                    }
+                    setResult(result.ordinal,intent)
+                    finish()
                 } else {
-                    ErrorScreen(error = error, onDismiss = {
-                        viewModel.onFinish()
-                        finish()
-                    })
+                    WaterRipples(viewModel)
                 }
             }
         }
@@ -70,11 +70,6 @@ class WaterRipplesActivity : ComponentActivity() {
 
     @Composable
     fun WaterRipples(viewModel: WaterRipplesViewModel) {
-
-        // if the game is not playing, finish the activity
-        if(! viewModel.playing.collectAsState().value){
-            finish()
-        }
 
         var ripples = remember { viewModel.ripples }
         val counter by viewModel.counter.collectAsState()
@@ -87,7 +82,7 @@ class WaterRipplesActivity : ComponentActivity() {
         ) {
 
             Button(
-                modifier = Modifier.size(80.dp),
+                modifier = Modifier.size(WATER_RIPPLES_BUTTON_SIZE.dp),
                 onClick = {
                     viewModel.click()
                 },
@@ -146,6 +141,10 @@ class WaterRipplesActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "WaterRipplesActivity"
     }
 }
 
