@@ -25,7 +25,7 @@ services:
     networks:
       - ims-network
     ports:
-      - "80:80"
+      - "5000:5000"
     volumes:
       - /home/admin/volumes/manager:/app/data
       - /etc/letsencrypt/live/ims-project.cs.bgu.ac.il:/app/certificates
