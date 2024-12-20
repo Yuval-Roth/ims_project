@@ -8,6 +8,7 @@ data class Result(val code: Code, val errorMessage: String? = null) {
         TCP_ERROR,
         UDP_EXCEPTION,
         UNEXPECTED_REQUEST,
+        BAD_REQUEST,
         UNKNOWN_ERROR;
 
         fun prettyName(): String{

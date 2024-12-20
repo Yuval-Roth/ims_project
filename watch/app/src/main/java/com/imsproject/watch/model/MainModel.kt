@@ -2,6 +2,7 @@ package com.imsproject.watch.model
 
 import android.util.Log
 import com.google.gson.JsonParseException
+import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.networking.UdpClient
@@ -29,6 +30,7 @@ private val SERVER_IP = if (RUNNING_LOCAL) LOCAL_IP else REMOTE_IP
 private val SCHEME = if (RUNNING_LOCAL) "ws" else "wss"
 private const val SERVER_WS_PORT = 8640
 private const val SERVER_UDP_PORT = 8641
+private const val TIME_SERVER_PORT = 8642
 // ================================|
 
 class MainModel (private val scope : CoroutineScope) {
@@ -226,6 +228,38 @@ class MainModel (private val scope : CoroutineScope) {
             .data("$x,$y")
             .build().toString()
         sendUdp(request)
+    }
+
+    suspend fun getTimeServerCurrentTimeMillis(): Long {
+        val udpClient = UdpClient()
+        udpClient.remoteAddress = SERVER_IP
+        udpClient.remotePort = TIME_SERVER_PORT
+        udpClient.init()
+        udpClient.setTimeout(TIMEOUT_MS.toInt())
+        val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
+        var time : Long = -1
+        while(true){
+            try{
+                udpClient.send(request)
+                val response = udpClient.receive()
+                val timeResponse = TimeRequest.fromJson(response)
+                val _time = timeResponse.time
+                if(_time == null){
+                    continue
+                }
+                time = _time
+                break
+            } catch(e: SocketTimeoutException){
+                Log.e(TAG, "Time request timeout", e)
+            } catch(e: JsonParseException){
+                Log.e(TAG, "Failed to parse time response", e)
+            } catch (e: IOException){
+                Log.e(TAG, "Failed to fetch time", e)
+                break
+            }
+        }
+        udpClient.close()
+        return time
     }
 
     private suspend fun executeCallback(action: suspend () -> Unit){

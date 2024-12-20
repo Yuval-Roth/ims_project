@@ -52,6 +52,12 @@ class MainViewModel() : ViewModel() {
     private var _ready = MutableStateFlow(false)
     val ready : StateFlow<Boolean> = _ready
 
+    private var _serverStartTime = MutableStateFlow(-1L)
+    val gameStartTime : StateFlow<Long> = _serverStartTime
+
+    private var _myStartTime = MutableStateFlow(-1L)
+    val myStartTime : StateFlow<Long> = _myStartTime
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -74,7 +80,11 @@ class MainViewModel() : ViewModel() {
         setupListeners() // take back control of the listeners
         _ready.value = false
         when(result.code){
-            Result.Code.OK -> _state.value = State.CONNECTED_IN_LOBBY
+            Result.Code.OK ->{
+                _serverStartTime.value = -1
+                _myStartTime.value = -1
+                _state.value = State.CONNECTED_IN_LOBBY
+            }
             else -> {
                 // typically, when reaching here, the game ended due to a network error
                 // or some other issue that hasn't been discovered yet.
@@ -141,11 +151,19 @@ class MainViewModel() : ViewModel() {
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
             }
             Type.START_GAME -> {
+                val serverStartTime = request.data?.get(0)?.toLong() ?: run {
+                    Log.e(TAG, "handleGameRequest: START_GAME request missing gameStartTime")
+                    showError("Failed to start game")
+                    return
+                }
+
                 // ===================================|
                 // clear the listeners to prevent any further messages from being processed.
                 // let the game activity handle the messages from here on out.
                 /*(!)*/ clearListeners()
                 // ===================================|
+                _serverStartTime.value = serverStartTime
+                _myStartTime.value = System.currentTimeMillis()
                 _state.value = State.IN_GAME
             }
             else -> {
@@ -200,6 +218,8 @@ class MainViewModel() : ViewModel() {
         _playerId.value = ""
         _lobbyId.value = ""
         _gameType.value = null
+        _serverStartTime.value = -1
+        _myStartTime.value = -1
         showError("The application encountered a fatal error and must be restarted.\n$message")
     }
 }

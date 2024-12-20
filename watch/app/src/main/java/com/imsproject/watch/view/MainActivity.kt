@@ -58,7 +58,7 @@ import com.imsproject.watch.viewmodel.MainViewModel.State
 class MainActivity : ComponentActivity() {
 
     private val viewModel : MainViewModel by viewModels<MainViewModel>()
-    private lateinit var waterRipples: ActivityResultLauncher<Unit>
+    private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,7 +111,11 @@ class MainActivity : ComponentActivity() {
 
             State.IN_GAME -> {
                 BlankScreen()
-                waterRipples.launch(Unit)
+                val input = mapOf<String,Any>(
+                    "serverStartTime" to viewModel.gameStartTime.collectAsState().value,
+                    "myStartTime" to viewModel.myStartTime.collectAsState().value
+                )
+                waterRipples.launch(input)
             }
 
             State.ERROR -> {
