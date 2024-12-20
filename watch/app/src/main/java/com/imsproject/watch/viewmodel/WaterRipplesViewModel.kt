@@ -20,13 +20,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.absoluteValue
 
-private const val SYNC_TIME_THRESHOLD = 10
+private const val SYNC_TIME_THRESHOLD = 90*1000000
 
 class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     class Ripple(
         color: Color,
-        val startingAlpha: Float = 1f,
+        var startingAlpha: Float = 1f,
         val timestamp: Long,
         val actor: String
     ) {
@@ -92,12 +92,22 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     }
 
     private fun showRipple(actor: String, timestamp : Long) {
-        val latestOtherActorRipple = ripples.find { it.actor != playerId }
-        if(latestOtherActorRipple != null
-            && (latestOtherActorRipple.timestamp - timestamp).absoluteValue <= SYNC_TIME_THRESHOLD
-            && latestOtherActorRipple.actor != actor
+        println("$actor: $timestamp")
+        val rippleToCheck = if (actor == playerId){
+            ripples.find { it.actor != playerId }
+        } else {
+            ripples.find { it.actor == playerId }
+        }
+
+        if(rippleToCheck != null
+            && (rippleToCheck.timestamp - timestamp).absoluteValue <= SYNC_TIME_THRESHOLD
         ){
-            latestOtherActorRipple.color.value = VIVID_ORANGE_COLOR
+            rippleToCheck.color.value = VIVID_ORANGE_COLOR
+            if(rippleToCheck.actor != playerId){
+                rippleToCheck.startingAlpha = 1.0f
+                rippleToCheck.currentAlpha.floatValue =
+                    (rippleToCheck.currentAlpha.floatValue * 2).coerceAtMost(1.0f)
+            }
         } else {
             val ripple = if(actor == playerId){
                 // My click
@@ -107,8 +117,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 Ripple(GRAY_COLOR,0.5f,timestamp,actor)
             }
             ripples.add(0,ripple)
-            _counter.value++
         }
+        _counter.value++
     }
 
     companion object {

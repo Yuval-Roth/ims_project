@@ -156,7 +156,12 @@ class MainViewModel() : ViewModel() {
                 // let the game activity handle the messages from here on out.
                 /*(!)*/ clearListeners()
                 // ===================================|
-                _timeServerStartTime.value = model.getTimeServerCurrentTimeMillis()
+                try{
+                    _timeServerStartTime.value = model.getTimeServerCurrentTimeMillis()
+                } catch(e: Exception){
+                    fatalError("Failed to start game: ${e.message ?: "Unknown error"}")
+                    return
+                }
                 _myStartTime.value = System.currentTimeMillis()
                 _state.value = State.IN_GAME
             }

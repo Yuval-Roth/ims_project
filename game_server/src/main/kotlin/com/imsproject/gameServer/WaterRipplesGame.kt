@@ -9,9 +9,11 @@ class WaterRipplesGame (player1 : ClientHandler, player2 : ClientHandler) : Game
     override fun handleGameAction(actor : ClientHandler, action: GameAction) {
         //TODO: Implement game logic
 
+        val timestamp = System.nanoTime() - startTime
+
         val toSend = GameAction.builder(GameAction.Type.CLICK)
             .actor(actor.id)
-            .timestamp(action.timestamp)
+            .timestamp(timestamp.toString())
             // add more things if needed
             .build()
         sendGameAction(toSend)

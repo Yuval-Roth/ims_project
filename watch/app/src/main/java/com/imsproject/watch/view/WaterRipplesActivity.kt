@@ -165,7 +165,11 @@ class WaterRipplesActivity : ComponentActivity() {
                     launch {
                         while (ripple.size.floatValue < RIPPLE_MAX_SIZE) {
                             ripple.size.floatValue += sizeAnimStep
-                            ripple.currentAlpha.floatValue = (ripple.currentAlpha.floatValue-alphaAnimStep).coerceAtLeast(0f)
+                            if(ripple.size.floatValue >= RIPPLE_MAX_SIZE){
+                                ripple.currentAlpha.floatValue = 0f
+                            } else {
+                                ripple.currentAlpha.floatValue = (ripple.currentAlpha.floatValue-alphaAnimStep).coerceAtLeast(0f)
+                            }
                             delay(16)
                         }
                     }

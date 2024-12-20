@@ -25,10 +25,10 @@ const val RUNNING_LOCAL : Boolean = false
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
 private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
-private const val LOCAL_IP = "10.0.2.2"
+private const val LOCAL_IP = "10.0.2.2"// "192.168.1.184"
 private val SERVER_IP = if (RUNNING_LOCAL) LOCAL_IP else REMOTE_IP
 private val SCHEME = if (RUNNING_LOCAL) "ws" else "wss"
-private const val SERVER_WS_PORT = 8640
+private val SERVER_WS_PORT = if (RUNNING_LOCAL) 8080 else 8640
 private const val SERVER_UDP_PORT = 8641
 private const val TIME_SERVER_PORT = 8642
 // ================================|

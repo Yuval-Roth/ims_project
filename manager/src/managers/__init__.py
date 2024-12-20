@@ -2,8 +2,8 @@ import requests
 import json
 from ..ENUMS import *
 
-URL = "http://ims-game-server:8080"
-# URL = "http://localhost:8640"
+# URL = "http://ims-game-server:8080"
+URL = "http://localhost:8080"
 
 
 class server_request:

@@ -57,9 +57,8 @@ class RestApiClient private constructor() {
 
         // send request
         val response: HttpResponse<String>
-        var client: HttpClient? = null
 
-        client = if (trustAllCertificates) createHttpClientTrustAllCertificates() else HttpClient.newHttpClient()
+        val client: HttpClient? = if (trustAllCertificates) createHttpClientTrustAllCertificates() else HttpClient.newHttpClient()
         response = client!!.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }

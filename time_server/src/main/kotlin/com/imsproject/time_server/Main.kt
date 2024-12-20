@@ -15,7 +15,14 @@ fun main() {
     // handle incoming requests
     while(true){
         val packet = udpClient.receiveRaw()
-        val request = TimeRequest.fromJson(String(packet.data))
+        val request: TimeRequest
+        val json = String(packet.data, 0, packet.length)
+        try{
+            request = TimeRequest.fromJson(json)
+        } catch(e: Exception){
+            System.err.println("${LocalDateTime.now().prettyPrint()} - Error parsing message: $json\n${e.stackTraceToString()}")
+            continue
+        }
         when(request.type){
             TimeRequest.Type.CURRENT_TIME_MILLIS -> udpClient.send(
                 TimeRequest.currentTimeMillis().toJson(),

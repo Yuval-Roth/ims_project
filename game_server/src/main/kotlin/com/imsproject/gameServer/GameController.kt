@@ -106,10 +106,6 @@ class GameController(private val clientController: ClientController) {
         log.debug("handleSyncTime() with clientId: {}",clientHandler.id)
 
         // ========= parameter validation ========= |
-        val lobbyId = clientToLobby[clientHandler.id] ?: run {
-            log.debug("handleSyncTime: Player not in lobby")
-            throw IllegalArgumentException("Player not in lobby")
-        }
         val game = clientIdToGame[clientHandler.id] ?: run {
             log.debug("handleSyncTime: Game not found for client")
             throw IllegalArgumentException("Game not found")
