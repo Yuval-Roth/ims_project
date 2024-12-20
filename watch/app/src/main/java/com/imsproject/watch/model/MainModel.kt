@@ -43,6 +43,7 @@ class MainModel (private val scope : CoroutineScope) {
 
     private lateinit var ws: WebSocketClient
     private lateinit var udp : UdpClient
+    private lateinit var timeServerUdp : UdpClient
 
     var playerId : String? = null
         private set
@@ -143,8 +144,16 @@ class MainModel (private val scope : CoroutineScope) {
         udp.setTimeout(0) // remove timeout
         // === end of confirmation === |
 
+        // set up udp client for time server
+        val timeServerUdp = UdpClient()
+        timeServerUdp.remoteAddress = SERVER_IP
+        timeServerUdp.remotePort = TIME_SERVER_PORT
+        timeServerUdp.init()
+        timeServerUdp.setTimeout(TIMEOUT_MS.toInt())
+
         this.ws = ws
         this.udp = udp
+        this.timeServerUdp = timeServerUdp
         this.playerId = playerId
         connected = true
 
@@ -215,50 +224,70 @@ class MainModel (private val scope : CoroutineScope) {
         sendTcp(request)
     }
 
-    suspend fun sendClick() {
+    suspend fun sendClick(timestamp: Long) {
         val request = GameAction.builder(GameAction.Type.CLICK)
+            .timestamp(timestamp.toString())
             // add more things here if needed
             .build().toString()
         sendUdp(request)
     }
 
-    suspend fun sendPosition(x: Float, y: Float) {
+    suspend fun sendPosition(x: Float, y: Float, timestamp: Long) {
         val request = GameAction.builder(GameAction.Type.POSITION)
             // add more things here if needed
             .data("$x,$y")
+            .timestamp(timestamp.toString())
             .build().toString()
         sendUdp(request)
     }
 
-    suspend fun getTimeServerCurrentTimeMillis(): Long {
-        val udpClient = UdpClient()
-        udpClient.remoteAddress = SERVER_IP
-        udpClient.remotePort = TIME_SERVER_PORT
-        udpClient.init()
-        udpClient.setTimeout(TIMEOUT_MS.toInt())
+    suspend fun sendSyncRequest(timestamp: Long) {
+        val request = GameRequest.builder(GameRequest.Type.SYNC_TIME)
+            .data(listOf(timestamp.toString()))
+            .build().toJson()
+        sendTcp(request)
+    }
+
+    /**
+     * Sends a request to the time server to get the current time in milliseconds.
+     * This method will retry up to 3 times in case of a timeout.
+     *
+     * @return The current time in milliseconds as reported by the time server.
+     * @throws SocketTimeoutException If the request times out after 3 attempts.
+     * @throws JsonParseException If the response from the time server cannot be parsed.
+     * @throws IOException If there is an I/O error while sending or receiving the request.
+     */
+    fun getTimeServerCurrentTimeMillis(): Long {
         val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
         var time : Long = -1
+        var tries = 0
         while(true){
             try{
-                udpClient.send(request)
-                val response = udpClient.receive()
+                val startTime = System.currentTimeMillis()
+                timeServerUdp.send(request)
+                val response = timeServerUdp.receive()
+                val timeDelta = System.currentTimeMillis() - startTime
+
                 val timeResponse = TimeRequest.fromJson(response)
-                val _time = timeResponse.time
-                if(_time == null){
-                    continue
+                if(timeResponse.time != null){
+                    val halfRoundTripTime = timeDelta / 2
+                    time = timeResponse.time!! - halfRoundTripTime // approximation
+                    break
                 }
-                time = _time
-                break
             } catch(e: SocketTimeoutException){
                 Log.e(TAG, "Time request timeout", e)
+                if(tries >= 3){
+                    throw e
+                }
+                tries++
             } catch(e: JsonParseException){
                 Log.e(TAG, "Failed to parse time response", e)
+                throw e
             } catch (e: IOException){
                 Log.e(TAG, "Failed to fetch time", e)
-                break
+                throw e
             }
         }
-        udpClient.close()
         return time
     }
 

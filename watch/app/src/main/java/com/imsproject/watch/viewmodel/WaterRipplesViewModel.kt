@@ -18,12 +18,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
+import kotlin.math.absoluteValue
+
+private const val SYNC_TIME_THRESHOLD = 10
 
 class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     class Ripple(
         color: Color,
         val startingAlpha: Float = 1f,
+        val timestamp: Long
     ) {
         var color = mutableStateOf(color)
         var size = mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
@@ -45,7 +50,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     fun click() {
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendClick()
+            model.sendClick(super.getCurrentGameTime())
         }
     }
 
@@ -63,13 +68,13 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                     Log.e(TAG, "handleGameAction: missing actor in click action")
                     return
                 }
-                val inSync = action.inSync ?: run{
-                    Log.e(TAG, "handleGameAction: missing inSync in click action")
+                val timestamp = action.timestamp?.toLong() ?: run{
+                    Log.e(TAG, "handleGameAction: missing timestamp in click action")
                     return
                 }
                 // switch to main thread to update UI
                 withContext(Dispatchers.Main) {
-                    showRipple(actor, inSync)
+                    showRipple(actor, timestamp)
                 }
             }
             else -> super.handleGameAction(action)
@@ -86,20 +91,22 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         }
     }
 
-    private fun showRipple(actor: String, inSync : Boolean) {
+    private fun showRipple(actor: String, timestamp : Long) {
 
-        val ripple = if (inSync){
-            // Synced click
-            Ripple(VIVID_ORANGE_COLOR)
-        } else if(actor == playerId){
-            // My click
-            Ripple(LIGHT_BLUE_COLOR)
-        } else  {
-            // Other player's click
-            Ripple(GRAY_COLOR,0.5f)
+        val latestRipple = ripples[0]
+        if((latestRipple.timestamp - timestamp).absoluteValue < SYNC_TIME_THRESHOLD){
+            latestRipple.color.value = VIVID_ORANGE_COLOR
+        } else {
+            val ripple = if(actor == playerId){
+                // My click
+                Ripple(LIGHT_BLUE_COLOR, timestamp = timestamp)
+            } else  {
+                // Other player's click
+                Ripple(GRAY_COLOR,0.5f,timestamp)
+            }
+            ripples.add(0,ripple)
+            _counter.value++
         }
-        ripples.add(0,ripple)
-        _counter.value++
     }
 
     companion object {

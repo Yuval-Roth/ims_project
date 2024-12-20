@@ -8,6 +8,8 @@ abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
 
     abstract fun handleGameAction(actor : ClientHandler, action: GameAction)
 
+    abstract fun handleGameRequest(actor : ClientHandler, request: GameRequest)
+
     fun startGame() {
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
             .data(listOf(System.currentTimeMillis().toString()))

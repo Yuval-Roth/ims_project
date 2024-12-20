@@ -4,7 +4,7 @@ data class GameAction(
     val type : Type,
     val actor : String?,
     val data : String?,
-    val timeStamp : String?
+    val timestamp : String?
     //TODO: Add more fields if needed
 ) {
     enum class Type {
@@ -17,7 +17,7 @@ data class GameAction(
     }
 
     override fun toString(): String {
-        return "$type;${actor ?: ""};${data ?: ""};${timeStamp ?: ""}"
+        return "$type;${actor ?: ""};${data ?: ""};${timestamp ?: ""}"
     }
 
     companion object {

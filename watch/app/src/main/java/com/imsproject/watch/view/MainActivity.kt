@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
             State.IN_GAME -> {
                 BlankScreen()
                 val input = mapOf<String,Any>(
-                    "serverStartTime" to viewModel.gameStartTime.collectAsState().value,
+                    "timeServerStartTime" to viewModel.gameStartTime.collectAsState().value,
                     "myStartTime" to viewModel.myStartTime.collectAsState().value
                 )
                 waterRipples.launch(input)

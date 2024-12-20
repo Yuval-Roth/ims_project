@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
@@ -46,10 +45,9 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     protected var _resultCode = MutableStateFlow(Result.Code.OK)
     val resultCode : StateFlow<Result.Code> = _resultCode
 
-    protected var gameServerStartTime = -1L
-    protected var myStartTime = -1L
-    protected var timeDifferenceFromTimeServer = -1L
-    protected var gameStartTime = -1L
+    private var myStartTime = -1L
+    private var timeServerStartTime = -1L
+    private var gameTimeDelta = 0L
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -57,17 +55,11 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
 
     open fun onCreate(intent: Intent){
         setupListeners()
-        val gameServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.serverStartTime",-1)
-        val myStartTime = intent.getLongExtra("$PACKAGE_PREFIX.myStartTime",-1)
-
-        // calculate time difference between watch and time server
-        // then approximate
+        myStartTime = intent.getLongExtra("$PACKAGE_PREFIX.myStartTime",-1)
+        timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
+        gameTimeDelta = myStartTime - timeServerStartTime
         viewModelScope.launch(Dispatchers.IO) {
-            val requestSentTime = System.currentTimeMillis()
-            val serverTime = model.getTimeServerCurrentTimeMillis()
-            val requestReceivedTime = System.currentTimeMillis()
-            val halfRoundTripTime = (requestReceivedTime - requestSentTime) / 2 // this is an approximation
-            timeDifferenceFromTimeServer = serverTime - requestSentTime - halfRoundTripTime
+            model.sendSyncRequest(timeServerStartTime)
         }
     }
 
@@ -75,23 +67,8 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     // ============================ PROTECTED METHODS ================================= |
     // ================================================================================ |
 
-    protected suspend fun handleTimeRequest(request: TimeRequest){
-        when(request.type){
-            TimeRequest.Type.CURRENT_TIME_MILLIS -> {
-                val time = request.time ?: run{
-                    val errorMsg = "missing time in time request"
-                    Log.e(TAG, "handleTimeRequest: $errorMsg")
-                    exitWithError("missing time in time request",Result.Code.BAD_REQUEST)
-                }
-            }
-            else -> {
-                val errorMsg = "Unexpected request type received\n" +
-                        "request type: ${request.type}\n"+
-                        "request content:\n$request"
-                Log.e(TAG, "handleTimeRequest: $errorMsg")
-                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
-            }
-        }
+    protected fun getCurrentGameTime(): Long {
+        return System.currentTimeMillis() - myStartTime - gameTimeDelta
     }
 
     /**
@@ -115,7 +92,22 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
      */
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
-            Type.HEARTBEAT -> {}
+            GameRequest.Type.HEARTBEAT -> {}
+            GameRequest.Type.SYNC_TIME -> {
+                val timestamp = request.data?.get(0)?.toLong() ?: run {
+                    Log.e(TAG, "handleGameRequest: missing timestamp in sync time request")
+                    return
+                }
+
+                // update the time server start time if the new timestamp is earlier
+                if(timeServerStartTime > timestamp){
+                    timeServerStartTime = timestamp
+                    gameTimeDelta = myStartTime - timeServerStartTime
+                }
+
+                // After syncing the time we can start the game
+                _state.value = State.PLAYING
+            }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
                 val errorMsg = "Unexpected request type received\n" +

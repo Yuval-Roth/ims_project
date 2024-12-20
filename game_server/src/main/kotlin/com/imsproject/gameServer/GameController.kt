@@ -57,6 +57,7 @@ class GameController(private val clientController: ClientController) {
     fun handleGameRequest(clientHandler: ClientHandler, request: GameRequest) {
         when (request.type) {
             Type.TOGGLE_READY -> handleToggleReady(clientHandler)
+            Type.SYNC_TIME -> handleSyncTime(clientHandler, request)
             else -> throw IllegalArgumentException("Invalid message type: ${request.type}")
         }
     }
@@ -99,6 +100,23 @@ class GameController(private val clientController: ClientController) {
             log.error("handleToggleReady() failed: Lobby found for player but toggle ready failed")
             throw IllegalArgumentException("Toggle ready failed")
         }
+    }
+
+    private fun handleSyncTime(clientHandler: ClientHandler, request: GameRequest) {
+        log.debug("handleSyncTime() with clientId: {}",clientHandler.id)
+
+        // ========= parameter validation ========= |
+        val lobbyId = clientToLobby[clientHandler.id] ?: run {
+            log.debug("handleSyncTime: Player not in lobby")
+            throw IllegalArgumentException("Player not in lobby")
+        }
+        val game = clientIdToGame[clientHandler.id] ?: run {
+            log.debug("handleSyncTime: Game not found for client")
+            throw IllegalArgumentException("Game not found")
+        }
+        // ======================================== |
+
+        game.handleGameRequest(clientHandler, request)
     }
 
     private fun handleGetAllLobbies() : String {

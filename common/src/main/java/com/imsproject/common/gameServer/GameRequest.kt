@@ -33,7 +33,8 @@ data class GameRequest(
         @SerializedName("resume_game") RESUME_GAME("resume_game"),
         @SerializedName("toggle_ready") TOGGLE_READY("toggle_ready"),
         @SerializedName("error") ERROR("error"),
-        @SerializedName("heartbeat") HEARTBEAT("heartbeat");
+        @SerializedName("heartbeat") HEARTBEAT("heartbeat"),
+        @SerializedName("sync_time") SYNC_TIME("sync_time"),;
     }
 
     fun toJson() = JsonUtils.serialize(this)
