@@ -28,7 +28,7 @@ interface SQLExecutor {
 
     /**
      * Executes a read query by using [java.sql.PreparedStatement]
-     * @param query An sql un-prepared query. Use '?' for parameters
+     * @param query An sql prepared query. Use '?' for parameters
      * @param params The parameters to be inserted into the query in order (will replace '?' in the query)
      * @return An [OfflineResultSet] containing the result of the query
      * @throws SQLException if an error occurs while executing the query
@@ -38,7 +38,7 @@ interface SQLExecutor {
 
     /**
      * Executes a write query by using [java.sql.PreparedStatement]
-     * @param query An sql un-prepared query. Use '?' for parameters
+     * @param query An sql prepared query. Use '?' for parameters
      * @param params The parameters to be inserted into the query in order (will replace '?' in the query)
      * @return The number of rows affected by the query
      * @throws SQLException if an error occurs while executing the query
