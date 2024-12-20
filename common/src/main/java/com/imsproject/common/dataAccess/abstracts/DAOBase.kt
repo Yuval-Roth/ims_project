@@ -43,12 +43,12 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     @Throws(DaoException::class)
     override fun select(key: PK): T {
         val values = keyToValues(key)
-        val unpreparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
-        expandWhereClause(key, unpreparedQuery)
+        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
+        expandWhereClause(key, preparedQuery)
 
         val resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(unpreparedQuery.toString(), *values)
+            resultSet = cursor.executeRead(preparedQuery.toString(), *values)
         } catch (e: SQLException) {
             throw DaoException("Failed to select from table $TABLE_NAME", e)
         }
@@ -79,11 +79,11 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     @Throws(DaoException::class)
     override fun delete(key: PK) {
         val values = keyToValues(key)
-        val unpreparedQuery = StringBuilder("DELETE FROM %s WHERE ".format(TABLE_NAME))
-        expandWhereClause(key, unpreparedQuery)
+        val preparedQuery = StringBuilder("DELETE FROM %s WHERE ".format(TABLE_NAME))
+        expandWhereClause(key, preparedQuery)
 
         try {
-            cursor.executeWrite(unpreparedQuery.toString(), *values)
+            cursor.executeWrite(preparedQuery.toString(), *values)
         } catch (e: SQLException) {
             throw DaoException("Failed to delete from table $TABLE_NAME", e)
         }
@@ -118,12 +118,12 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     @Throws(DaoException::class)
     override fun exists(key: PK): Boolean {
         val values = keyToValues(key)
-        val unpreparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
-        expandWhereClause(key, unpreparedQuery)
+        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
+        expandWhereClause(key, preparedQuery)
 
         val resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(unpreparedQuery.toString(), *values)
+            resultSet = cursor.executeRead(preparedQuery.toString(), *values)
         } catch (e: SQLException) {
             throw DaoException("Failed to check if exists in table $TABLE_NAME", e)
         }
@@ -131,14 +131,14 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         return resultSet.next()
     }
 
-    private fun expandWhereClause(key: PK, unpreparedQuery: StringBuilder) {
+    private fun expandWhereClause(key: PK, preparedQuery: StringBuilder) {
         val columnNames = key.columnNames()
         for (i in columnNames.indices) {
-            unpreparedQuery.append("%s = ?".format(columnNames[i]))
+            preparedQuery.append("%s = ?".format(columnNames[i]))
             if (i != columnNames.size - 1) {
-                unpreparedQuery.append(" AND ")
+                preparedQuery.append(" AND ")
             } else {
-                unpreparedQuery.append(";")
+                preparedQuery.append(";")
             }
         }
     }

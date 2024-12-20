@@ -5,7 +5,7 @@ import com.imsproject.common.dataAccess.DaoException
 /**
  * Data Access Object interface
  */
-interface DAO<T, PK : PrimaryKey?> {
+interface DAO<T, PK : PrimaryKey> {
     @Throws(DaoException::class)
     fun select(key: PK): T
 
