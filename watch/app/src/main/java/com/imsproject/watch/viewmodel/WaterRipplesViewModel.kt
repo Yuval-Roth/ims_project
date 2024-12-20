@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
 import kotlin.math.absoluteValue
 
 private const val SYNC_TIME_THRESHOLD = 10
@@ -28,7 +27,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     class Ripple(
         color: Color,
         val startingAlpha: Float = 1f,
-        val timestamp: Long
+        val timestamp: Long,
+        val actor: String
     ) {
         var color = mutableStateOf(color)
         var size = mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
@@ -92,17 +92,19 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     }
 
     private fun showRipple(actor: String, timestamp : Long) {
-
-        val latestRipple = ripples[0]
-        if((latestRipple.timestamp - timestamp).absoluteValue < SYNC_TIME_THRESHOLD){
-            latestRipple.color.value = VIVID_ORANGE_COLOR
+        val latestOtherActorRipple = ripples.find { it.actor != playerId }
+        if(latestOtherActorRipple != null
+            && (latestOtherActorRipple.timestamp - timestamp).absoluteValue <= SYNC_TIME_THRESHOLD
+            && latestOtherActorRipple.actor != actor
+        ){
+            latestOtherActorRipple.color.value = VIVID_ORANGE_COLOR
         } else {
             val ripple = if(actor == playerId){
                 // My click
-                Ripple(LIGHT_BLUE_COLOR, timestamp = timestamp)
+                Ripple(LIGHT_BLUE_COLOR, timestamp = timestamp, actor = actor)
             } else  {
                 // Other player's click
-                Ripple(GRAY_COLOR,0.5f,timestamp)
+                Ripple(GRAY_COLOR,0.5f,timestamp,actor)
             }
             ripples.add(0,ripple)
             _counter.value++
