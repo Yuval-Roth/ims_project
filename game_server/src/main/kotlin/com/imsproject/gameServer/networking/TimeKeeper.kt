@@ -17,8 +17,10 @@ class TimeKeeper {
     @Value("\${running.local}")
     private var runningLocal: Boolean = false
 
+    @Value("\${time_server.port}")
+    private var timeServerPort: Int = 0
+
     private lateinit var timeServerIp: String
-    private val timeServerPort: Int = 8642
 
     final var timeServerDelta: Long = 0
         private set
