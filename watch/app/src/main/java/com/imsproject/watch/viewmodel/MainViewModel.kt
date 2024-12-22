@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.view.contracts.Result
@@ -14,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.java_websocket.exceptions.WebsocketNotConnectedException
+import java.util.Random
 
 private const val TAG = "MainViewModel"
 
@@ -129,8 +129,9 @@ class MainViewModel() : ViewModel() {
 
     private fun handleGameRequest(request: GameRequest){
         when (request.type){
-            Type.HEARTBEAT -> {}
-            Type.JOIN_LOBBY -> {
+            GameRequest.Type.PONG -> {}
+            GameRequest.Type.HEARTBEAT -> {}
+            GameRequest.Type.JOIN_LOBBY -> {
                 val lobbyId = request.lobbyId ?: run {
                     Log.e(TAG, "handleGameRequest: JOIN_LOBBY request missing lobbyId")
                     showError("Failed to join lobby")
@@ -146,23 +147,22 @@ class MainViewModel() : ViewModel() {
                 _lobbyId.value = lobbyId
                 _state.value = State.CONNECTED_IN_LOBBY
             }
-            Type.LEAVE_LOBBY -> {
+            GameRequest.Type.LEAVE_LOBBY -> {
                 _lobbyId.value = ""
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
             }
-            Type.START_GAME -> {
+            GameRequest.Type.START_GAME -> {
                 // ===================================|
                 // clear the listeners to prevent any further messages from being processed.
                 // let the game activity handle the messages from here on out.
                 /*(!)*/ clearListeners()
                 // ===================================|
-                try{
-                    _timeServerStartTime.value = model.getTimeServerCurrentTimeMillis()
-                } catch(e: Exception){
-                    fatalError("Failed to start game: ${e.message ?: "Unknown error"}")
+                _myStartTime.value = System.currentTimeMillis()
+                _timeServerStartTime.value = request.data?.get(0)?.toLong() ?: run{
+                    Log.e(TAG, "handleGameRequest: START_GAME request missing start time")
+                    fatalError("Failed to start game: missing start time")
                     return
                 }
-                _myStartTime.value = System.currentTimeMillis()
                 _state.value = State.IN_GAME
             }
             else -> {
@@ -177,6 +177,7 @@ class MainViewModel() : ViewModel() {
 
     private fun handleGameAction(action: GameAction){
         when(action.type){
+            GameAction.Type.PONG -> {}
             GameAction.Type.HEARTBEAT -> {}
             else -> {
                 Log.e(TAG, "handleGameAction: Unexpected action type: ${action.type}")

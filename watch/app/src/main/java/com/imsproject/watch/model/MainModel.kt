@@ -19,16 +19,18 @@ import java.net.SocketTimeoutException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 
-// flip this to true when debugging locally
-const val RUNNING_LOCAL : Boolean = true
+// set these values to run the app locally
+const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
+const val RUNNING_ON_EMULATOR : Boolean = false
+const val COMPUTER_NETWORK_IP = "192.168.0.104"
 
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
 private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
-private const val LOCAL_IP = "10.0.2.2" // "192.168.0.104"
-private val SERVER_IP = if (RUNNING_LOCAL) LOCAL_IP else REMOTE_IP
-private val SCHEME = if (RUNNING_LOCAL) "ws" else "wss"
-private val SERVER_WS_PORT = if (RUNNING_LOCAL) 8080 else 8640
+private val LOCAL_IP = if(RUNNING_ON_EMULATOR) "10.0.2.2" else COMPUTER_NETWORK_IP
+private val SERVER_IP = if (RUNNING_LOCAL_GAME_SERVER) LOCAL_IP else REMOTE_IP
+private val SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "ws" else "wss"
+private val SERVER_WS_PORT = if (RUNNING_LOCAL_GAME_SERVER) 8080 else 8640
 private const val SERVER_UDP_PORT = 8641
 private const val TIME_SERVER_PORT = 8642
 // ================================|
@@ -219,6 +221,16 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
+    fun pingUdp() {
+        if(connected.not()) return
+        udp.send(GameAction.ping)
+    }
+
+    fun pingTcp() {
+        if(connected.not()) return
+        ws.send(GameRequest.ping)
+    }
+
     suspend fun toggleReady() {
         val request = GameRequest.builder(GameRequest.Type.TOGGLE_READY).build().toJson()
         sendTcp(request)
@@ -242,10 +254,10 @@ class MainModel (private val scope : CoroutineScope) {
     }
 
     suspend fun sendSyncRequest(timestamp: Long) {
-        val request = GameRequest.builder(GameRequest.Type.SYNC_TIME)
-            .data(listOf(timestamp.toString()))
-            .build().toJson()
-        sendTcp(request)
+        val request = GameAction.builder(GameAction.Type.SYNC_TIME)
+            .timestamp(timestamp.toString())
+            .build().toString()
+        sendUdp(request)
     }
 
     /**
@@ -259,36 +271,24 @@ class MainModel (private val scope : CoroutineScope) {
      */
     fun getTimeServerCurrentTimeMillis(): Long {
         val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
-        var time : Long = -1
-        var tries = 0
-        while(true){
-            try{
-                val startTime = System.currentTimeMillis()
-                timeServerUdp.send(request)
-                val response = timeServerUdp.receive()
-                val timeDelta = System.currentTimeMillis() - startTime
-
-                val timeResponse = TimeRequest.fromJson(response)
-                if(timeResponse.time != null){
-                    val halfRoundTripTime = timeDelta / 2
-                    time = timeResponse.time!! - halfRoundTripTime // approximation
-                    break
-                }
-            } catch(e: SocketTimeoutException){
-                Log.e(TAG, "Time request timeout", e)
-                if(tries >= 3){
-                    throw e
-                }
-                tries++
-            } catch(e: JsonParseException){
-                Log.e(TAG, "Failed to parse time response", e)
-                throw e
-            } catch (e: IOException){
-                Log.e(TAG, "Failed to fetch time", e)
-                throw e
-            }
+        try{
+            val startTime = System.currentTimeMillis()
+            timeServerUdp.send(request)
+            val response = timeServerUdp.receive()
+            val timeDelta = System.currentTimeMillis() - startTime
+            val timeResponse = TimeRequest.fromJson(response)
+            val halfRoundTripTime = timeDelta / 2
+            return timeResponse.time!! - halfRoundTripTime // approximation
+        } catch(e: SocketTimeoutException){
+            Log.e(TAG, "Time request timeout", e)
+            throw e
+        } catch(e: JsonParseException){
+            Log.e(TAG, "Failed to parse time response", e)
+            throw e
+        } catch (e: IOException){
+            Log.e(TAG, "Failed to fetch time", e)
+            throw e
         }
-        return time
     }
 
     private suspend fun executeCallback(action: suspend () -> Unit){

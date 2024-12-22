@@ -13,7 +13,8 @@ data class GameAction(
         PONG,
         POSITION,
         CLICK,
-        HEARTBEAT
+        HEARTBEAT,
+        SYNC_TIME
     }
 
     override fun toString(): String {

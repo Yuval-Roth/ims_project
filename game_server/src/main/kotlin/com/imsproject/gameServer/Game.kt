@@ -11,10 +11,10 @@ abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
 
     abstract fun handleGameRequest(actor : ClientHandler, request: GameRequest)
 
-    fun startGame() {
+    fun startGame(timestamp: Long) {
         startTime = System.currentTimeMillis()
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
-            .data(listOf(System.currentTimeMillis().toString()))
+            .data(listOf(timestamp.toString()))
             .build().toJson()
         player1.sendTcp(startMessage)
         player2.sendTcp(startMessage)

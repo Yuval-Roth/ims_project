@@ -4,10 +4,10 @@ import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.networking.PingTracker
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.view.contracts.Result
@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlin.math.absoluteValue
 
 abstract class GameViewModel(gameType: GameType) : ViewModel() {
 
@@ -45,9 +47,10 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     protected var _resultCode = MutableStateFlow(Result.Code.OK)
     val resultCode : StateFlow<Result.Code> = _resultCode
 
-    private var myStartTime = -1L
-    private var timeServerStartTime = -1L
-    private var gameTimeDelta = 0L
+    private var timeServerDelta = 0L
+    private var myStartTime = 0L
+    private var latency = 0L
+    private val pingTracker = PingTracker()
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -55,11 +58,32 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
 
     open fun onCreate(intent: Intent){
         setupListeners()
-        myStartTime = intent.getLongExtra("$PACKAGE_PREFIX.myStartTime",-1)
-        timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
-        gameTimeDelta = myStartTime - timeServerStartTime
+
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendSyncRequest(timeServerStartTime)
+            pingTracker.onUpdate = { latency = it }
+            pingTracker.start()
+            while (true) {
+                val now = System.currentTimeMillis()
+                model.pingUdp()
+                pingTracker.sentAt(now)
+                delay(50)
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            delay(1200) // wait for latency to be calculated
+            calculateTimeServerDelta()
+            println("Time server delta: $timeServerDelta")
+            var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
+            myStartTime = timeServerStartTime + timeServerDelta
+            model.sendSyncRequest(getCurrentGameTime() + (latency / 2))
+            _state.value = State.PLAYING
+
+//            while(true){
+//                val skewedTimestamp = getCurrentGameTime() + (latency / 2)
+//                model.sendSyncRequest(skewedTimestamp)
+//                delay(100)
+//            }
         }
     }
 
@@ -68,7 +92,7 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     // ================================================================================ |
 
     protected fun getCurrentGameTime(): Long {
-        return System.currentTimeMillis() - myStartTime - gameTimeDelta
+        return System.currentTimeMillis() - myStartTime
     }
 
     /**
@@ -76,6 +100,27 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
      */
     protected open suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
+            GameAction.Type.PONG -> {
+                val now = System.currentTimeMillis()
+                pingTracker.receivedAt(now)
+            }
+            GameAction.Type.SYNC_TIME -> {
+
+                val currentGameTime = getCurrentGameTime()
+
+                val timestamp = action.timestamp?.toLong() ?: run {
+                    Log.e(TAG, "handleGameAction: missing timestamp in sync time request")
+                    return
+                }
+                val skewedTimestamp = timestamp + (latency / 2)
+                val delta = skewedTimestamp - currentGameTime
+
+                // update the time server start time if the new timestamp is earlier
+                println("delta: $delta")
+                if(delta <= -5){
+                    myStartTime -= -5
+                }
+            }
             GameAction.Type.HEARTBEAT -> {}
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected action type: ${action.type}")
@@ -93,21 +138,6 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
             GameRequest.Type.HEARTBEAT -> {}
-            GameRequest.Type.SYNC_TIME -> {
-                val timestamp = request.data?.get(0)?.toLong() ?: run {
-                    Log.e(TAG, "handleGameRequest: missing timestamp in sync time request")
-                    return
-                }
-
-                // update the time server start time if the new timestamp is earlier
-                if(timeServerStartTime > timestamp){
-                    timeServerStartTime = timestamp
-                    gameTimeDelta = myStartTime - timeServerStartTime
-                }
-
-                // After syncing the time we can start the game
-                _state.value = State.PLAYING
-            }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
                 val errorMsg = "Unexpected request type received\n" +
@@ -128,6 +158,15 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     protected fun exitOk() {
         clearListeners() // clear the listeners to prevent any further messages from being processed.
         _state.value = State.TERMINATED
+    }
+
+    protected fun calculateTimeServerDelta(){
+        val data : List<Long> = List(100) {
+            val currentLocal = System.currentTimeMillis()
+            val currentTimeServer = model.getTimeServerCurrentTimeMillis()
+            currentLocal-currentTimeServer
+        }
+        timeServerDelta = data.average().toLong()
     }
 
     // ================================================================================ |

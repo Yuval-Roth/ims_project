@@ -9,6 +9,7 @@ class PingTracker {
     // this will be called periodically to update the current ping
     var onUpdate : (Long) -> Unit = {}
 
+    private val waitingForAck = ConcurrentLinkedDeque<Long>()
     private val values = ConcurrentLinkedDeque<Long>()
     private var job : Job? = null
     private var sentCount = 0
@@ -16,12 +17,15 @@ class PingTracker {
 
     fun lostCount() = sentCount - receivedCount
 
-    fun add(value: Long) {
-        values.addLast(value)
+    fun receivedAt(value: Long) {
+        waitingForAck.poll()?.let { timestamp ->
+            values.add(value - timestamp)
+        }
         receivedCount++
     }
 
-    fun addSent(){
+    fun sentAt(timestamp: Long){
+        waitingForAck.add(timestamp)
         sentCount++
     }
 
@@ -34,6 +38,7 @@ class PingTracker {
                     .map { num -> num / values.size }
                     .getOrElse { -1L }
                 values.clear()
+                waitingForAck.clear()
                 onUpdate(avg)
                 delay(1000)
             }

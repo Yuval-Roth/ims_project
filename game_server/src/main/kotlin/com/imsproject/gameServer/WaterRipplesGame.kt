@@ -9,13 +9,27 @@ class WaterRipplesGame (player1 : ClientHandler, player2 : ClientHandler) : Game
     override fun handleGameAction(actor: ClientHandler, action: GameAction, timestamp: Long) {
         //TODO: Implement game logic
 
-        val timestamp = timestamp - startTime
-        val toSend = GameAction.builder(GameAction.Type.CLICK)
-            .actor(actor.id)
-            .timestamp(timestamp.toString())
-            // add more things if needed
-            .build()
-        sendGameAction(toSend)
+        when(action.type) {
+            GameAction.Type.CLICK -> {
+                val toSend = GameAction.builder(GameAction.Type.CLICK)
+                    .actor(actor.id)
+                    .timestamp(action.timestamp)
+                    // add more things if needed
+                    .build()
+                sendGameAction(toSend)
+            }
+            GameAction.Type.SYNC_TIME -> {
+                val toSend = GameAction.builder(GameAction.Type.SYNC_TIME)
+                    .timestamp(action.timestamp)
+                    .build()
+                if(actor == player1) {
+                    player2.sendUdp(toSend.toString())
+                } else {
+                    player1.sendUdp(toSend.toString())
+                }
+            }
+            else -> return
+        }
     }
 
     override fun handleGameRequest(actor: ClientHandler, request: GameRequest) {

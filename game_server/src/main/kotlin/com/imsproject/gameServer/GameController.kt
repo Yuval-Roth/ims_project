@@ -7,12 +7,16 @@ import com.imsproject.common.gameServer.GameType
 import com.imsproject.common.gameServer.LobbyState
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.SimpleIdGenerator
+import com.imsproject.gameServer.networking.TimeKeeper
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
-class GameController(private val clientController: ClientController) {
+class GameController(
+        private val clientController: ClientController,
+        private val timeKeeper: TimeKeeper
+    ) {
 
     private val lobbies = ConcurrentHashMap<String,Lobby>()
     private val games = ConcurrentHashMap<String, Game>()
@@ -57,7 +61,6 @@ class GameController(private val clientController: ClientController) {
     fun handleGameRequest(clientHandler: ClientHandler, request: GameRequest) {
         when (request.type) {
             Type.TOGGLE_READY -> handleToggleReady(clientHandler)
-            Type.SYNC_TIME -> handleSyncTime(clientHandler, request)
             else -> throw IllegalArgumentException("Invalid message type: ${request.type}")
         }
     }
@@ -102,9 +105,7 @@ class GameController(private val clientController: ClientController) {
         }
     }
 
-    private fun handleSyncTime(clientHandler: ClientHandler, request: GameRequest) {
-        log.debug("handleSyncTime() with clientId: {}",clientHandler.id)
-
+    private fun handleSyncTime(clientHandler: ClientHandler, action: GameAction) {
         // ========= parameter validation ========= |
         val game = clientIdToGame[clientHandler.id] ?: run {
             log.debug("handleSyncTime: Game not found for client")
@@ -112,7 +113,7 @@ class GameController(private val clientController: ClientController) {
         }
         // ======================================== |
 
-        game.handleGameRequest(clientHandler, request)
+        game.handleGameAction(clientHandler, action,0)
     }
 
     private fun handleGetAllLobbies() : String {
@@ -344,8 +345,9 @@ class GameController(private val clientController: ClientController) {
         games[lobby.id] = game
         clientIdToGame[player1Id] = game
         clientIdToGame[player2Id] = game
-        
-        game.startGame() // game.startGame() notifies the clients
+
+        // game.startGame() notifies the clients
+        game.startGame(timeKeeper.timeServerCurrentTimeMillis())
 
         log.debug("handleStartGame() successful")
         return Response.getOk()

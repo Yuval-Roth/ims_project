@@ -47,12 +47,10 @@ class UdpSocketHandler(private val gameController: GameController) {
         while(true) {
             // try to receive a packet
             val senderAddress = socket.receiveNonBlocking(buffer) ?: continue
-            println("received message ${System.currentTimeMillis()}")
             val timestamp = System.currentTimeMillis()
             buffer.flip()
             val message = String(buffer.array(), 0, buffer.limit())
             handleMessage(message, senderAddress, timestamp)
-            println("handled message ${System.currentTimeMillis()}")
             buffer.clear()
         }
     }
@@ -67,8 +65,7 @@ class UdpSocketHandler(private val gameController: GameController) {
         }
 
         when (action.type) {
-            Type.CLICK, Type.POSITION -> {
-                println("coming out $timestamp")
+            Type.CLICK, Type.POSITION, Type.SYNC_TIME -> {
                 val client = clients[address.toHostPortString()]
                 if (client == null) {
                     log.debug("Client not found for packet from ${address.toHostPortString()}")
