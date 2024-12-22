@@ -6,11 +6,10 @@ import com.imsproject.common.gameServer.GameRequest
 
 class WaterRipplesGame (player1 : ClientHandler, player2 : ClientHandler) : Game(player1, player2) {
 
-    override fun handleGameAction(actor : ClientHandler, action: GameAction) {
+    override fun handleGameAction(actor: ClientHandler, action: GameAction, timestamp: Long) {
         //TODO: Implement game logic
 
-        val timestamp = System.nanoTime() - startTime
-
+        val timestamp = timestamp - startTime
         val toSend = GameAction.builder(GameAction.Type.CLICK)
             .actor(actor.id)
             .timestamp(timestamp.toString())

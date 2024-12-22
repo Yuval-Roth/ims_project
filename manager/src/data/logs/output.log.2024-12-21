@@ -1,0 +1,9 @@
+2024-12-21 23:22:31,826 - ERROR - Failed to get participants, HTTPConnectionPool(host='ims-game-server', port=8080): Max retries exceeded with url: /manager (Caused by NameResolutionError("<urllib3.connection.HTTPConnection object at 0x000002AD0FCB36A0>: Failed to resolve 'ims-game-server' ([Errno 11001] getaddrinfo failed)"))
+2024-12-21 23:23:35,087 - INFO - Starting game in lobby 01
+2024-12-21 23:29:08,349 - ERROR - Failed to get participants, HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /manager (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001BBBCD94040>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))
+2024-12-21 23:29:24,471 - INFO - Starting game in lobby 01
+2024-12-21 23:39:07,899 - INFO - Starting game in lobby 01
+2024-12-21 23:42:18,946 - INFO - Stopping game in lobby 01
+2024-12-21 23:42:18,964 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-21 23:42:18,964 - ERROR - Failed to remove 01 from lobby 01
+2024-12-21 23:42:24,518 - INFO - Starting game in lobby 02

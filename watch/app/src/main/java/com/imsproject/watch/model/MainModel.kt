@@ -20,12 +20,12 @@ import java.net.URI
 import java.util.concurrent.TimeUnit
 
 // flip this to true when debugging locally
-const val RUNNING_LOCAL : Boolean = false
+const val RUNNING_LOCAL : Boolean = true
 
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
 private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
-private const val LOCAL_IP = "10.0.2.2"// "192.168.1.184"
+private const val LOCAL_IP = "10.0.2.2" // "192.168.0.104"
 private val SERVER_IP = if (RUNNING_LOCAL) LOCAL_IP else REMOTE_IP
 private val SCHEME = if (RUNNING_LOCAL) "ws" else "wss"
 private val SERVER_WS_PORT = if (RUNNING_LOCAL) 8080 else 8640

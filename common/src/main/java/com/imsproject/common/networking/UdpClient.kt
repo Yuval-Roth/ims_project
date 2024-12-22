@@ -2,10 +2,7 @@ package com.imsproject.common.networking
 
 import kotlinx.coroutines.*
 import java.io.IOException
-import java.net.DatagramPacket
-import java.net.DatagramSocket
-import java.net.InetAddress
-import java.net.SocketTimeoutException
+import java.net.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -228,10 +225,6 @@ class UdpClient {
     }
 
     private fun assertClientInitialized() : DatagramSocket {
-        if (client != null) {
-            return client!!
-        } else {
-            throw IllegalStateException("Client is not initialized.")
-        }
+        return this.client ?: throw IllegalStateException("Client is not initialized.")
     }
 }

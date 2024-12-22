@@ -116,8 +116,8 @@ class WebSocketHandler(
 
     private fun newClientHandler(wsSession: WebSocketSession) : ClientHandler {
         val id = idGenerator.generate()
-        return ClientHandler(id, wsSession) { message, address, port ->
-            udpSocketHandler.send(message, address, port)
+        return ClientHandler(id, wsSession) { message, address ->
+            udpSocketHandler.send(message, address)
         }
     }
 }
