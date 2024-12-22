@@ -43,6 +43,12 @@
             android:exported="true"
             android:lockTaskMode="always"
             />
+        <activity
+            android:name=".view.WineGlassesActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:lockTaskMode="always"
+            />
 
     </application>
 

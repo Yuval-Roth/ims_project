@@ -106,7 +106,6 @@ class WaterRipplesActivity : ComponentActivity() {
                     CircularProgressIndicator(
                         strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
                         modifier = Modifier.size((SCREEN_WIDTH *0.2f).dp)
-//                        modifier = Modifier.size(75.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     BasicText(
