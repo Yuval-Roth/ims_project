@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.absoluteValue
 
-private const val SYNC_TIME_THRESHOLD = 90
+private const val SYNC_TIME_THRESHOLD = 50
 
 class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
