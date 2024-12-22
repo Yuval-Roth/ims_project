@@ -347,7 +347,7 @@ class MainModel (private val scope : CoroutineScope) {
 
         heartBeatListener = scope.launch(Dispatchers.IO){
             while(true){
-                delay(1000)
+                delay(5000)
                 try{
                     ws.send(GameRequest.heartbeat)
                     udp.send(GameAction.heartbeat)

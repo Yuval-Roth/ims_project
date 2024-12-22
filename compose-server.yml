@@ -17,6 +17,8 @@ services:
         - "8641:8641/udp"
     volumes:
         - /home/admin/volumes/game_server:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   ims-manager:
     image: yuvalroth123/imsproject_manager:latest

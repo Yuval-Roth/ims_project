@@ -15,6 +15,7 @@ import org.springframework.web.socket.CloseStatus
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.TextWebSocketHandler
+import java.time.LocalDateTime
 import java.util.*
 
 @Component
@@ -52,7 +53,12 @@ class WebSocketHandler(
 
             Type.PING -> session.send(GameRequest.pong)
             Type.PONG -> {}
-            Type.HEARTBEAT -> session.send(GameRequest.heartbeat)
+            Type.HEARTBEAT -> {
+                clientController.getByWsSessionId(session.id)?.let {
+                    it.lastHeartbeat = LocalDateTime.now()
+                    session.send(GameRequest.heartbeat)
+                }
+            }
 
             Type.ENTER -> {
 
@@ -88,6 +94,9 @@ class WebSocketHandler(
                 // get the client handler for the session if it exists
                 val client = clientController.getByWsSessionId(session.id) ?: run {
                     log.error("Client not found for session: {}", session.id)
+                    session.send(GameRequest.builder(Type.ERROR)
+                            .message("Client not found, please reconnect")
+                            .build().toJson())
                     return
                 }
                 try {
@@ -98,8 +107,7 @@ class WebSocketHandler(
                     // send an error message to the client
                     // to inform him he sent an invalid message
                     // if the error message is null, send a generic error message
-                    client.sendTcp(
-                        GameRequest.builder(Type.ERROR)
+                    client.sendTcp(GameRequest.builder(Type.ERROR)
                             .message(e.message ?: "An error occurred:\n${e.stackTraceToString()}")
                             .data(listOf(rawPayload))
                             .build().toJson())

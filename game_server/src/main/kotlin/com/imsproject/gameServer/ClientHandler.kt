@@ -3,6 +3,7 @@ package com.imsproject.gameServer
 import org.springframework.web.socket.WebSocketSession
 import java.io.IOException
 import java.net.SocketAddress
+import java.time.LocalDateTime
 
 class ClientHandler internal constructor(
     val id: String,
@@ -10,7 +11,9 @@ class ClientHandler internal constructor(
     private val sendUdp: (String,SocketAddress) -> Unit
 ) {
 
+    val wsSessionId: String = wsSession.id
     var udpAddress: SocketAddress? = null
+    var lastHeartbeat: LocalDateTime = LocalDateTime.now()
 
     @Throws(IOException::class)
     fun sendTcp(message: String) {
