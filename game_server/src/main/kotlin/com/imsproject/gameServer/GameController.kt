@@ -69,7 +69,7 @@ class GameController(
      * @throws IllegalArgumentException if anything is wrong with the message
      */
     @Throws(IllegalArgumentException::class)
-    fun handleGameAction(clientHandler: ClientHandler, action: GameAction, timestamp: Long) {
+    fun handleGameAction(clientHandler: ClientHandler, action: GameAction) {
         // ========= parameter validation ========= |
         val game = clientIdToGame[clientHandler.id] ?: run{
             log.debug("handleGameAction: Game not found for client: {}",clientHandler.id)
@@ -77,7 +77,7 @@ class GameController(
         }
         // ======================================== |
 
-        game.handleGameAction(clientHandler, action, timestamp)
+        game.handleGameAction(clientHandler, action)
     }
 
     private fun handleToggleReady(clientHandler: ClientHandler) {
@@ -113,7 +113,7 @@ class GameController(
         }
         // ======================================== |
 
-        game.handleGameAction(clientHandler, action,0)
+        game.handleGameAction(clientHandler, action)
     }
 
     private fun handleGetAllLobbies() : String {

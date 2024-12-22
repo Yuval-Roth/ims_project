@@ -262,10 +262,9 @@ class MainModel (private val scope : CoroutineScope) {
 
     /**
      * Sends a request to the time server to get the current time in milliseconds.
-     * This method will retry up to 3 times in case of a timeout.
      *
      * @return The current time in milliseconds as reported by the time server.
-     * @throws SocketTimeoutException If the request times out after 3 attempts.
+     * @throws SocketTimeoutException If the request times out
      * @throws JsonParseException If the response from the time server cannot be parsed.
      * @throws IOException If there is an I/O error while sending or receiving the request.
      */

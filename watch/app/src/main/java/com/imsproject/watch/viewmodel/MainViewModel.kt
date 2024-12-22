@@ -55,9 +55,6 @@ class MainViewModel() : ViewModel() {
     private var _timeServerStartTime = MutableStateFlow(-1L)
     val gameStartTime : StateFlow<Long> = _timeServerStartTime
 
-    private var _myStartTime = MutableStateFlow(-1L)
-    val myStartTime : StateFlow<Long> = _myStartTime
-
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -82,7 +79,6 @@ class MainViewModel() : ViewModel() {
         when(result.code){
             Result.Code.OK ->{
                 _timeServerStartTime.value = -1
-                _myStartTime.value = -1
                 _state.value = State.CONNECTED_IN_LOBBY
             }
             else -> {
@@ -157,7 +153,6 @@ class MainViewModel() : ViewModel() {
                 // let the game activity handle the messages from here on out.
                 /*(!)*/ clearListeners()
                 // ===================================|
-                _myStartTime.value = System.currentTimeMillis()
                 _timeServerStartTime.value = request.data?.get(0)?.toLong() ?: run{
                     Log.e(TAG, "handleGameRequest: START_GAME request missing start time")
                     fatalError("Failed to start game: missing start time")
@@ -219,7 +214,6 @@ class MainViewModel() : ViewModel() {
         _lobbyId.value = ""
         _gameType.value = null
         _timeServerStartTime.value = -1
-        _myStartTime.value = -1
         showError("The application encountered a fatal error and must be restarted.\n$message")
     }
 }

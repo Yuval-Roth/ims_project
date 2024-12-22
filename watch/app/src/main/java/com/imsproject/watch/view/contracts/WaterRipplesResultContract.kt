@@ -14,9 +14,7 @@ class WaterRipplesResultContract : ActivityResultContract<Map<String,Any>, Resul
     ): Intent {
         val intent = Intent(context, WaterRipplesActivity::class.java)
         val serverStartTime = input["timeServerStartTime"] as Long
-        val myStartTime = input["myStartTime"] as Long
         intent.putExtra("$PACKAGE_PREFIX.timeServerStartTime", serverStartTime)
-        intent.putExtra("$PACKAGE_PREFIX.myStartTime", myStartTime)
         return intent
     }
 

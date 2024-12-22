@@ -7,7 +7,7 @@ abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
 
     protected var startTime : Long = 0
 
-    abstract fun handleGameAction(actor: ClientHandler, action: GameAction, timestamp: Long)
+    abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
 
     abstract fun handleGameRequest(actor : ClientHandler, request: GameRequest)
 

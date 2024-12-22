@@ -23,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
 import androidx.wear.compose.material.Button
@@ -34,6 +35,7 @@ import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
+import com.imsproject.watch.initGlobalValues
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
@@ -103,7 +105,8 @@ class WaterRipplesActivity : ComponentActivity() {
                 ) {
                     CircularProgressIndicator(
                         strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
-                        modifier = Modifier.fillMaxSize(0.4f)
+                        modifier = Modifier.size((SCREEN_WIDTH *0.2f).dp)
+//                        modifier = Modifier.size(75.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     BasicText(
@@ -196,6 +199,13 @@ class WaterRipplesActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "WaterRipplesActivity"
+    }
+
+    @Preview(device = "id:wearos_large_round", apiLevel = 34)
+    @Composable
+    fun PreviewLoadingScreen() {
+        initGlobalValues(454, 454)
+        LoadingScreen()
     }
 }
 

@@ -49,8 +49,6 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
 
     private var timeServerDelta = 0L
     private var myStartTime = 0L
-    private var latency = 0L
-    private val pingTracker = PingTracker()
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -58,32 +56,20 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
 
     open fun onCreate(intent: Intent){
         setupListeners()
-
         viewModelScope.launch(Dispatchers.IO) {
-            pingTracker.onUpdate = { latency = it }
-            pingTracker.start()
-            while (true) {
-                val now = System.currentTimeMillis()
-                model.pingUdp()
-                pingTracker.sentAt(now)
-                delay(50)
-            }
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            delay(1200) // wait for latency to be calculated
-            calculateTimeServerDelta()
-            println("Time server delta: $timeServerDelta")
             var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
+            do {
+                try{
+                    calculateTimeServerDelta()
+                } catch (e: WebsocketNotConnectedException){
+                    Log.e(TAG, "Failed to get time server delta", e)
+                    continue
+                }
+                Log.d(TAG,"Time server delta: $timeServerDelta")
+                break
+            } while(true)
             myStartTime = timeServerStartTime + timeServerDelta
-            model.sendSyncRequest(getCurrentGameTime() + (latency / 2))
             _state.value = State.PLAYING
-
-//            while(true){
-//                val skewedTimestamp = getCurrentGameTime() + (latency / 2)
-//                model.sendSyncRequest(skewedTimestamp)
-//                delay(100)
-//            }
         }
     }
 
@@ -100,27 +86,6 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
      */
     protected open suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.PONG -> {
-                val now = System.currentTimeMillis()
-                pingTracker.receivedAt(now)
-            }
-            GameAction.Type.SYNC_TIME -> {
-
-                val currentGameTime = getCurrentGameTime()
-
-                val timestamp = action.timestamp?.toLong() ?: run {
-                    Log.e(TAG, "handleGameAction: missing timestamp in sync time request")
-                    return
-                }
-                val skewedTimestamp = timestamp + (latency / 2)
-                val delta = skewedTimestamp - currentGameTime
-
-                // update the time server start time if the new timestamp is earlier
-                println("delta: $delta")
-                if(delta <= -5){
-                    myStartTime -= -5
-                }
-            }
             GameAction.Type.HEARTBEAT -> {}
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected action type: ${action.type}")

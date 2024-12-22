@@ -2,19 +2,15 @@ package com.imsproject.gameServer.networking
 
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameAction.Type
-import com.imsproject.common.networking.NonBlockingUdpClient
+import com.imsproject.common.networking.UdpClient
 import com.imsproject.gameServer.ClientHandler
 import com.imsproject.gameServer.GameController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.net.SocketAddress
-import java.nio.ByteBuffer
-import java.util.concurrent.Executors
 
 
 @Component
@@ -26,13 +22,11 @@ class UdpSocketHandler(private val gameController: GameController) {
 
     private val clients = HashMap<String, ClientHandler>()
     private val enterCodes = HashMap<String, String>()
-    private lateinit var socket : NonBlockingUdpClient
-    private val scope = CoroutineScope(Dispatchers.IO)
-    private val executor = Executors.newFixedThreadPool(10)
+    private lateinit var socket : UdpClient
 
     fun send(message: String, address: SocketAddress){
         val (host,port) = address.toHostPort()
-        socket.sendBusyWait(message, host,port)
+        socket.send(message, host,port)
     }
 
     fun addClient(client: ClientHandler, enterCode : String){
@@ -41,21 +35,14 @@ class UdpSocketHandler(private val gameController: GameController) {
     }
 
     private fun run(){
-
-        val buffer = ByteBuffer.allocate(1024)
-
         while(true) {
-            // try to receive a packet
-            val senderAddress = socket.receiveNonBlocking(buffer) ?: continue
-            val timestamp = System.currentTimeMillis()
-            buffer.flip()
-            val message = String(buffer.array(), 0, buffer.limit())
-            handleMessage(message, senderAddress, timestamp)
-            buffer.clear()
+            val packet = socket.receiveRaw()
+            val message = String(packet.data, 0, packet.length)
+            handleMessage(message, packet.socketAddress)
         }
     }
 
-    private fun handleMessage(message: String, address: SocketAddress, timestamp: Long){
+    private fun handleMessage(message: String, address: SocketAddress){
         val action: GameAction
         try {
             action = GameAction.fromString(message)
@@ -72,7 +59,7 @@ class UdpSocketHandler(private val gameController: GameController) {
                     return
                 }
 
-                gameController.handleGameAction(client, action, timestamp)
+                gameController.handleGameAction(client, action)
             }
             Type.PING -> send(GameAction.pong, address)
             Type.PONG -> {}
@@ -131,7 +118,7 @@ class UdpSocketHandler(private val gameController: GameController) {
 
     @EventListener
     fun onApplicationReadyEvent(event: ApplicationReadyEvent){
-        socket = NonBlockingUdpClient().also{
+        socket = UdpClient().also{
             it.localPort = localPort
             it.init()
         }
