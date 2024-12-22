@@ -29,7 +29,7 @@ class CredentialsController {
         }
         file.mkdirs()
         file.createNewFile()
-        file.writeText(credentials.hashedPassword)
+        file.writeText(credentials.password)
     }
 
     fun remove(userId: String) : Boolean {

@@ -1,9 +1,11 @@
 package com.imsproject.gameServer.networking
 
 import com.imsproject.common.gameServer.GameRequest
+import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
 import com.imsproject.gameServer.GameController
 import com.imsproject.gameServer.auth.AuthController
+import com.imsproject.gameServer.auth.Credentials
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
@@ -34,6 +36,27 @@ class RestHandler(
             Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
+
+    @PostMapping("/operators/{action}")
+    fun operators(
+        @PathVariable action: String,
+        @RequestBody body : String
+    ): ResponseEntity<String> {
+        val credentials = JsonUtils.deserialize<Credentials>(body, Credentials::class.java)
+        try{
+            when(action){
+                "add" -> authController.createUser(credentials)
+                "remove" -> authController.deleteUser(credentials.userId)
+                else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
+            }
+        } catch(e: IllegalArgumentException){
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        } catch(e: Exception){
+            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+        return Response.getOk().toResponseEntity()
+    }
+
 
     @PostMapping("/data")
     fun data(@RequestBody body : String): ResponseEntity<String> {

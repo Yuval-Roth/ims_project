@@ -5,9 +5,6 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.MacAlgorithm
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.security.access.AccessDeniedException
-import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
@@ -80,33 +77,25 @@ class AuthController(private val credentials: CredentialsController) {
     //============================== USER MANAGEMENT ================================== |
     //================================================================================= |
 
-    fun createUser(user: UserDetails) {
-        val userId = user.username.lowercase()
-        if (userExists(userId)) {
-            throw AccessDeniedException("user already exists")
+    fun createUser(user: Credentials) {
+        val cleanUserId = user.userId.lowercase()
+        if (userExists(cleanUserId)) {
+            throw IllegalArgumentException("user already exists")
+        }
+        if(!isValidPassword(user.password)) {
+            throw IllegalArgumentException("Password does not meet the requirements")
         }
 
-        log.debug("Adding user credentials for user {}", userId)
+        log.debug("Adding user credentials for user {}", cleanUserId)
         val hashedPassword = encoder.encode(user.password)
-        val userCredentials = Credentials(userId, hashedPassword)
-        credentials[user.username] = userCredentials
-    }
-
-    fun updateUser(user: UserDetails) {
-        val userId = user.username.lowercase()
-        if (!userExists(userId)) {
-            throw UsernameNotFoundException("User not found")
-        }
-
-        val hashedPassword = encoder.encode(user.password)
-        val updatedUserCredentials = Credentials(userId, hashedPassword)
-        credentials[user.username] = updatedUserCredentials
+        val userCredentials = Credentials(cleanUserId, hashedPassword)
+        credentials[cleanUserId] = userCredentials
     }
 
     fun deleteUser(userId: String) {
         val cleanUserId = userId.lowercase()
         if (!userExists(cleanUserId)) {
-            throw UsernameNotFoundException("User not found")
+            throw IllegalArgumentException("User not found")
         }
         credentials.remove(cleanUserId)
     }
@@ -123,6 +112,11 @@ class AuthController(private val credentials: CredentialsController) {
     //========================= PRIVATE METHODS ================================== |
     //============================================================================ |
 
+    private fun isValidPassword(password: String): Boolean {
+        val pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d!@#$%^&*()-=_+\\[\\]{};:<>?/~\\\\]{8,}$"
+        return password.matches(Regex(pattern))
+    }
+
     private fun authenticate(userId: String, password: String): Boolean {
         log.debug("Authenticating user: {}", userId)
         val user = credentials[userId] ?: run {
@@ -130,7 +124,7 @@ class AuthController(private val credentials: CredentialsController) {
             return false
         }
         log.trace("User {} exists", userId)
-        val hashedPassword = user.hashedPassword
+        val hashedPassword = user.password
 
         // check if the password is correct
         if (!isPasswordsMatch(password, hashedPassword)) {
