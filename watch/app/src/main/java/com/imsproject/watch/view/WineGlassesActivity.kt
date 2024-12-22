@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
@@ -21,10 +22,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -44,8 +47,15 @@ import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
+import androidx.wear.compose.material.SwipeToDismissBox
+import androidx.wear.compose.material.rememberSwipeToDismissBoxState
+import com.imsproject.watch.LIGHT_BLUE_COLOR
+import kotlin.math.atan2
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 val GLOW_COLOR = Color(0xFFFFA500) // Example orange glow color
 
@@ -56,6 +66,8 @@ class WineGlassesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        initGlobalValues(metrics.bounds.width(), metrics.bounds.height())
 //        viewModel.onCreate(intent)
         setContent {
             WineGlasses()
@@ -127,7 +139,11 @@ class WineGlassesActivity : ComponentActivity() {
 
     @Composable
     fun WineGlasses() {
-        var touchPoint = remember { mutableStateOf<Pair<Float,Float>>(Pair(-1f,-1f)) }
+        var touchPoint = remember { mutableStateOf<Pair<Double,Double>>(Pair(-1.0,-1.0)) }
+        val center = remember {Offset(SCREEN_WIDTH / 2f, SCREEN_WIDTH / 2f)}
+        val radiusOuterEdge = remember{ (SCREEN_WIDTH / 2) }
+        val radiusInnerEdge = remember { (SCREEN_WIDTH / 2) * 0.60f }
+        val radiusCenter = remember { (SCREEN_WIDTH / 2) * 0.8f }
 
         Box(
             modifier = Modifier
@@ -135,52 +151,63 @@ class WineGlassesActivity : ComponentActivity() {
                 .background(color = DARK_BACKGROUND_COLOR)
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
-                        while(true){
+                        while (true) {
                             val event = awaitPointerEvent()
-                            if(event.type == PointerEventType.Release){
-                                touchPoint.value = Pair(-1f, -1f)
+                            if (event.type == PointerEventType.Release) {
+                                touchPoint.value = Pair(-1.0, -1.0)
                                 continue
                             }
-                            val touchPosition = event.changes.first().position
-                            touchPoint.value = Pair(touchPosition.x, touchPosition.y)
+                            val eventFirst = event.changes.first()
+                            eventFirst.consume()
+                            val touchPosition = eventFirst.position
+                            touchPoint.value = Pair(touchPosition.x.toDouble(), touchPosition.y.toDouble())
                         }
                     }
-//                    detectDragGestures(
-//                        onDragStart = { offset -> touchPoint.value = Pair(offset.x, offset.y) },
-//                        onDrag = { change, dragAmount ->
-//                            touchPoint.value = Pair(change.position.x, change.position.y)
-//                        },
-//                        onDragEnd = { touchPoint.value = Pair(-1f, -1f) }
-//                    )
                 },
-//                .pointerInput(Unit) {
-//                    detectTapGestures(
-//                        onPress = { offset -> touchPoint.value = Pair(offset.x, offset.y) },
-//                    )
-//                }
-//                .pointerInput()
-
-
             contentAlignment = Alignment.Center
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(0.9f)
+                    .clip(shape = CircleShape)
+                    .background(color = LIGHT_BLUE_COLOR)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(0.7f)
+                    .clip(shape = CircleShape)
+                    .background(color = DARK_BACKGROUND_COLOR)
+            )
             Canvas(modifier = Modifier.fillMaxSize()) {
-//                // Draw outer ring
-//                drawCircle(
-//                    color = DARK_BACKGROUND_COLOR.copy(alpha = 0.3f),
-//                    radius = size.minDimension / 2 - 20.dp.toPx(),
-//                    style = Stroke(width = 4.dp.toPx())
-//                )
 
-                println("touchPoint: $touchPoint")
+                // calculate distance from center
+                // to determine if the touch point is roughly within the circle
+                // we allow a little bit of leeway
+                val distanceFromCenter = sqrt(
+                    (touchPoint.value.first - center.x).pow(2.0) +
+                            (touchPoint.value.second - center.y).pow(2.0))
 
-                // Draw glowing effect for each touch point
-                if(touchPoint.value.first != -1f && touchPoint.value.second != -1f){
-                    drawCircle(
-                        color = GLOW_COLOR.copy(alpha = 0.6f),
-                        center = Offset(touchPoint.value.first, touchPoint.value.second),
-                        radius = 5.dp.toPx(),
-                        style = Fill
+                //calculate angle from coordinates
+                val angle = Math.toRadians(Math.toDegrees(
+                    atan2(
+                        touchPoint.value.second - center.y,
+                        touchPoint.value.first - center.x
                     )
+                ))
+
+                //calculate x and y to draw the circle
+                val x = center.x + radiusCenter * kotlin.math.cos(angle).toFloat()
+                val y = center.y + radiusCenter * kotlin.math.sin(angle).toFloat()
+
+                if(distanceFromCenter >= radiusInnerEdge && distanceFromCenter <= radiusOuterEdge){
+                    if(touchPoint.value.first != -1.0 && touchPoint.value.second != -1.0){
+                        drawCircle(
+                            color = GLOW_COLOR.copy(alpha = 0.8f),
+                            center = Offset(x, y),
+                            radius = 10.dp.toPx(),
+                            style = Fill
+                        )
+                    }
                 }
             }
         }

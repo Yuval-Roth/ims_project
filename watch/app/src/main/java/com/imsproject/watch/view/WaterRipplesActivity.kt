@@ -52,15 +52,7 @@ class WaterRipplesActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         viewModel.onCreate(intent)
         setContent {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = DARK_BACKGROUND_COLOR)
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Main()
-            }
+            Main()
         }
     }
 
