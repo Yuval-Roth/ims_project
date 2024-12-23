@@ -1,12 +1,9 @@
-package com.imsproject.gameServer.networking
+package com.imsproject.gameserver.networking
 
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.utils.SimpleIdGenerator
-import com.imsproject.gameServer.ClientController
-import com.imsproject.gameServer.ClientHandler
-import com.imsproject.gameServer.GameController
-import com.imsproject.gameServer.send
+import com.imsproject.gameserver.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.lang.NonNull
@@ -19,20 +16,21 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Component
-class WebSocketHandler(
+class GameRequestHandler(
     private val gameController: GameController,
-    private val udpSocketHandler: UdpSocketHandler,
-    private val clientController: ClientController
+    private val gameActionHandler: GameActionHandler,
+    private val clientController: ClientController,
+    private val managerEventsHandler: ManagerEventsHandler
 ) : TextWebSocketHandler() {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(WebSocketHandler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(GameRequestHandler::class.java)
     }
 
     private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(2)
 
     override fun afterConnectionEstablished(@NonNull session: WebSocketSession) {
-        log.debug("New websocket client: {}", session.id)
+        log.debug("New game requests client connected with id: {}", session.id)
     }
 
     override fun handleTextMessage(@NonNull session: WebSocketSession, message: TextMessage) {
@@ -77,7 +75,7 @@ class WebSocketHandler(
                 // generate code to add the client to the udp socket handler
                 // the client will use this code to identify itself
                 val udpCode = UUID.randomUUID().toString()
-                udpSocketHandler.addClient(client, udpCode)
+                gameActionHandler.addClient(client, udpCode)
 
                 // send the client id and the udp code to the client
                 GameRequest.builder(Type.ENTER)
@@ -86,6 +84,12 @@ class WebSocketHandler(
                     .build()
                     .toJson()
                     .also { session.send(it) }
+
+                //notify the manager
+                val event = ManagerEvent.builder(ManagerEvent.Type.PLAYER_CONNECTED)
+                    .playerId(client.id)
+                    .build()
+                managerEventsHandler.notify(event)
             }
 
             Type.EXIT -> session.close()
@@ -120,12 +124,17 @@ class WebSocketHandler(
         val client = clientController.getByWsSessionId(session.id) ?: return
         log.debug("Client disconnected: {}", client.id)
         clientController.removeClientHandler(client.id)
+        //notify the manager
+        val event = ManagerEvent.builder(ManagerEvent.Type.PLAYER_DISCONNECTED)
+            .playerId(client.id)
+            .build()
+        managerEventsHandler.notify(event)
     }
 
     private fun newClientHandler(wsSession: WebSocketSession) : ClientHandler {
         val id = idGenerator.generate()
         return ClientHandler(id, wsSession) { message, address ->
-            udpSocketHandler.send(message, address)
+            gameActionHandler.send(message, address)
         }
     }
 }

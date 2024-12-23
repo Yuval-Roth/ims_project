@@ -1,13 +1,15 @@
-package com.imsproject.gameServer
+package com.imsproject.gameserver
 
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
-import com.imsproject.common.gameServer.LobbyState
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.SimpleIdGenerator
-import com.imsproject.gameServer.networking.TimeKeeper
+import com.imsproject.gameserver.lobbies.Lobby
+import com.imsproject.gameserver.lobbies.LobbyState
+import com.imsproject.gameserver.networking.ManagerEventsHandler
+import com.imsproject.gameserver.networking.TimeServerHandler
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
@@ -15,10 +17,11 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 class GameController(
         private val clientController: ClientController,
-        private val timeKeeper: TimeKeeper
+        private val timeServerHandler: TimeServerHandler,
+        private val managerEventsHandler: ManagerEventsHandler
     ) {
 
-    private val lobbies = ConcurrentHashMap<String,Lobby>()
+    private val lobbies = ConcurrentHashMap<String, Lobby>()
     private val games = ConcurrentHashMap<String, Game>()
     private val clientIdToGame = ConcurrentHashMap<String, Game>()
     private val clientToLobby = ConcurrentHashMap<String, String>()
@@ -97,23 +100,18 @@ class GameController(
 
         val success = lobby.toggleReady(clientHandler.id)
         if (success) {
+            // notify the manager
+            val event = ManagerEvent.builder(ManagerEvent.Type.PLAYER_READY_TOGGLE)
+                .playerId(clientHandler.id)
+                .lobbyId(lobbyId)
+                .build()
+            managerEventsHandler.notify(event)
             log.debug("handleToggleReady() successful")
         } else {
             // should not happen
             log.error("handleToggleReady() failed: Lobby found for player but toggle ready failed")
             throw IllegalArgumentException("Toggle ready failed")
         }
-    }
-
-    private fun handleSyncTime(clientHandler: ClientHandler, action: GameAction) {
-        // ========= parameter validation ========= |
-        val game = clientIdToGame[clientHandler.id] ?: run {
-            log.debug("handleSyncTime: Game not found for client")
-            throw IllegalArgumentException("Game not found")
-        }
-        // ======================================== |
-
-        game.handleGameAction(clientHandler, action)
     }
 
     private fun handleGetAllLobbies() : String {
@@ -289,6 +287,12 @@ class GameController(
         game.endGame() // game.endGame() notifies the clients
         games.remove(lobby.id)
         lobby.state = LobbyState.WAITING
+
+        // Notify the manager
+        val event = ManagerEvent.builder(ManagerEvent.Type.GAME_ENDED)
+            .lobbyId(lobbyId)
+            .build()
+        managerEventsHandler.notify(event)
         log.debug("handleEndGame() successful")
         return Response.getOk()
     }
@@ -347,7 +351,7 @@ class GameController(
         clientIdToGame[player2Id] = game
 
         // game.startGame() notifies the clients
-        game.startGame(timeKeeper.timeServerCurrentTimeMillis())
+        game.startGame(timeServerHandler.timeServerCurrentTimeMillis())
 
         log.debug("handleStartGame() successful")
         return Response.getOk()

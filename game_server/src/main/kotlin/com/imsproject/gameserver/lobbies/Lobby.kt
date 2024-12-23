@@ -1,9 +1,6 @@
-package com.imsproject.gameServer
+package com.imsproject.gameserver.lobbies
 
 import com.imsproject.common.gameServer.GameType
-import com.imsproject.common.gameServer.LobbyInfo
-import com.imsproject.common.gameServer.LobbyState
-
 
 class Lobby(val id : String, gameType: GameType) {
 

@@ -1,6 +1,6 @@
 package com.imsproject.common.gameServer
 
-data class GameAction(
+data class GameAction internal constructor(
     val type : Type,
     val actor : String?,
     val data : String?,

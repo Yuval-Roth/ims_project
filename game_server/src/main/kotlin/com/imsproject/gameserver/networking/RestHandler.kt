@@ -1,15 +1,15 @@
-package com.imsproject.gameServer.networking
+package com.imsproject.gameserver.networking
 
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
-import com.imsproject.gameServer.GameController
-import com.imsproject.gameServer.auth.AuthController
-import com.imsproject.gameServer.auth.Credentials
+import com.imsproject.gameserver.GameController
+import com.imsproject.gameserver.auth.AuthController
+import com.imsproject.gameserver.auth.Credentials
+import com.imsproject.gameserver.toResponseEntity
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.io.File
@@ -70,31 +70,11 @@ class RestHandler(
         }
         // base64 encoded user:password
         val credentials = header.split(" ")[1]
-        val decoded = String(java.util.Base64.getDecoder().decode(credentials))
+        val decoded = String(Base64.getDecoder().decode(credentials))
         val split = decoded.split(":")
         val userId = split[0]
         val password = split[1]
         return authController.authenticateUser(userId, password).toJson().toResponseEntity()
-    }
-
-    @GetMapping("/log")
-    fun log(
-        @RequestParam(value = "rows", required = false, defaultValue = "-1") rows : Int
-    ): ResponseEntity<String> {
-        try{
-            val logFile = File("/app/data/logs/application.log")
-            val file = logFile.readText()
-            return if(rows > 0) {
-                val split = file.split("\n")
-                split.takeLast(rows).joinToString("<br/>").toResponseEntity()
-            } else {
-                file.replace("\n", "<br/>").toResponseEntity()
-            }
-        } catch(e: Exception){
-            return "Error while fetching log file:<br/>${e.stackTraceToString()
-                .replace("\n", "<br/>")}"
-                .toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
-        }
     }
 
     @GetMapping("/bcrypt")
@@ -115,14 +95,6 @@ class RestHandler(
             .replace("[TIME_STAMP]", Date().toString())
             .replace("[STATUS]", code.toString())
             .toResponseEntity(code)
-    }
-
-    private fun String.toResponseEntity (errorCode: HttpStatusCode): ResponseEntity<String> {
-        return ResponseEntity.status(errorCode).body(this)
-    }
-
-    private fun String.toResponseEntity (): ResponseEntity<String> {
-        return ResponseEntity.ok(this)
     }
 
     private fun readHtmlFile(path: String): String {

@@ -1,4 +1,4 @@
-package com.imsproject.gameServer
+package com.imsproject.gameserver
 
 import org.springframework.web.socket.WebSocketSession
 import java.io.IOException
@@ -12,8 +12,8 @@ class ClientHandler internal constructor(
 ) {
 
     val wsSessionId: String = wsSession.id
-    var udpAddress: SocketAddress? = null
     var lastHeartbeat: LocalDateTime = LocalDateTime.now()
+    lateinit var udpAddress: SocketAddress
 
     @Throws(IOException::class)
     fun sendTcp(message: String) {
@@ -22,7 +22,7 @@ class ClientHandler internal constructor(
 
     @Throws(IOException::class)
     fun sendUdp(message: String) {
-        val address = udpAddress?: throw IllegalStateException("UDP address is not set.")
+        val address = udpAddress
         sendUdp.invoke(message,address)
     }
 }

@@ -1,4 +1,4 @@
-package com.imsproject.gameServer
+package com.imsproject.gameserver
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

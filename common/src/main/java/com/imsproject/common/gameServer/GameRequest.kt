@@ -3,7 +3,7 @@ package com.imsproject.common.gameServer
 import com.google.gson.annotations.SerializedName
 import com.imsproject.common.utils.JsonUtils
 
-data class GameRequest(
+data class GameRequest internal constructor(
     val type: Type,
     val playerId: String?,
     val lobbyId : String?,

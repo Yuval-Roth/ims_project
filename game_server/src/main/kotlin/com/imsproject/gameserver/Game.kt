@@ -1,4 +1,4 @@
-package com.imsproject.gameServer
+package com.imsproject.gameserver
 
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest

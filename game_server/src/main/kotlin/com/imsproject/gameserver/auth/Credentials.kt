@@ -1,4 +1,4 @@
-package com.imsproject.gameServer.auth
+package com.imsproject.gameserver.auth
 
 data class Credentials(
     val userId: String,

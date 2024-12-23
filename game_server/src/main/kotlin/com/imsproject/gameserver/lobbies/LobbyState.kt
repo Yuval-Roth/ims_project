@@ -1,4 +1,4 @@
-package com.imsproject.common.gameServer
+package com.imsproject.gameserver.lobbies
 
 import com.google.gson.annotations.SerializedName
 

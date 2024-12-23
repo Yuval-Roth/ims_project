@@ -1,4 +1,4 @@
-package com.imsproject.gameServer.auth
+package com.imsproject.gameserver.auth
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException

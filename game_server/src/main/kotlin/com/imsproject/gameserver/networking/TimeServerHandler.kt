@@ -1,4 +1,4 @@
-package com.imsproject.gameServer.networking
+package com.imsproject.gameserver.networking
 
 import com.google.gson.JsonParseException
 import com.imsproject.common.etc.TimeRequest
@@ -12,7 +12,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 
 @Component
-class TimeKeeper {
+class TimeServerHandler {
 
     @Value("\${running.local}")
     private var runningLocal: Boolean = false
@@ -87,6 +87,6 @@ class TimeKeeper {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(TimeKeeper::class.java)
+        private val log = LoggerFactory.getLogger(TimeServerHandler::class.java)
     }
 }

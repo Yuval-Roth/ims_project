@@ -1,15 +1,14 @@
-package com.imsproject.gameServer
+package com.imsproject.gameserver
 
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
-
-private const val HEARTBEAT_TIMEOUT_THRESHOLD = 30L
+import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ClientController {
 
-    private val clientIdToHandler = mutableMapOf<String, ClientHandler>()
-    private val wsSessionIdToHandler = mutableMapOf<String, ClientHandler>()
+    private val clientIdToHandler = ConcurrentHashMap<String, ClientHandler>()
+    private val wsSessionIdToHandler = ConcurrentHashMap<String, ClientHandler>()
+    private val hostPortToHandler = ConcurrentHashMap<String, ClientHandler>()
 
     fun getByClientId(clientId: String): ClientHandler? {
         return clientIdToHandler[clientId]
@@ -19,9 +18,22 @@ class ClientController {
         return wsSessionIdToHandler[sessionId]
     }
 
+    fun getByHostPort(hostPort: String): ClientHandler? {
+        return hostPortToHandler[hostPort]
+    }
+
     fun addClientHandler(sessionId: String, clientHandler: ClientHandler) {
         wsSessionIdToHandler[sessionId] = clientHandler
         clientIdToHandler[clientHandler.id] = clientHandler
+    }
+
+    /**
+     * @throws IllegalStateException if no client handler is found for the given client id
+     */
+    @Throws (IllegalStateException::class)
+    fun setHostPort(clientId: String, hostPort: String) {
+        val handler = clientIdToHandler[clientId] ?: throw IllegalStateException("No client handler found for client id $clientId")
+        hostPortToHandler[hostPort] = handler
     }
 
     fun removeClientHandler(clientId: String) {
@@ -29,21 +41,16 @@ class ClientController {
         wsSessionIdToHandler.remove(handler.wsSessionId)
     }
 
-    fun containsByClientId(clientId: String): Boolean {
-        return clientIdToHandler.containsKey(clientId)
-    }
-
     fun containsByWsSessionId(sessionId: String): Boolean {
         return wsSessionIdToHandler.containsKey(sessionId)
     }
 
     fun getAllClientIds(): List<String> {
-         val iter = clientIdToHandler.iterator()
+        val iter = clientIdToHandler.iterator()
         while(iter.hasNext()){
             val entry = iter.next()
             val isAlive = entry.value
-                .lastHeartbeat.plusSeconds(HEARTBEAT_TIMEOUT_THRESHOLD)
-                .isAfter(LocalDateTime.now())
+                .lastHeartbeat.isMoreThanSecondsAgo(HEARTBEAT_TIMEOUT_THRESHOLD)
             if(!isAlive){
                 iter.remove()
                 wsSessionIdToHandler.remove(entry.value.wsSessionId)
