@@ -49,11 +49,12 @@ class ClientController {
         val iter = clientIdToHandler.iterator()
         while(iter.hasNext()){
             val entry = iter.next()
-            val isAlive = entry.value
-                .lastHeartbeat.isMoreThanSecondsAgo(HEARTBEAT_TIMEOUT_THRESHOLD)
+            val handler = entry.value
+            val isAlive = handler.lastHeartbeat.isMoreThanSecondsAgo(HEARTBEAT_TIMEOUT_THRESHOLD)
             if(!isAlive){
                 iter.remove()
                 wsSessionIdToHandler.remove(entry.value.wsSessionId)
+                hostPortToHandler.remove(handler.udpAddress.toHostPortString())
             }
         }
         return clientIdToHandler.keys.toList()
