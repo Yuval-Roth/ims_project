@@ -53,11 +53,15 @@ import androidx.compose.ui.input.pointer.PointerId
 import androidx.wear.compose.material.SwipeToDismissBox
 import androidx.wear.compose.material.rememberSwipeToDismissBoxState
 import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlinx.coroutines.delay
 
 val GLOW_COLOR = Color(0xFFFFA500) // Example orange glow color
+private const val MARKER_FADE_DURATION = 500
+private const val MARKER_SIZE = 30
 
 class WineGlassesActivity : ComponentActivity() {
 
@@ -142,8 +146,12 @@ class WineGlassesActivity : ComponentActivity() {
         var touchPoint = remember { mutableStateOf<Pair<Double,Double>>(Pair(-1.0,-1.0)) }
         val center = remember {Offset(SCREEN_WIDTH / 2f, SCREEN_WIDTH / 2f)}
         val radiusOuterEdge = remember{ (SCREEN_WIDTH / 2) }
-        val radiusInnerEdge = remember { (SCREEN_WIDTH / 2) * 0.60f }
-        val radiusCenter = remember { (SCREEN_WIDTH / 2) * 0.8f }
+        val radiusInnerEdge = remember { (SCREEN_WIDTH / 2) * 0.2f }
+        val radiusCenter = remember { (SCREEN_WIDTH / 2) * 0.7f }
+        val defaultAlpha = remember { 0.8f }
+        val alpha = remember { mutableFloatStateOf(0.8f) }
+        val counter = remember { mutableIntStateOf(0) }
+        val released = remember { mutableStateOf(false) }
 
         Box(
             modifier = Modifier
@@ -154,27 +162,40 @@ class WineGlassesActivity : ComponentActivity() {
                         while (true) {
                             val event = awaitPointerEvent()
                             if (event.type == PointerEventType.Release) {
-                                touchPoint.value = Pair(-1.0, -1.0)
-                                continue
+                                released.value = true
+                                counter.intValue++
+                            } else {
+                                released.value = false
+                                alpha.floatValue = defaultAlpha
+                                val eventFirst = event.changes.first()
+                                eventFirst.consume()
+                                val touchPosition = eventFirst.position
+                                touchPoint.value =
+                                    Pair(touchPosition.x.toDouble(), touchPosition.y.toDouble())
                             }
-                            val eventFirst = event.changes.first()
-                            eventFirst.consume()
-                            val touchPosition = eventFirst.position
-                            touchPoint.value = Pair(touchPosition.x.toDouble(), touchPosition.y.toDouble())
                         }
                     }
                 },
             contentAlignment = Alignment.Center
         ) {
+            LaunchedEffect(counter.intValue) {
+                if(released.value){
+                    val alphaAnimStep =  defaultAlpha / (MARKER_FADE_DURATION / 16f)
+                    while(released.value && alpha.floatValue > 0.0f){
+                        alpha.floatValue = (alpha.floatValue - alphaAnimStep).coerceAtLeast(0.0f)
+                        delay(16)
+                    }
+                }
+            }
             Box(
                 modifier = Modifier
-                    .fillMaxSize(0.9f)
+                    .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
                     .background(color = LIGHT_BLUE_COLOR)
             )
             Box(
                 modifier = Modifier
-                    .fillMaxSize(0.7f)
+                    .fillMaxSize(0.6f)
                     .clip(shape = CircleShape)
                     .background(color = DARK_BACKGROUND_COLOR)
             )
@@ -202,9 +223,9 @@ class WineGlassesActivity : ComponentActivity() {
                 if(distanceFromCenter >= radiusInnerEdge && distanceFromCenter <= radiusOuterEdge){
                     if(touchPoint.value.first != -1.0 && touchPoint.value.second != -1.0){
                         drawCircle(
-                            color = GLOW_COLOR.copy(alpha = 0.8f),
+                            color = GLOW_COLOR.copy(alpha = alpha.floatValue),
                             center = Offset(x, y),
-                            radius = 10.dp.toPx(),
+                            radius = MARKER_SIZE.dp.toPx(),
                             style = Fill
                         )
                     }
