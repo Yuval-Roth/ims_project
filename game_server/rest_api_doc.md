@@ -109,7 +109,16 @@ The game type (e.g. `water_ripples`).
 Retrieves the list with ids of online players. No additional fields are required for this request type.
 
 **Return value:**
-The `payload` field in the response json will hold a list of strings, each string being a player id.
+```json
+{
+  "success": true,
+  "payload": [
+    "player1",
+    "player2",
+    "player3"
+  ]
+}
+```
 
 <br/>
 
@@ -120,19 +129,26 @@ The `payload` field in the response json will hold a list of strings, each strin
 **Description:**  
 Retrieves the list of available lobbies. No additional fields are required for this request type.
 
-#### Return value
-The `payload` field in the response json will hold a list of `LobbyInfo` objects, each object representing a lobby. <br>
-`LobbyInfo` contains the following fields:
+**Return value:**
 ```json
 {
-  "lobbyId": "String",
-  "gameType": "String",
-  "state": "String",
-  "players": ["String"]
+  "success": true,
+  "payload": [
+    {
+      "lobbyId": "lobby1",
+      "gameType": "gameTypeA",
+      "state": "waiting",
+      "players": ["player1", "player2"]
+    },
+    {
+      "lobbyId": "lobby2",
+      "gameType": "gameTypeB",
+      "state": "playing",
+      "players": ["player3"]
+    }
+  ]
 }
 ```
-
-where `state` can be either `"waiting"` or `"playing"`, <br/> and `players` is a list of player ids. 
 
 <br/>
 
@@ -143,19 +159,18 @@ where `state` can be either `"waiting"` or `"playing"`, <br/> and `players` is a
 **Description:**  
 This request type is used to get the details of a specific lobby. The `lobbyId` must be provided to identify the lobby.
 
-#### Return value
-The `payload` field in the response json will hold a single `LobbyInfo` object, representing the target lobby. <br>
-`LobbyInfo` contains the following fields:
+**Return value:**
 ```json
 {
-  "lobbyId": "String",
-  "gameType": "String",
-  "state": "String",
-  "players": ["String"]
+  "success": true,
+  "payload": {
+    "lobbyId": "lobby1",
+    "gameType": "gameTypeA",
+    "state": "waiting",
+    "players": ["player1", "player2"]
+  }
 }
 ```
-
-where `state` can be either `"waiting"` or `"playing"`, <br/> and `players` is a list of player ids.
 
 <br/>
 
@@ -166,9 +181,13 @@ where `state` can be either `"waiting"` or `"playing"`, <br/> and `players` is a
 **Description:**  
 This request type is used to create a new lobby. The `gameType` field must be provided to specify the type of game to be played in the new lobby.
 
-#### Return value
-The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
-If the lobby was created successfully, the `payload` field the id of the newly created lobby. <br/>
+**Return value:**
+```json
+{
+  "success": true,
+  "payload": ["newLobbyId"]
+}
+```
 
 <br/>
 
@@ -179,8 +198,14 @@ If the lobby was created successfully, the `payload` field the id of the newly c
 **Description:**
 This request type is used to remove a specific lobby. The `lobbyId` must be provided to identify the lobby to be removed.
 
-#### Return value
-The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
+**Return value:**
+```json
+{
+  "success": true
+}
+```
+
+<br/>
 
 ### `set_lobby_type`
 **Required fields:**
@@ -190,8 +215,12 @@ The success field will be true if the game type was changed successfully, and fa
 **Description:**  
 This request type is used to change the game type for a specific lobby. Both the `lobbyId` (to identify the lobby) and the `gameType` (to specify the new type of game) are required.
 
-#### Return value
-The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
+**Return value:**
+```json
+{
+  "success": true
+}
+```
 
 <br/>
 
@@ -203,8 +232,12 @@ The success field will be true if the game type was changed successfully, and fa
 **Description:**  
 This request type is used to join an existing lobby. Both the `lobbyId` (to identify the target lobby) and the `playerId` (to identify the player joining the lobby) are required.
 
-#### Return value
-The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
+**Return value:**
+```json
+{
+  "success": true
+}
+```
 
 <br/>
 
@@ -216,8 +249,12 @@ The success field will be true if the game type was changed successfully, and fa
 **Description:**  
 This request type is used when a player leaves a lobby. Both `lobbyId` (to identify the lobby) and `playerId` (to identify the player leaving the lobby) are required.
 
-#### Return value
-The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
+**Return value:**
+```json
+{
+  "success": true
+}
+```
 
 <br/>
 
@@ -228,8 +265,12 @@ The success field will be true if the game type was changed successfully, and fa
 **Description:**  
 This request type starts the game in a specific lobby. The `lobbyId` must be provided to identify the lobby where the game should start.
 
-#### Return value
-The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
+**Return value:**
+```json
+{
+  "success": true
+}
+```
 
 <br/>
 
@@ -240,12 +281,18 @@ The success field will be true if the game type was changed successfully, and fa
 **Description:**  
 This request type ends the game in a specific lobby. The `lobbyId` must be provided to identify the lobby where the game should end.
 
-#### Return value
-The success field will be true if the game type was changed successfully, and false otherwise with an error message. <br/>
+**Return value:**
+```json
+{
+  "success": true
+}
+```
+
+
 
 ---
 
-### 3. POST /data
+### 3. POST `/data`
 **Description**  
 Currently a placeholder endpoint, not implemented.
 
@@ -253,4 +300,73 @@ Currently a placeholder endpoint, not implemented.
 "Not Implemented" - Always returned since this endpoint is not yet functional.
 
 ---
+
+### 4. POST `/operators/{action}`
+
+#### **Description**
+This endpoint manages user operations such as adding or removing operators. The specific action is determined by the `action` path variable, which can be either `add` or `remove`.
+
+---
+
+#### **Request**
+
+- **Path Variables**:
+  - `action` (required): The action to perform.
+    - **Possible values**:
+      - `add`: Add a new operator.
+      - `remove`: Remove an existing operator.
+
+- **Body**:
+  ```json
+  {
+    "userId": "string",
+    "password": "string"
+  }
+  ```
+  **Required Fields**:
+  - `userId`: The unique identifier of the user. Must be in lowercase.
+  - `password`: The password of the user. (Required only for the `add` action.)
+
+  **Password Requirements** (for `add` action):
+  - At least 8 characters.
+  - At least one uppercase letter.
+  - At least one lowercase letter.
+  - At least one digit.
+  - May contain special characters (`!@#$%^&*()-=_+[]{};:<>?/~\`).
+
+---
+
+#### **Response**
+
+- **Success**:
+  ```json
+  {
+    "message": "User added successfully",
+    "success": true
+  }
+  ```
+  or
+  ```json
+  {
+    "message": "User removed successfully",
+    "success": true
+  }
+  ```
+
+- **Failure**:
+  ```json
+  {
+    "message": "string",
+    "success": false
+  }
+  ```
+  **Examples of failure messages**:
+  - `"Invalid action"`
+  - `"User already exists"`
+  - `"Password does not meet the requirements"`
+  - `"User not found"`
+
+---
+
+
 
