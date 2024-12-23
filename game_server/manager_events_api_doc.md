@@ -107,7 +107,7 @@ The server can send the following message types to the client. Messages will be 
 The server maintains a heartbeat mechanism to track active connections. The following rules apply:
 
 1. **Client Responsibility**: The client must send a `heartbeat` message periodically.
-2. **Timeout Threshold**: If no heartbeat is received from a client within the threshold defined by `HEARTBEAT_TIMEOUT_THRESHOLD = 30`, the server will:
+2. **Timeout Threshold**: If no heartbeat is received from a client within 30 seconds, the server will:
     - Close the WebSocket connection.
     - Remove the client from the list of observers.
 
