@@ -26,6 +26,7 @@ val GRAY_COLOR = Color(0xFFDEDBDB)
 val GREEN_COLOR = Color(0xFF4EFF00)
 val RED_COLOR = Color(0xFFFF0000)
 val GLOWING_YELLOW_COLOR = Color(0xFFFFA500)
+val LIGHT_GRAY_COLOR = Color(0xFFD5D5D5)
 // ================================================== |
 
 // ================= Water Ripples ================== |
@@ -36,10 +37,14 @@ const val WATER_RIPPLES_ANIMATION_DURATION = 2000
 
 // ================= Wine Glasses =================== |
 const val MARKER_FADE_DURATION = 500
-const val MARKER_SIZE = 30
+const val MY_STROKE_WIDTH = 30
+const val OPPONENT_STROKE_WIDTH = 30 / 4
 const val UNDEFINED_ANGLE = 600f
 const val MAX_ANGLE_SKEW = 40f
 const val MIN_ANGLE_SKEW = 20f
+const val OPPONENT_SWEEP_ANGLE = 60f
+const val MY_SWEEP_ANGLE = 30f
+const val ARC_DEFAULT_ALPHA = 0.8f
 var SCREEN_CENTER = Offset(0f,0f)
 var MY_RADIUS_OUTER_EDGE = 0f
 var MY_RADIUS_INNER_EDGE = 0f

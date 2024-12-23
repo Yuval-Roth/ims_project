@@ -3,6 +3,7 @@ package com.imsproject.watch.viewmodel
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import com.imsproject.common.gameServer.GameAction
@@ -10,41 +11,32 @@ import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
+import com.imsproject.watch.MY_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_RADIUS_OUTER_EDGE
+import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.lifecycle.viewModelScope
+import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.LIGHT_GRAY_COLOR
+import com.imsproject.watch.MY_SWEEP_ANGLE
+import com.imsproject.watch.OPPONENT_STROKE_WIDTH
+import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 
 class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
-
-//    var touchPoint = remember { mutableStateOf<Pair<Double,Double>>(Pair(-1.0,-1.0)) }
-//
-//    // ============= touch point related values =========== |
-//    val center = remember {Offset(SCREEN_WIDTH / 2f, SCREEN_WIDTH / 2f)}
-//    val radiusOuterEdge = remember{ (SCREEN_WIDTH / 2).toFloat() }
-//    val radiusInnerEdge = remember { (SCREEN_WIDTH / 2) * 0.2f }
-//    val released = remember { mutableStateOf(false) }
-//    // ===================================================== |
-//
-//    // ============= arc related values ================= |
-//    val defaultAlpha = remember { 0.8f }
-//    val alpha = remember { mutableFloatStateOf(0.8f) }
-//    val arcSize = remember { Size(radiusOuterEdge * 2, radiusOuterEdge * 2) }
-//    val sweepAngle = remember { 30f }
-//    var angleSkew = remember { 0f }
-//    var previousAngle = remember { UNDEFINED_ANGLE }
-//    var direction = remember { 0f }
-//    var arcStartAngle = remember { mutableFloatStateOf(UNDEFINED_ANGLE) }
-//    // ================================================== |
-
-    class Arc(
+    class Arc private constructor(
         val color: Color,
         val size: Size,
         val sweepAngle: Float,
         val defaultAlpha: Float,
+        val topLeft: Offset,
+        val strokeWidth: Int
     ) {
         var currentAlpha = mutableFloatStateOf(defaultAlpha)
         var angleSkew = 0f
@@ -56,15 +48,21 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
             fun my() = Arc(
                 GLOWING_YELLOW_COLOR,
                 Size(MY_RADIUS_OUTER_EDGE * 2, MY_RADIUS_OUTER_EDGE * 2),
-                30f, // sweep angle
-                0.8f // default alpha
+                MY_SWEEP_ANGLE,
+                ARC_DEFAULT_ALPHA,
+                Offset(SCREEN_CENTER.x - MY_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - MY_RADIUS_OUTER_EDGE),
+                MY_STROKE_WIDTH
             )
-            fun opponent() = Arc(
-                Color(0xFFD5D5D5),
-                Size(OPPONENT_RADIUS_OUTER_EDGE * 2, OPPONENT_RADIUS_OUTER_EDGE * 2),
-                30f,
-                0.8f
-            )
+            fun opponent(): Arc {
+                return Arc(
+                    LIGHT_GRAY_COLOR,
+                    Size(OPPONENT_RADIUS_OUTER_EDGE * 2, OPPONENT_RADIUS_OUTER_EDGE * 2),
+                    OPPONENT_SWEEP_ANGLE,
+                    ARC_DEFAULT_ALPHA,
+                    Offset(SCREEN_CENTER.x - OPPONENT_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - OPPONENT_RADIUS_OUTER_EDGE),
+                    OPPONENT_STROKE_WIDTH
+                )
+            }
         }
     }
 
@@ -76,18 +74,14 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     lateinit var myArc : Arc
     lateinit var opponentArc : Arc
 
-    private var _released = MutableStateFlow(false)
-    val released : StateFlow<Boolean> = _released
-
     private var _touchPoint = MutableStateFlow(Pair(-1.0,-1.0))
     val touchPoint : StateFlow<Pair<Double,Double>> = _touchPoint
 
-    private var _opponentAngle = MutableStateFlow(UNDEFINED_ANGLE)
-    val opponentAngle : StateFlow<Float> = _opponentAngle
+    private var _released = MutableStateFlow(false)
+    val released : StateFlow<Boolean> = _released
 
-    private var _inBounds = MutableStateFlow(false)
-    val inBounds : StateFlow<Boolean> = _inBounds
-
+    private var _opponentReleased = MutableStateFlow(false)
+    val opponentReleased : StateFlow<Boolean> = _opponentReleased
 
 
     // ================================================================================ |
@@ -98,6 +92,12 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     override fun onCreate(intent: Intent) {
         myArc = Arc.my()
         opponentArc = Arc.opponent()
+        viewModelScope.launch(Dispatchers.IO) {
+            while(true){
+                opponentArc.startAngle.floatValue = opponentArc.startAngle.floatValue + 2
+                delay(16)
+            }
+        }
     }
 
     fun setTouchPoint(x: Double, y: Double) {
@@ -107,12 +107,6 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     fun setReleased(bool: Boolean) {
         _released.value = bool
     }
-
-    fun setInBounds(bool: Boolean) {
-        _inBounds.value = bool
-    }
-
-    fun shouldShowArc() = _inBounds.value && !_released.value
 
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |

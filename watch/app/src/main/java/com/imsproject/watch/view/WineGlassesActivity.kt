@@ -38,12 +38,13 @@ import androidx.core.content.IntentSanitizer
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.MARKER_FADE_DURATION
-import com.imsproject.watch.MARKER_SIZE
+import com.imsproject.watch.MY_STROKE_WIDTH
 import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_RADIUS_INNER_EDGE
 import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
 import com.imsproject.watch.OPPONENT_RADIUS_OUTER_EDGE
+import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.UNDEFINED_ANGLE
@@ -191,6 +192,7 @@ class WineGlassesActivity : ComponentActivity() {
             )
             Canvas(modifier = Modifier.fillMaxSize()) {
 
+                // inner circle for opponent's arc
                 drawCircle(
                     color = GLOWING_YELLOW_COLOR,
                     radius = OPPONENT_RADIUS_OUTER_EDGE * 0.65f,
@@ -253,28 +255,24 @@ class WineGlassesActivity : ComponentActivity() {
                         startAngle = myArc.startAngle.floatValue,
                         sweepAngle = myArc.sweepAngle,
                         useCenter = false, // Open arc, not filled
-                        topLeft = Offset(
-                            SCREEN_CENTER.x - MY_RADIUS_OUTER_EDGE,
-                            SCREEN_CENTER.y - MY_RADIUS_OUTER_EDGE
-                        ),
+                        topLeft = myArc.topLeft,
                         size = myArc.size,
-                        style = Stroke(width = MARKER_SIZE.dp.toPx()) // Adjust thickness
+                        style = Stroke(width = myArc.strokeWidth.dp.toPx()) // Adjust thickness
                     )
                 }
 
                 // draw opponent's arc
-                drawArc(
-                    color = opponentArc.color,
-                    startAngle = myArc.startAngle.floatValue - 15,
-                    sweepAngle = 60f,
-                    useCenter = false, // Open arc, not filled
-                    topLeft = Offset(
-                        SCREEN_CENTER.x - OPPONENT_RADIUS_OUTER_EDGE,
-                        SCREEN_CENTER.y - OPPONENT_RADIUS_OUTER_EDGE
-                    ),
-                    size = opponentArc.size,
-                    style = Stroke(width = MARKER_SIZE.dp.toPx()/4) // Adjust thickness
-                )
+                if(opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                    drawArc(
+                        color = opponentArc.color,
+                        startAngle = opponentArc.startAngle.floatValue - 15,
+                        sweepAngle = opponentArc.sweepAngle,
+                        useCenter = false, // Open arc, not filled
+                        topLeft = opponentArc.topLeft,
+                        size = opponentArc.size,
+                        style = Stroke(width = opponentArc.strokeWidth.dp.toPx()) // Adjust thickness
+                    )
+                }
             }
         }
     }
