@@ -1,5 +1,6 @@
 package com.imsproject.watch
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -9,6 +10,14 @@ import androidx.compose.ui.unit.sp
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
+// ============== Screen size related =============== |
+var SCREEN_WIDTH : Int = -1
+var SCREEN_HEIGHT : Int = -1
+var TEXT_SIZE = 0.sp
+var COLUMN_PADDING = 0.dp
+var textStyle : TextStyle = TextStyle()
+// ================================================== |
+
 // ===================== Colors ===================== |
 val DARK_BACKGROUND_COLOR = Color(0xFF333842)
 val LIGHT_BLUE_COLOR = Color(0xFFACC7F6)
@@ -16,7 +25,7 @@ val VIVID_ORANGE_COLOR = Color(0xFFFF5722)
 val GRAY_COLOR = Color(0xFFDEDBDB)
 val GREEN_COLOR = Color(0xFF4EFF00)
 val RED_COLOR = Color(0xFFFF0000)
-val GLOW_COLOR = Color(0xFFFFA500)
+val GLOWING_YELLOW_COLOR = Color(0xFFFFA500)
 // ================================================== |
 
 // ================= Water Ripples ================== |
@@ -31,14 +40,11 @@ const val MARKER_SIZE = 30
 const val UNDEFINED_ANGLE = 600f
 const val MAX_ANGLE_SKEW = 40f
 const val MIN_ANGLE_SKEW = 20f
-// ================================================== |
-
-// ============== Screen size related =============== |
-var SCREEN_WIDTH : Int = -1
-var SCREEN_HEIGHT : Int = -1
-var TEXT_SIZE = 0.sp
-var COLUMN_PADDING = 0.dp
-var textStyle : TextStyle = TextStyle()
+var SCREEN_CENTER = Offset(0f,0f)
+var MY_RADIUS_OUTER_EDGE = 0f
+var MY_RADIUS_INNER_EDGE = 0f
+var OPPONENT_RADIUS_OUTER_EDGE = 0f
+var OPPONENT_RADIUS_INNER_EDGE = 0f
 // ================================================== |
 
 // called from MainActivity.kt in onCreate()
@@ -60,6 +66,11 @@ fun initProperties(screenWidth : Int, screenHeight : Int){
         textAlign = TextAlign.Center,
         textDirection = TextDirection.Ltr
     )
+
+    SCREEN_CENTER = Offset(SCREEN_WIDTH / 2f, SCREEN_WIDTH / 2f)
+    MY_RADIUS_OUTER_EDGE = (SCREEN_WIDTH / 2).toFloat()
+    MY_RADIUS_INNER_EDGE = (SCREEN_WIDTH / 2) * 0.2f
+    OPPONENT_RADIUS_OUTER_EDGE = (SCREEN_WIDTH / 2).toFloat() * 0.2f
 }
 
 

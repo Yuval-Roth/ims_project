@@ -28,7 +28,7 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     }
 
     private val TAG = "$_TAG-${gameType.prettyName()}"
-    val model = MainModel.instance
+    val model = MainModel(viewModelScope) // MainModel.instance
     val playerId : String = model.playerId ?: run {
         Log.e(TAG, "init: missing player ID")
         "unknown player ID"
