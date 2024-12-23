@@ -7,13 +7,6 @@ This WebSocket endpoint allows clients to subscribe to and handle manager-relate
 
 ---
 
-### Connection Lifecycle
-
-#### Establishing a Connection
-When a client connects to the `/manager/events` WebSocket endpoint, the connection will be acknowledged by the server. A session ID will be assigned to the client internally for managing events and heartbeats.
-
----
-
 ### Client Messages
 The client can send the following message types to the server. Messages must be in JSON format:
 
