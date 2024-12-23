@@ -41,6 +41,7 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GREEN_COLOR
@@ -50,7 +51,7 @@ import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
-import com.imsproject.watch.view.contracts.WaterRipplesResultContract
+import com.imsproject.watch.view.contracts.GenericActivityResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 
@@ -59,6 +60,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel : MainViewModel by viewModels<MainViewModel>()
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +74,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun registerActivities(){
-        waterRipples = registerForActivityResult(WaterRipplesResultContract()) {
+        waterRipples = registerForActivityResult(GenericActivityResultContract()) {
+            viewModel.afterGame(it)
+        }
+
+        wineGlasses = registerForActivityResult(GenericActivityResultContract()) {
             viewModel.afterGame(it)
         }
     }
@@ -114,7 +120,11 @@ class MainActivity : ComponentActivity() {
                 val input = mapOf<String,Any>(
                     "timeServerStartTime" to viewModel.gameStartTime.collectAsState().value
                 )
-                waterRipples.launch(input)
+                when(viewModel.gameType.collectAsState().value) {
+                    GameType.WATER_RIPPLES -> waterRipples.launch(input)
+                    GameType.WINE_GLASSES -> wineGlasses.launch(input)
+                    else -> viewModel.showError("Unknown game type")
+                }
             }
 
             State.ERROR -> {

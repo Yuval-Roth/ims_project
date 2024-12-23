@@ -8,6 +8,7 @@ import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.watch.model.MainModel.CallbackNotSetException
+import com.imsproject.watch.viewmodel.WineGlassesViewModel.Angle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -244,10 +245,10 @@ class MainModel (private val scope : CoroutineScope) {
         sendUdp(request)
     }
 
-    suspend fun sendPosition(x: Float, y: Float, timestamp: Long) {
+    suspend fun sendPosition(position : Position, timestamp: Long) {
         val request = GameAction.builder(GameAction.Type.POSITION)
             // add more things here if needed
-            .data("$x,$y")
+            .data(position.toString())
             .timestamp(timestamp.toString())
             .build().toString()
         sendUdp(request)

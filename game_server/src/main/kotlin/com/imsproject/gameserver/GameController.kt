@@ -340,6 +340,10 @@ class GameController(
                     log.debug("handleStartGame: Selected WaterRipplesGame")
                     WaterRipplesGame(player1Handler, player2Handler)
                 }
+                GameType.WINE_GLASSES -> {
+                    log.debug("handleStartGame: Selected WineGlassesGame")
+                    WineGlassesGame(player1Handler, player2Handler)
+                }
                 else -> {
                     log.debug("handleStartGame: Invalid game type")
                     return Response.getError("Invalid game type")
