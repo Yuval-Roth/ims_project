@@ -16,6 +16,7 @@ val VIVID_ORANGE_COLOR = Color(0xFFFF5722)
 val GRAY_COLOR = Color(0xFFDEDBDB)
 val GREEN_COLOR = Color(0xFF4EFF00)
 val RED_COLOR = Color(0xFFFF0000)
+val GLOW_COLOR = Color(0xFFFFA500)
 // ================================================== |
 
 // ================= Water Ripples ================== |
@@ -24,14 +25,24 @@ var RIPPLE_MAX_SIZE = -1
 const val WATER_RIPPLES_ANIMATION_DURATION = 2000
 // ================================================== |
 
+// ================= Wine Glasses =================== |
+const val MARKER_FADE_DURATION = 500
+const val MARKER_SIZE = 30
+const val UNDEFINED_ANGLE = 600f
+const val MAX_ANGLE_SKEW = 40f
+const val MIN_ANGLE_SKEW = 20f
+// ================================================== |
+
+// ============== Screen size related =============== |
 var SCREEN_WIDTH : Int = -1
 var SCREEN_HEIGHT : Int = -1
 var TEXT_SIZE = 0.sp
 var COLUMN_PADDING = 0.dp
 var textStyle : TextStyle = TextStyle()
+// ================================================== |
 
 // called from MainActivity.kt in onCreate()
-fun initGlobalValues(screenWidth : Int, screenHeight : Int){
+fun initProperties(screenWidth : Int, screenHeight : Int){
     SCREEN_WIDTH = screenWidth
     SCREEN_HEIGHT = screenHeight
 

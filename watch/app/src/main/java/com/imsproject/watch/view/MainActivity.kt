@@ -48,7 +48,7 @@ import com.imsproject.watch.RED_COLOR
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.TEXT_SIZE
-import com.imsproject.watch.initGlobalValues
+import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initGlobalValues(metrics.bounds.width(), metrics.bounds.height())
+        initProperties(metrics.bounds.width(), metrics.bounds.height())
         registerActivities()
         setContent {
             Main(viewModel)
@@ -324,77 +324,77 @@ class MainActivity : ComponentActivity() {
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewConnectingScreenBig() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         ConnectingScreen()
     }
 
     @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewConnectingScreenSmall() {
-        initGlobalValues(384, 384)
+        initProperties(384, 384)
         ConnectingScreen()
     }
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewPreviewConnectedNotInLobbyBig() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         ConnectedNotInLobbyScreen("123456")
     }
 
     @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewPreviewConnectedNotInLobbySmall() {
-        initGlobalValues(384, 384)
+        initProperties(384, 384)
         ConnectedNotInLobbyScreen("123456")
     }
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedNotInLobbyScreenBig() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         ConnectedNotInLobbyScreen("123456")
     }
 
     @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedNotInLobbyScreenSmall() {
-        initGlobalValues(384, 384)
+        initProperties(384, 384)
         ConnectedNotInLobbyScreen("123456")
     }
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedInLobbyScreenBig() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         ConnectedInLobbyScreen("123456", "ABC", "gameType", false) {}
     }
 
     @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewConnectedInLobbyScreenSmall() {
-        initGlobalValues(384, 384)
+        initProperties(384, 384)
         ConnectedInLobbyScreen("123456", "ABC", "gameType", false) {}
     }
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewErrorScreenBig() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         ErrorScreen("Error message") {}
     }
 
     @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewErrorScreenSmall() {
-        initGlobalValues(384, 384)
+        initProperties(384, 384)
         ErrorScreen("Error message") {}
     }
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewLongErrorScreenBig() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         val msg = "Error message\nwith new line character\nthat is long enough to cause the text to wrap around to the next line"
         ErrorScreen(msg) {}
     }
@@ -402,7 +402,7 @@ class MainActivity : ComponentActivity() {
     @Preview(device = "id:wearos_small_round", apiLevel = 34)
     @Composable
     fun PreviewLongErrorScreenSmall() {
-        initGlobalValues(384, 384)
+        initProperties(384, 384)
         val msg = "Error message\nwith new line character\nthat is long enough to cause the text to wrap around to the next line"
         ErrorScreen(msg) {}
     }

@@ -30,22 +30,21 @@ import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.SCREEN_WIDTH
-import com.imsproject.watch.initGlobalValues
+import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
+import com.imsproject.watch.GLOW_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.MARKER_FADE_DURATION
+import com.imsproject.watch.MARKER_SIZE
+import com.imsproject.watch.MAX_ANGLE_SKEW
+import com.imsproject.watch.MIN_ANGLE_SKEW
+import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.sqrt
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
-
-val GLOW_COLOR = Color(0xFFFFA500) // Example orange glow color
-private const val MARKER_FADE_DURATION = 500
-private const val MARKER_SIZE = 30
-
-private const val UNDEFINED_ANGLE = 600f
 
 class WineGlassesActivity : ComponentActivity() {
 
@@ -55,7 +54,7 @@ class WineGlassesActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initGlobalValues(metrics.bounds.width(), metrics.bounds.height())
+        initProperties(metrics.bounds.width(), metrics.bounds.height())
 //        viewModel.onCreate(intent)
         setContent {
             WineGlasses()
@@ -135,8 +134,6 @@ class WineGlassesActivity : ComponentActivity() {
         val radiusOuterEdge = remember{ (SCREEN_WIDTH / 2).toFloat() }
         val radiusInnerEdge = remember { (SCREEN_WIDTH / 2) * 0.2f }
         val released = remember { mutableStateOf(false) }
-        var targetAngle = remember { mutableFloatStateOf(UNDEFINED_ANGLE) }
-        var currentAngle = remember { mutableFloatStateOf(UNDEFINED_ANGLE) }
         // ===================================================== |
 
         // ============= arc related values ================= |
@@ -147,7 +144,7 @@ class WineGlassesActivity : ComponentActivity() {
         var angleSkew = remember { 0f }
         var previousAngle = remember { UNDEFINED_ANGLE }
         var direction = remember { 0f }
-        var arcStartAngle = remember { mutableFloatStateOf(0f) }
+        var arcStartAngle = remember { mutableFloatStateOf(UNDEFINED_ANGLE) }
         // ================================================== |
 
         Box(
@@ -181,16 +178,11 @@ class WineGlassesActivity : ComponentActivity() {
                         delay(16)
                     }
                     previousAngle = UNDEFINED_ANGLE
+                    arcStartAngle.floatValue = UNDEFINED_ANGLE
+                    touchPoint.value = Pair(-1.0,-1.0)
+                    direction = 0f
                 } else {
                     alpha.floatValue = defaultAlpha
-                }
-            }
-            LaunchedEffect(released.value) {
-                if(! released.value) {
-                    while (true) {
-                        angleSkew = (angleSkew - 0.75f).coerceAtLeast(20f)
-                        delay(16)
-                    }
                 }
             }
             Box(
@@ -212,6 +204,7 @@ class WineGlassesActivity : ComponentActivity() {
                             (touchPoint.value.second - center.y).pow(2.0)
                 )
 
+                // animate only when touching the screen
                 if(! released.value){
                     var angle = Math.toDegrees(
                         atan2(
@@ -219,36 +212,27 @@ class WineGlassesActivity : ComponentActivity() {
                             touchPoint.value.first - center.x
                         ).toDouble()
                     ).toFloat()
-
-                    //make the angle move faster with faster change rate
-
+                    
                     // ==== angle logic ==== |
+                    //make the angle move faster with faster change rate
                     val skewedAngle = angle + direction * angleSkew // for current iteration
                     if(previousAngle != UNDEFINED_ANGLE){ // for next iteration
-                        if ((angle - previousAngle).absoluteValue > 2){
-                            angleSkew = (angleSkew + 1f).coerceAtMost(40f)
+                        angleSkew = if ((angle - previousAngle).absoluteValue > 3){
+                            (angleSkew + 1f).coerceAtMost(MAX_ANGLE_SKEW)
+                        } else {
+                            (angleSkew - 0.5f).coerceAtLeast(MIN_ANGLE_SKEW)
                         }
                     }
                     // ====================== |
 
                     // ==== direction logic ==== |
                     if (previousAngle != UNDEFINED_ANGLE){
-                        println("angle: $angle")
-                        if(angle > 0){
-                            if(angle > previousAngle){
-                                direction += 0.1f
-                            } else if (angle < previousAngle){
-                                direction -= 0.1f
-                            }
-                        } else if (angle < 0){
-                            if(angle > previousAngle){
-                                direction += 0.1f
-                            } else if(angle < previousAngle){
-                                direction -= 0.1f
-                            }
+                        if(angle > previousAngle){
+                            direction = (direction + 0.1f).coerceAtMost(1f)
+                        } else if (angle < previousAngle){
+                            direction = (direction - 0.1f).coerceAtLeast(-1f)
                         }
                     }
-                    direction = direction.coerceIn(-1f,1f)
                     // =============================== |
 
                     previousAngle = angle
@@ -274,7 +258,6 @@ class WineGlassesActivity : ComponentActivity() {
         }
     }
 
-
     companion object {
         private const val TAG = "WineGlassesActivity"
     }
@@ -282,14 +265,14 @@ class WineGlassesActivity : ComponentActivity() {
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewLoadingScreen() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         LoadingScreen()
     }
 
     @Preview(device = "id:wearos_large_round", apiLevel = 34)
     @Composable
     fun PreviewWineGlasses() {
-        initGlobalValues(454, 454)
+        initProperties(454, 454)
         WineGlasses()
     }
 }
