@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -201,36 +202,77 @@ class WineGlassesActivity : ComponentActivity() {
             )
             Canvas(modifier = Modifier.fillMaxSize()) {
 
-                // calculate distance from center
-                // to determine if the touch point is roughly within the circle
-                // we allow a little bit of leeway
                 val distanceFromCenter = sqrt(
                     (touchPoint.value.first - center.x).pow(2.0) +
-                            (touchPoint.value.second - center.y).pow(2.0))
+                            (touchPoint.value.second - center.y).pow(2.0)
+                )
 
-                //calculate angle from coordinates
-                val angle = Math.toRadians(Math.toDegrees(
+                val angle = Math.toDegrees(
                     atan2(
                         touchPoint.value.second - center.y,
                         touchPoint.value.first - center.x
-                    )
-                ))
+                    ).toDouble()
+                ).toFloat()
 
-                //calculate x and y to draw the circle
-                val x = center.x + radiusCenter * kotlin.math.cos(angle).toFloat()
-                val y = center.y + radiusCenter * kotlin.math.sin(angle).toFloat()
+                if (distanceFromCenter >= radiusInnerEdge && distanceFromCenter <= radiusOuterEdge) {
+                    if (touchPoint.value.first != -1.0 && touchPoint.value.second != -1.0) {
+                        // Define the arc size
+                        val arcRadius = radiusOuterEdge.toFloat() // Adjust as needed
+                        val arcSize = Size(arcRadius * 2, arcRadius * 2)
 
-                if(distanceFromCenter >= radiusInnerEdge && distanceFromCenter <= radiusOuterEdge){
-                    if(touchPoint.value.first != -1.0 && touchPoint.value.second != -1.0){
-                        drawCircle(
+                        // Calculate start angle and sweep angle
+                        val startAngle = angle - 15f // Adjust start angle
+                        val sweepAngle = 30f // Define arc length in degrees
+
+                        drawArc(
                             color = GLOW_COLOR.copy(alpha = alpha.floatValue),
-                            center = Offset(x, y),
-                            radius = MARKER_SIZE.dp.toPx(),
-                            style = Fill
+                            startAngle = startAngle,
+                            sweepAngle = sweepAngle,
+                            useCenter = false, // Open arc, not filled
+                            topLeft = Offset(
+                                center.x - arcRadius,
+                                center.y - arcRadius
+                            ),
+                            size = arcSize,
+                            style = Stroke(width = MARKER_SIZE.dp.toPx()) // Adjust thickness
                         )
                     }
                 }
             }
+
+
+//            Canvas(modifier = Modifier.fillMaxSize()) {
+//
+//                // calculate distance from center
+//                // to determine if the touch point is roughly within the circle
+//                // we allow a little bit of leeway
+//                val distanceFromCenter = sqrt(
+//                    (touchPoint.value.first - center.x).pow(2.0) +
+//                            (touchPoint.value.second - center.y).pow(2.0))
+//
+//                //calculate angle from coordinates
+//                val angle = Math.toRadians(Math.toDegrees(
+//                    atan2(
+//                        touchPoint.value.second - center.y,
+//                        touchPoint.value.first - center.x
+//                    )
+//                ))
+//
+//                //calculate x and y to draw the circle
+//                val x = center.x + radiusCenter * kotlin.math.cos(angle).toFloat()
+//                val y = center.y + radiusCenter * kotlin.math.sin(angle).toFloat()
+//
+//                if(distanceFromCenter >= radiusInnerEdge && distanceFromCenter <= radiusOuterEdge){
+//                    if(touchPoint.value.first != -1.0 && touchPoint.value.second != -1.0){
+//                        drawCircle(
+//                            color = GLOW_COLOR.copy(alpha = alpha.floatValue),
+//                            center = Offset(x, y),
+//                            radius = MARKER_SIZE.dp.toPx(),
+//                            style = Fill
+//                        )
+//                    }
+//                }
+//            }
         }
     }
 
