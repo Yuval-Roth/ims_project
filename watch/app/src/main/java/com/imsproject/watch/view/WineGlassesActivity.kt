@@ -247,7 +247,7 @@ class WineGlassesActivity : ComponentActivity() {
                 if(previousAngle != UNDEFINED_ANGLE){
                     val previousAngleDiff = myArc.previousAngleDiff
                     val angleDiffDiff = angleDiff - previousAngleDiff
-                    myArc.angleSkew = if (angleDiffDiff > 1){
+                    myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 2){
                         (angleSkew + 5f).coerceAtMost(MAX_ANGLE_SKEW)
                     } else if (angleDiffDiff < 1){
                         (angleSkew - 2.5f).coerceAtLeast(MIN_ANGLE_SKEW)
