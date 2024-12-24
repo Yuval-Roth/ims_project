@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,16 +36,24 @@ import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.core.content.IntentSanitizer
+import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.MARKER_FADE_DURATION
 import com.imsproject.watch.MY_STROKE_WIDTH
 import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
+import com.imsproject.watch.MY_ARC_SIZE
+import com.imsproject.watch.MY_ARC_TOP_LEFT
 import com.imsproject.watch.MY_RADIUS_INNER_EDGE
 import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
+import com.imsproject.watch.MY_SWEEP_ANGLE
+import com.imsproject.watch.OPPONENT_ARC_SIZE
+import com.imsproject.watch.OPPONENT_ARC_TOP_LEFT
 import com.imsproject.watch.OPPONENT_RADIUS_OUTER_EDGE
 import com.imsproject.watch.OPPONENT_STROKE_WIDTH
+import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.UNDEFINED_ANGLE
@@ -164,7 +173,7 @@ class WineGlassesActivity : ComponentActivity() {
             // arc fade animation - my arc
             LaunchedEffect(viewModel.released.collectAsState().value) {
                 if(viewModel.released.value){
-                    val alphaAnimStep =  myArc.defaultAlpha / (MARKER_FADE_DURATION / 16f)
+                    val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
                     while(viewModel.released.value && myArc.currentAlpha.floatValue > 0.0f){
                         myArc.currentAlpha.floatValue =
                             (myArc.currentAlpha.floatValue - alphaAnimStep)
@@ -176,14 +185,14 @@ class WineGlassesActivity : ComponentActivity() {
                     myArc.direction = 0f
                     viewModel.setTouchPoint(-1.0,-1.0)
                 } else {
-                    myArc.currentAlpha.floatValue = myArc.defaultAlpha
+                    myArc.currentAlpha.floatValue = ARC_DEFAULT_ALPHA
                 }
             }
 
             // arc fade animation - opponent's arc
             LaunchedEffect(viewModel.opponentReleased.collectAsState().value) {
                 if(viewModel.opponentReleased.value){
-                    val alphaAnimStep =  opponentArc.defaultAlpha / (MARKER_FADE_DURATION / 16f)
+                    val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
                     while(viewModel.opponentReleased.value && opponentArc.currentAlpha.floatValue > 0.0f){
                         opponentArc.currentAlpha.floatValue =
                             (opponentArc.currentAlpha.floatValue - alphaAnimStep)
@@ -191,7 +200,7 @@ class WineGlassesActivity : ComponentActivity() {
                         delay(16)
                     }
                 } else {
-                    opponentArc.currentAlpha.floatValue = opponentArc.defaultAlpha
+                    opponentArc.currentAlpha.floatValue = ARC_DEFAULT_ALPHA
                 }
             }
 
@@ -236,7 +245,7 @@ class WineGlassesActivity : ComponentActivity() {
                 println("angleSkew: $angleSkew")
 
                 // update the arc be drawn in this iteration
-                myArc.startAngle.floatValue = skewedAngle - myArc.sweepAngle / 2
+                myArc.startAngle.floatValue = skewedAngle - MY_SWEEP_ANGLE / 2
 
                 // ============== for next iteration =============== |
 
@@ -285,25 +294,25 @@ class WineGlassesActivity : ComponentActivity() {
                 // draw only if the touch point is within the defined borders
                 if (distanceFromCenter >= MY_RADIUS_INNER_EDGE && distanceFromCenter <= MY_RADIUS_OUTER_EDGE) {
                     drawArc(
-                        color = myArc.color.copy(alpha = myArc.currentAlpha.floatValue),
+                        color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha.floatValue),
                         startAngle = myArc.startAngle.floatValue,
-                        sweepAngle = myArc.sweepAngle,
+                        sweepAngle = MY_SWEEP_ANGLE,
                         useCenter = false,
-                        topLeft = myArc.topLeft,
-                        size = myArc.size,
-                        style = Stroke(width = myArc.strokeWidth.dp.toPx())
+                        topLeft = MY_ARC_TOP_LEFT,
+                        size = MY_ARC_SIZE,
+                        style = Stroke(width = MY_STROKE_WIDTH.dp.toPx())
                     )
                 }
 
                 // draw opponent's arc
                 drawArc(
-                    color = opponentArc.color.copy(alpha = opponentArc.currentAlpha.floatValue),
+                    color = LIGHT_GRAY_COLOR.copy(alpha = opponentArc.currentAlpha.floatValue),
                     startAngle = opponentArc.startAngle.floatValue,
-                    sweepAngle = opponentArc.sweepAngle,
+                    sweepAngle = OPPONENT_SWEEP_ANGLE,
                     useCenter = false,
-                    topLeft = opponentArc.topLeft,
-                    size = opponentArc.size,
-                    style = Stroke(width = opponentArc.strokeWidth.dp.toPx())
+                    topLeft = OPPONENT_ARC_TOP_LEFT,
+                    size = OPPONENT_ARC_SIZE,
+                    style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
                 )
             }
         }

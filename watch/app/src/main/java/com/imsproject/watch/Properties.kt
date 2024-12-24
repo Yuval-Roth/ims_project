@@ -1,6 +1,7 @@
 package com.imsproject.watch
 
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -48,8 +49,11 @@ const val ARC_DEFAULT_ALPHA = 0.8f
 var SCREEN_CENTER = Offset(0f,0f)
 var MY_RADIUS_OUTER_EDGE = 0f
 var MY_RADIUS_INNER_EDGE = 0f
+var MY_ARC_TOP_LEFT = Offset(0f,0f)
+var MY_ARC_SIZE = Size(0f,0f)
 var OPPONENT_RADIUS_OUTER_EDGE = 0f
-var OPPONENT_RADIUS_INNER_EDGE = 0f
+var OPPONENT_ARC_TOP_LEFT = Offset(0f,0f)
+var OPPONENT_ARC_SIZE = Size(0f,0f)
 // ================================================== |
 
 // called from MainActivity.kt in onCreate()
@@ -58,13 +62,10 @@ fun initProperties(screenWidth : Int, screenHeight : Int){
     SCREEN_HEIGHT = screenHeight
 
     WATER_RIPPLES_BUTTON_SIZE = SCREEN_WIDTH / 6
-
     RIPPLE_MAX_SIZE = SCREEN_WIDTH / 2
 
     TEXT_SIZE = (SCREEN_WIDTH * 0.03f).sp
-
     COLUMN_PADDING = (SCREEN_HEIGHT * 0.06f).dp
-
     textStyle = TextStyle(
         color = Color.White,
         fontSize = TEXT_SIZE,
@@ -75,7 +76,11 @@ fun initProperties(screenWidth : Int, screenHeight : Int){
     SCREEN_CENTER = Offset(SCREEN_WIDTH / 2f, SCREEN_WIDTH / 2f)
     MY_RADIUS_OUTER_EDGE = (SCREEN_WIDTH / 2).toFloat()
     MY_RADIUS_INNER_EDGE = (SCREEN_WIDTH / 2) * 0.2f
+    MY_ARC_TOP_LEFT = Offset(SCREEN_CENTER.x - MY_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - MY_RADIUS_OUTER_EDGE)
+    MY_ARC_SIZE = Size(MY_RADIUS_OUTER_EDGE * 2, MY_RADIUS_OUTER_EDGE * 2)
     OPPONENT_RADIUS_OUTER_EDGE = (SCREEN_WIDTH / 2).toFloat() * 0.2f
+    OPPONENT_ARC_TOP_LEFT = Offset(SCREEN_CENTER.x - OPPONENT_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - OPPONENT_RADIUS_OUTER_EDGE)
+    OPPONENT_ARC_SIZE = Size(OPPONENT_RADIUS_OUTER_EDGE * 2, OPPONENT_RADIUS_OUTER_EDGE * 2)
 }
 
 

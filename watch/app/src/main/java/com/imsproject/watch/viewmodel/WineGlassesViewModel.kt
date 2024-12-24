@@ -30,41 +30,13 @@ import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 
 class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
-    class Arc private constructor(
-        val color: Color,
-        val size: Size,
-        val sweepAngle: Float,
-        val defaultAlpha: Float,
-        val topLeft: Offset,
-        val strokeWidth: Int
-    ) {
-        var currentAlpha = mutableFloatStateOf(defaultAlpha)
+    class Arc{
         var startAngle = mutableFloatStateOf(0f)
         var angleSkew = 0f
         var direction = 0f
         var previousAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
         var previousAngleDiff = 0f
-
-        companion object {
-            fun my() = Arc(
-                GLOWING_YELLOW_COLOR,
-                Size(MY_RADIUS_OUTER_EDGE * 2, MY_RADIUS_OUTER_EDGE * 2),
-                MY_SWEEP_ANGLE,
-                ARC_DEFAULT_ALPHA,
-                Offset(SCREEN_CENTER.x - MY_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - MY_RADIUS_OUTER_EDGE),
-                MY_STROKE_WIDTH
-            )
-            fun opponent(): Arc {
-                return Arc(
-                    LIGHT_GRAY_COLOR,
-                    Size(OPPONENT_RADIUS_OUTER_EDGE * 2, OPPONENT_RADIUS_OUTER_EDGE * 2),
-                    OPPONENT_SWEEP_ANGLE,
-                    ARC_DEFAULT_ALPHA,
-                    Offset(SCREEN_CENTER.x - OPPONENT_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - OPPONENT_RADIUS_OUTER_EDGE),
-                    OPPONENT_STROKE_WIDTH
-                )
-            }
-        }
+        var currentAlpha = mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
 
     // ================================================================================ |
@@ -91,8 +63,8 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     // TODO: remove this
     override fun onCreate(intent: Intent) {
-        myArc = Arc.my()
-        opponentArc = Arc.opponent()
+        myArc = Arc()
+        opponentArc = Arc()
 
         // simulate opponent's movement
         viewModelScope.launch(Dispatchers.IO) {
