@@ -12,12 +12,13 @@ import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.MAX_ANGLE_SKEW
+import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_RADIUS_INNER_EDGE
+import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.model.Position
 import kotlin.math.absoluteValue
 import kotlin.math.atan2
@@ -27,7 +28,7 @@ import kotlin.math.sqrt
 class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     class Arc{
-        var startAngle = mutableFloatStateOf(0f)
+        var startAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
         var angleSkew = 0f
         var direction = 0f
         var previousAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
@@ -61,12 +62,6 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     val myArc = Arc()
     val opponentArc = Arc()
 
-    private var _angle = MutableStateFlow(UNDEFINED_ANGLE)
-    val angle : StateFlow<Float> = _angle
-
-    private var _inBounds = MutableStateFlow(false)
-    val inBounds : StateFlow<Boolean> = _inBounds
-
     private var _released = MutableStateFlow(false)
     val released : StateFlow<Boolean> = _released
 
@@ -77,20 +72,24 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
+    override fun onCreate(intent: Intent) {
+        super.onCreate(intent)
+    }
+
     fun setTouchPoint(x: Double, y: Double) {
-        val angle = calculateAngle(x, y)
+        val rawAngle = calculateAngle(x, y)
         val distance = calculateDistance(x, y)
 
         val inBounds = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
-        _inBounds.value = inBounds
         if(inBounds){
-            _angle.value = angle
+            updateMyArc(rawAngle)
             _released.value = false
         } else {
             _released.value = true
         }
 
         val released = released.value
+        val angle = myArc.startAngle.floatValue
 
         // send position to server
         viewModelScope.launch(Dispatchers.IO) {
@@ -99,12 +98,12 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     }
 
     fun setReleased() {
-        val angle = _angle.value
-        _released.value = false
+        _released.value = true
 
+        val angle = myArc.startAngle.floatValue
         // send position to server
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Angle(angle, false),getCurrentGameTime())
+            model.sendPosition(Angle(angle, true),getCurrentGameTime())
         }
     }
 
@@ -161,6 +160,50 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         return sqrt(
             (x - SCREEN_CENTER.x).pow(2) + (y - SCREEN_CENTER.y).pow(2)
         )
+    }
+
+    private fun updateMyArc(angle: Float){
+
+        // =========== for current iteration =============== |
+
+        // calculate the skew angle to show the arc ahead of the finger
+        // based on the calculations of the previous iteration
+        val angleSkew = myArc.angleSkew
+        myArc.startAngle.floatValue = angle + myArc.direction * angleSkew - MY_SWEEP_ANGLE / 2
+
+        // ============== for next iteration =============== |
+
+        // prepare the skew angle for the next iteration
+        val previousAngle = myArc.previousAngle.floatValue
+        val angleDiff = (angle - previousAngle).absoluteValue
+        if(previousAngle != UNDEFINED_ANGLE){
+            val previousAngleDiff = myArc.previousAngleDiff
+            val angleDiffDiff = angleDiff - previousAngleDiff
+            myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 2){
+                (angleSkew + 5f).coerceAtMost(MAX_ANGLE_SKEW)
+            } else if (angleDiffDiff < 1){
+                (angleSkew - 2.5f).coerceAtLeast(MIN_ANGLE_SKEW)
+            } else {
+                angleSkew
+            }
+        }
+
+        // prepare the direction for the next iteration
+        if (previousAngle != UNDEFINED_ANGLE && angleDiff > 2){
+            val direction = myArc.direction
+            myArc.direction = if(angle > previousAngle){
+                (direction + 0.1f).coerceAtMost(1f)
+            } else if (angle < previousAngle){
+                (direction - 0.1f).coerceAtLeast(-1f)
+            } else {
+                direction
+            }
+            if(myArc.direction == 0f) myArc.angleSkew = MIN_ANGLE_SKEW
+        }
+
+        // current angle becomes previous angle for the next iteration
+        myArc.previousAngle.floatValue = angle
+        myArc.previousAngleDiff = angleDiff
     }
 
     companion object {

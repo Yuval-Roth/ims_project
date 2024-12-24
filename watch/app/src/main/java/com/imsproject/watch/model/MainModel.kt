@@ -21,8 +21,8 @@ import java.net.URI
 import java.util.concurrent.TimeUnit
 
 // set these values to run the app locally
-const val RUNNING_LOCAL_GAME_SERVER : Boolean = true
-const val RUNNING_ON_EMULATOR : Boolean = true
+const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
+const val RUNNING_ON_EMULATOR : Boolean = false
 const val COMPUTER_NETWORK_IP = "192.168.0.104"
 
 // ========== Constants ===========|
@@ -249,13 +249,6 @@ class MainModel (private val scope : CoroutineScope) {
         val request = GameAction.builder(GameAction.Type.POSITION)
             // add more things here if needed
             .data(position.toString())
-            .timestamp(timestamp.toString())
-            .build().toString()
-        sendUdp(request)
-    }
-
-    suspend fun sendSyncRequest(timestamp: Long) {
-        val request = GameAction.builder(GameAction.Type.SYNC_TIME)
             .timestamp(timestamp.toString())
             .build().toString()
         sendUdp(request)

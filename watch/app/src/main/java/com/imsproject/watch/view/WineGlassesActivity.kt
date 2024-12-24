@@ -137,7 +137,6 @@ class WineGlassesActivity : ComponentActivity() {
     fun WineGlasses() {
         val myArc = remember { viewModel.myArc }
         val opponentArc = remember { viewModel.opponentArc }
-        var angle = viewModel.angle.collectAsState().value // my angle
         val released = viewModel.released.collectAsState().value // my released state
 
         Box(
@@ -224,59 +223,12 @@ class WineGlassesActivity : ComponentActivity() {
                     .background(color = GLOWING_YELLOW_COLOR)
             )
 
-            // ======== Manipulate my arc based on touch point ========= |
-
-            // only when touching the screen
-            if(!released){
-
-                // =========== for current iteration =============== |
-
-                // calculate the skew angle to show the arc ahead of the finger
-                // based on the calculations of the previous iteration
-                val angleSkew = myArc.angleSkew
-                myArc.startAngle.floatValue = angle + myArc.direction * angleSkew - MY_SWEEP_ANGLE / 2
-
-                // ============== for next iteration =============== |
-
-                // prepare the skew angle for the next iteration
-                val previousAngle = myArc.previousAngle.floatValue
-                val angleDiff = (angle - previousAngle).absoluteValue
-                if(previousAngle != UNDEFINED_ANGLE){
-                    val previousAngleDiff = myArc.previousAngleDiff
-                    val angleDiffDiff = angleDiff - previousAngleDiff
-                    myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 2){
-                        (angleSkew + 5f).coerceAtMost(MAX_ANGLE_SKEW)
-                    } else if (angleDiffDiff < 1){
-                        (angleSkew - 2.5f).coerceAtLeast(MIN_ANGLE_SKEW)
-                    } else {
-                        angleSkew
-                    }
-                }
-
-                // prepare the direction for the next iteration
-                if (previousAngle != UNDEFINED_ANGLE && angleDiff > 2){
-                    val direction = myArc.direction
-                    myArc.direction = if(angle > previousAngle){
-                        (direction + 0.1f).coerceAtMost(1f)
-                    } else if (angle < previousAngle){
-                        (direction - 0.1f).coerceAtLeast(-1f)
-                    } else {
-                        direction
-                    }
-                    if(myArc.direction == 0f) myArc.angleSkew = MIN_ANGLE_SKEW
-                }
-
-                // current angle becomes previous angle for the next iteration
-                myArc.previousAngle.floatValue = angle
-                myArc.previousAngleDiff = angleDiff
-            }
-
             // =================== Draw arcs =================== |
 
             Canvas(modifier = Modifier.fillMaxSize()) {
 
                 // draw only if the touch point is within the defined borders
-                if (viewModel.angle.value != UNDEFINED_ANGLE) {
+                if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
                     drawArc(
                         color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha.floatValue),
                         startAngle = myArc.startAngle.floatValue,
@@ -289,15 +241,17 @@ class WineGlassesActivity : ComponentActivity() {
                 }
 
                 // draw opponent's arc
-                drawArc(
-                    color = LIGHT_GRAY_COLOR.copy(alpha = opponentArc.currentAlpha.floatValue),
-                    startAngle = opponentArc.startAngle.floatValue,
-                    sweepAngle = OPPONENT_SWEEP_ANGLE,
-                    useCenter = false,
-                    topLeft = OPPONENT_ARC_TOP_LEFT,
-                    size = OPPONENT_ARC_SIZE,
-                    style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
-                )
+                if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                    drawArc(
+                        color = LIGHT_GRAY_COLOR.copy(alpha = opponentArc.currentAlpha.floatValue),
+                        startAngle = opponentArc.startAngle.floatValue,
+                        sweepAngle = OPPONENT_SWEEP_ANGLE,
+                        useCenter = false,
+                        topLeft = OPPONENT_ARC_TOP_LEFT,
+                        size = OPPONENT_ARC_SIZE,
+                        style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
+                    )
+                }
             }
         }
     }
