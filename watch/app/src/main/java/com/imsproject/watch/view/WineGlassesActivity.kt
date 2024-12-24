@@ -131,9 +131,7 @@ class WineGlassesActivity : ComponentActivity() {
     fun WineGlasses() {
         val myArc = remember { viewModel.myArc }
         val opponentArc = remember { viewModel.opponentArc }
-        var touchPoint = viewModel.touchPoint.collectAsState().value
-
-        // ============= touch point related values =========== |
+        var touchPoint = viewModel.touchPoint.collectAsState().value // my touch point
 
         Box(
             modifier = Modifier
@@ -161,6 +159,9 @@ class WineGlassesActivity : ComponentActivity() {
             contentAlignment = Alignment.Center
         ) {
 
+            //=============== Arc fade animation =============== |
+
+            // arc fade animation - my arc
             LaunchedEffect(viewModel.released.collectAsState().value) {
                 if(viewModel.released.value){
                     val alphaAnimStep =  myArc.defaultAlpha / (MARKER_FADE_DURATION / 16f)
@@ -178,6 +179,24 @@ class WineGlassesActivity : ComponentActivity() {
                     myArc.currentAlpha.floatValue = myArc.defaultAlpha
                 }
             }
+
+            // arc fade animation - opponent's arc
+            LaunchedEffect(viewModel.opponentReleased.collectAsState().value) {
+                if(viewModel.opponentReleased.value){
+                    val alphaAnimStep =  opponentArc.defaultAlpha / (MARKER_FADE_DURATION / 16f)
+                    while(viewModel.opponentReleased.value && opponentArc.currentAlpha.floatValue > 0.0f){
+                        opponentArc.currentAlpha.floatValue =
+                            (opponentArc.currentAlpha.floatValue - alphaAnimStep)
+                                .coerceAtLeast(0.0f)
+                        delay(16)
+                    }
+                } else {
+                    opponentArc.currentAlpha.floatValue = opponentArc.defaultAlpha
+                }
+            }
+
+            // =============== Draw background ================ |
+
             Box(
                 modifier = Modifier
                     .fillMaxSize(0.8f)
@@ -190,14 +209,16 @@ class WineGlassesActivity : ComponentActivity() {
                     .clip(shape = CircleShape)
                     .background(color = DARK_BACKGROUND_COLOR)
             )
-            Canvas(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .size((OPPONENT_RADIUS_OUTER_EDGE * 0.65f).dp)
+                    .clip(shape = CircleShape)
+                    .background(color = GLOWING_YELLOW_COLOR)
+            )
 
-                // inner circle for opponent's arc
-                drawCircle(
-                    color = GLOWING_YELLOW_COLOR,
-                    radius = OPPONENT_RADIUS_OUTER_EDGE * 0.65f,
-                    center = SCREEN_CENTER
-                )
+            // =================== Draw arcs =================== |
+
+            Canvas(modifier = Modifier.fillMaxSize()) {
 
                 val distanceFromCenter = sqrt(
                     (touchPoint.first - SCREEN_CENTER.x).pow(2.0) +
@@ -254,25 +275,23 @@ class WineGlassesActivity : ComponentActivity() {
                         color = myArc.color.copy(alpha = myArc.currentAlpha.floatValue),
                         startAngle = myArc.startAngle.floatValue,
                         sweepAngle = myArc.sweepAngle,
-                        useCenter = false, // Open arc, not filled
+                        useCenter = false,
                         topLeft = myArc.topLeft,
                         size = myArc.size,
-                        style = Stroke(width = myArc.strokeWidth.dp.toPx()) // Adjust thickness
+                        style = Stroke(width = myArc.strokeWidth.dp.toPx())
                     )
                 }
 
                 // draw opponent's arc
-                if(opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
-                    drawArc(
-                        color = opponentArc.color,
-                        startAngle = opponentArc.startAngle.floatValue - 15,
-                        sweepAngle = opponentArc.sweepAngle,
-                        useCenter = false, // Open arc, not filled
-                        topLeft = opponentArc.topLeft,
-                        size = opponentArc.size,
-                        style = Stroke(width = opponentArc.strokeWidth.dp.toPx()) // Adjust thickness
-                    )
-                }
+                drawArc(
+                    color = opponentArc.color.copy(alpha = opponentArc.currentAlpha.floatValue),
+                    startAngle = opponentArc.startAngle.floatValue,
+                    sweepAngle = opponentArc.sweepAngle,
+                    useCenter = false,
+                    topLeft = opponentArc.topLeft,
+                    size = opponentArc.size,
+                    style = Stroke(width = opponentArc.strokeWidth.dp.toPx())
+                )
             }
         }
     }

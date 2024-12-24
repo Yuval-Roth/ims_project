@@ -92,10 +92,20 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     override fun onCreate(intent: Intent) {
         myArc = Arc.my()
         opponentArc = Arc.opponent()
+
+        // simulate opponent's movement
         viewModelScope.launch(Dispatchers.IO) {
             while(true){
-                opponentArc.startAngle.floatValue = opponentArc.startAngle.floatValue + 2
-                delay(16)
+                var counter = 0
+                opponentArc.startAngle.floatValue = 0f
+                while(counter < 360 * 3){
+                    opponentArc.startAngle.floatValue = opponentArc.startAngle.floatValue + 4
+                    counter += 4
+                    delay(16)
+                }
+                _opponentReleased.value = true
+                delay(1000)
+                _opponentReleased.value = false
             }
         }
     }
