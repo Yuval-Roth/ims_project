@@ -216,6 +216,58 @@ class WineGlassesActivity : ComponentActivity() {
                     .background(color = GLOWING_YELLOW_COLOR)
             )
 
+            // ======== Manipulate my arc based on touch point ========= |
+
+            // only when touching the screen
+            if(! viewModel.released.collectAsState().value){
+                val angle = Math.toDegrees(
+                    atan2(
+                        touchPoint.second - SCREEN_CENTER.y,
+                        touchPoint.first - SCREEN_CENTER.x
+                    ).toDouble()
+                ).toFloat()
+
+                // =========== for current iteration =============== |
+
+                // calculate the skew angle to show the arc ahead of the finger
+                // based on the calculations of the previous iteration
+                val angleSkew = myArc.angleSkew
+                val skewedAngle = angle + myArc.direction * angleSkew
+
+                // update the arc be drawn in this iteration
+                myArc.startAngle.floatValue = skewedAngle - myArc.sweepAngle / 2
+
+                // ============== for next iteration =============== |
+
+                // prepare the skew angle for the next iteration
+                val previousAngle = myArc.previousAngle.floatValue
+                if(previousAngle != UNDEFINED_ANGLE){
+                    val angleDiff = (angle - previousAngle).absoluteValue
+                    myArc.angleSkew = if (angleDiff > 3){
+                        (angleSkew + 1f).coerceAtMost(MAX_ANGLE_SKEW)
+                    } else if (angleDiff < 3 && angleDiff > 0){
+                        (angleSkew - 0.5f).coerceAtLeast(MIN_ANGLE_SKEW)
+                    } else {
+                        angleSkew
+                    }
+                }
+
+                // prepare the direction for the next iteration
+                if (previousAngle != UNDEFINED_ANGLE){
+                    val direction = myArc.direction
+                    myArc.direction = if(angle > previousAngle){
+                        (direction + 0.1f).coerceAtMost(1f)
+                    } else if (angle < previousAngle){
+                        (direction - 0.1f).coerceAtLeast(-1f)
+                    } else {
+                        direction
+                    }
+                }
+
+                // current angle becomes previous angle for the next iteration
+                myArc.previousAngle.floatValue = angle
+            }
+
             // =================== Draw arcs =================== |
 
             Canvas(modifier = Modifier.fillMaxSize()) {
@@ -224,50 +276,6 @@ class WineGlassesActivity : ComponentActivity() {
                     (touchPoint.first - SCREEN_CENTER.x).pow(2.0) +
                             (touchPoint.second - SCREEN_CENTER.y).pow(2.0)
                 )
-
-                // animate only when touching the screen
-                if(! viewModel.released.value){
-                    val angle = Math.toDegrees(
-                        atan2(
-                            touchPoint.second - SCREEN_CENTER.y,
-                            touchPoint.first - SCREEN_CENTER.x
-                        ).toDouble()
-                    ).toFloat()
-                    
-                    // ==== angle logic ==== |
-                    //make the angle move faster with faster change rate
-                    val angleSkew = myArc.angleSkew
-                    val skewedAngle = angle + myArc.direction * angleSkew
-                    // for next iteration
-                    val previousAngle = myArc.previousAngle.floatValue
-                    if(previousAngle != UNDEFINED_ANGLE){
-                        val angleDiff = (angle - previousAngle).absoluteValue
-                        myArc.angleSkew = if (angleDiff > 3){
-                            (angleSkew + 1f).coerceAtMost(MAX_ANGLE_SKEW)
-                        } else if (angleDiff < 3 && angleDiff > 0){
-                            (angleSkew - 0.5f).coerceAtLeast(MIN_ANGLE_SKEW)
-                        } else {
-                            angleSkew
-                        }
-                    }
-                    // ====================== |
-
-                    // ==== direction logic ==== |
-                    if (previousAngle != UNDEFINED_ANGLE){
-                        val direction = myArc.direction
-                        myArc.direction = if(angle > previousAngle){
-                            (direction + 0.1f).coerceAtMost(1f)
-                        } else if (angle < previousAngle){
-                            (direction - 0.1f).coerceAtLeast(-1f)
-                        } else {
-                            direction
-                        }
-                    }
-                    // =============================== |
-
-                    myArc.previousAngle.floatValue = angle
-                    myArc.startAngle.floatValue = skewedAngle - myArc.sweepAngle / 2
-                }
 
                 // draw only if the touch point is within the defined borders
                 if (distanceFromCenter >= MY_RADIUS_INNER_EDGE && distanceFromCenter <= MY_RADIUS_OUTER_EDGE) {
