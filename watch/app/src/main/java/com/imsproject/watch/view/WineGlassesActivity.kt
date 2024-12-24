@@ -183,6 +183,7 @@ class WineGlassesActivity : ComponentActivity() {
                         delay(16)
                     }
                     myArc.previousAngle.floatValue = UNDEFINED_ANGLE
+                    myArc.previousAngleDiff = 0f
                     myArc.startAngle.floatValue = UNDEFINED_ANGLE
                     myArc.direction = 0f
                     viewModel.setTouchPoint(-1.0,-1.0)
@@ -257,7 +258,7 @@ class WineGlassesActivity : ComponentActivity() {
                 }
 
                 // prepare the direction for the next iteration
-                if (previousAngle != UNDEFINED_ANGLE){
+                if (previousAngle != UNDEFINED_ANGLE && angleDiff > 2){
                     val direction = myArc.direction
                     myArc.direction = if(angle > previousAngle){
                         (direction + 0.1f).coerceAtMost(1f)

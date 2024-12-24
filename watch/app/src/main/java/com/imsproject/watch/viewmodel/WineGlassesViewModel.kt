@@ -19,6 +19,7 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.MY_RADIUS_INNER_EDGE
 import com.imsproject.watch.model.Position
+import kotlin.math.absoluteValue
 import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -71,7 +72,6 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     private var _opponentReleased = MutableStateFlow(false)
     val opponentReleased : StateFlow<Boolean> = _opponentReleased
-
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
