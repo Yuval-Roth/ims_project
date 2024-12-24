@@ -37,20 +37,26 @@ const val WATER_RIPPLES_ANIMATION_DURATION = 2000
 // ================================================== |
 
 // ================= Wine Glasses =================== |
+
+// general
+var SCREEN_CENTER = Offset(0f,0f)
 const val MARKER_FADE_DURATION = 500
-const val MY_STROKE_WIDTH = 30
-const val OPPONENT_STROKE_WIDTH = 30 / 4
 const val UNDEFINED_ANGLE = 600f
+const val ARC_DEFAULT_ALPHA = 0.8f
 const val MAX_ANGLE_SKEW = 40f
 const val MIN_ANGLE_SKEW = 20f
-const val OPPONENT_SWEEP_ANGLE = 60f
+
+// my arc
+const val MY_STROKE_WIDTH = 30
 const val MY_SWEEP_ANGLE = 30f
-const val ARC_DEFAULT_ALPHA = 0.8f
-var SCREEN_CENTER = Offset(0f,0f)
 var MY_RADIUS_OUTER_EDGE = 0f
 var MY_RADIUS_INNER_EDGE = 0f
 var MY_ARC_TOP_LEFT = Offset(0f,0f)
 var MY_ARC_SIZE = Size(0f,0f)
+
+// opponent arc
+const val OPPONENT_STROKE_WIDTH = 30 / 4
+const val OPPONENT_SWEEP_ANGLE = 60f
 var OPPONENT_RADIUS_OUTER_EDGE = 0f
 var OPPONENT_ARC_TOP_LEFT = Offset(0f,0f)
 var OPPONENT_ARC_SIZE = Size(0f,0f)
