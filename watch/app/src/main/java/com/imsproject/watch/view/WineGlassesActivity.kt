@@ -149,9 +149,8 @@ class WineGlassesActivity : ComponentActivity() {
                         while (true) {
                             val pointerEvent = awaitPointerEvent()
                             if (pointerEvent.type == PointerEventType.Release) {
-                                viewModel.setReleased(true)
+                                viewModel.setReleased()
                             } else {
-                                viewModel.setReleased(false)
                                 val inputChange = pointerEvent.changes.first()
                                 inputChange.consume()
                                 val position = inputChange.position

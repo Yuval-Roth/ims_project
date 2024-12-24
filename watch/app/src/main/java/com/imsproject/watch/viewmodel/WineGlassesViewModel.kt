@@ -81,8 +81,9 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         val angle = calculateAngle(x, y)
         val distance = calculateDistance(x, y)
 
-        _inBounds.value = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
-        if(inBounds.value){
+        val inBounds = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
+        _inBounds.value = inBounds
+        if(inBounds){
             _angle.value = angle
             _released.value = false
         } else {
@@ -97,13 +98,13 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         }
     }
 
-    fun setReleased(released: Boolean) {
+    fun setReleased() {
         val angle = _angle.value
-        _released.value = released
+        _released.value = false
 
         // send position to server
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Angle(angle, released),getCurrentGameTime())
+            model.sendPosition(Angle(angle, false),getCurrentGameTime())
         }
     }
 
