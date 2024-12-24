@@ -233,6 +233,7 @@ class WineGlassesActivity : ComponentActivity() {
                 // based on the calculations of the previous iteration
                 val angleSkew = myArc.angleSkew
                 val skewedAngle = angle + myArc.direction * angleSkew
+                println("angleSkew: $angleSkew")
 
                 // update the arc be drawn in this iteration
                 myArc.startAngle.floatValue = skewedAngle - myArc.sweepAngle / 2
@@ -241,12 +242,14 @@ class WineGlassesActivity : ComponentActivity() {
 
                 // prepare the skew angle for the next iteration
                 val previousAngle = myArc.previousAngle.floatValue
+                val angleDiff = (angle - previousAngle).absoluteValue
                 if(previousAngle != UNDEFINED_ANGLE){
-                    val angleDiff = (angle - previousAngle).absoluteValue
-                    myArc.angleSkew = if (angleDiff > 3){
-                        (angleSkew + 1f).coerceAtMost(MAX_ANGLE_SKEW)
-                    } else if (angleDiff < 3 && angleDiff > 0){
-                        (angleSkew - 0.5f).coerceAtLeast(MIN_ANGLE_SKEW)
+                    val previousAngleDiff = myArc.previousAngleDiff
+                    val angleDiffDiff = angleDiff - previousAngleDiff
+                    myArc.angleSkew = if (angleDiffDiff > 1){
+                        (angleSkew + 5f).coerceAtMost(MAX_ANGLE_SKEW)
+                    } else if (angleDiffDiff < 1){
+                        (angleSkew - 2.5f).coerceAtLeast(MIN_ANGLE_SKEW)
                     } else {
                         angleSkew
                     }
@@ -262,10 +265,12 @@ class WineGlassesActivity : ComponentActivity() {
                     } else {
                         direction
                     }
+                    if(myArc.direction == 0f) myArc.angleSkew = MIN_ANGLE_SKEW
                 }
 
                 // current angle becomes previous angle for the next iteration
                 myArc.previousAngle.floatValue = angle
+                myArc.previousAngleDiff = angleDiff
             }
 
             // =================== Draw arcs =================== |

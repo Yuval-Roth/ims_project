@@ -39,10 +39,11 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         val strokeWidth: Int
     ) {
         var currentAlpha = mutableFloatStateOf(defaultAlpha)
-        var angleSkew = 0f
-        var previousAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
-        var direction = 0f
         var startAngle = mutableFloatStateOf(0f)
+        var angleSkew = 0f
+        var direction = 0f
+        var previousAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
+        var previousAngleDiff = 0f
 
         companion object {
             fun my() = Arc(
