@@ -24,9 +24,13 @@ import kotlinx.coroutines.delay
 import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.LIGHT_GRAY_COLOR
+import com.imsproject.watch.MY_RADIUS_INNER_EDGE
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
+import kotlin.math.atan2
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
@@ -47,8 +51,11 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     lateinit var myArc : Arc
     lateinit var opponentArc : Arc
 
-    private var _touchPoint = MutableStateFlow(Pair(-1.0,-1.0))
-    val touchPoint : StateFlow<Pair<Double,Double>> = _touchPoint
+    private var _angle = MutableStateFlow(UNDEFINED_ANGLE)
+    val angle : StateFlow<Float> = _angle
+
+    private var _inBounds = MutableStateFlow(false)
+    val inBounds : StateFlow<Boolean> = _inBounds
 
     private var _released = MutableStateFlow(false)
     val released : StateFlow<Boolean> = _released
@@ -84,7 +91,25 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     }
 
     fun setTouchPoint(x: Double, y: Double) {
-        _touchPoint.value = Pair(x, y)
+        val angle = calculateAngle(x, y)
+        val distance = calculateDistance(x, y)
+        _angle.value = angle
+        _inBounds.value = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
+    }
+
+    private fun calculateAngle(x: Double, y:Double) : Float {
+        return Math.toDegrees(
+            atan2(
+                y - SCREEN_CENTER.y,
+                x - SCREEN_CENTER.x
+            ).toDouble()
+        ).toFloat()
+    }
+
+    private fun calculateDistance(x: Double, y: Double) : Double {
+        return sqrt(
+            (x - SCREEN_CENTER.x).pow(2) + (y - SCREEN_CENTER.y).pow(2)
+        )
     }
 
     fun setReleased(bool: Boolean) {

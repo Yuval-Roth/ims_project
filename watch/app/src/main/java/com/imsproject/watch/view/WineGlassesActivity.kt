@@ -140,7 +140,8 @@ class WineGlassesActivity : ComponentActivity() {
     fun WineGlasses() {
         val myArc = remember { viewModel.myArc }
         val opponentArc = remember { viewModel.opponentArc }
-        var touchPoint = viewModel.touchPoint.collectAsState().value // my touch point
+        var angle = viewModel.angle.collectAsState().value // my angle
+        val released = viewModel.released.collectAsState().value // my released state
 
         Box(
             modifier = Modifier
@@ -171,7 +172,8 @@ class WineGlassesActivity : ComponentActivity() {
             //=============== Arc fade animation =============== |
 
             // arc fade animation - my arc
-            LaunchedEffect(viewModel.released.collectAsState().value) {
+
+            LaunchedEffect(released) {
                 if(viewModel.released.value){
                     val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
                     while(viewModel.released.value && myArc.currentAlpha.floatValue > 0.0f){
@@ -228,24 +230,14 @@ class WineGlassesActivity : ComponentActivity() {
             // ======== Manipulate my arc based on touch point ========= |
 
             // only when touching the screen
-            if(! viewModel.released.collectAsState().value){
-                val angle = Math.toDegrees(
-                    atan2(
-                        touchPoint.second - SCREEN_CENTER.y,
-                        touchPoint.first - SCREEN_CENTER.x
-                    ).toDouble()
-                ).toFloat()
+            if(!released){
 
                 // =========== for current iteration =============== |
 
                 // calculate the skew angle to show the arc ahead of the finger
                 // based on the calculations of the previous iteration
                 val angleSkew = myArc.angleSkew
-                val skewedAngle = angle + myArc.direction * angleSkew
-                println("angleSkew: $angleSkew")
-
-                // update the arc be drawn in this iteration
-                myArc.startAngle.floatValue = skewedAngle - MY_SWEEP_ANGLE / 2
+                myArc.startAngle.floatValue = angle + myArc.direction * angleSkew - MY_SWEEP_ANGLE / 2
 
                 // ============== for next iteration =============== |
 
@@ -286,13 +278,8 @@ class WineGlassesActivity : ComponentActivity() {
 
             Canvas(modifier = Modifier.fillMaxSize()) {
 
-                val distanceFromCenter = sqrt(
-                    (touchPoint.first - SCREEN_CENTER.x).pow(2.0) +
-                            (touchPoint.second - SCREEN_CENTER.y).pow(2.0)
-                )
-
                 // draw only if the touch point is within the defined borders
-                if (distanceFromCenter >= MY_RADIUS_INNER_EDGE && distanceFromCenter <= MY_RADIUS_OUTER_EDGE) {
+                if (viewModel.inBounds.value) {
                     drawArc(
                         color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha.floatValue),
                         startAngle = myArc.startAngle.floatValue,
