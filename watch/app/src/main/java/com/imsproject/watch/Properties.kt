@@ -43,8 +43,8 @@ var SCREEN_CENTER = Offset(0f,0f)
 const val MARKER_FADE_DURATION = 500
 const val UNDEFINED_ANGLE = 600f
 const val ARC_DEFAULT_ALPHA = 0.8f
-const val MAX_ANGLE_SKEW = 40f
-const val MIN_ANGLE_SKEW = 20f
+const val MAX_ANGLE_SKEW = 60f
+const val MIN_ANGLE_SKEW = 15f
 
 // my arc
 const val MY_STROKE_WIDTH = 30
