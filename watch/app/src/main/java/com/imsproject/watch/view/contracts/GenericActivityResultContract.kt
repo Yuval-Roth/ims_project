@@ -6,7 +6,7 @@ import androidx.activity.result.contract.ActivityResultContract
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.view.WaterRipplesActivity
 
-class WaterRipplesResultContract : ActivityResultContract<Map<String,Any>, Result>() {
+class GenericActivityResultContract : ActivityResultContract<Map<String,Any>, Result>() {
 
     override fun createIntent(
         context: Context,

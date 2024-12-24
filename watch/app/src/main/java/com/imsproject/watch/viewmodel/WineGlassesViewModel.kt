@@ -77,25 +77,6 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    // TODO: remove this
-    override fun onCreate(intent: Intent) {
-        // simulate opponent's movement
-        viewModelScope.launch(Dispatchers.IO) {
-            while(true){
-                var counter = 0
-                opponentArc.startAngle.floatValue = 0f
-                while(counter < 360 * 3){
-                    opponentArc.startAngle.floatValue = opponentArc.startAngle.floatValue + 4
-                    counter += 4
-                    delay(16)
-                }
-                _opponentReleased.value = true
-                delay(1000)
-                _opponentReleased.value = false
-            }
-        }
-    }
-
     fun setTouchPoint(x: Double, y: Double) {
         val angle = calculateAngle(x, y)
         val distance = calculateDistance(x, y)
@@ -104,10 +85,9 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         _inBounds.value = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
 
         // send position to server
-        //TODO: uncomment this when server is ready
-//        viewModelScope.launch(Dispatchers.IO) {
-//            model.sendPosition(Angle(angle, released),getCurrentGameTime())
-//        }
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sendPosition(Angle(angle, released),getCurrentGameTime())
+        }
     }
 
     fun setReleased(released: Boolean) {
@@ -115,10 +95,9 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         _released.value = released
 
         // send position to server
-        //TODO: uncomment this when server is ready
-//        viewModelScope.launch(Dispatchers.IO) {
-//            model.sendPosition(Angle(angle, released),getCurrentGameTime())
-//        }
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sendPosition(Angle(angle, released),getCurrentGameTime())
+        }
     }
 
     // ================================================================================ |
@@ -139,10 +118,13 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
                     Log.e(TAG, "handleGameAction: missing timestamp in position action")
                     return
                 }
-                // switch to main thread to update UI
-                withContext(Dispatchers.Main) {
-                    //TODO: implement
+                val position = action.data?.let { Angle.fromString(it) } ?: run{
+                    Log.e(TAG, "handleGameAction: missing position in position action")
+                    return
                 }
+
+                opponentArc.startAngle.floatValue = position.angle
+                _opponentReleased.value = position.released
             }
             else -> super.handleGameAction(action)
         }

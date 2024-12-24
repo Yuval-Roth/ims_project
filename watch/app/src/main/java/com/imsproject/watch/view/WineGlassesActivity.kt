@@ -73,12 +73,9 @@ class WineGlassesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent)
         setContent {
-            WineGlasses()
-//            Main()
+            Main()
         }
     }
 
