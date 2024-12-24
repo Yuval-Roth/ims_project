@@ -3,30 +3,24 @@ package com.imsproject.watch.viewmodel
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
-import com.imsproject.watch.GLOWING_YELLOW_COLOR
-import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
-import com.imsproject.watch.MY_STROKE_WIDTH
-import com.imsproject.watch.OPPONENT_RADIUS_OUTER_EDGE
-import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
-import com.imsproject.watch.LIGHT_GRAY_COLOR
-import com.imsproject.watch.MY_SWEEP_ANGLE
-import com.imsproject.watch.OPPONENT_STROKE_WIDTH
-import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
+import com.imsproject.watch.OPPONENT_RADIUS_OUTER_EDGE
+import com.imsproject.watch.SCREEN_CENTER
+import java.lang.Math.toDegrees
+import java.lang.Math.toRadians
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
@@ -39,16 +33,34 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         var currentAlpha = mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
 
+    data class Position(
+        val x: Double,
+        val y: Double,
+        val released: Boolean
+    ){
+        override fun toString(): String {
+            return "$x,$y,$released"
+        }
+        companion object {
+            fun fromString(str: String): Position {
+                val parts = str.split(",")
+                return Position(parts[0].toDouble(), parts[1].toDouble(), parts[2].toBoolean())
+            }
+        }
+    }
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    //TODO: make this val
-    lateinit var myArc : Arc
-    lateinit var opponentArc : Arc
+    val myArc = Arc()
+    val opponentArc = Arc()
 
     private var _touchPoint = MutableStateFlow(Pair(-1.0,-1.0))
     val touchPoint : StateFlow<Pair<Double,Double>> = _touchPoint
+
+    private var _opponentTouchPoint = MutableStateFlow(Pair(-1.0,-1.0))
+    val opponentTouchPoint : StateFlow<Pair<Double,Double>> = _opponentTouchPoint
 
     private var _released = MutableStateFlow(false)
     val released : StateFlow<Boolean> = _released
@@ -63,17 +75,17 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     // TODO: remove this
     override fun onCreate(intent: Intent) {
-        myArc = Arc()
-        opponentArc = Arc()
-
         // simulate opponent's movement
         viewModelScope.launch(Dispatchers.IO) {
             while(true){
-                var counter = 0
-                opponentArc.startAngle.floatValue = 0f
-                while(counter < 360 * 3){
-                    opponentArc.startAngle.floatValue = opponentArc.startAngle.floatValue + 4
-                    counter += 4
+                var angle = 0.0
+                val (x, y) = angleToCoordinates(angle, SCREEN_CENTER.x.toDouble(), SCREEN_CENTER.y.toDouble(), OPPONENT_RADIUS_OUTER_EDGE.toDouble())
+                _opponentTouchPoint.value = Pair(x, y)
+                while(angle < 360.0 * 3.0){
+                    // calculate coordinates
+                    val (x, y) = angleToCoordinates(angle, SCREEN_CENTER.x.toDouble(), SCREEN_CENTER.y.toDouble(), OPPONENT_RADIUS_OUTER_EDGE.toDouble())
+                    _opponentTouchPoint.value = Pair(x, y)
+                    angle += 4.0
                     delay(16)
                 }
                 _opponentReleased.value = true
@@ -89,6 +101,13 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     fun setReleased(bool: Boolean) {
         _released.value = bool
+    }
+
+    fun sendPosition(x: Double, y: Double, released: Boolean) {
+        val position = Position(x, y, released)
+//        viewModelScope.launch(Dispatchers.IO) {
+//            model.sendPosition(position, getCurrentGameTime())
+//        }
     }
 
     // ================================================================================ |
@@ -109,13 +128,21 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
                     Log.e(TAG, "handleGameAction: missing timestamp in position action")
                     return
                 }
-                // switch to main thread to update UI
-                withContext(Dispatchers.Main) {
-                    //TODO: implement
-                }
+
             }
             else -> super.handleGameAction(action)
         }
+    }
+
+    fun angleToCoordinates(angle: Double, centerX: Double, centerY: Double, radius: Double): Pair<Double, Double> {
+        // Convert angle from degrees to radians
+        val angleInRadians = toRadians(angle)
+
+        // Calculate coordinates
+        val x = centerX + radius * cos(angleInRadians)
+        val y = centerY + radius * sin(angleInRadians)
+
+        return Pair(x, y)
     }
 
     /**
