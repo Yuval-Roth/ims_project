@@ -6,6 +6,9 @@ import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.SimpleIdGenerator
+import com.imsproject.gameserver.games.Game
+import com.imsproject.gameserver.games.WaterRipplesGame
+import com.imsproject.gameserver.games.WineGlassesGame
 import com.imsproject.gameserver.lobbies.Lobby
 import com.imsproject.gameserver.lobbies.LobbyState
 import com.imsproject.gameserver.networking.ManagerEventsHandler

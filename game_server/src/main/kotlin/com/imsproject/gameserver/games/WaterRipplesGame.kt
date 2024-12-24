@@ -1,7 +1,8 @@
-package com.imsproject.gameserver
+package com.imsproject.gameserver.games
 
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
+import com.imsproject.gameserver.ClientHandler
 import org.slf4j.LoggerFactory
 
 

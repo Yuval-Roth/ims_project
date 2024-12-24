@@ -163,12 +163,14 @@ This request type is used to get the details of a specific lobby. The `lobbyId` 
 ```json
 {
   "success": true,
-  "payload": {
-    "lobbyId": "lobby1",
-    "gameType": "gameTypeA",
-    "state": "waiting",
-    "players": ["player1", "player2"]
-  }
+  "payload": [
+    {
+      "lobbyId": "lobby1",
+      "gameType": "gameTypeA",
+      "state": "waiting",
+      "players": ["player1", "player2"]
+    }
+  ]
 }
 ```
 
@@ -332,7 +334,7 @@ This endpoint manages user operations such as adding or removing operators. The 
   - At least one uppercase letter.
   - At least one lowercase letter.
   - At least one digit.
-  - May contain special characters (`!@#$%^&*()-=_+[]{};:<>?/~\`).
+  - May contain special characters (`!@#$%^&*()-=_+[]{};:<>?/\~|`).
 
 ---
 

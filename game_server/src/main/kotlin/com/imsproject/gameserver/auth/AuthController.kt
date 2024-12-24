@@ -113,7 +113,7 @@ class AuthController(private val credentials: CredentialsController) {
     //============================================================================ |
 
     private fun isValidPassword(password: String): Boolean {
-        val pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d!@#$%^&*()-=_+\\[\\]{};:<>?/~\\\\]{8,}$"
+        val pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[A-Za-z\\d!@#$%^&*()-=_+\\[\\]{};:<>?/~\\\\|]{8,}$"
         return password.matches(Regex(pattern))
     }
 
