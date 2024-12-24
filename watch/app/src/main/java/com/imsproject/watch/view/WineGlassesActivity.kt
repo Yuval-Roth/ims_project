@@ -277,7 +277,7 @@ class WineGlassesActivity : ComponentActivity() {
             Canvas(modifier = Modifier.fillMaxSize()) {
 
                 // draw only if the touch point is within the defined borders
-                if (viewModel.inBounds.value) {
+                if (viewModel.angle.value != UNDEFINED_ANGLE) {
                     drawArc(
                         color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha.floatValue),
                         startAngle = myArc.startAngle.floatValue,
