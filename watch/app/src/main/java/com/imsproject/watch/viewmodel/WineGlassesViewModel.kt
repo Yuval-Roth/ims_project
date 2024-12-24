@@ -3,16 +3,10 @@ package com.imsproject.watch.viewmodel
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
-import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
-import com.imsproject.watch.MY_STROKE_WIDTH
-import com.imsproject.watch.OPPONENT_RADIUS_OUTER_EDGE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.Dispatchers
@@ -23,11 +17,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
-import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.MY_RADIUS_INNER_EDGE
-import com.imsproject.watch.MY_SWEEP_ANGLE
-import com.imsproject.watch.OPPONENT_STROKE_WIDTH
-import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
+import com.imsproject.watch.model.Position
 import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -43,13 +34,31 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         var currentAlpha = mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
 
+    class Angle (
+        val angle: Float,
+        val released: Boolean
+    ) : Position{
+        override fun toString(): String {
+            return "$angle,$released"
+        }
+
+        companion object {
+            fun fromString(string: String) : Angle {
+                val parts = string.split(",")
+                return Angle(
+                    parts[0].toFloat(),
+                    parts[1].toBoolean()
+                )
+            }
+        }
+    }
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    //TODO: make this val
-    lateinit var myArc : Arc
-    lateinit var opponentArc : Arc
+    val myArc = Arc()
+    val opponentArc = Arc()
 
     private var _angle = MutableStateFlow(UNDEFINED_ANGLE)
     val angle : StateFlow<Float> = _angle
@@ -70,9 +79,6 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     // TODO: remove this
     override fun onCreate(intent: Intent) {
-        myArc = Arc()
-        opponentArc = Arc()
-
         // simulate opponent's movement
         viewModelScope.launch(Dispatchers.IO) {
             while(true){
@@ -93,27 +99,26 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     fun setTouchPoint(x: Double, y: Double) {
         val angle = calculateAngle(x, y)
         val distance = calculateDistance(x, y)
+        val released = released.value
         _angle.value = angle
         _inBounds.value = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
+
+        // send position to server
+        //TODO: uncomment this when server is ready
+//        viewModelScope.launch(Dispatchers.IO) {
+//            model.sendPosition(Angle(angle, released),getCurrentGameTime())
+//        }
     }
 
-    private fun calculateAngle(x: Double, y:Double) : Float {
-        return Math.toDegrees(
-            atan2(
-                y - SCREEN_CENTER.y,
-                x - SCREEN_CENTER.x
-            ).toDouble()
-        ).toFloat()
-    }
+    fun setReleased(released: Boolean) {
+        val angle = _angle.value
+        _released.value = released
 
-    private fun calculateDistance(x: Double, y: Double) : Double {
-        return sqrt(
-            (x - SCREEN_CENTER.x).pow(2) + (y - SCREEN_CENTER.y).pow(2)
-        )
-    }
-
-    fun setReleased(bool: Boolean) {
-        _released.value = bool
+        // send position to server
+        //TODO: uncomment this when server is ready
+//        viewModelScope.launch(Dispatchers.IO) {
+//            model.sendPosition(Angle(angle, released),getCurrentGameTime())
+//        }
     }
 
     // ================================================================================ |
@@ -151,6 +156,21 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
             GameRequest.Type.END_GAME -> exitOk()
             else -> super.handleGameRequest(request)
         }
+    }
+
+    private fun calculateAngle(x: Double, y:Double) : Float {
+        return Math.toDegrees(
+            atan2(
+                y - SCREEN_CENTER.y,
+                x - SCREEN_CENTER.x
+            ).toDouble()
+        ).toFloat()
+    }
+
+    private fun calculateDistance(x: Double, y: Double) : Double {
+        return sqrt(
+            (x - SCREEN_CENTER.x).pow(2) + (y - SCREEN_CENTER.y).pow(2)
+        )
     }
 
     companion object {
