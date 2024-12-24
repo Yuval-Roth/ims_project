@@ -99,9 +99,16 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     fun setTouchPoint(x: Double, y: Double) {
         val angle = calculateAngle(x, y)
         val distance = calculateDistance(x, y)
-        val released = released.value
-        _angle.value = angle
+
         _inBounds.value = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
+        if(inBounds.value){
+            _angle.value = angle
+            _released.value = false
+        } else {
+            _released.value = true
+        }
+
+        val released = released.value
 
         // send position to server
         //TODO: uncomment this when server is ready
