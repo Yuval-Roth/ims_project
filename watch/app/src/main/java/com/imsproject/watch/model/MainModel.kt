@@ -21,8 +21,8 @@ import java.net.URI
 import java.util.concurrent.TimeUnit
 
 // set these values to run the app locally
-const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
-const val RUNNING_ON_EMULATOR : Boolean = false
+const val RUNNING_LOCAL_GAME_SERVER : Boolean = true
+const val RUNNING_ON_EMULATOR : Boolean = true
 const val COMPUTER_NETWORK_IP = "192.168.0.104"
 
 // ========== Constants ===========|

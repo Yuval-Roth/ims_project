@@ -3,7 +3,8 @@ from enum import Enum
 
 class GAME_TYPE(Enum):
     water_ripples = 1
-    poc = 2
+    wine_glasses = 2
+    poc = 3
 
 
 class GAME_REQUEST_TYPE(Enum):

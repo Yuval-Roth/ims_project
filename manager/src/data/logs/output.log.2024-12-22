@@ -1,0 +1,75 @@
+2024-12-22 00:45:07,681 - INFO - Starting game in lobby 01
+2024-12-22 00:46:18,129 - INFO - Stopping game in lobby 01
+2024-12-22 00:48:40,909 - INFO - Starting game in lobby 02
+2024-12-22 00:49:09,410 - INFO - Stopping game in lobby 02
+2024-12-22 01:00:53,354 - ERROR - Error joining lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 01:01:23,327 - INFO - Starting game in lobby Failed to join 03 to lobby 01
+2024-12-22 01:01:23,335 - ERROR - Error starting game: Message: Lobby not found, Success: False, Payload: []
+2024-12-22 01:01:38,757 - INFO - Starting game in lobby 02
+2024-12-22 01:01:38,765 - ERROR - Error starting game: Message: Lobby is not ready, Success: False, Payload: []
+2024-12-22 01:02:11,357 - INFO - Starting game in lobby 03
+2024-12-22 01:10:44,218 - INFO - Starting game in lobby 01
+2024-12-22 01:12:40,111 - INFO - Starting game in lobby 01
+2024-12-22 03:29:12,369 - INFO - Starting game in lobby 01
+2024-12-22 03:29:20,668 - INFO - Stopping game in lobby 01
+2024-12-22 03:30:45,619 - INFO - Starting game in lobby 01
+2024-12-22 03:33:53,849 - INFO - Starting game in lobby 01
+2024-12-22 13:33:48,739 - INFO - Starting game in lobby 01
+2024-12-22 13:34:56,296 - INFO - Starting game in lobby 02
+2024-12-22 13:39:17,193 - INFO - Starting game in lobby 03
+2024-12-22 13:44:13,972 - INFO - Starting game in lobby 04
+2024-12-22 13:45:14,097 - INFO - Starting game in lobby 05
+2024-12-22 13:47:43,623 - INFO - Starting game in lobby 06
+2024-12-22 13:49:38,957 - INFO - Starting game in lobby 07
+2024-12-22 13:51:41,474 - INFO - Starting game in lobby 08
+2024-12-22 13:54:05,315 - INFO - Starting game in lobby 09
+2024-12-22 13:55:42,843 - INFO - Starting game in lobby 0a
+2024-12-22 13:59:15,846 - INFO - Starting game in lobby 0b
+2024-12-22 13:59:15,864 - ERROR - Error starting game: Message: Lobby is not ready, Success: False, Payload: []
+2024-12-22 13:59:19,640 - INFO - Starting game in lobby 0b
+2024-12-22 14:00:36,643 - INFO - Starting game in lobby 0c
+2024-12-22 14:02:57,090 - INFO - Starting game in lobby 0d
+2024-12-22 14:08:07,144 - INFO - Starting game in lobby 0e
+2024-12-22 14:08:07,151 - ERROR - Error starting game: Message: Lobby is not ready, Success: False, Payload: []
+2024-12-22 14:08:11,284 - INFO - Starting game in lobby 0e
+2024-12-22 14:09:08,745 - INFO - Starting game in lobby 0f
+2024-12-22 14:09:47,645 - INFO - Starting game in lobby 10
+2024-12-22 14:11:06,570 - INFO - Starting game in lobby 11
+2024-12-22 14:16:57,810 - INFO - Starting game in lobby 12
+2024-12-22 14:45:09,642 - INFO - Starting game in lobby 14
+2024-12-22 14:53:57,955 - INFO - Starting game in lobby 01
+2024-12-22 14:56:51,757 - INFO - Stopping game in lobby 01
+2024-12-22 14:56:51,780 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 14:56:51,781 - ERROR - Failed to remove 02 from lobby 01
+2024-12-22 14:57:18,075 - INFO - Starting game in lobby 02
+2024-12-22 15:03:16,017 - INFO - Starting game in lobby 01
+2024-12-22 15:12:11,637 - INFO - Starting game in lobby 02
+2024-12-22 15:16:32,493 - INFO - Starting game in lobby 03
+2024-12-22 15:17:06,479 - INFO - Stopping game in lobby 03
+2024-12-22 15:17:06,550 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:17:06,550 - ERROR - Failed to remove 07 from lobby 03
+2024-12-22 15:17:06,559 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:17:06,560 - ERROR - Failed to remove 08 from lobby 03
+2024-12-22 15:17:18,388 - INFO - Starting game in lobby 04
+2024-12-22 15:18:35,365 - INFO - Stopping game in lobby 04
+2024-12-22 15:18:35,379 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:18:35,379 - ERROR - Failed to remove 09 from lobby 04
+2024-12-22 15:18:35,386 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:18:35,387 - ERROR - Failed to remove 0a from lobby 04
+2024-12-22 15:18:42,060 - INFO - Starting game in lobby 05
+2024-12-22 15:24:16,927 - INFO - Stopping game in lobby 05
+2024-12-22 15:24:30,606 - INFO - Starting game in lobby 06
+2024-12-22 15:30:06,914 - INFO - Stopping game in lobby 06
+2024-12-22 15:30:55,031 - INFO - Starting game in lobby 01
+2024-12-22 15:34:00,168 - INFO - Stopping game in lobby 01
+2024-12-22 15:34:00,185 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:34:00,187 - ERROR - Failed to remove 01 from lobby 01
+2024-12-22 15:34:00,193 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:34:00,193 - ERROR - Failed to remove 02 from lobby 01
+2024-12-22 15:34:05,695 - INFO - Starting game in lobby 02
+2024-12-22 15:37:23,917 - INFO - Stopping game in lobby 02
+2024-12-22 15:37:23,932 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:37:23,933 - ERROR - Failed to remove 03 from lobby 02
+2024-12-22 15:37:23,941 - ERROR - Error leaving lobby: Message: The following were not found:  Player, Success: False, Payload: []
+2024-12-22 15:37:23,942 - ERROR - Failed to remove 04 from lobby 02
+2024-12-22 15:37:50,667 - INFO - Starting game in lobby 03

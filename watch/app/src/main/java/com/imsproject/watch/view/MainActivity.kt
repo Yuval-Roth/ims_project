@@ -51,7 +51,8 @@ import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
-import com.imsproject.watch.view.contracts.GenericActivityResultContract
+import com.imsproject.watch.view.contracts.WaterRipplesResultContract
+import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 
@@ -74,11 +75,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun registerActivities(){
-        waterRipples = registerForActivityResult(GenericActivityResultContract()) {
+        waterRipples = registerForActivityResult(WaterRipplesResultContract()) {
             viewModel.afterGame(it)
         }
 
-        wineGlasses = registerForActivityResult(GenericActivityResultContract()) {
+        wineGlasses = registerForActivityResult(WineGlassesResultContract()) {
             viewModel.afterGame(it)
         }
     }

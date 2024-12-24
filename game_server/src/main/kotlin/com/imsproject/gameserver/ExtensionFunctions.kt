@@ -37,5 +37,5 @@ fun String.toResponseEntity (): ResponseEntity<String> {
 }
 
 fun LocalDateTime.isMoreThanSecondsAgo(seconds: Long): Boolean {
-    return this.isBefore(LocalDateTime.now().minusSeconds(seconds))
+    return this.isAfter(LocalDateTime.now().minusSeconds(seconds))
 }

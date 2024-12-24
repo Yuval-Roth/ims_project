@@ -10,7 +10,7 @@ class WineGlassesGame (player1 : ClientHandler, player2 : ClientHandler) : Game(
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {
-            GameAction.Type.CLICK -> {
+            GameAction.Type.POSITION -> {
                 val toSend = GameAction.builder(GameAction.Type.POSITION)
                     .actor(actor.id)
                     .timestamp(action.timestamp)

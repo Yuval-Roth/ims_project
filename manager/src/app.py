@@ -43,7 +43,7 @@ def main_menu():
             flash("Please select at least one participant.")
             return redirect(url_for('main_menu'))
 
-        lobby_id = create_lobby(selected_participants)
+        lobby_id = create_lobby(selected_participants, GAME_TYPE.wine_glasses)
         if not lobby_id:
             lobby_id = 1
         return redirect(url_for('lobby', selected_participants=",".join(selected_participants), lobby_id=lobby_id))
