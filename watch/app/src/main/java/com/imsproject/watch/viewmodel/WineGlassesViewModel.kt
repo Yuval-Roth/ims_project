@@ -3,27 +3,28 @@ package com.imsproject.watch.viewmodel
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.UNDEFINED_ANGLE
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_RADIUS_INNER_EDGE
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.model.Position
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.sqrt
+
 
 class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
@@ -175,36 +176,69 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
         // prepare the skew angle for the next iteration
         val previousAngle = myArc.previousAngle.floatValue
-        val angleDiff = (angle - previousAngle).absoluteValue
+        val angleDiff = normalizedAngleDiff(previousAngle, angle)
         if(previousAngle != UNDEFINED_ANGLE){
             val previousAngleDiff = myArc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
-            myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 2){
-                (angleSkew + 5f).coerceAtMost(MAX_ANGLE_SKEW)
+            myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
+                (angleSkew + angleDiff * 0.75f).coerceAtMost(MAX_ANGLE_SKEW)
             } else if (angleDiffDiff < 1){
-                (angleSkew - 2.5f).coerceAtLeast(MIN_ANGLE_SKEW)
+                (angleSkew - angleDiff * 0.375f).coerceAtLeast(MIN_ANGLE_SKEW)
             } else {
                 angleSkew
             }
         }
 
         // prepare the direction for the next iteration
-        if (previousAngle != UNDEFINED_ANGLE && angleDiff > 2){
+        if (previousAngle != UNDEFINED_ANGLE /*&& angleDiff > 2*/){
             val direction = myArc.direction
-            myArc.direction = if(angle > previousAngle){
-                (direction + 0.1f).coerceAtMost(1f)
-            } else if (angle < previousAngle){
-                (direction - 0.1f).coerceAtLeast(-1f)
+            myArc.direction = if(isClockwise(previousAngle, angle)){
+                (direction + angleDiff * 0.2f).coerceAtMost(1f)
+            } else if (! isClockwise(previousAngle, angle)){
+                (direction - angleDiff * 0.2f).coerceAtLeast(-1f)
             } else {
                 direction
             }
-            if(myArc.direction == 0f) myArc.angleSkew = MIN_ANGLE_SKEW
+            if(myArc.direction.isBetweenInclusive(-0.1f,0.1f)) myArc.angleSkew = MIN_ANGLE_SKEW
         }
 
         // current angle becomes previous angle for the next iteration
         myArc.previousAngle.floatValue = angle
         myArc.previousAngleDiff = angleDiff
     }
+
+    private fun normalizedAngleDiff(angle1: Float, angle2: Float) : Float {
+        // angles are in the range of -180 to 180
+        // and there is a 360 degree jump between the 2nd and 3rd quadrant
+        // so we need to normalize the angles to calculate the difference
+
+        // Problematic cases:
+        // angle1 is in 2nd quadrant and angle2 is in 3rd quadrant
+        return if(angle1.isBetweenInclusive(90f,180f) && angle2.isBetweenInclusive(-179.999999f,-90f)){
+            angle1 - (angle2+360)
+        }
+        // angle1 is in 3rd quadrant and angle2 is in 2nd quadrant
+        else if(angle1.isBetweenInclusive(-179.999999f,-90f) && angle2.isBetweenInclusive(90f,180f)){
+            (angle1+360) - angle2
+        }
+        // simple case
+        else {
+            angle1 - angle2
+        }.absoluteValue
+    }
+
+    private fun isClockwise(angle1: Float, angle2: Float) : Boolean {
+        //handle the gap between 3rd and 4th quadrants
+        return if(angle1.isBetweenInclusive(90f,180f) && angle2.isBetweenInclusive(-179.999999f,-90f)){
+            true
+        } else if(angle1.isBetweenInclusive(-179.999999f,-90f) && angle2.isBetweenInclusive(90f,180f)){
+            false
+        } else {
+            angle1 < angle2
+        }
+    }
+
+    private fun Float.isBetweenInclusive(min: Float, max: Float) =  min <= this && this <= max
 
     companion object {
         private const val TAG = "WineGlassesViewModel"

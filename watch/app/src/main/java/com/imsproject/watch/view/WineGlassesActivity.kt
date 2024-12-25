@@ -181,6 +181,7 @@ class WineGlassesActivity : ComponentActivity() {
                     myArc.previousAngleDiff = 0f
                     myArc.startAngle.floatValue = UNDEFINED_ANGLE
                     myArc.direction = 0f
+                    myArc.angleSkew = MIN_ANGLE_SKEW
                     viewModel.setTouchPoint(-1.0,-1.0)
                 } else {
                     myArc.currentAlpha.floatValue = ARC_DEFAULT_ALPHA
