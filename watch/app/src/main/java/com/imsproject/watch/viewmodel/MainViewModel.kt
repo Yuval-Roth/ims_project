@@ -62,13 +62,14 @@ class MainViewModel() : ViewModel() {
     fun connect() {
         viewModelScope.launch(Dispatchers.IO){
             _state.value = State.CONNECTING
-            val id = model.connectToServer()
-            if (id != null) {
-                _playerId.value = id
-                _state.value = State.CONNECTED_NOT_IN_LOBBY
-                setupListeners() // setup the listeners to start receiving messages
-            } else {
-                showError("Failed to connect to server")
+            while(true){
+                val id = model.connectToServer()
+                if (id != null) {
+                    _playerId.value = id
+                    _state.value = State.CONNECTED_NOT_IN_LOBBY
+                    setupListeners() // setup the listeners to start receiving messages
+                    return@launch
+                }
             }
         }
     }
