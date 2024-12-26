@@ -36,24 +36,33 @@ def main_menu():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-
-        selected_participants = request.form.getlist('selected_participants')  #list of str
+        selected_participants = request.form.getlist('selected_participants')
+        game_type = request.form.get('game_type')
 
         if not selected_participants:
             flash("Please select at least one participant.")
             return redirect(url_for('main_menu'))
 
-        lobby_id = create_lobby(selected_participants, GAME_TYPE.wine_glasses)
+        if not game_type:
+            flash("Please select a game type.")
+            return redirect(url_for('main_menu'))
+
+        game_type_enum = GAME_TYPE[game_type]
+        lobby_id = create_lobby(selected_participants, game_type_enum)
+
         if not lobby_id:
-            lobby_id = 1
+            flash("Failed to create lobby.")
+            return redirect(url_for('main_menu'))
+
         return redirect(url_for('lobby', selected_participants=",".join(selected_participants), lobby_id=lobby_id))
-
     else:
+        # Get participants and handle None case
         participants = get_participants()
-        participants = [{"id": participant, "name": f"Player {participant}"} for participant in participants]
-
-        if not participants:
+        if not participants:  # Handle None or empty list
+            participants = []
             flash("No participants found.")
+
+        participants = [{"id": participant, "name": f"Player {participant}"} for participant in participants]
 
         return render_template('main_menu.html', participants=participants)
 
