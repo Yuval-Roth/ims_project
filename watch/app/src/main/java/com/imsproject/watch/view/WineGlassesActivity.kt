@@ -27,28 +27,24 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.IntentSanitizer
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
-import com.imsproject.watch.DARK_BACKGROUND_COLOR
-import com.imsproject.watch.SCREEN_WIDTH
-import com.imsproject.watch.initProperties
-import com.imsproject.watch.textStyle
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.rotary.onRotaryScrollEvent
-import androidx.core.content.IntentSanitizer
-import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.MARKER_FADE_DURATION
-import com.imsproject.watch.MY_STROKE_WIDTH
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
+import com.imsproject.watch.MY_STROKE_WIDTH
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OPPONENT_ARC_SIZE
 import com.imsproject.watch.OPPONENT_ARC_TOP_LEFT
@@ -56,15 +52,27 @@ import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_CENTER
+import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.UNDEFINED_ANGLE
+import com.imsproject.watch.initProperties
+import com.imsproject.watch.textStyle
+import com.imsproject.watch.utils.WavPlayer
+import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
-import com.imsproject.watch.view.contracts.Result
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import com.imsproject.watch.R
+
+private const val LOW_BUILD_IN_TRACK = 0
+private const val LOW_LOOP_TRACK = 1
+private const val LOW_BUILD_OUT_TRACK = 2
 
 class WineGlassesActivity : ComponentActivity() {
 
     private val viewModel : WineGlassesViewModel by viewModels<WineGlassesViewModel>()
+    private lateinit var sound: WavPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +80,11 @@ class WineGlassesActivity : ComponentActivity() {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent)
+        sound = WavPlayer(applicationContext)
+        sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
+        sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
+        sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
+
         setContent {
             Main()
         }
@@ -140,6 +153,8 @@ class WineGlassesActivity : ComponentActivity() {
         val focusRequester = remember { FocusRequester() }
         var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
         var touchingBezel by remember { mutableStateOf(false) }
+        var playSound by remember { mutableStateOf(false) }
+        var currentStream by remember { mutableStateOf(-1) }
 
         Box(
             modifier = Modifier
@@ -156,17 +171,22 @@ class WineGlassesActivity : ComponentActivity() {
                         while (true) {
                             val pointerEvent = awaitPointerEvent()
                             touchingBezel = false
-                            if (pointerEvent.type == PointerEventType.Release) {
-                                viewModel.setReleased()
-                            } else {
-                                val inputChange = pointerEvent.changes.first()
-                                inputChange.consume()
-                                val position = inputChange.position
-                                viewModel.setTouchPoint(
-                                    position.x.toDouble(),
-                                    position.y.toDouble()
-                                )
+                            when (pointerEvent.type) {
+                                PointerEventType.Move, PointerEventType.Press -> {
+                                    val inputChange = pointerEvent.changes.first()
+                                    inputChange.consume()
+                                    val position = inputChange.position
+                                    viewModel.setTouchPoint(
+                                        position.x.toDouble(),
+                                        position.y.toDouble()
+                                    )
+                                }
+
+                                PointerEventType.Release -> {
+                                    viewModel.setReleased()
+                                }
                             }
+                            playSound = true
                         }
                     }
                 }
@@ -181,7 +201,6 @@ class WineGlassesActivity : ComponentActivity() {
             }
 
             LaunchedEffect(touchingBezel) {
-
                 if(touchingBezel){
                     bezelWarningAlpha = 0.0f
                     while(touchingBezel){
@@ -198,6 +217,32 @@ class WineGlassesActivity : ComponentActivity() {
                     while(bezelWarningAlpha > 0.0f){
                         bezelWarningAlpha = (bezelWarningAlpha - 0.01f).coerceAtLeast(0.0f)
                         delay(16)
+                    }
+                }
+            }
+
+            LaunchedEffect(released){
+                if(playSound){
+                    withContext(Dispatchers.IO){
+                        if(released){
+                            val currentlyPlaying = if(sound.isPlaying(LOW_LOOP_TRACK)){
+                                LOW_LOOP_TRACK
+                            } else {
+                                LOW_BUILD_IN_TRACK
+                            }
+                            sound.stopFadeOut(currentlyPlaying,20)
+                            sound.play(LOW_BUILD_OUT_TRACK){
+                                sound.stop(LOW_BUILD_OUT_TRACK)
+                            }
+                            playSound = false
+                        } else {
+                            sound.setVolume(LOW_BUILD_IN_TRACK,1.0f)
+                            sound.play(LOW_BUILD_IN_TRACK) {
+                                sound.setVolume(LOW_LOOP_TRACK,1.0f)
+                                sound.playLooped(LOW_LOOP_TRACK)
+                                sound.stop(LOW_BUILD_IN_TRACK)
+                            }
+                        }
                     }
                 }
             }

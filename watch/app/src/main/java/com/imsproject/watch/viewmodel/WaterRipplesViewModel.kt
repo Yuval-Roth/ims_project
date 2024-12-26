@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
+import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.VIVID_ORANGE_COLOR
@@ -49,6 +50,11 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     // ================================================================================ |
 
     fun click() {
+        if(ACTIVITY_DEBUG_MODE){
+            showRipple(playerId, super.getCurrentGameTime())
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             model.sendClick(super.getCurrentGameTime())
         }

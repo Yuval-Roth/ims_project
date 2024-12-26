@@ -1,5 +1,11 @@
 package com.imsproject.watch.view
 
+import android.annotation.SuppressLint
+import android.media.AudioAttributes
+import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
+import android.media.SoundPool
 import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
@@ -20,9 +26,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
+import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -37,17 +46,26 @@ import com.imsproject.watch.textStyle
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
+import com.imsproject.watch.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class WaterRipplesActivity : ComponentActivity() {
 
     private val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
+    private lateinit var soundPool: SoundPool
+    private var clickSoundId : Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent)
+        soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
+        clickSoundId = soundPool.load(applicationContext, R.raw.ripple_click_sound, 1)
+
         setContent {
             Main()
         }
@@ -107,6 +125,7 @@ class WaterRipplesActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("ReturnFromAwaitPointerEventScope")
     @Composable
     fun WaterRipples() {
 
@@ -121,10 +140,23 @@ class WaterRipplesActivity : ComponentActivity() {
         ) {
 
             Button(
-                modifier = Modifier.size(WATER_RIPPLES_BUTTON_SIZE.dp),
-                onClick = {
-                    viewModel.click()
-                },
+                modifier = Modifier
+                    .size(WATER_RIPPLES_BUTTON_SIZE.dp)
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                if(event.type == PointerEventType.Press){
+                                    event.changes[0].consume()
+                                    viewModel.click()
+                                    viewModel.viewModelScope.launch(Dispatchers.IO) {
+                                        soundPool.play(clickSoundId, 1f, 1f, 0, 0, 1f)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                onClick = {},
             ){
                 // button content
             }

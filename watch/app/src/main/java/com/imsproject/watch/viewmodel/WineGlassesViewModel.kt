@@ -29,7 +29,7 @@ import kotlin.math.sqrt
 
 private const val DIRECTION_MAX_OFFSET = 1.0f
 
-class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
+class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     class Arc{
         var startAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
@@ -66,7 +66,7 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     val myArc = Arc()
     val opponentArc = Arc()
 
-    private var _released = MutableStateFlow(false)
+    private var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
 
     private var _opponentReleased = MutableStateFlow(false)
@@ -80,7 +80,7 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         val rawAngle = calculateAngle(x, y)
         val distance = calculateDistance(x, y)
 
-        val inBounds = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
+        val inBounds = distance in MY_RADIUS_INNER_EDGE..MY_RADIUS_OUTER_EDGE
         if(inBounds){
             updateMyArc(rawAngle)
             _released.value = false
