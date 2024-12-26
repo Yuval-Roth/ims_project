@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +23,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,6 +37,7 @@ import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.core.content.IntentSanitizer
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
@@ -42,16 +45,12 @@ import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.MARKER_FADE_DURATION
 import com.imsproject.watch.MY_STROKE_WIDTH
-import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
-import com.imsproject.watch.MY_RADIUS_INNER_EDGE
-import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OPPONENT_ARC_SIZE
 import com.imsproject.watch.OPPONENT_ARC_TOP_LEFT
-import com.imsproject.watch.OPPONENT_RADIUS_OUTER_EDGE
 import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.PACKAGE_PREFIX
@@ -60,11 +59,7 @@ import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import com.imsproject.watch.view.contracts.Result
-import kotlin.math.atan2
-import kotlin.math.pow
-import kotlin.math.sqrt
 import kotlinx.coroutines.delay
-import kotlin.math.absoluteValue
 
 class WineGlassesActivity : ComponentActivity() {
 
@@ -137,16 +132,26 @@ class WineGlassesActivity : ComponentActivity() {
     fun WineGlasses() {
         val myArc = remember { viewModel.myArc }
         val opponentArc = remember { viewModel.opponentArc }
-        val released = viewModel.released.collectAsState().value // my released state
+        val released by viewModel.released.collectAsState() // my released state
+        val focusRequester = remember { FocusRequester() }
+        var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
+        var touchingBezel by remember { mutableStateOf(false) }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(color = DARK_BACKGROUND_COLOR)
+                .onRotaryScrollEvent {
+                    touchingBezel = true
+                    true
+                }
+                .focusRequester(focusRequester)
+                .focusable()
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
                             val pointerEvent = awaitPointerEvent()
+                            touchingBezel = false
                             if (pointerEvent.type == PointerEventType.Release) {
                                 viewModel.setReleased()
                             } else {
@@ -160,9 +165,29 @@ class WineGlassesActivity : ComponentActivity() {
                             }
                         }
                     }
-                },
+                }
+            ,
             contentAlignment = Alignment.Center
         ) {
+
+            // ================== Scrolling bezel warning ================== |
+
+            LaunchedEffect(Unit){
+                focusRequester.requestFocus()
+            }
+
+            LaunchedEffect(touchingBezel) {
+                while(touchingBezel){
+                    while(bezelWarningAlpha < 0.5f){
+                        bezelWarningAlpha = (bezelWarningAlpha + 0.01f).coerceAtMost(0.5f)
+                        delay(16)
+                    }
+                    while(bezelWarningAlpha > 0.0f){
+                        bezelWarningAlpha = (bezelWarningAlpha - 0.01f).coerceAtLeast(0.0f)
+                        delay(16)
+                    }
+                }
+            }
 
             //=============== Arc fade animation =============== |
 
@@ -245,6 +270,14 @@ class WineGlassesActivity : ComponentActivity() {
                         topLeft = OPPONENT_ARC_TOP_LEFT,
                         size = OPPONENT_ARC_SIZE,
                         style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
+                    )
+                }
+                if(touchingBezel){
+                    drawCircle(
+                        color = Color.Red.copy(alpha = bezelWarningAlpha),
+                        radius = SCREEN_WIDTH / 2.0f ,
+                        center = SCREEN_CENTER,
+                        style = Stroke(width = 20.dp.toPx())
                     )
                 }
             }
