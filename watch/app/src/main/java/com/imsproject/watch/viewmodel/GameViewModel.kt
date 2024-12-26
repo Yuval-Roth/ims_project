@@ -133,15 +133,6 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
         _state.value = State.TERMINATED
     }
 
-    protected fun calculateTimeServerDelta(){
-        val data : List<Long> = List(100) {
-            val currentLocal = System.currentTimeMillis()
-            val currentTimeServer = model.getTimeServerCurrentTimeMillis()
-            currentLocal-currentTimeServer
-        }
-        timeServerDelta = data.average().toLong()
-    }
-
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
@@ -163,6 +154,15 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
             Log.e(TAG, "udp exception", it)
             exitWithError(it.message ?: it.cause?.message ?: "unknown udp exception",Result.Code.UDP_EXCEPTION)
         }
+    }
+
+    private fun calculateTimeServerDelta(){
+        val data : List<Long> = List(100) {
+            val currentLocal = System.currentTimeMillis()
+            val currentTimeServer = model.getTimeServerCurrentTimeMillis()
+            currentLocal-currentTimeServer
+        }
+        timeServerDelta = data.average().toLong()
     }
 
     private fun clearListeners(){
