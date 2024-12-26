@@ -217,12 +217,6 @@ class WineGlassesActivity : ComponentActivity() {
                     .clip(shape = CircleShape)
                     .background(color = DARK_BACKGROUND_COLOR)
             )
-            Box(
-                modifier = Modifier
-                    .size((OPPONENT_RADIUS_OUTER_EDGE * 0.65f).dp)
-                    .clip(shape = CircleShape)
-                    .background(color = GLOWING_YELLOW_COLOR)
-            )
 
             // =================== Draw arcs =================== |
 

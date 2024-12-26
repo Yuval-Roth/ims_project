@@ -26,6 +26,8 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 
+private const val DIRECTION_MAX_OFFSET = 1.0f
+
 class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     class Arc{
@@ -170,7 +172,9 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         // calculate the skew angle to show the arc ahead of the finger
         // based on the calculations of the previous iteration
         val angleSkew = myArc.angleSkew
-        myArc.startAngle.floatValue = angle + myArc.direction * angleSkew - MY_SWEEP_ANGLE / 2
+        myArc.startAngle.floatValue = angle + myArc.direction
+            .coerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET
+        ) * angleSkew - MY_SWEEP_ANGLE / 2
 
         // ============== for next iteration =============== |
 
@@ -190,12 +194,14 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         }
 
         // prepare the direction for the next iteration
-        if (previousAngle != UNDEFINED_ANGLE /*&& angleDiff > 2*/){
+        // we add a bit to the max offset to prevent random jitter in the direction
+        // we clamp the direction to the max offset when calculating the skewed angle
+        if (previousAngle != UNDEFINED_ANGLE){
             val direction = myArc.direction
             myArc.direction = if(isClockwise(previousAngle, angle)){
-                (direction + angleDiff * 0.2f).coerceAtMost(1f)
+                (direction + angleDiff * 0.2f).coerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
             } else if (! isClockwise(previousAngle, angle)){
-                (direction - angleDiff * 0.2f).coerceAtLeast(-1f)
+                (direction - angleDiff * 0.2f).coerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
             } else {
                 direction
             }
@@ -214,7 +220,7 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
         // Problematic cases:
         // angle1 is in 2nd quadrant and angle2 is in 3rd quadrant
-        return if(angle1.isBetweenInclusive(90f,180f) && angle2.isBetweenInclusive(-179.999999f,-90f)){
+        val diff = if(angle1.isBetweenInclusive(90f,180f) && angle2.isBetweenInclusive(-179.999999f,-90f)){
             angle1 - (angle2+360)
         }
         // angle1 is in 3rd quadrant and angle2 is in 2nd quadrant
@@ -224,7 +230,8 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         // simple case
         else {
             angle1 - angle2
-        }.absoluteValue
+        }
+        return diff.absoluteValue
     }
 
     private fun isClockwise(angle1: Float, angle2: Float) : Boolean {
