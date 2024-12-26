@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
+import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.UNDEFINED_ANGLE
@@ -75,10 +76,6 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    override fun onCreate(intent: Intent) {
-        super.onCreate(intent)
-    }
-
     fun setTouchPoint(x: Double, y: Double) {
         val rawAngle = calculateAngle(x, y)
         val distance = calculateDistance(x, y)
@@ -94,6 +91,7 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         val released = released.value
         val angle = myArc.startAngle.floatValue
 
+        if(ACTIVITY_DEBUG_MODE) return
         // send position to server
         viewModelScope.launch(Dispatchers.IO) {
             model.sendPosition(Angle(angle, released),getCurrentGameTime())
@@ -102,8 +100,9 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     fun setReleased() {
         _released.value = true
-
         val angle = myArc.startAngle.floatValue
+
+        if(ACTIVITY_DEBUG_MODE) return
         // send position to server
         viewModelScope.launch(Dispatchers.IO) {
             model.sendPosition(Angle(angle, true),getCurrentGameTime())

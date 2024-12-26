@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.sp
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
+const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
+
 // ============== Screen size related =============== |
 var SCREEN_WIDTH : Int = -1
 var SCREEN_HEIGHT : Int = -1

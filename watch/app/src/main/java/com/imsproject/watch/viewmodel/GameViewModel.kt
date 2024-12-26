@@ -8,6 +8,7 @@ import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.common.networking.PingTracker
+import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.view.contracts.Result
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import java.net.SocketTimeoutException
 import kotlin.math.absoluteValue
 
 abstract class GameViewModel(gameType: GameType) : ViewModel() {
@@ -28,7 +30,7 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     }
 
     private val TAG = "$_TAG-${gameType.prettyName()}"
-    val model = MainModel.instance
+    val model = if(ACTIVITY_DEBUG_MODE) MainModel(viewModelScope) else MainModel.instance
     val playerId : String = model.playerId ?: run {
         Log.e(TAG, "init: missing player ID")
         "unknown player ID"
@@ -55,13 +57,19 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     // ================================================================================ |
 
     open fun onCreate(intent: Intent){
+
+        if(ACTIVITY_DEBUG_MODE){
+            _state.value = State.PLAYING
+            return
+        }
+
         setupListeners()
         viewModelScope.launch(Dispatchers.IO) {
             var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
             do {
                 try{
                     calculateTimeServerDelta()
-                } catch (e: WebsocketNotConnectedException){
+                } catch (e: SocketTimeoutException){
                     Log.e(TAG, "Failed to get time server delta", e)
                     continue
                 }

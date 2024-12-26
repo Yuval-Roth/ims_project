@@ -138,7 +138,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun BlankScreen() {
+    fun BlankScreen() {
         MaterialTheme {
             Box(
                 modifier = Modifier

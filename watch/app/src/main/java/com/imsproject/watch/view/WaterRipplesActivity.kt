@@ -64,6 +64,7 @@ class WaterRipplesActivity : ComponentActivity() {
                 WaterRipples()
             }
             GameViewModel.State.TERMINATED -> {
+                BlankScreen()
                 val result = viewModel.resultCode.collectAsState().value
                 val intent = IntentSanitizer.Builder()
                     .allowComponent(componentName)
@@ -181,6 +182,20 @@ class WaterRipplesActivity : ComponentActivity() {
                         style = Stroke(width = 4.dp.toPx())
                     )
                 }
+            }
+        }
+    }
+
+    @Composable
+    fun BlankScreen() {
+        MaterialTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DARK_BACKGROUND_COLOR),
+                contentAlignment = Alignment.Center
+            ){
+
             }
         }
     }

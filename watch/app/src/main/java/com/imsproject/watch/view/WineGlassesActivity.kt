@@ -39,6 +39,7 @@ import com.imsproject.watch.textStyle
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.core.content.IntentSanitizer
+import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
@@ -68,6 +69,8 @@ class WineGlassesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent)
         setContent {
             Main()
@@ -85,6 +88,7 @@ class WineGlassesActivity : ComponentActivity() {
                 WineGlasses()
             }
             GameViewModel.State.TERMINATED -> {
+                BlankScreen()
                 val result = viewModel.resultCode.collectAsState().value
                 val intent = IntentSanitizer.Builder()
                     .allowComponent(componentName)
@@ -177,11 +181,20 @@ class WineGlassesActivity : ComponentActivity() {
             }
 
             LaunchedEffect(touchingBezel) {
-                while(touchingBezel){
-                    while(bezelWarningAlpha < 0.5f){
-                        bezelWarningAlpha = (bezelWarningAlpha + 0.01f).coerceAtMost(0.5f)
-                        delay(16)
+
+                if(touchingBezel){
+                    bezelWarningAlpha = 0.0f
+                    while(touchingBezel){
+                        while(bezelWarningAlpha < 0.5f){
+                            bezelWarningAlpha = (bezelWarningAlpha + 0.01f).coerceAtMost(0.5f)
+                            delay(16)
+                        }
+                        while(bezelWarningAlpha > 0.0f){
+                            bezelWarningAlpha = (bezelWarningAlpha - 0.01f).coerceAtLeast(0.0f)
+                            delay(16)
+                        }
                     }
+                } else {
                     while(bezelWarningAlpha > 0.0f){
                         bezelWarningAlpha = (bezelWarningAlpha - 0.01f).coerceAtLeast(0.0f)
                         delay(16)
@@ -277,9 +290,29 @@ class WineGlassesActivity : ComponentActivity() {
                         color = Color.Red.copy(alpha = bezelWarningAlpha),
                         radius = SCREEN_WIDTH / 2.0f ,
                         center = SCREEN_CENTER,
-                        style = Stroke(width = 20.dp.toPx())
+                        style = Stroke(width = (SCREEN_WIDTH * 0.05f).dp.toPx())
+                    )
+                    drawCircle(
+                        color = Color.Green.copy(alpha = bezelWarningAlpha),
+                        radius = (SCREEN_WIDTH * 0.5f) - (SCREEN_WIDTH * 0.15f),
+                        center = SCREEN_CENTER,
+                        style = Stroke(width = (SCREEN_WIDTH * 0.05f).dp.toPx())
                     )
                 }
+            }
+        }
+    }
+
+    @Composable
+    fun BlankScreen() {
+        MaterialTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DARK_BACKGROUND_COLOR),
+                contentAlignment = Alignment.Center
+            ){
+
             }
         }
     }
