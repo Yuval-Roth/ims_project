@@ -11,6 +11,7 @@ data class GameRequest internal constructor(
     val success : Boolean?,
     val message : String?,
     val data : List<String>?,
+    val timestamp: String?
 
     //TODO: Add more fields if needed
 ){

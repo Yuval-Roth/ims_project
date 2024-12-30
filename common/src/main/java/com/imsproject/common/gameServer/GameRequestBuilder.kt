@@ -8,6 +8,7 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     private var success : Boolean? = null
     private var message : String? = null
     private var data : List<String> ? = null
+    private var timestamp : String? = null
 
     fun playerId(playerId: String) = apply { this.playerId = playerId }
     fun lobbyId(lobbyId: String) = apply { this.lobbyId = lobbyId }
@@ -15,6 +16,8 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     fun success(success: Boolean) = apply { this.success = success }
     fun message(message: String) = apply { this.message = message }
     fun data(data: List<String>) = apply { this.data = data }
+    fun timestamp(timeStamp: String) = apply { this.timestamp = timeStamp }
 
-    fun build() = GameRequest(type, playerId, lobbyId, gameType,success,message,data)
+
+    fun build() = GameRequest(type, playerId, lobbyId, gameType,success,message,data,timestamp)
 }

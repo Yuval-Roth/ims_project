@@ -43,11 +43,13 @@ class WavPlayer(private val context: Context) {
      */
     fun play(@IntRange(0,31) trackNumber: Int, onFinished: () -> Unit = {}) {
         val duration = getDuration(trackNumber)
-        tracks[trackNumber]?.play() ?: throw IllegalArgumentException("Track not loaded")
+        val track = tracks[trackNumber] ?: throw IllegalArgumentException("Track not loaded")
+        track.play()
         jobs[trackNumber]?.cancel() // cancel previous job if it exists
         jobs[trackNumber] = scope.launch {
             delay((duration * 1000).toLong())
             onFinished()
+            track.stop() // stop the track so it can be played again
         }
     }
 
@@ -110,7 +112,6 @@ class WavPlayer(private val context: Context) {
     }
 
     private fun createAudioTrack(wav: WavFile) : AudioTrack {
-        // Define audio parameters
         val sampleRate = 44100
         val channelConfig = AudioFormat.CHANNEL_OUT_STEREO
         val audioFormat = AudioFormat.ENCODING_PCM_16BIT

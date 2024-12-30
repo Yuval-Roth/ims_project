@@ -99,8 +99,7 @@ class Lobby(val id : String, gameType: GameType) {
     fun getPlayers() = setOfNotNull(player1Id, player2Id)
 
     fun getInfo() : LobbyInfo {
-        val ids = getPlayers()
-        val players : List<String> = ids.toList()
+        val players = listOfNotNull(player1Id, player2Id)
         return LobbyInfo(id, gameType, state, players)
     }
 }

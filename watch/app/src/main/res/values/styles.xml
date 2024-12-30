@@ -12,5 +12,8 @@
     <style name="WineGlassesActivityTheme">
         <item name="android:windowSwipeToDismiss" tools:ignore="WearBackNavigation">false</item>
     </style>
+    <style name="FlourMillActivityTheme">
+        <item name="android:windowSwipeToDismiss" tools:ignore="WearBackNavigation">false</item>
+    </style>
 
 </resources>

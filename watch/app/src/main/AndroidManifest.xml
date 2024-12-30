@@ -49,6 +49,11 @@
             android:taskAffinity=""
             android:exported="true"
             android:theme="@style/WineGlassesActivityTheme" />
+        <activity
+            android:name=".view.FlourMillActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:theme="@style/FlourMillActivityTheme" />
 
     </application>
 

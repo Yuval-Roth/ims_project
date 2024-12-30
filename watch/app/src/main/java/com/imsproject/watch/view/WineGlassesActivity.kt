@@ -64,6 +64,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.imsproject.watch.R
+import com.imsproject.watch.SCREEN_RADIUS
 
 private const val LOW_BUILD_IN_TRACK = 0
 private const val LOW_LOOP_TRACK = 1
@@ -149,12 +150,11 @@ class WineGlassesActivity : ComponentActivity() {
     fun WineGlasses() {
         val myArc = remember { viewModel.myArc }
         val opponentArc = remember { viewModel.opponentArc }
-        val released by viewModel.released.collectAsState() // my released state
         val focusRequester = remember { FocusRequester() }
         var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
         var touchingBezel by remember { mutableStateOf(false) }
         var playSound by remember { mutableStateOf(false) }
-        var currentStream by remember { mutableStateOf(-1) }
+        val released by viewModel.released.collectAsState() // my released state
 
         Box(
             modifier = Modifier
@@ -231,16 +231,13 @@ class WineGlassesActivity : ComponentActivity() {
                                 LOW_BUILD_IN_TRACK
                             }
                             sound.stopFadeOut(currentlyPlaying,20)
-                            sound.play(LOW_BUILD_OUT_TRACK){
-                                sound.stop(LOW_BUILD_OUT_TRACK)
-                            }
+                            sound.play(LOW_BUILD_OUT_TRACK)
                             playSound = false
                         } else {
                             sound.setVolume(LOW_BUILD_IN_TRACK,1.0f)
                             sound.play(LOW_BUILD_IN_TRACK) {
                                 sound.setVolume(LOW_LOOP_TRACK,1.0f)
                                 sound.playLooped(LOW_LOOP_TRACK)
-                                sound.stop(LOW_BUILD_IN_TRACK)
                             }
                         }
                     }
@@ -254,20 +251,20 @@ class WineGlassesActivity : ComponentActivity() {
             LaunchedEffect(released) {
                 if(viewModel.released.value){
                     val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
-                    while(viewModel.released.value && myArc.currentAlpha.floatValue > 0.0f){
-                        myArc.currentAlpha.floatValue =
-                            (myArc.currentAlpha.floatValue - alphaAnimStep)
+                    while(viewModel.released.value && myArc.currentAlpha > 0.0f){
+                        myArc.currentAlpha =
+                            (myArc.currentAlpha - alphaAnimStep)
                                 .coerceAtLeast(0.0f)
                         delay(16)
                     }
-                    myArc.previousAngle.floatValue = UNDEFINED_ANGLE
+                    myArc.previousAngle = UNDEFINED_ANGLE
                     myArc.previousAngleDiff = 0f
-                    myArc.startAngle.floatValue = UNDEFINED_ANGLE
+                    myArc.startAngle = UNDEFINED_ANGLE
                     myArc.direction = 0f
                     myArc.angleSkew = MIN_ANGLE_SKEW
                     viewModel.setTouchPoint(-1.0,-1.0)
                 } else {
-                    myArc.currentAlpha.floatValue = ARC_DEFAULT_ALPHA
+                    myArc.currentAlpha = ARC_DEFAULT_ALPHA
                 }
             }
 
@@ -275,14 +272,14 @@ class WineGlassesActivity : ComponentActivity() {
             LaunchedEffect(viewModel.opponentReleased.collectAsState().value) {
                 if(viewModel.opponentReleased.value){
                     val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
-                    while(viewModel.opponentReleased.value && opponentArc.currentAlpha.floatValue > 0.0f){
-                        opponentArc.currentAlpha.floatValue =
-                            (opponentArc.currentAlpha.floatValue - alphaAnimStep)
+                    while(viewModel.opponentReleased.value && opponentArc.currentAlpha > 0.0f){
+                        opponentArc.currentAlpha =
+                            (opponentArc.currentAlpha - alphaAnimStep)
                                 .coerceAtLeast(0.0f)
                         delay(16)
                     }
                 } else {
-                    opponentArc.currentAlpha.floatValue = ARC_DEFAULT_ALPHA
+                    opponentArc.currentAlpha = ARC_DEFAULT_ALPHA
                 }
             }
 
@@ -306,10 +303,10 @@ class WineGlassesActivity : ComponentActivity() {
             Canvas(modifier = Modifier.fillMaxSize()) {
 
                 // draw only if the touch point is within the defined borders
-                if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                if (myArc.startAngle != UNDEFINED_ANGLE) {
                     drawArc(
-                        color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha.floatValue),
-                        startAngle = myArc.startAngle.floatValue,
+                        color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha),
+                        startAngle = myArc.startAngle,
                         sweepAngle = MY_SWEEP_ANGLE,
                         useCenter = false,
                         topLeft = MY_ARC_TOP_LEFT,
@@ -319,10 +316,10 @@ class WineGlassesActivity : ComponentActivity() {
                 }
 
                 // draw opponent's arc
-                if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                if (opponentArc.startAngle != UNDEFINED_ANGLE) {
                     drawArc(
-                        color = LIGHT_GRAY_COLOR.copy(alpha = opponentArc.currentAlpha.floatValue),
-                        startAngle = opponentArc.startAngle.floatValue,
+                        color = LIGHT_GRAY_COLOR.copy(alpha = opponentArc.currentAlpha),
+                        startAngle = opponentArc.startAngle,
                         sweepAngle = OPPONENT_SWEEP_ANGLE,
                         useCenter = false,
                         topLeft = OPPONENT_ARC_TOP_LEFT,
@@ -333,15 +330,15 @@ class WineGlassesActivity : ComponentActivity() {
                 if(touchingBezel){
                     drawCircle(
                         color = Color.Red.copy(alpha = bezelWarningAlpha),
-                        radius = SCREEN_WIDTH / 2.0f ,
+                        radius = SCREEN_RADIUS,
                         center = SCREEN_CENTER,
-                        style = Stroke(width = (SCREEN_WIDTH * 0.05f).dp.toPx())
+                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
                     )
                     drawCircle(
                         color = Color.Green.copy(alpha = bezelWarningAlpha),
-                        radius = (SCREEN_WIDTH * 0.5f) - (SCREEN_WIDTH * 0.15f),
+                        radius = SCREEN_RADIUS - (SCREEN_RADIUS * 0.3f),
                         center = SCREEN_CENTER,
-                        style = Stroke(width = (SCREEN_WIDTH * 0.05f).dp.toPx())
+                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
                     )
                 }
             }
@@ -364,20 +361,6 @@ class WineGlassesActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "WineGlassesActivity"
-    }
-
-    @Preview(device = "id:wearos_large_round", apiLevel = 34)
-    @Composable
-    fun PreviewLoadingScreen() {
-        initProperties(454, 454)
-        LoadingScreen()
-    }
-
-    @Preview(device = "id:wearos_large_round", apiLevel = 34)
-    @Composable
-    fun PreviewWineGlasses() {
-        initProperties(454, 454)
-        WineGlasses()
     }
 }
 

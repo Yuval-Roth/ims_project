@@ -55,6 +55,9 @@ class MainViewModel() : ViewModel() {
     private var _timeServerStartTime = MutableStateFlow(-1L)
     val gameStartTime : StateFlow<Long> = _timeServerStartTime
 
+    private var _additionalData = MutableStateFlow<String>("")
+    val additionalData : StateFlow<String> = _additionalData
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -154,11 +157,13 @@ class MainViewModel() : ViewModel() {
                 // let the game activity handle the messages from here on out.
                 /*(!)*/ clearListeners()
                 // ===================================|
-                _timeServerStartTime.value = request.data?.get(0)?.toLong() ?: run{
+                _timeServerStartTime.value = request.timestamp?.toLong() ?: run{
                     Log.e(TAG, "handleGameRequest: START_GAME request missing start time")
                     fatalError("Failed to start game: missing start time")
                     return
                 }
+                _additionalData.value = request.data?.joinToString(";") ?: ""
+
                 _state.value = State.IN_GAME
             }
             else -> {

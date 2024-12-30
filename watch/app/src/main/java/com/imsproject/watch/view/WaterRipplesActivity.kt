@@ -175,7 +175,7 @@ class WaterRipplesActivity : ComponentActivity() {
                     // in this code, we reached ripples that are already at max size
                     // and we don't want to animate them anymore
                     // so we remove them from the list
-                    if(ripple.size.floatValue >= RIPPLE_MAX_SIZE) {
+                    if(ripple.size >= RIPPLE_MAX_SIZE) {
                         rippleIterator.remove()
                         continue
                     }
@@ -187,12 +187,12 @@ class WaterRipplesActivity : ComponentActivity() {
                     val alphaAnimStep =  ripple.startingAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
 
                     launch {
-                        while (ripple.size.floatValue < RIPPLE_MAX_SIZE) {
-                            ripple.size.floatValue += sizeAnimStep
-                            if(ripple.size.floatValue >= RIPPLE_MAX_SIZE){
-                                ripple.currentAlpha.floatValue = 0f
+                        while (ripple.size < RIPPLE_MAX_SIZE) {
+                            ripple.size += sizeAnimStep
+                            if(ripple.size >= RIPPLE_MAX_SIZE){
+                                ripple.currentAlpha = 0f
                             } else {
-                                ripple.currentAlpha.floatValue = (ripple.currentAlpha.floatValue-alphaAnimStep).coerceAtLeast(0f)
+                                ripple.currentAlpha = (ripple.currentAlpha-alphaAnimStep).coerceAtLeast(0f)
                             }
                             delay(16)
                         }
@@ -205,11 +205,11 @@ class WaterRipplesActivity : ComponentActivity() {
             ) {
                 for(ripple in ripples){
                     val color = ripple.color
-                    val size = ripple.size.floatValue
-                    val alpha = ripple.currentAlpha.floatValue
+                    val size = ripple.size
+                    val alpha = ripple.currentAlpha
 
                     drawCircle(
-                        color = color.value.copy(alpha = alpha),
+                        color = color.copy(alpha = alpha),
                         radius = size,
                         style = Stroke(width = 4.dp.toPx())
                     )

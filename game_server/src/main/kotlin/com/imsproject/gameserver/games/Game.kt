@@ -6,16 +6,13 @@ import com.imsproject.gameserver.ClientHandler
 
 abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
 
-    protected var startTime : Long = 0
-
     abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
 
     abstract fun handleGameRequest(actor : ClientHandler, request: GameRequest)
 
-    fun startGame(timestamp: Long) {
-        startTime = System.currentTimeMillis()
+    open fun startGame(timestamp: Long) {
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
-            .data(listOf(timestamp.toString()))
+            .timestamp(timestamp.toString())
             .build().toJson()
         player1.sendTcp(startMessage)
         player2.sendTcp(startMessage)

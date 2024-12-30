@@ -7,9 +7,9 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
-import com.imsproject.common.networking.PingTracker
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
@@ -17,9 +17,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import java.net.SocketTimeoutException
 import kotlin.math.absoluteValue
+import kotlin.math.atan2
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 abstract class GameViewModel(gameType: GameType) : ViewModel() {
 

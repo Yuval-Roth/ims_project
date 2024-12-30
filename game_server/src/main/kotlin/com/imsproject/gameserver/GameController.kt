@@ -6,6 +6,7 @@ import com.imsproject.common.gameServer.GameRequest.Type
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.SimpleIdGenerator
+import com.imsproject.gameserver.games.FlourMillGame
 import com.imsproject.gameserver.games.Game
 import com.imsproject.gameserver.games.WaterRipplesGame
 import com.imsproject.gameserver.games.WineGlassesGame
@@ -346,6 +347,10 @@ class GameController(
                 GameType.WINE_GLASSES -> {
                     log.debug("handleStartGame: Selected WineGlassesGame")
                     WineGlassesGame(player1Handler, player2Handler)
+                }
+                GameType.FLOUR_MILL -> {
+                    log.debug("handleStartGame: Selected FlourMillGame")
+                    FlourMillGame(player1Handler, player2Handler)
                 }
                 else -> {
                     log.debug("handleStartGame: Invalid game type")

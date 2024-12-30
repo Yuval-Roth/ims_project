@@ -16,7 +16,9 @@ abstract class GenericActivityResultContract : ActivityResultContract<Map<String
     ): Intent {
         val intent = createIntent(context)
         val serverStartTime = input["timeServerStartTime"] as Long
+        val additionalData = input["additionalData"] as String
         intent.putExtra("$PACKAGE_PREFIX.timeServerStartTime", serverStartTime)
+        intent.putExtra("$PACKAGE_PREFIX.additionalData", additionalData)
         return intent
     }
 

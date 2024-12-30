@@ -51,10 +51,12 @@ import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
+import com.imsproject.watch.view.contracts.FlourMillResultContract
 import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
+import kotlin.collections.mutableMapOf
 
 
 class MainActivity : ComponentActivity() {
@@ -62,6 +64,7 @@ class MainActivity : ComponentActivity() {
     private val viewModel : MainViewModel by viewModels<MainViewModel>()
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var flourMill: ActivityResultLauncher<Map<String,Any>>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,13 +78,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun registerActivities(){
-        waterRipples = registerForActivityResult(WaterRipplesResultContract()) {
-            viewModel.afterGame(it)
-        }
-
-        wineGlasses = registerForActivityResult(WineGlassesResultContract()) {
-            viewModel.afterGame(it)
-        }
+        waterRipples = registerForActivityResult(WaterRipplesResultContract()) { viewModel.afterGame(it) }
+        wineGlasses = registerForActivityResult(WineGlassesResultContract()) { viewModel.afterGame(it) }
+        flourMill = registerForActivityResult(FlourMillResultContract()) { viewModel.afterGame(it) }
     }
 
     override fun onResume() {
@@ -118,12 +117,14 @@ class MainActivity : ComponentActivity() {
 
             State.IN_GAME -> {
                 BlankScreen()
-                val input = mapOf<String,Any>(
-                    "timeServerStartTime" to viewModel.gameStartTime.collectAsState().value
+                val input = mutableMapOf<String,Any>(
+                    "timeServerStartTime" to viewModel.gameStartTime.collectAsState().value,
+                    "additionalData" to viewModel.additionalData.collectAsState().value
                 )
                 when(viewModel.gameType.collectAsState().value) {
                     GameType.WATER_RIPPLES -> waterRipples.launch(input)
                     GameType.WINE_GLASSES -> wineGlasses.launch(input)
+                    GameType.FLOUR_MILL -> flourMill.launch(input)
                     else -> viewModel.showError("Unknown game type")
                 }
             }
