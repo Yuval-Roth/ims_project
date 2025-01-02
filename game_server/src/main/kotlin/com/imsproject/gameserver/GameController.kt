@@ -17,6 +17,8 @@ import com.imsproject.gameserver.networking.TimeServerHandler
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.ConcurrentSkipListMap
 
 @Component
 class GameController(
@@ -25,11 +27,19 @@ class GameController(
         private val managerEventsHandler: ManagerEventsHandler
     ) {
 
+    private data class Session(
+        val sessionId: String,
+        val duration: Int,
+        val gameType: GameType
+    )
+
     private val lobbies = ConcurrentHashMap<String, Lobby>()
     private val games = ConcurrentHashMap<String, Game>()
     private val clientIdToGame = ConcurrentHashMap<String, Game>()
     private val clientIdToLobbyId = ConcurrentHashMap<String, String>()
-    private val idGenerator = SimpleIdGenerator(2)
+    private val lobbyIdGenerator = SimpleIdGenerator(4)
+    private val lobbyIdToSessions = ConcurrentHashMap<String, ConcurrentLinkedDeque<Session>>()
+    private val sessionIdGenerator = SimpleIdGenerator(5)
 
     // ========================================================================== |
     // ========================= PUBLIC METHODS ================================= |
@@ -47,10 +57,16 @@ class GameController(
                 Type.CREATE_LOBBY -> handleCreateLobby(request)
                 Type.REMOVE_LOBBY -> handleRemoveLobby(request)
                 Type.SET_LOBBY_TYPE -> handleSetLobbyType(request)
+                Type.SET_GAME_DURATION -> handleSetGameDuration(request)
                 Type.JOIN_LOBBY -> handleJoinLobby(request)
                 Type.LEAVE_LOBBY -> handleLeaveLobby(request)
                 Type.START_GAME -> handleStartGame(request)
                 Type.END_GAME -> handleEndGame(request)
+                Type.CREATE_SESSION -> handleCreateSession(request)
+                Type.REMOVE_SESSION -> handleRemoveSession(request)
+                Type.GET_SESSIONS -> handleGetSessions(request)
+                Type.CHANGE_SESSIONS_ORDER -> handleChangeSessionsOrder(request)
+
                 else -> Response.getError("Invalid message type")
             }
         } catch (e: Exception) {
@@ -258,7 +274,7 @@ class GameController(
         }
         // ======================================== |
 
-        val lobbyId = idGenerator.generate()
+        val lobbyId = lobbyIdGenerator.generate()
         val lobby = Lobby(lobbyId,gameType)
         lobbies[lobbyId] = lobby
         log.debug("handleCreateLobby() successful")
@@ -428,6 +444,161 @@ class GameController(
         }
 
         log.debug("handleSetLobbyType() successful")
+        return Response.getOk()
+    }
+
+    private fun handleSetGameDuration(request: GameRequest): String {
+        log.debug("handleSetGameDuration() with lobbyId: {}, duration: {}",request.lobbyId, request.duration)
+
+        // ========= parameter validation ========= |
+        val errorMsg = "Missing the following parameters: "
+        val missingParams = mutableListOf<String>()
+        /*(1)*/ val lobbyId = request.lobbyId ?: run { missingParams.add("lobbyId") ; null }
+        /*(2)*/ val duration = request.duration ?: run { missingParams.add("duration") ; null }
+        if(lobbyId == null || duration == null){
+            log.debug("handleSetGameDuration: {} {}",errorMsg, missingParams.joinToString())
+            return Response.getError("$errorMsg ${missingParams.joinToString()}")
+        }
+        // === check if the lobby exists === |
+        val lobby = lobbies[lobbyId] ?: run {
+            log.debug("handleSetGameDuration: Lobby not found")
+            return Response.getError("Lobby not found")
+        }
+        // ======================================== |
+
+        lobby.gameDuration = duration
+        // Notify the clients
+        lobby.getPlayers()
+            .map {clientController.getByClientId(it)}
+            .forEach {
+                it?.sendTcp(
+                GameRequest.builder(Type.SET_GAME_DURATION)
+                    .data(listOf(duration.toString()))
+                    .build().toJson()
+            )
+        }
+
+        log.debug("handleSetGameDuration() successful")
+        return Response.getOk()
+    }
+
+    private fun handleCreateSession(request: GameRequest): String {
+        log.debug("handleCreateSession() with lobbyId: {}, duration: {}, gameType: {}",request.lobbyId,request.data?.get(0),request.gameType)
+
+        // ========= parameter validation ========= |
+        val errorMsg = "Missing the following parameters: "
+        val missingParams = mutableListOf<String>()
+        /*(1)*/ val lobbyId = request.lobbyId ?: run { missingParams.add("lobbyId") ; null }
+        /*(2)*/ val duration = request.duration ?: run { missingParams.add("duration") ; null }
+        /*(3)*/ val gameType = request.gameType ?: run { missingParams.add("gameType") ; null }
+        if(lobbyId == null || duration == null || gameType == null){
+            log.debug("handleCreateSession: {} {}",errorMsg, missingParams.joinToString())
+            return Response.getError("$errorMsg ${missingParams.joinToString()}")
+        }
+        // === check if the lobby exists === |
+        if(! lobbies.contains(lobbyId)){
+            log.debug("handleCreateSession: Lobby not found")
+            return Response.getError("Lobby not found")
+        }
+        // ======================================== |
+
+        val sessionId = sessionIdGenerator.generate()
+        val session = Session(sessionId, duration, gameType)
+        val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
+        lobbySessions.add(session)
+        return Response.getOk(session.sessionId)
+    }
+
+    private fun handleRemoveSession(request: GameRequest): String {
+        log.debug("handleRemoveSession() with lobbyId: {}, sessionId: {}",request.lobbyId,request.sessionId)
+
+        // ========= parameter validation ========= |
+        val errorMsg = "Missing the following parameters: "
+        val missingParams = mutableListOf<String>()
+        /*(1)*/ val lobbyId = request.lobbyId ?: run { missingParams.add("lobbyId") ; null }
+        /*(2)*/ val sessionId = request.sessionId ?: run { missingParams.add("sessionId") ; null }
+        if(lobbyId == null || sessionId == null){
+            log.debug("handleRemoveSession: {} {}",errorMsg, missingParams.joinToString())
+            return Response.getError("$errorMsg ${missingParams.joinToString()}")
+        }
+        // === check if the lobby exists === |
+        if(! lobbies.contains(lobbyId)){
+            log.debug("handleRemoveSession: Lobby not found")
+            return Response.getError("Lobby not found")
+        }
+        // === check if the lobby has any sessions === |
+        val lobbySessions = lobbyIdToSessions[lobbyId] ?: run {
+            log.debug("handleRemoveSession: No sessions found for lobby")
+            return Response.getError("No sessions found for lobby")
+        }
+        // ======================================== |
+
+        val success = lobbySessions.removeIf {it.sessionId == sessionId}
+        return if(success){
+            log.debug("handleRemoveSession() successful")
+            Response.getOk()
+        } else {
+            log.debug("handleRemoveSession() failed: Session not found")
+            Response.getError("Session not found")
+        }
+    }
+
+    private fun handleGetSessions(request: GameRequest): String {
+        log.debug("handleGetSessions() with lobbyId: {}",request.lobbyId)
+
+        // ========= parameter validation ========= |
+        val errorMsg = "Missing the following parameters: lobbyId"
+        val lobbyId = request.lobbyId ?: run {
+            log.debug("handleGetSessions: {}",errorMsg)
+            return Response.getError(errorMsg)
+        }
+        // ======================================== |
+
+        val lobbySessions = lobbyIdToSessions[lobbyId] ?: emptyList()
+        return Response.getOk(lobbySessions)
+    }
+
+    private fun handleChangeSessionsOrder(request: GameRequest): String {
+        log.debug("handleChangeSessionsOrder() with lobbyId: {}, sessionIds: {}",request.lobbyId,request.sessionIds)
+
+        // ========= parameter validation ========= |
+        val errorMsg = "Missing the following parameters: "
+        val missingParams = mutableListOf<String>()
+        /*(1)*/ val lobbyId = request.lobbyId ?: run { missingParams.add("lobbyId") ; null }
+        /*(2)*/ val sessionIds = request.sessionIds ?: run { missingParams.add("sessionIds") ; null }
+        if(lobbyId == null || sessionIds == null){
+            log.debug("handleChangeSessionsOrder: {} {}",errorMsg, missingParams.joinToString())
+            return Response.getError("$errorMsg ${missingParams.joinToString()}")
+        }
+        // === check if the lobby exists === |
+        if(! lobbies.contains(lobbyId)){
+            log.debug("handleChangeSessionsOrder: Lobby not found")
+            return Response.getError("Lobby not found")
+        }
+        // === check if the lobby has any sessions === |
+        val lobbySessions = lobbyIdToSessions[lobbyId] ?: run {
+            log.debug("handleChangeSessionsOrder: No sessions found for lobby")
+            return Response.getError("No sessions found for lobby")
+        }
+        // ======================================== |
+
+        // validate that the same number of sessions are provided
+        if(lobbySessions.size != sessionIds.size){
+            log.debug("handleChangeSessionsOrder: Different number of sessions provided")
+            return Response.getError("Different number of sessions provided")
+        }
+
+        // validate that all the sessions are in the lobby
+        if(! sessionIds.all {sessionId -> lobbySessions.any {it.sessionId == sessionId}}){
+            log.debug("handleChangeSessionsOrder: Not all sessions are in the lobby")
+            return Response.getError("Not all sessions are in the lobby")
+        }
+
+        val newOrder = sessionIds.mapNotNull {sessionId ->
+            lobbySessions.find {it.sessionId == sessionId}
+        }
+        lobbySessions.clear()
+        lobbySessions.addAll(newOrder)
         return Response.getOk()
     }
 

@@ -2,7 +2,11 @@ package com.imsproject.gameserver.lobbies
 
 import com.imsproject.common.gameServer.GameType
 
-class Lobby(val id : String, gameType: GameType) {
+class Lobby(
+    val id: String,
+    gameType: GameType,
+    var gameDuration: Int = -1 // -1 means the game has no time limit
+) {
 
     var gameType = gameType
         set(value) {
@@ -107,6 +111,6 @@ class Lobby(val id : String, gameType: GameType) {
                 else -> throw IllegalStateException("Player $it is not in the lobby, but was found in the player list")
             }
         }
-        return LobbyInfo(id, gameType, state, players, playersReadyStatus)
+        return LobbyInfo(id, gameType, state,gameDuration, players, playersReadyStatus)
     }
 }

@@ -7,6 +7,7 @@ data class LobbyInfo(
     val lobbyId: String,
     val gameType: GameType,
     val state: LobbyState,
+    val gameDuration: Int,
     val players: List<String>,
     val readyStatus: List<Boolean>
 ){

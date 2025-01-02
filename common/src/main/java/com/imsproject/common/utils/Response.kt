@@ -15,30 +15,18 @@ class Response {
     constructor(message: String?, success: Boolean, payload: List<Any>?) {
         this.message = message
         this.success = success
-        this.payload = if(! payload.isNullOrEmpty()) {
-            payload.map{
-                if (it is String) it
-                else serialize(it)
-            }
-        } else {
-            null
+        this.payload = payload?.map{
+            if (it is String) it
+            else serialize(it)
         }
     }
 
-    constructor(message: String?, success: Boolean, payload: String?) {
-        this.message = message
-        this.success = success
-        this.payload = if (payload == null) null else listOf(payload)
-    }
+    constructor(message: String?, success: Boolean, payload: String) : this(message, success, listOf(payload))
 
     /**
      * @param success If the request was successful or not
      */
-    constructor(success: Boolean) {
-        this.message = null
-        this.success = success
-        this.payload = null
-    }
+    constructor(success: Boolean) : this(null, success, null)
 
     fun message(): String? {
         return message
@@ -83,7 +71,7 @@ class Response {
         }
 
         fun getOk(): String {
-            return getOk(listOf())
+            return Response(true).toJson()
         }
 
         /**
@@ -106,10 +94,7 @@ class Response {
          * Otherwise, the data field will be an empty string
          */
         fun getError(e: Exception): String {
-            var cause: String? = ""
-            if (e.cause != null) {
-                cause = e.cause!!.message
-            }
+            val cause = e.cause?.message ?: ""
             return Response(e.message, false, cause).toJson()
         }
 
@@ -117,7 +102,7 @@ class Response {
          * Equivalent to `new Response(error,false,List.of()).toJson()`
          */
         fun getError(error: String): String {
-            return Response(error, false, listOf()).toJson()
+            return Response(error, false, null).toJson()
         }
     }
 }

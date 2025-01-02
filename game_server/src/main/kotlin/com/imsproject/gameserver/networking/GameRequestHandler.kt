@@ -27,7 +27,7 @@ class GameRequestHandler(
         private val log: Logger = LoggerFactory.getLogger(GameRequestHandler::class.java)
     }
 
-    private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(2)
+    private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(3)
 
     override fun afterConnectionEstablished(@NonNull session: WebSocketSession) {
         log.debug("New game requests client connected with id: {}", session.id)

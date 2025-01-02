@@ -10,6 +10,9 @@ data class GameRequest internal constructor(
     val gameType : GameType?,
     val success : Boolean?,
     val message : String?,
+    val duration: Int?,
+    val sessionId: String?,
+    val sessionIds: List<String>?,
     val data : List<String>?,
     val timestamp: String?
 
@@ -25,6 +28,7 @@ data class GameRequest internal constructor(
         @SerializedName("get_lobby") GET_LOBBY("get_lobby"),
         @SerializedName("create_lobby") CREATE_LOBBY("create_lobby"),
         @SerializedName("set_lobby_type") SET_LOBBY_TYPE("set_lobby_type"),
+        @SerializedName("set_game_duration") SET_GAME_DURATION("set_game_duration"),
         @SerializedName("join_lobby") JOIN_LOBBY("join_lobby"),
         @SerializedName("leave_lobby") LEAVE_LOBBY("leave_lobby"),
         @SerializedName("remove_lobby") REMOVE_LOBBY("remove_lobby"),
@@ -35,7 +39,11 @@ data class GameRequest internal constructor(
         @SerializedName("toggle_ready") TOGGLE_READY("toggle_ready"),
         @SerializedName("error") ERROR("error"),
         @SerializedName("heartbeat") HEARTBEAT("heartbeat"),
-        @SerializedName("sync_time") SYNC_TIME("sync_time"),;
+        @SerializedName("sync_time") SYNC_TIME("sync_time"),
+        @SerializedName("create_session") CREATE_SESSION("create_session"),
+        @SerializedName("remove_session") REMOVE_SESSION("remove_session"),
+        @SerializedName("get_sessions") GET_SESSIONS("get_sessions"),
+        @SerializedName("change_sessions_order") CHANGE_SESSIONS_ORDER("change_sessions_order");
     }
 
     fun toJson() = JsonUtils.serialize(this)
