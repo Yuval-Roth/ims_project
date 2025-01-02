@@ -5,6 +5,9 @@ class GAME_TYPE(Enum):
     water_ripples = 1
     wine_glasses = 2
     poc = 3
+    chess = 4
+    tic_tac_toe = 5
+    racing = 6
 
 
 class GAME_REQUEST_TYPE(Enum):
@@ -17,3 +20,6 @@ class GAME_REQUEST_TYPE(Enum):
     leave_lobby = 7
     start_game = 8
     end_game = 9
+    update_session_order = 10  # Added for changing the session order
+    create_session = 11       # Added for creating a new session
+    delete_session = 12       # Added for deleting a session

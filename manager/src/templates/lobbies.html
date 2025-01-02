@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lobby Menu</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='lobbies.css') }}">
 </head>
 <body>
     <a href="/main_menu" class="home-button">
@@ -75,19 +75,32 @@
         let selectedRow = null;
 
         // Highlight selected row on single click
-        document.querySelectorAll('.lobby-row').forEach(row => {
-            row.addEventListener('click', function () {
-                document.querySelectorAll('.lobby-row').forEach(r => r.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedRow = this.dataset.lobbyId;
-            });
+        // Highlight selected row on single click
+document.querySelectorAll('.lobby-row').forEach(row => {
+    row.addEventListener('click', function () {
+        // Deselect all rows
+        document.querySelectorAll('.lobby-row').forEach(r => r.classList.remove('selected'));
 
-            // Navigate to another page on double click
-            row.addEventListener('dblclick', function () {
-                const lobbyId = this.dataset.lobbyId;
-                window.location.href = `/lobby?lobby_id=${lobbyId}`;
-            });
-        });
+        // Select the clicked row
+        this.classList.add('selected');
+        selectedRow = this.dataset.lobbyId;
+    });
+
+    // Navigate to another page on double click
+    row.addEventListener('dblclick', function () {
+        // Ensure the row is selected
+        if (!this.classList.contains('selected')) {
+            document.querySelectorAll('.lobby-row').forEach(r => r.classList.remove('selected'));
+            this.classList.add('selected');
+        }
+
+        // Get the selected lobby ID and navigate to the lobby page
+        const lobbyId = this.dataset.lobbyId;
+        const selectedParticipants = this.querySelector('td:nth-child(2)').textContent.trim(); // Extract players from the second column
+        window.location.href = `/lobby?lobby_id=${lobbyId}&selected_participants=${encodeURIComponent(selectedParticipants)}`;
+    });
+});
+
 
         // Delete lobby
         document.getElementById('delete-lobby-btn').addEventListener('click', function () {

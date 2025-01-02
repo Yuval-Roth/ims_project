@@ -3,31 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby</title>
+    <title>Lobby {{ lobby_id }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body>
+    <!-- Home Button -->
     <a href="/main_menu" class="home-button">
         <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
     </a>
-    <div class="lobby-container">
-        <h1>Lobby {{ lobby_id }}</h1>
-        <p>Selected Participants:</p>
-        <ul>
-            {% for participant in selected_participants %}
-            <li>{{ participant }}</li>
-            {% endfor %}
-        </ul>
 
-        <!-- Form with hidden inputs for backend processing -->
-        <form method="post">
-            <input type="hidden" name="selected_participants" value="{{ ','.join(selected_participants) }}">
-            <input type="hidden" name="lobby_id" value="{{ lobby_id }}">
-            <input type="hidden" name="action" value="{{ action }}">
-            <!-- Button that toggles between Start and Stop -->
-            <button type="submit" value="start" class="toggle-session-button"> {{ action }}</button>
-        </form>
+    <!-- Lobby Container -->
+    <div class="main-container">
+        <div class="lobby-header">
+            <h1>Lobby {{ lobby_id }}</h1>
+        </div>
+
+        <div class="lobby-content">
+            <!-- Participants Section -->
+            <section class="participants-section">
+                <h2>Participants</h2>
+                <div class="table-container">
+                    <table class="styled-table participants-table">
+                        <thead>
+                            <tr>
+                                <th>Player Name</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for participant in selected_participants %}
+                            <tr>
+                                <td>{{ participant }}</td>
+                                <td id="status-{{ participant }}">Not Ready</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sessions Section -->
+            <section class="sessions-section">
+                <h2>Sessions</h2>
+                <div class="table-container">
+                    <table class="styled-table sessions-table">
+                        <thead>
+                            <tr>
+                                <th>Game Type</th>
+                                <th>Duration</th>
+                                <th>Session ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessions-tbody">
+                            {% for session in sessions %}
+                            <tr data-session-id="{{ session.sessionId }}">
+                                <td>{{ session.gameType }}</td>
+                                <td>{{ session.duration }}</td>
+                                <td>{{ session.sessionId }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button id="add-session-btn" class="primary-button">Add Session</button>
+                <button id="remove-session-btn" class="danger-button">Remove Session</button>
+                <button id="start-game-btn" class="success-button">Start Game</button>
+                <button id="stop-game-btn" class="warning-button">Stop Game</button>
+            </div>
+        </div>
     </div>
+
+    <!-- Modal for Adding a Session -->
+    <div id="add-session-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Add a Session</h2>
+            <form id="add-session-form">
+                <input type="hidden" name="lobby_id" value="{{ lobby_id }}">
+                <label for="gameType">Game Type:</label>
+                <select name="gameType" id="gameType" required>
+                    {% for game in GAME_TYPE %}
+                    <option value="{{ game.name }}">{{ game.name }}</option>
+                    {% endfor %}
+                </select>
+                <label for="duration">Duration (minutes):</label>
+                <input type="number" name="duration" id="duration" min="1" required>
+                <div class="modal-actions">
+                    <button type="submit" class="primary-button">Add</button>
+                    <button type="button" id="cancel-modal-btn" class="cancel-button">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay" style="display: none;"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const addSessionBtn = document.getElementById('add-session-btn');
+        const modal = document.getElementById('add-session-modal');
+        const overlay = document.getElementById('modal-overlay');
+        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+        const sessionTableBody = document.getElementById('sessions-tbody');
+
+        // Show modal
+        addSessionBtn.addEventListener('click', () => {
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+        });
+
+        // Hide modal
+        cancelModalBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            overlay.style.display = 'none';
+        });
+
+        // Handle form submission via AJAX
+        document.querySelector('#add-session-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            fetch('/add_session', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const newSession = data.session;
+
+                        // Append new session to the table
+                        const row = document.createElement('tr');
+                        row.dataset.sessionId = newSession.sessionId;
+                        row.innerHTML = `
+                            <td>${newSession.gameType}</td>
+                            <td>${newSession.duration}</td>
+                            <td>${newSession.sessionId}</td>
+                        `;
+                        sessionTableBody.appendChild(row);
+
+                        // Hide modal
+                        modal.style.display = 'none';
+                        overlay.style.display = 'none';
+                    } else {
+                        alert('Failed to add session.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to add session.');
+                });
+        });
+
+        // Enable drag-and-drop reordering using Sortable.js
+        new Sortable(sessionTableBody, {
+            animation: 150,
+            onEnd: function () {
+                const sessionOrder = Array.from(sessionTableBody.children).map(row => row.dataset.sessionId);
+                fetch('/update_session_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.status !== 'success') {
+                          alert('Failed to update session order.');
+                      }
+                  })
+                  .catch(error => console.error('Error:', error));
+            }
+        });
+    });
+    </script>
 </body>
 </html>

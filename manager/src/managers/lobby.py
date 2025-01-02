@@ -93,3 +93,63 @@ def leave_lobby(lobby_id: str, player_id: str):
 
     except Exception as e:
         return False
+
+
+def change_session_order(lobby_id: str, session_order: list[str]):
+    """
+    Updates the order of sessions in a lobby.
+    """
+    body = server_request(GAME_REQUEST_TYPE.update_session_order.name, lobbyId=lobby_id, session_order=session_order).to_dict()
+    try:
+        res = requests.post(URL + "/manager", json=body)
+        if res.status_code in [200, 201]:
+            ser_res = server_response(res)
+            if ser_res.get_success():
+                return True
+            else:
+                Logger.log_error(f"Failed to update session order: {ser_res.get_message()}")
+                return False
+
+    except Exception as e:
+        Logger.log_error(f"Failed to update session order: {e}")
+        return False
+
+
+def create_session(lobby_id: str, game_type: str, duration: int):
+    """
+    Creates a new session in the specified lobby.
+    """
+    body = server_request(GAME_REQUEST_TYPE.create_session.name, lobbyId=lobby_id, gameType=game_type, duration=duration).to_dict()
+    try:
+        res = requests.post(URL + "/manager", json=body)
+        if res.status_code in [200, 201]:
+            ser_res = server_response(res)
+            if ser_res.get_success():
+                return ser_res.get_payload()[0]  # Return the session ID
+            else:
+                Logger.log_error(f"Failed to create session: {ser_res.get_message()}")
+                return None
+
+    except Exception as e:
+        Logger.log_error(f"Failed to create session: {e}")
+        return None
+
+
+def delete_session(lobby_id: str, session_id: str):
+    """
+    Deletes a session from a lobby.
+    """
+    body = server_request(GAME_REQUEST_TYPE.delete_session.name, lobbyId=lobby_id, sessionId=session_id).to_dict()
+    try:
+        res = requests.post(URL + "/manager", json=body)
+        if res.status_code in [200, 201]:
+            ser_res = server_response(res)
+            if ser_res.get_success():
+                return True
+            else:
+                Logger.log_error(f"Failed to delete session: {ser_res.get_message()}")
+                return False
+
+    except Exception as e:
+        Logger.log_error(f"Failed to delete session: {e}")
+        return False

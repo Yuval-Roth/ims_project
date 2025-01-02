@@ -122,7 +122,6 @@ def lobby():
         selected_participants_list = selected_participants.split(",") if selected_participants else []
 
         if action == 'start':
-
             Logger.log_info(f"Starting game in lobby {lobby_id}")
             suc = start_game(lobby_id)
             action = 'stop' if suc else 'start'
@@ -145,11 +144,54 @@ def lobby():
                                 lobby_id=lobby_id,
                                 action=action))
 
+    # Handle GET request
+    lobby_id = request.args.get('lobby_id', '')
     selected_participants = request.args.get('selected_participants', '')
     selected_participants_list = selected_participants.split(",") if selected_participants else []
-    lobby_id = request.args.get('lobby_id', '')
 
-    return render_template('lobby.html', selected_participants=selected_participants_list, lobby_id=lobby_id, action='start')
+    return render_template('lobby.html', selected_participants=selected_participants_list, lobby_id=lobby_id, action='start', GAME_TYPE=GAME_TYPE)
+
+
+@app.route('/update_session_order', methods=['POST'])
+def update_session_order():
+    data = request.json
+    lobby_id = data.get('lobby_id')
+    session_order = data.get('session_order')
+
+    if not lobby_id or not session_order:
+        return jsonify({"status": "error", "message": "Invalid data"}), 400
+
+    success = change_session_order(lobby_id, session_order)
+    return jsonify({"status": "success" if success else "error"})
+
+
+@app.route('/add_session', methods=['POST'])
+def add_session():
+    lobby_id = request.form.get('lobby_id')
+    game_type = request.form.get('gameType')
+    duration = int(request.form.get('duration', 0))
+
+    if not lobby_id or not game_type or duration <= 0:
+        return jsonify({"status": "error", "message": "Invalid data"}), 400
+
+    session_id = create_session(lobby_id, game_type, duration)
+    if session_id:
+        return jsonify({"status": "success", "session": {"gameType": game_type, "duration": duration, "sessionId": session_id}})
+    return jsonify({"status": "error"})
+
+
+@app.route('/delete_session', methods=['POST'])
+def delete_session_route():
+    lobby_id = request.json.get('lobby_id')
+    session_id = request.json.get('session_id')
+
+    if not lobby_id or not session_id:
+        return jsonify({"status": "error", "message": "Invalid data"}), 400
+
+    success = delete_session(lobby_id, session_id)
+    return jsonify({"status": "success" if success else "error"})
+
+
 
 
 if __name__ == '__main__':
