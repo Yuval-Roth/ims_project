@@ -28,15 +28,19 @@ class GameController(
     private val lobbies = ConcurrentHashMap<String, Lobby>()
     private val games = ConcurrentHashMap<String, Game>()
     private val clientIdToGame = ConcurrentHashMap<String, Game>()
-    private val clientToLobby = ConcurrentHashMap<String, String>()
+    private val clientIdToLobbyId = ConcurrentHashMap<String, String>()
     private val idGenerator = SimpleIdGenerator(2)
+
+    // ========================================================================== |
+    // ========================= PUBLIC METHODS ================================= |
+    // ========================================================================== |
 
     /**
      * Handles a game request from the manager
      */
     fun handleGameRequest(request: GameRequest) : String {
-        try{
-            return when(request.type){
+        try {
+            return when (request.type) {
                 Type.GET_ONLINE_PLAYER_IDS -> handleGetOnlinePlayerIds()
                 Type.GET_ALL_LOBBIES -> handleGetAllLobbies()
                 Type.GET_LOBBY -> handleGetLobby(request)
@@ -49,15 +53,10 @@ class GameController(
                 Type.END_GAME -> handleEndGame(request)
                 else -> Response.getError("Invalid message type")
             }
-        } catch(e: Exception){
+        } catch (e: Exception) {
             log.error("Error handling game request", e)
             return Response.getError(e)
         }
-    }
-
-    private fun handleGetOnlinePlayerIds(): String {
-        val playerIds = clientController.getAllClientIds()
-        return Response.getOk(playerIds)
     }
 
     /**
@@ -87,11 +86,32 @@ class GameController(
         game.handleGameAction(clientHandler, action)
     }
 
+    fun onClientDisconnect(clientHandler: ClientHandler){
+        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: return // client not in a lobby, nothing to do
+        val game = clientIdToGame[clientHandler.id]
+        if(game != null){
+            val gameEndRequest = GameRequest.builder(Type.END_GAME)
+                .lobbyId(lobbyId)
+                .build()
+            handleEndGame(gameEndRequest, "Player ${clientHandler.id} disconnected")
+        }
+        clientIdToLobbyId.remove(clientHandler.id)
+    }
+
+    // ========================================================================== |
+    // ========================= PRIVATE METHODS ================================ |
+    // ========================================================================== |
+
+    private fun handleGetOnlinePlayerIds(): String {
+        val playerIds = clientController.getAllClientIds()
+        return Response.getOk(playerIds)
+    }
+
     private fun handleToggleReady(clientHandler: ClientHandler) {
         log.debug("handleToggleReady() with clientId: {}",clientHandler.id)
 
         // ========= parameter validation ========= |
-        val lobbyId = clientToLobby[clientHandler.id] ?: run {
+        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: run {
             log.debug("handleToggleReady: Player not in lobby")
             throw IllegalArgumentException("Player not in lobby")
         }
@@ -167,9 +187,9 @@ class GameController(
         }
         // ======================================== |
 
-        val success = lobby.remove(clientId)
+        val success = lobby.remove(clientId) // true if player was in the lobby
         return if(success){
-            clientToLobby.remove(clientId)
+            clientIdToLobbyId.remove(clientId)
             // notify the client
             clientHandler.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
             log.debug("handleLeaveLobby() successful")
@@ -201,13 +221,18 @@ class GameController(
             log.debug("handleJoinLobby: {} {}",errorMsg2, notFound.joinToString())
             return Response.getError("$errorMsg2 ${notFound.joinToString()}")
         }
+        // === check that player is not already in a lobby === |
+        if(clientIdToLobbyId.containsKey(clientId)){
+            log.debug("handleJoinLobby: Player is already in a lobby")
+            return Response.getError("Player is already in a lobby")
+        }
         // ======================================== |
 
         // Try to add the player to the lobby
         val success = lobby.add(clientId)
 
         return if(success){
-            clientToLobby[clientId] = lobbyId
+            clientIdToLobbyId[clientId] = lobbyId
             // notify the client
             clientHandler.sendTcp(
                 GameRequest.builder(Type.JOIN_LOBBY)
@@ -268,7 +293,7 @@ class GameController(
         return Response.getOk(lobbyId)
     }
 
-    private fun handleEndGame(request: GameRequest) : String {
+    private fun handleEndGame(request: GameRequest, errorMessage: String? = null) : String {
         log.debug("handleEndGame() with lobbyId: {}",request.lobbyId)
 
         // ========= parameter validation ========= |
@@ -288,7 +313,9 @@ class GameController(
         }
         // ======================================== |
 
-        game.endGame() // game.endGame() notifies the clients
+        game.endGame(errorMessage) // game.endGame() notifies the clients
+        clientIdToGame.remove(game.player1.id)
+        clientIdToGame.remove(game.player2.id)
         games.remove(lobby.id)
         lobby.state = LobbyState.WAITING
 

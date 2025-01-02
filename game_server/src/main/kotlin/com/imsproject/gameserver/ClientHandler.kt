@@ -25,4 +25,8 @@ class ClientHandler internal constructor(
         val address = udpAddress
         sendUdp.invoke(message,address)
     }
+
+    fun close() {
+        wsSession.close()
+    }
 }

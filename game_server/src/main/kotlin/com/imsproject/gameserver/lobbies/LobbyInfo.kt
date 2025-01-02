@@ -7,7 +7,8 @@ data class LobbyInfo(
     val lobbyId: String,
     val gameType: GameType,
     val state: LobbyState,
-    val players: List<String>
+    val players: List<String>,
+    val readyStatus: List<Boolean>
 ){
 
     fun toJson(): String {

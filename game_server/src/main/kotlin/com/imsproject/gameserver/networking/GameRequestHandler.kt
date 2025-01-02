@@ -124,6 +124,7 @@ class GameRequestHandler(
         val client = clientController.getByWsSessionId(session.id) ?: return
         log.debug("Client disconnected: {}", client.id)
         clientController.removeClientHandler(client.id)
+        gameController.onClientDisconnect(client)
         //notify the manager
         val event = ManagerEvent.builder(ManagerEvent.Type.PLAYER_DISCONNECTED)
             .playerId(client.id)

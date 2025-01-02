@@ -55,6 +55,7 @@ class ClientController {
                 iter.remove()
                 wsSessionIdToHandler.remove(entry.value.wsSessionId)
                 hostPortToHandler.remove(handler.udpAddress.toHostPortString())
+                handler.close()
             }
         }
         return clientIdToHandler.keys.toList()

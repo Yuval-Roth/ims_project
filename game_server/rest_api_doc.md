@@ -138,13 +138,15 @@ Retrieves the list of available lobbies. No additional fields are required for t
       "lobbyId": "lobby1",
       "gameType": "gameTypeA",
       "state": "waiting",
-      "players": ["player1", "player2"]
+      "players": ["player1", "player2"],
+      "readyStatus": ["false", "true"]
     },
     {
       "lobbyId": "lobby2",
       "gameType": "gameTypeB",
       "state": "playing",
-      "players": ["player3"]
+      "players": ["player3"],
+      "readyStatus": ["true"]
     }
   ]
 }
@@ -168,7 +170,8 @@ This request type is used to get the details of a specific lobby. The `lobbyId` 
       "lobbyId": "lobby1",
       "gameType": "gameTypeA",
       "state": "waiting",
-      "players": ["player1", "player2"]
+      "players": ["player1", "player2"],
+      "readyStatus": ["false", "true"]
     }
   ]
 }

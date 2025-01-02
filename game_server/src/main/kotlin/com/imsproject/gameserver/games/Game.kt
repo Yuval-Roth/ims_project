@@ -18,9 +18,12 @@ abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
         player2.sendTcp(startMessage)
     }
 
-    fun endGame() {
+    fun endGame(errorMessage: String? = null) {
         // Send exit message
-        val exitMessage = GameRequest.builder(GameRequest.Type.END_GAME).build().toJson()
+        val exitMessage = GameRequest.builder(GameRequest.Type.END_GAME)
+            .apply { errorMessage?.let { message(it) } }
+            .success(errorMessage == null)
+            .build().toJson()
         try{
             player1.sendTcp(exitMessage)
         } catch (ignored: Exception){ }

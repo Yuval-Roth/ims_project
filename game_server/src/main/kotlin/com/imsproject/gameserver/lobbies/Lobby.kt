@@ -100,6 +100,13 @@ class Lobby(val id : String, gameType: GameType) {
 
     fun getInfo() : LobbyInfo {
         val players = listOfNotNull(player1Id, player2Id)
-        return LobbyInfo(id, gameType, state, players)
+        val playersReadyStatus = players.map {
+            when (it) {
+                player1Id -> player1Ready
+                player2Id -> player2Ready
+                else -> throw IllegalStateException("Player $it is not in the lobby, but was found in the player list")
+            }
+        }
+        return LobbyInfo(id, gameType, state, players, playersReadyStatus)
     }
 }
