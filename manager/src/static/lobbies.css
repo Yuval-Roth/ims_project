@@ -204,3 +204,13 @@ body {
 .cancel-button:hover {
     background-color: #c82333;
 }
+
+footer {
+            text-align: center;
+            padding: 15px 0;
+            margin-top: 40px;
+            font-size: 1em;
+            color: #666;
+            border-top: 1px solid #ddd;
+
+        }

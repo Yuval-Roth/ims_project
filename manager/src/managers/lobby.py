@@ -99,7 +99,8 @@ def change_session_order(lobby_id: str, session_order: list[str]):
     """
     Updates the order of sessions in a lobby.
     """
-    body = server_request(GAME_REQUEST_TYPE.update_session_order.name, lobbyId=lobby_id, session_order=session_order).to_dict()
+    body = server_request(GAME_REQUEST_TYPE.update_session_order.name, lobbyId=lobby_id).to_dict()
+    body["sessionOrder"] = session_order
     try:
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
@@ -119,7 +120,8 @@ def create_session(lobby_id: str, game_type: str, duration: int):
     """
     Creates a new session in the specified lobby.
     """
-    body = server_request(GAME_REQUEST_TYPE.create_session.name, lobbyId=lobby_id, gameType=game_type, duration=duration).to_dict()
+    body = server_request(GAME_REQUEST_TYPE.create_session.name, lobbyId=lobby_id, gameType=game_type).to_dict()
+    body["duration"] = duration
     try:
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
@@ -139,7 +141,8 @@ def delete_session(lobby_id: str, session_id: str):
     """
     Deletes a session from a lobby.
     """
-    body = server_request(GAME_REQUEST_TYPE.delete_session.name, lobbyId=lobby_id, sessionId=session_id).to_dict()
+    body = server_request(GAME_REQUEST_TYPE.delete_session.name, lobbyId=lobby_id).to_dict()
+    body["sessionId"] = session_id
     try:
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:

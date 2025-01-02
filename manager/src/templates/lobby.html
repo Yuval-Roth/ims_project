@@ -48,31 +48,37 @@
             <section class="sessions-section">
                 <h2>Sessions</h2>
                 <div class="table-container">
-                    <table class="styled-table sessions-table">
-                        <thead>
-                            <tr>
-                                <th>Game Type</th>
-                                <th>Duration</th>
-                                <th>Session ID</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sessions-tbody">
-                            {% for session in sessions %}
-                            <tr data-session-id="{{ session.sessionId }}">
-                                <td>{{ session.gameType }}</td>
-                                <td>{{ session.duration }}</td>
-                                <td>{{ session.sessionId }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="scrollable-table-container">
+
+                        <table class="styled-table sessions-table">
+                            <thead>
+                                <tr>
+                                    <th>Game Type</th>
+                                    <th>Duration</th>
+                                    <th>Session ID</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessions-tbody">
+                                {% for session in sessions %}
+                                <tr data-session-id="{{ session.sessionId }}">
+                                    <td>{{ session.gameType }}</td>
+                                    <td>{{ session.duration }}</td>
+                                    <td>{{ session.sessionId }}</td>
+                                    <td>
+                                        <button class="danger-button delete-session-btn" data-session-id="{{ session.sessionId }}">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
             <!-- Action Buttons -->
             <div class="action-buttons">
                 <button id="add-session-btn" class="primary-button">Add Session</button>
-                <button id="remove-session-btn" class="danger-button">Remove Session</button>
                 <button id="start-game-btn" class="success-button">Start Game</button>
                 <button id="stop-game-btn" class="warning-button">Stop Game</button>
             </div>
@@ -88,7 +94,7 @@
                 <label for="gameType">Game Type:</label>
                 <select name="gameType" id="gameType" required>
                     {% for game in GAME_TYPE %}
-                    <option value="{{ game.name }}">{{ game.name }}</option>
+                    <option value="{{ game.value }}">{{ game.value }}</option>
                     {% endfor %}
                 </select>
                 <label for="duration">Duration (minutes):</label>
@@ -106,11 +112,11 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const sessionTableBody = document.getElementById('sessions-tbody');
         const addSessionBtn = document.getElementById('add-session-btn');
         const modal = document.getElementById('add-session-modal');
         const overlay = document.getElementById('modal-overlay');
         const cancelModalBtn = document.getElementById('cancel-modal-btn');
-        const sessionTableBody = document.getElementById('sessions-tbody');
 
         // Show modal
         addSessionBtn.addEventListener('click', () => {
@@ -145,6 +151,9 @@
                             <td>${newSession.gameType}</td>
                             <td>${newSession.duration}</td>
                             <td>${newSession.sessionId}</td>
+                            <td>
+                                <button class="danger-button delete-session-btn" data-session-id="${newSession.sessionId}">Delete</button>
+                            </td>
                         `;
                         sessionTableBody.appendChild(row);
 
@@ -161,7 +170,30 @@
                 });
         });
 
-        // Enable drag-and-drop reordering using Sortable.js
+        // Handle Delete Session
+        sessionTableBody.addEventListener('click', function (e) {
+            if (e.target.classList.contains('delete-session-btn')) {
+                const sessionId = e.target.dataset.sessionId;
+                const lobbyId = "{{ lobby_id }}";
+
+                fetch('/delete_session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lobby_id: lobbyId, session_id: sessionId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        e.target.closest('tr').remove();
+                    } else {
+                        alert('Failed to delete session.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+
+        // Enable drag-and-drop reordering
         new Sortable(sessionTableBody, {
             animation: 150,
             onEnd: function () {
@@ -170,13 +202,14 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
-                }).then(response => response.json())
-                  .then(data => {
-                      if (data.status !== 'success') {
-                          alert('Failed to update session order.');
-                      }
-                  })
-                  .catch(error => console.error('Error:', error));
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        alert('Failed to update session order.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
             }
         });
     });

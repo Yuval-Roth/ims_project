@@ -13,6 +13,7 @@ class server_request:
     #   "lobbyId": "string?",
     #   "gameType": "string?",
     # }
+    # can add more fields if needed, automaticly
     def __init__(self, type: str, playerId: str = "", lobbyId: str = "", gameType: str = ""):
         self.type: str = type
         self.playerId: str = playerId

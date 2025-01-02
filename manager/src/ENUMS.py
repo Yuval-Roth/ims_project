@@ -2,12 +2,12 @@ from enum import Enum
 
 
 class GAME_TYPE(Enum):
-    water_ripples = 1
-    wine_glasses = 2
-    poc = 3
-    chess = 4
-    tic_tac_toe = 5
-    racing = 6
+    water_ripples = 'Water Ripples'
+    wine_glasses = 'Wine Glasses'
+    poc = 'Poc'
+    chess = 'Chess'
+    tic_tac_toe = 'Tic Tac Toe'
+    racing = 'Racing'
 
 
 class GAME_REQUEST_TYPE(Enum):

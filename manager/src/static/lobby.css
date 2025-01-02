@@ -53,6 +53,17 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* Fixed Size for Scrollable Session Table */
+.scrollable-table-container {
+    max-height: 300px; /* Set fixed height for scrollable table */
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #ffffff;
+    margin-bottom: 20px;
+}
+
 /* Styled Tables */
 .styled-table {
     width: 100%;
@@ -199,21 +210,3 @@ button:hover {
     display: none;
 }
 
-/* Home Button */
-.home-button {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 10;
-}
-
-.home-icon {
-    width: 40px;
-    height: 40px;
-    transition: opacity 0.3s ease, transform 0.1s ease;
-}
-
-.home-icon:hover {
-    opacity: 0.8;
-    transform: scale(1.1);
-}

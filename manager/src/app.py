@@ -69,6 +69,7 @@ def main_menu():
     #
     #     return render_template('main_menu.html', participants=participants)
 
+
 @app.route('/get_participants', methods=['GET'])
 def get_parts():
     # participants = get_participants()  # Replace with your function to fetch participants
@@ -88,6 +89,7 @@ def lobbies_menu():
         lobbies = LOBBIES
     return render_template('lobbies.html', lobbies=lobbies)
 
+
 @app.route('/create_lobby', methods=['POST'])
 def create_lobby_action():
     participant1 = request.form['participant1']
@@ -99,6 +101,7 @@ def create_lobby_action():
         flash("Failed to create lobby.")
     return redirect(url_for('lobbies_menu'))
 
+
 @app.route('/delete_lobby', methods=['GET'])
 def delete_lobby_action():
     lobby_id = request.args.get('lobby_id')
@@ -107,7 +110,6 @@ def delete_lobby_action():
     else:
         flash("Failed to remove lobby.")
     return redirect(url_for('lobbies_menu'))
-
 
 
 @app.route('/lobby', methods=['GET', 'POST'])
@@ -149,11 +151,13 @@ def lobby():
     selected_participants = request.args.get('selected_participants', '')
     selected_participants_list = selected_participants.split(",") if selected_participants else []
 
-    return render_template('lobby.html', selected_participants=selected_participants_list, lobby_id=lobby_id, action='start', GAME_TYPE=GAME_TYPE)
+    return render_template('lobby.html', selected_participants=selected_participants_list, lobby_id=lobby_id,
+                           action='start', GAME_TYPE=GAME_TYPE)
 
 
 @app.route('/update_session_order', methods=['POST'])
 def update_session_order():
+    return jsonify({"status": "success"})
     data = request.json
     lobby_id = data.get('lobby_id')
     session_order = data.get('session_order')
@@ -167,6 +171,8 @@ def update_session_order():
 
 @app.route('/add_session', methods=['POST'])
 def add_session():
+    return jsonify({"status": "success", "session": {"gameType": "chess", "duration": 60, "sessionId": "123"}})
+
     lobby_id = request.form.get('lobby_id')
     game_type = request.form.get('gameType')
     duration = int(request.form.get('duration', 0))
@@ -176,12 +182,15 @@ def add_session():
 
     session_id = create_session(lobby_id, game_type, duration)
     if session_id:
-        return jsonify({"status": "success", "session": {"gameType": game_type, "duration": duration, "sessionId": session_id}})
+        return jsonify(
+            {"status": "success", "session": {"gameType": game_type, "duration": duration, "sessionId": session_id}})
     return jsonify({"status": "error"})
 
 
 @app.route('/delete_session', methods=['POST'])
 def delete_session_route():
+    return jsonify({"status": "success"})
+
     lobby_id = request.json.get('lobby_id')
     session_id = request.json.get('session_id')
 
@@ -190,8 +199,6 @@ def delete_session_route():
 
     success = delete_session(lobby_id, session_id)
     return jsonify({"status": "success" if success else "error"})
-
-
 
 
 if __name__ == '__main__':
