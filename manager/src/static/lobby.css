@@ -1,63 +1,201 @@
-/* Lobby Styles */
-
+/* General Body Styles */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    background-color: #f4f4f9;
     margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    padding: 0;
 }
 
-.lobby-container {
-    background-color: #ffffff;
-    border: 1px solid #ccc;
-    border-radius: 10px;
+/* Main Container */
+.container {
+    display: flex;
+    justify-content: space-between;
+    width: 90%;
+    max-width: 1200px;
+    margin: 50px auto;
+    background: #ffffff;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
     padding: 20px;
-    width: 300px;
+}
+
+/* Active Lobbies Table */
+.lobby-table-container {
+    width: 65%;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.online-participants-table-container {
+    max-height: 400px; /* Enable scrolling within the table */
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.online-participants-table-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.online-participants-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.online-participants-table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.online-participants-table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+.online-participants-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.online-participants-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-bottom: 2px solid #ddd;
+}
+
+.online-participants-table th,
+.online-participants-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
     text-align: center;
 }
 
-.lobby-container h1 {
-    font-size: 24px;
-    margin-bottom: 10px;
-    color: #333;
+.online-participants-table tr:nth-child(even) {
+    background-color: #f9f9f9;
 }
 
-.lobby-container p {
-    font-size: 16px;
-    color: #555;
-    margin-bottom: 20px;
+.online-participants-table tr:hover {
+    background-color: #f1f1f1;
 }
 
-.toggle-session-button button {
-    padding: 10px 20px;
+.lobby-row.selected {
+    background-color: #cce5ff;
+    cursor: pointer;
+}
+
+/* Action Buttons */
+.actions-container {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.action-button {
+    width: 100%;
+    max-width: 200px;
+    padding: 10px 15px;
     font-size: 16px;
-    color: #fff;
-    background-color: #4CAF50;
+    font-weight: bold;
+    color: white;
+    background-color: #007bff;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    text-align: center;
     transition: background-color 0.3s;
 }
 
-.toggle-session-button {
-    padding: 10px 20px;
-    font-size: 16px;
-    color: #fff;
-    background-color: #4CAF50;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+.action-button:hover {
+    background-color: #0056b3;
 }
 
-.toggle-session-button:hover {
-    background-color: #45a049;
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    z-index: 1000;
+    width: 50%;
+    max-width: 500px;
+    overflow: hidden;
 }
 
-.toggle-session-button:active {
-    background-color: #3e8e41;
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+/* Modal Table Styles */
+.table-container {
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-top: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.table-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Buttons within Modal */
+.create-lobby-button {
+    padding-top: 10px;
+    background-color: #28a745;
+}
+
+.create-lobby-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.cancel-button {
+    background-color: #dc3545;
+}
+
+.cancel-button:hover {
+    background-color: #c82333;
 }

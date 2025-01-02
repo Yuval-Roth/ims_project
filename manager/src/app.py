@@ -1,6 +1,7 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import requests
+from . import *
 from .managers.participants import *
 from .managers.lobby import *
 from .managers.game import *
@@ -35,36 +36,78 @@ def main_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        selected_participants = request.form.getlist('selected_participants')
-        game_type = request.form.get('game_type')
+    return render_template('main_menu.html')
 
-        if not selected_participants:
-            flash("Please select at least one participant.")
-            return redirect(url_for('main_menu'))
+    # if request.method == 'POST':
+    #     selected_participants = request.form.getlist('selected_participants')
+    #     game_type = request.form.get('game_type')
+    #
+    #     if not selected_participants:
+    #         flash("Please select at least one participant.")
+    #         return redirect(url_for('main_menu'))
+    #
+    #     if not game_type:
+    #         flash("Please select a game type.")
+    #         return redirect(url_for('main_menu'))
+    #
+    #     game_type_enum = GAME_TYPE[game_type]
+    #     lobby_id = create_lobby(selected_participants, game_type_enum)
+    #
+    #     if not lobby_id:
+    #         flash("Failed to create lobby.")
+    #         return redirect(url_for('main_menu'))
+    #
+    #     return redirect(url_for('lobby', selected_participants=",".join(selected_participants), lobby_id=lobby_id))
+    # else:
+    #     # Get participants and handle None case
+    #     participants = get_participants()
+    #     if not participants:  # Handle None or empty list
+    #         participants = [1, 2, 3, 4, 5]
+    #         flash("No participants found.")
+    #
+    #     participants = [{"id": participant, "name": f"Player {participant}"} for participant in participants]
+    #
+    #     return render_template('main_menu.html', participants=participants)
 
-        if not game_type:
-            flash("Please select a game type.")
-            return redirect(url_for('main_menu'))
+@app.route('/get_participants', methods=['GET'])
+def get_parts():
+    # participants = get_participants()  # Replace with your function to fetch participants
+    participants = None
+    if not participants:
+        participants = PARTICIPANTS
+    return jsonify(participants)
 
-        game_type_enum = GAME_TYPE[game_type]
-        lobby_id = create_lobby(selected_participants, game_type_enum)
 
-        if not lobby_id:
-            flash("Failed to create lobby.")
-            return redirect(url_for('main_menu'))
+@app.route('/lobbies', methods=['GET'])
+def lobbies_menu():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    # lobbies = get_lobbies()  # list of dict : {lobbyId, players}
+    lobbies = None
+    if not lobbies:
+        lobbies = LOBBIES
+    return render_template('lobbies.html', lobbies=lobbies)
 
-        return redirect(url_for('lobby', selected_participants=",".join(selected_participants), lobby_id=lobby_id))
+@app.route('/create_lobby', methods=['POST'])
+def create_lobby_action():
+    participant1 = request.form['participant1']
+    participant2 = request.form['participant2']
+    lobby_id = create_lobby([participant1, participant2])
+    if lobby_id:
+        flash("Lobby created successfully!")
     else:
-        # Get participants and handle None case
-        participants = get_participants()
-        if not participants:  # Handle None or empty list
-            participants = []
-            flash("No participants found.")
+        flash("Failed to create lobby.")
+    return redirect(url_for('lobbies_menu'))
 
-        participants = [{"id": participant, "name": f"Player {participant}"} for participant in participants]
+@app.route('/delete_lobby', methods=['GET'])
+def delete_lobby_action():
+    lobby_id = request.args.get('lobby_id')
+    if lobby_id and leave_lobby(lobby_id, None):  # Implement logic to remove lobby
+        flash("Lobby removed successfully!")
+    else:
+        flash("Failed to remove lobby.")
+    return redirect(url_for('lobbies_menu'))
 
-        return render_template('main_menu.html', participants=participants)
 
 
 @app.route('/lobby', methods=['GET', 'POST'])

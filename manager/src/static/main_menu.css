@@ -126,3 +126,24 @@ select:focus {
     border-color: #007bff;
     outline: none;
 }
+
+
+.main-menu-button {
+    display: block;
+    width: 200px;
+    padding: 10px;
+    margin: 10px auto;
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.main-menu-button:hover {
+    background-color: #0056b3;
+}

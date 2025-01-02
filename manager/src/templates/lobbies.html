@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby Menu</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}">
+</head>
+<body>
+    <a href="/main_menu" class="home-button">
+        <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
+    </a>
+    <div class="container">
+        <!-- Left: Table of Active Lobbies -->
+        <div class="lobby-table-container">
+            <h1>Active Lobbies</h1>
+            <div class="online-participants-table-container">
+                <table class="online-participants-table">
+                    <thead>
+                        <tr>
+                            <th>Lobby ID</th>
+                            <th>Players</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lobby in lobbies %}
+                        <tr class="lobby-row" data-lobby-id="{{ lobby.lobbyId }}">
+                            <td>{{ lobby.lobbyId }}</td>
+                            <td>{{ lobby.players | join(', ') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right: Action Buttons -->
+        <div class="actions-container">
+            <button id="create-lobby-btn" class="action-button">Create Lobby</button>
+            <button id="delete-lobby-btn" class="action-button">Remove Lobby</button>
+        </div>
+    </div>
+
+<!-- Modal Overlay -->
+<div id="modal-overlay" class="modal-overlay"></div>
+
+<!-- Modal for Creating Lobby -->
+<div id="create-lobby-modal" class="modal">
+    <div class="modal-content">
+        <h2>Create Lobby</h2>
+        <form action="/create_lobby" method="post">
+            <div class="table-container">
+                <table class="online-participants-table">
+                    <thead>
+                        <tr>
+                            <th>Participant Name</th>
+                            <th>Select</th>
+                        </tr>
+                    </thead>
+                    <tbody id="participant-list">
+                        <!-- Participants will be dynamically populated here -->
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="create-lobby-button" disabled>Create Lobby</button>
+            <button type="button" id="close-modal-btn" class="cancel-button">Cancel</button>
+        </form>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let selectedRow = null;
+
+        // Highlight selected row on single click
+        document.querySelectorAll('.lobby-row').forEach(row => {
+            row.addEventListener('click', function () {
+                document.querySelectorAll('.lobby-row').forEach(r => r.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedRow = this.dataset.lobbyId;
+            });
+
+            // Navigate to another page on double click
+            row.addEventListener('dblclick', function () {
+                const lobbyId = this.dataset.lobbyId;
+                window.location.href = `/lobby?lobby_id=${lobbyId}`;
+            });
+        });
+
+        // Delete lobby
+        document.getElementById('delete-lobby-btn').addEventListener('click', function () {
+            if (!selectedRow) {
+                alert('Please select a lobby to delete.');
+                return;
+            }
+            if (confirm('Are you sure you want to delete lobby ' + selectedRow + '?')) {
+                window.location.href = `/delete_lobby?lobby_id=${selectedRow}`;
+            }
+        });
+
+        // Show modal for creating lobby
+        const createLobbyBtn = document.getElementById('create-lobby-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modal = document.getElementById('create-lobby-modal');
+        const checkboxesContainer = document.getElementById('participant-list');
+        const submitButton = document.querySelector('.create-lobby-button');
+
+        createLobbyBtn.addEventListener('click', () => {
+            fetchParticipants().then(() => {
+                resetModalState(); // Reset modal state before showing
+                modal.style.display = 'block';
+                document.getElementById('modal-overlay').style.display = 'block';
+            });
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+            resetModalState(); // Reset modal state when closing
+        });
+
+        // Fetch participants dynamically
+        function fetchParticipants() {
+            return fetch('/get_participants')
+                .then(response => response.json())
+                .then(data => {
+                    checkboxesContainer.innerHTML = ''; // Clear existing content
+                    data.forEach(participant => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${participant.name}</td>
+                            <td><input type="checkbox" name="selected_participants" value="${participant.id}"></td>
+                        `;
+                        checkboxesContainer.appendChild(row);
+                    });
+
+                    // Reattach event listeners to the dynamically added checkboxes
+                    attachCheckboxListeners();
+                })
+                .catch(error => console.error('Error fetching participants:', error));
+        }
+
+        // Attach listeners to checkboxes
+        function attachCheckboxListeners() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    const checkedCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                    submitButton.disabled = checkedCheckboxes.length !== 2;
+
+                    // Disable unchecked checkboxes if 2 are already checked
+                    checkboxes.forEach(cb => {
+                        if (!cb.checked) {
+                            cb.disabled = checkedCheckboxes.length === 2;
+                        }
+                    });
+                });
+            });
+        }
+
+        // Reset modal state
+        function resetModalState() {
+            // Uncheck all checkboxes
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.disabled = false;
+            });
+
+            // Disable the Create Lobby button
+            submitButton.disabled = true;
+        }
+    });
+</script>
+
+
+</body>
+</html>

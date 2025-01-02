@@ -18,6 +18,23 @@ class lobby_info_payload:
         self.players: list[str] = payload.get("players")
 
 
+def get_lobbies():
+    body = server_request(GAME_REQUEST_TYPE.get_lobbies.name).to_dict()
+    try:
+        response = requests.post(URL + "/manager", json=body, timeout=0.1)
+        if response.status_code in [200, 201]:
+            ser_res = server_response(response)
+            if ser_res.get_success():
+                return lobbies_list_payload(ser_res.get_payload())
+
+            Logger.log_error(f"Failed to get lobbies: {ser_res.get_message()}")
+            return None
+
+    except Exception as e:
+        Logger.log_error(f"Failed to get lobbies, {e}")
+        return None
+
+
 def create_lobby(participants: list[str], gameType=GAME_TYPE.water_ripples):
     body = server_request(GAME_REQUEST_TYPE.create_lobby.name, gameType=gameType.name).to_dict()
     try:

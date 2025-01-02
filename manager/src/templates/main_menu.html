@@ -6,62 +6,12 @@
     <title>Main Menu</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='general.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main_menu.css') }}">
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            const button = document.querySelector('.create-lobby-button');
-            button.disabled = true;
-
-            function updateButtonState() {
-                const checkedCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-                button.disabled = checkedCheckboxes.length !== 2;
-            }
-
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function () {
-                    const checkedCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
-                    if (checkedCheckboxes.length > 2) {
-                        this.checked = false;
-                    }
-                    updateButtonState();
-                });
-            });
-
-            updateButtonState(); // Initial check on page load
-        });
-    </script>
 </head>
 <body>
     <div class="main-menu-container">
-    <h1>Online Participants</h1>
-    <form action="{{ url_for('main_menu') }}" method="post" style="width:100%">
-        <div class="table-container">
-            <table class="online-participants-table">
-                <thead>
-                    <tr>
-                        <th>Participant Name</th>
-                        <th>Select</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for participant in participants %}
-                    <tr>
-                        <td>{{ participant.name }}</td>
-                        <td><input type="checkbox" name="selected_participants" value="{{ participant.id }}"></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <label for="game-type">Select Game Type:</label>
-        <select id="game-type" name="game_type" required>
-            <option value="water_ripples">Water Ripples</option>
-            <option value="wine_glasses">Wine Glasses</option>
-            <option value="poc">PoC</option>
-        </select>
-        <button type="submit" class="create-lobby-button">Create Lobby</button>
-    </form>
-</div>
-
+        <h1>Main Menu</h1>
+        <button onclick="window.location.href='/lobbies'" class="main-menu-button">Lobbies</button>
+        <button onclick="window.location.href='/participants'" class="main-menu-button">Participants</button>
+    </div>
 </body>
 </html>
