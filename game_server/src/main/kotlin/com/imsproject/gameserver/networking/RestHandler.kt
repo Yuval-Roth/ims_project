@@ -74,7 +74,7 @@ class RestHandler(
         val split = decoded.split(":")
         val userId = split[0]
         val password = split[1]
-        return authController.authenticateUser(userId, password).toJson().toResponseEntity()
+        return authController.authenticateUser(userId, password).toResponseEntity()
     }
 
     @GetMapping("/bcrypt")

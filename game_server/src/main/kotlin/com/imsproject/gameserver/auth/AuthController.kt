@@ -18,11 +18,15 @@ class AuthController(private val credentials: CredentialsController) {
     private val encoder: PasswordEncoder = BCryptPasswordEncoder()
     private var key: SecretKey = Jwts.SIG.HS512.key().build()
 
-    fun authenticateUser(userId: String, password: String): Response {
+    fun authenticateUser(userId: String, password: String): String {
         val cleanUserId = userId.lowercase()
         log.debug("Authenticating user {}", cleanUserId)
         val answer = authenticate(cleanUserId, password)
-        return Response(null, answer, if (answer) getToken(cleanUserId) else null)
+        return if(answer){
+            Response.getOk(getToken(cleanUserId))
+        } else {
+            Response.getError("Invalid credentials")
+        }
     }
 
     fun revokeAuthentication(userId: String): Boolean {

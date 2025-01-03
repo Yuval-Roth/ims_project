@@ -23,6 +23,6 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     fun sessionIds(sessionIds: List<String>) = apply { this.sessionIds = sessionIds }
     fun data(data: List<String>) = apply { this.data = data }
     fun timestamp(timeStamp: String) = apply { this.timestamp = timeStamp }
-    
+
     fun build() = GameRequest(type,playerId,lobbyId,gameType,success,message,duration,sessionId,sessionIds,data,timestamp)
 }
