@@ -24,9 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +35,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
-import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.AXLE_HANDLE_LENGTH
@@ -45,32 +42,29 @@ import com.imsproject.watch.AXLE_WIDTH
 import com.imsproject.watch.BEZIER_START_DISTANCE
 import com.imsproject.watch.CONTROL_POINT_DISTANCE
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
-import com.imsproject.watch.FLOUR_MILL_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_WIDTH
-import com.imsproject.watch.STRETCH_PEAK
 import com.imsproject.watch.STRETCH_PEAK_DECAY
 import com.imsproject.watch.STRETCH_POINT_DISTANCE
 import com.imsproject.watch.STRETCH_STEP
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
-import com.imsproject.watch.utils.WaitMonitor
 import com.imsproject.watch.utils.addToAngle
-import com.imsproject.watch.utils.calculateAngleDiff
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.utils.calculateTriangleThirdPoint
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.isBetweenInclusive
-import com.imsproject.watch.utils.isInQuadrant
+import com.imsproject.watch.utils.isClockwise
+import com.imsproject.watch.utils.sign
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.FlourMillViewModel.Axle
-import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleEnd
 import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
+import kotlin.math.absoluteValue
 
 class FlourMillActivity : ComponentActivity() {
 
@@ -145,21 +139,15 @@ class FlourMillActivity : ComponentActivity() {
     fun FlourMill() {
         val (centerX, centerY) = remember { polarToCartesian(0f, 0f) }
         val axle = remember { viewModel.axle }
-        val myAxleEnd = remember { viewModel.myAxleSide }
+        val mySide = remember { viewModel.myAxleSide }
         val focusRequester = remember { FocusRequester() }
-        val leftMonitor = remember { viewModel.leftMonitor }
-        val rightMonitor = remember { viewModel.rightMonitor }
-        val coolingDown = viewModel.coolingDown.collectAsState().value
-        val leftCounter = viewModel.leftCounter.collectAsState().value
-        val rightCounter = viewModel.rightCounter.collectAsState().value
-        val axleCounter = viewModel.axleCounter.collectAsState().value
 
         Box(
             modifier = Modifier.Companion
                 .fillMaxSize()
                 .background(color = DARK_BACKGROUND_COLOR)
                 .onRotaryScrollEvent {
-                    if (!coolingDown) {
+                    if (!viewModel.isCoolingDown()) {
                         val direction = if (it.verticalScrollPixels < 0) -1 else 1
                         viewModel.rotateMyAxleEnd(direction)
                     }
@@ -168,11 +156,20 @@ class FlourMillActivity : ComponentActivity() {
                 .focusRequester(focusRequester)
                 .focusable()
                 .pointerInput(Unit) {
-                    detectDragGestures { change, offset ->
-                        val coolingDown = viewModel.coolingDown.value
-                        if (!coolingDown) {
+                    detectDragGestures(
+                        onDragEnd = {
+                            viewModel.onDragEnd()
+                        },
+                    ) { change, offset ->
+                        if(viewModel.isDragged()) return@detectDragGestures
+                        viewModel.dragged()
+
+                        if (!viewModel.isCoolingDown()) {
                             val position = change.position
-                            val (_, angle) = cartesianToPolar(position.x.toDouble(), position.y.toDouble())
+                            val (_, angle) = cartesianToPolar(
+                                position.x.toDouble(),
+                                position.y.toDouble()
+                            )
                             val direction = if (angle.isBetweenInclusive(-135.0001f, -45f)) {
                                 if (offset.x < 0) -1 else 1
                             } else if (angle.isBetweenInclusive(-45.0001f, 45f)) {
@@ -195,39 +192,29 @@ class FlourMillActivity : ComponentActivity() {
                 focusRequester.requestFocus()
             }
 
-            // =============== Animate axle end stretch ================ |
+            // =============== Animate the axle and its ends ================ |
 
-            // Left end
-            LaunchedEffect(leftCounter) {
-                val inSync = animateAxleEnd(axle,AxleSide.LEFT,leftMonitor)
-                if(! inSync && myAxleEnd == AxleSide.LEFT) {
+            LaunchedEffect(Unit){
+                while(true){
+                    // left end
+                    animateAxleEndStep(axle, AxleSide.LEFT, mySide)
+
+                    // right end
+                    animateAxleEndStep(axle, AxleSide.RIGHT, mySide)
+
+                    // axle
+                    if(axle.angle != axle.targetAngle){
+                        val direction = getDirection(axle.angle, axle.targetAngle)
+                        axle.angle = addToAngle(axle.angle, STRETCH_STEP * direction)
+                    } else {
+                        if(axle.isRotating){
+                            axle.effectiveAngle = axle.angle
+                            axle.isRotating = false
+                            viewModel.resetCoolDown()
+                        }
+                    }
                     delay(16)
-                    viewModel.cooledDown()
                 }
-            }
-
-            // Right end
-            LaunchedEffect(rightCounter) {
-                val inSync = animateAxleEnd(axle,AxleSide.RIGHT,rightMonitor)
-                if(! inSync && myAxleEnd == AxleSide.RIGHT) {
-                    delay(16)
-                    viewModel.cooledDown()
-                }
-            }
-
-            // axle rotation
-            LaunchedEffect(axleCounter) {
-                leftMonitor.wakeup()
-                rightMonitor.wakeup()
-                val targetAngle = addToAngle(axle.angle, STRETCH_PEAK * axle.toRotateDirection)
-                val step = STRETCH_STEP * axle.toRotateDirection
-                while(calculateAngleDiff(axle.angle, targetAngle) > 0.0f){
-                    axle.angle = addToAngle(axle.angle, step)
-                    delay(32)
-                }
-                axle.effectiveAngle = targetAngle
-                delay(16)
-                viewModel.cooledDown()
             }
 
             // =============== Draw background ================ |
@@ -262,7 +249,7 @@ class FlourMillActivity : ComponentActivity() {
 
                     val (bezierStartX,bezierStartY) = polarToCartesian(BEZIER_START_DISTANCE, endAngle)
                     val (controlX,controlY) = polarToCartesian(CONTROL_POINT_DISTANCE, endAngle)
-                    val (stretchX,stretchY) = polarToCartesian(STRETCH_POINT_DISTANCE, axleEnd.stretchPointAngle)
+                    val (stretchX,stretchY) = polarToCartesian(STRETCH_POINT_DISTANCE, axleEnd.angle)
                     val (handleStartX,handleStartY) = calculateTriangleThirdPoint(
                         centerX, centerY,
                         stretchX, stretchY,
@@ -301,52 +288,72 @@ class FlourMillActivity : ComponentActivity() {
         }
     }
 
-    private suspend fun animateAxleEnd(axle: Axle, side: AxleSide, monitor: WaitMonitor) : Boolean {
-        val axleEnd = axle.getEnd(side)
-        val direction = axleEnd.direction
-        var referenceAngle = axle.getEffectiveEndAngle(side)
+    private fun animateAxleEndStep(
+        axle: Axle,
+        animatedSide: AxleSide,
+        mySide : AxleSide
+    ) {
+        val axleEnd = axle.getEnd(animatedSide)
 
-        // initial stretch in the direction of the scroll
-        var targetAngle = addToAngle(referenceAngle, axleEnd.stretchPeak * direction)
-        animateAxleEndStretch(axleEnd, targetAngle, direction)
+        // First thing we do is get the angle of the axle end to its target angle
+        if (axleEnd.angle != axleEnd.targetAngle) {
+            val direction = getDirection(axleEnd.angle, axleEnd.targetAngle)
+            axleEnd.angle = addToAngle(axleEnd.angle, STRETCH_STEP * direction)
+        }
 
-        // wait to see if the scroll in sync with the opponent
-        monitor.wait(FLOUR_MILL_SYNC_TIME_THRESHOLD)
+        // If the axle end is at its target angle, we check if there is more work to be done
+        else {
 
-        return if(viewModel.isSynced(side)){
-            axleEnd.stretchPeak = 0.0f
-            true
-        } else {
-            // the opponent did not scroll, so sync was not achieved.
-            // so we add the spring effect.
-            axleEnd.stretchPeak -= STRETCH_PEAK_DECAY
-            while (axleEnd.stretchPeak > 0.0f) {
-                // stretch in the opposite direction of the scroll
+            // if the stretch peak is not zero, then we're either resetting or waiting for sync timeout
+            if (axleEnd.stretchPeak != 0.0f) {
 
-                targetAngle = addToAngle(referenceAngle, axleEnd.stretchPeak * -direction)
-                animateAxleEndStretch(axleEnd, targetAngle, -direction)
-                axleEnd.stretchPeak -= STRETCH_PEAK_DECAY
+                if (axleEnd.resetting) {
+                    // if the axle end is resetting, we set the target angle to be the next reset step
+                    val baseAngle = axle.getEffectiveEndAngle(animatedSide)
+                    val newStretchPeakSign = -1f * axleEnd.stretchPeak.sign()
+                    val newStretchPeak = (axleEnd.stretchPeak.absoluteValue - STRETCH_PEAK_DECAY) * newStretchPeakSign
+                    val newTargetAngle = addToAngle(baseAngle, newStretchPeak)
+                    axleEnd.stretchPeak = newStretchPeak
+                    axleEnd.targetAngle = newTargetAngle
 
-                // stretch in the direction of the scroll
+                    // if the new stretch peak is zero, we finished resetting
+                    if (newStretchPeak == 0.0f) {
+                        axleEnd.resetting = false
+                        if(animatedSide == mySide){
+                            viewModel.resetCoolDown()
+                        }
+                    }
+                }
 
-                targetAngle = addToAngle(referenceAngle, axleEnd.stretchPeak * direction)
-                animateAxleEndStretch(axleEnd, targetAngle, direction)
-                axleEnd.stretchPeak -= STRETCH_PEAK_DECAY
+                // we're waiting for the sync threshold timeout
+                else {
+                    // check if we passed the sync threshold timeout
+                    if (System.currentTimeMillis() >= axleEnd.syncThresholdTimeout) {
+                        if (viewModel.isSynced(animatedSide)) {
+                            axleEnd.stretchPeak = 0.0f // leave the axle end at the target angle
+                        } else {
+                            axleEnd.resetting = true // reset the axle end to its base angle
+                        }
+                    }
+                    //else ----> no work to be done
+                }
             }
-            false
+            else {
+                if(!axle.isRotating && axleEnd.targetAngle != axle.getEffectiveEndAngle(animatedSide)){
+                    // if we get here then the axle end went out of sync with the axle for some reason
+                    // that i can't figure out. So we reset the axle end to its base angle according to the axle
+                    axleEnd.targetAngle = axle.getEffectiveEndAngle(animatedSide)
+                    if(animatedSide == mySide){
+                        viewModel.resetCoolDown()
+                    }
+                }
+                // else ----> no work to be done
+            }
         }
     }
 
-    private suspend fun animateAxleEndStretch(
-        axleEnd: AxleEnd,
-        targetAngle: Float,
-        direction : Int
-    ) {
-        while (calculateAngleDiff(axleEnd.stretchPointAngle, targetAngle) > 0.0f) {
-            val newAngle = addToAngle(axleEnd.stretchPointAngle, STRETCH_STEP * direction)
-            axleEnd.stretchPointAngle = newAngle
-            delay(16)
-        }
+    private fun getDirection(angle: Float, targetAngle: Float) : Float {
+        return if (isClockwise(angle, targetAngle)) 1f else -1f
     }
 
     @Composable

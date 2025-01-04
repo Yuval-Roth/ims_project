@@ -173,4 +173,6 @@ fun calculateTriangleThirdPoint(
     return Pair(p3X, p3Y)
 }
 
+fun Float.sign() = if(this < 0) -1 else if (this > 0) 1 else 0
+
 
