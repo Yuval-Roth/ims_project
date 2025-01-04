@@ -1,5 +1,7 @@
 package com.imsproject.watch.view
 
+import android.app.GameManager
+import android.app.GameState
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -72,6 +74,8 @@ class MainActivity : ComponentActivity() {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         registerActivities()
+        val gameManager = getSystemService(GameManager::class.java)
+        gameManager.setGameState(GameState(false,GameState.MODE_GAMEPLAY_UNINTERRUPTIBLE))
         setContent {
             Main(viewModel)
         }

@@ -1,12 +1,16 @@
 package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
+import android.app.GameManager
+import android.app.GameState
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
 import android.media.SoundPool
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -62,10 +66,9 @@ class WaterRipplesActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
-        viewModel.onCreate(intent)
+        viewModel.onCreate(intent,applicationContext)
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         clickSoundId = soundPool.load(applicationContext, R.raw.ripple_click_sound, 1)
-
         setContent {
             Main()
         }
@@ -128,7 +131,6 @@ class WaterRipplesActivity : ComponentActivity() {
     @SuppressLint("ReturnFromAwaitPointerEventScope")
     @Composable
     fun WaterRipples() {
-
         var ripples = remember { viewModel.ripples }
         val counter by viewModel.counter.collectAsState()
 
@@ -146,7 +148,7 @@ class WaterRipplesActivity : ComponentActivity() {
                         awaitPointerEventScope {
                             while (true) {
                                 val event = awaitPointerEvent()
-                                if(event.type == PointerEventType.Press){
+                                if (event.type == PointerEventType.Press) {
                                     event.changes[0].consume()
                                     viewModel.click()
                                     viewModel.viewModelScope.launch(Dispatchers.IO) {

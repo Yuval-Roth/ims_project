@@ -1,6 +1,8 @@
 package com.imsproject.watch.viewmodel
 
+import android.content.Context
 import android.content.Intent
+import android.os.Vibrator
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -38,6 +40,9 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
         "unknown player ID"
     }
 
+    protected lateinit var vibrator: Vibrator
+        private set
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
@@ -58,7 +63,9 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    open fun onCreate(intent: Intent){
+    open fun onCreate(intent: Intent, context: Context){
+
+        vibrator = context.getSystemService(Vibrator::class.java)
 
         if(ACTIVITY_DEBUG_MODE){
             _state.value = State.PLAYING

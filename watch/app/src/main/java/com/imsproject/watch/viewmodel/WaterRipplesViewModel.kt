@@ -1,6 +1,8 @@
 package com.imsproject.watch.viewmodel
 
+import android.content.Context
 import android.content.Intent
+import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -40,6 +42,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         var currentAlpha by mutableFloatStateOf(startingAlpha)
     }
 
+    private lateinit var clickVibration : VibrationEffect
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
@@ -64,14 +68,18 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         }
     }
 
-    override fun onCreate(intent: Intent) {
-        super.onCreate(intent)
+    override fun onCreate(intent: Intent, context: Context) {
+        super.onCreate(intent, context)
+
+        clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.IO) {
                 while(true){
                     delay(1000)
-                    showRipple("player1", System.currentTimeMillis())
+                    withContext(Dispatchers.Main){
+                        showRipple("player1", System.currentTimeMillis())
+                    }
                 }
             }
         }
@@ -115,7 +123,6 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     }
 
     private fun showRipple(actor: String, timestamp : Long) {
-        println("$actor: $timestamp")
         val rippleToCheck = if (actor == playerId){
             ripples.find { it.actor != playerId }
         } else {
@@ -140,6 +147,13 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             }
             ripples.add(0,ripple)
         }
+        viewModelScope.launch(Dispatchers.IO) {
+            delay(100)
+            if(actor != playerId){
+                vibrator.vibrate(clickVibration)
+            }
+        }
+
         _counter.value++
     }
 

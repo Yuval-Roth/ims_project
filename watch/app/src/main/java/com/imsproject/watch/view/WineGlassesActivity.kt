@@ -80,7 +80,7 @@ class WineGlassesActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
-        viewModel.onCreate(intent)
+        viewModel.onCreate(intent,applicationContext)
         try{
             sound = WavPlayer(applicationContext)
             sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)

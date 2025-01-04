@@ -1,5 +1,6 @@
 package com.imsproject.watch.viewmodel
 
+import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -78,8 +79,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    override fun onCreate(intent: Intent) {
-        super.onCreate(intent)
+    override fun onCreate(intent: Intent, context: Context) {
+        super.onCreate(intent,context)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.IO) {
