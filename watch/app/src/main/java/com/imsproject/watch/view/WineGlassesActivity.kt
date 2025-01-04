@@ -81,10 +81,15 @@ class WineGlassesActivity : ComponentActivity() {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent)
-        sound = WavPlayer(applicationContext)
-        sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
-        sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
-        sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
+        try{
+            sound = WavPlayer(applicationContext)
+            sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
+            sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
+            sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
+        } catch (e: IllegalArgumentException){
+            val msg = e.message ?: "Unknown error"
+            viewModel.exitWithError(msg, Result.Code.BAD_RESOURCE)
+        }
 
         setContent {
             Main()

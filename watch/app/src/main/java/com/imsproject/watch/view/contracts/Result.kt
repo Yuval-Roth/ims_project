@@ -9,7 +9,8 @@ data class Result(val code: Code, val errorMessage: String? = null) {
         UDP_EXCEPTION,
         UNEXPECTED_REQUEST,
         BAD_REQUEST,
-        UNKNOWN_ERROR;
+        UNKNOWN_ERROR,
+        BAD_RESOURCE;
 
         fun prettyName(): String{
             return this.name.replace("_", " ").lowercase()

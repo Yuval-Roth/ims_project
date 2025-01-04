@@ -83,6 +83,13 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
         }
     }
 
+    fun exitWithError(string: String, code: Result.Code) {
+        clearListeners() // clear the listeners to prevent any further messages from being processed.
+        _error.value = string
+        _resultCode.value = code
+        _state.value = State.TERMINATED
+    }
+
     // ================================================================================ |
     // ============================ PROTECTED METHODS ================================= |
     // ================================================================================ |
@@ -121,13 +128,6 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
                 exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
             }
         }
-    }
-
-    protected fun exitWithError(string: String, code: Result.Code) {
-        clearListeners() // clear the listeners to prevent any further messages from being processed.
-        _error.value = string
-        _resultCode.value = code
-        _state.value = State.TERMINATED
     }
 
     protected fun exitOk() {

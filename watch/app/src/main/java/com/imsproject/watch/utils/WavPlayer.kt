@@ -27,10 +27,20 @@ class WavPlayer(private val context: Context) {
      * the wav file must have the following parameters:
      * - 16 bit PCM
      * - 44100 Hz sample rate
+     * - no compression
      * - stereo
+     *
+     * @throws IllegalArgumentException if the wav file is incompatible
      */
+    @Throws (IllegalArgumentException::class)
     fun load(@IntRange(0, 31) trackNumber: Int, resId: Int) {
-        val wav = WavFile.parse(context.resources.openRawResource(resId).readBytes())
+        val resourceName = context.resources.getResourceName(resId).split("raw/").last()
+        val wav: WavFile
+        try{
+            wav = WavFile.parse(context.resources.openRawResource(resId).readBytes())
+        } catch (e: WavFile.IncompatibleWavFileException){
+            throw IllegalArgumentException("Incompatible wav file '$resourceName': ${e.message}")
+        }
         wavs[trackNumber] = wav
         tracks[trackNumber] = createAudioTrack(wav)
     }
@@ -47,7 +57,7 @@ class WavPlayer(private val context: Context) {
         track.play()
         jobs[trackNumber]?.cancel() // cancel previous job if it exists
         jobs[trackNumber] = scope.launch {
-            delay((duration * 1000).toLong())
+            delay((duration * 1000.0).toLong())
             onFinished()
             track.stop() // stop the track so it can be played again
         }
@@ -92,7 +102,11 @@ class WavPlayer(private val context: Context) {
     }
 
     fun releaseAll() {
-        tracks.forEach { it?.release() }
+        for (i in 0 until 32) {
+            if(tracks[i] != null){
+                release(i)
+            }
+        }
     }
 
     fun setVolume(
