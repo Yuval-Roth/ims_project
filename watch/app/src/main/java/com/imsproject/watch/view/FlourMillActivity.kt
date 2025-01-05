@@ -28,8 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
@@ -40,11 +42,16 @@ import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.AXLE_HANDLE_LENGTH
 import com.imsproject.watch.AXLE_WIDTH
 import com.imsproject.watch.BEZIER_START_DISTANCE
+import com.imsproject.watch.BROWN_COLOR
 import com.imsproject.watch.CONTROL_POINT_DISTANCE
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
+import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.LIGHT_BROWN_COLOR
+import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.STRETCH_PEAK_DECAY
 import com.imsproject.watch.STRETCH_POINT_DISTANCE
@@ -218,12 +225,16 @@ class FlourMillActivity : ComponentActivity() {
             }
 
             // =============== Draw background ================ |
-
+            Box(
+                modifier = Modifier.Companion.fillMaxSize()
+                    .background(color = BROWN_COLOR)
+            )
             Box( // ground
                 modifier = Modifier.Companion
                     .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
-                    .background(color = LIGHT_BLUE_COLOR)
+                    .background(color = LIGHT_GRAY_COLOR)
+                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
             )
 
             Box( // center axis

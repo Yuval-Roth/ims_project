@@ -25,10 +25,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -51,6 +54,7 @@ import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import com.imsproject.watch.R
+import com.imsproject.watch.SCREEN_RADIUS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -137,7 +141,9 @@ class WaterRipplesActivity : ComponentActivity() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = DARK_BACKGROUND_COLOR),
+                .background(color = DARK_BACKGROUND_COLOR)
+                .shadow(elevation = (SCREEN_RADIUS * 0.25f).dp, CircleShape, spotColor = Color.Cyan.copy(alpha = 0.5f))
+            ,
             contentAlignment = Alignment.Center
         ) {
 
