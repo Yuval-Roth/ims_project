@@ -301,7 +301,8 @@ class WineGlassesActivity : ComponentActivity() {
                     .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
                     .background(color = DARK_BACKGROUND_COLOR)
-                    .shadow((SCREEN_RADIUS* 0.2f).dp, CircleShape, spotColor = Color.Red)
+                    .shadow((SCREEN_RADIUS* 0.3f).dp, CircleShape, spotColor = Color.Red)
+                    .shadow((SCREEN_RADIUS* 0.3f).dp, CircleShape, spotColor = Color.Red.copy(alpha = 0.5f))
             )
 
             // =================== Draw arcs =================== |
