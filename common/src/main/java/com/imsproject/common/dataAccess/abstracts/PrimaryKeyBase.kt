@@ -8,10 +8,9 @@ abstract class PrimaryKeyBase (private vararg val columnNames: String) : Primary
      * Sets the value of the column with the given name
      * If the value is null, it will remove the value for the column
      */
-    protected fun setValue(columnName: String, value: Any?) {
-        if(value == null) {
-            values.remove(columnName)
-            return
+    protected fun setValue(columnName: String, value: Any) {
+        if(columnName !in columnNames){
+            throw IllegalArgumentException("Column name $columnName is not a primary key column")
         }
         values[columnName] = value
     }

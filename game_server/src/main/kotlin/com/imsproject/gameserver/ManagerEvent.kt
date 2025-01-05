@@ -25,7 +25,7 @@ class ManagerEvent internal constructor (
 
     companion object {
         fun fromJson(json: String): ManagerEvent {
-            return JsonUtils.deserialize(json, ManagerEvent::class.java)
+            return JsonUtils.deserialize(json)
         }
 
         fun builder(type: Type): ManagerEventBuilder {

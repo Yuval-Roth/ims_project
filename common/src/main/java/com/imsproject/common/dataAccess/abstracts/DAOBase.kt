@@ -8,84 +8,71 @@ import java.util.*
 
 abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     protected val cursor: SQLExecutor,
-    protected val TABLE_NAME: String
+    protected val tableName: String
 ) : DAO<T, PK> {
-
-    protected val createTableQueryBuilder = CreateTableQueryBuilder.create(TABLE_NAME)
 
     init {
         initTable()
     }
 
-    @Throws(DaoException::class)
-    protected fun initTable() {
-        initializeCreateTableQueryBuilder()
-        val query = createTableQueryBuilder.build()
-        try {
-            cursor.executeWrite(query)
-        } catch (e: SQLException) {
-            throw DaoException("Failed to initialize table $TABLE_NAME", e)
-        }
-    }
-
     /**
-     * Used to insert data into [DAOBase.createTableQueryBuilder].
+     * Used to automatically create a table in the database if it does not exist.
      *
      * in order to add columns and foreign keys to the table use:
      * 1. [CreateTableQueryBuilder.addColumn]
-     * 2. [CreateTableQueryBuilder.addForeignKey]<br></br><br></br>
+     * 2. [CreateTableQueryBuilder.addForeignKey]
      * 3. [CreateTableQueryBuilder.addCompositeForeignKey]
      */
-    protected abstract fun initializeCreateTableQueryBuilder()
+    protected abstract fun tableQueryBuilder() : CreateTableQueryBuilder
 
-    protected abstract fun getObjectFromResultSet(resultSet: OfflineResultSet): T
+    protected abstract fun buildObjectFromResultSet(resultSet: OfflineResultSet): T
 
     @Throws(DaoException::class)
     override fun select(key: PK): T {
-        val values = keyToValues(key)
-        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
+        val values = key.values()
+        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(tableName))
         expandWhereClause(key, preparedQuery)
 
         val resultSet: OfflineResultSet
         try {
             resultSet = cursor.executeRead(preparedQuery.toString(), *values)
         } catch (e: SQLException) {
-            throw DaoException("Failed to select from table $TABLE_NAME", e)
+            throw DaoException("Failed to select from table $tableName", e)
         }
 
         if (resultSet.next()) {
-            return getObjectFromResultSet(resultSet)
+            return buildObjectFromResultSet(resultSet)
         } else {
-            throw DaoException("Failed to select from table $TABLE_NAME")
+            throw DaoException("Failed to select from table $tableName")
         }
     }
 
     @Throws(DaoException::class)
     override fun selectAll(): List<T> {
-        val query = "SELECT * FROM %s;".format(TABLE_NAME)
+        val query = "SELECT * FROM %s;".format(tableName)
         val resultSet: OfflineResultSet
         try {
             resultSet = cursor.executeRead(query)
         } catch (e: SQLException) {
-            throw DaoException("Failed to select all from table $TABLE_NAME", e)
+            throw DaoException("Failed to select all from table $tableName", e)
         }
         val objects: MutableList<T> = LinkedList()
         while (resultSet.next()) {
-            objects.add(getObjectFromResultSet(resultSet))
+            objects.add(buildObjectFromResultSet(resultSet))
         }
         return objects
     }
 
     @Throws(DaoException::class)
     override fun delete(key: PK) {
-        val values = keyToValues(key)
-        val preparedQuery = StringBuilder("DELETE FROM %s WHERE ".format(TABLE_NAME))
+        val values = key.values()
+        val preparedQuery = StringBuilder("DELETE FROM %s WHERE ".format(tableName))
         expandWhereClause(key, preparedQuery)
 
         try {
             cursor.executeWrite(preparedQuery.toString(), *values)
         } catch (e: SQLException) {
-            throw DaoException("Failed to delete from table $TABLE_NAME", e)
+            throw DaoException("Failed to delete from table $tableName", e)
         }
     }
 
@@ -104,7 +91,9 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         } catch (e: DaoException) {
             try {
                 cursor.rollback()
-            } catch (ignored: SQLException) { }
+            } catch (e2: SQLException) {
+                e.addSuppressed(e2)
+            }
             throw e
         }
 
@@ -117,18 +106,32 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
 
     @Throws(DaoException::class)
     override fun exists(key: PK): Boolean {
-        val values = keyToValues(key)
-        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
+        val values = key.values()
+        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(tableName))
         expandWhereClause(key, preparedQuery)
 
         val resultSet: OfflineResultSet
         try {
             resultSet = cursor.executeRead(preparedQuery.toString(), *values)
         } catch (e: SQLException) {
-            throw DaoException("Failed to check if exists in table $TABLE_NAME", e)
+            throw DaoException("Failed to check if exists in table $tableName", e)
         }
 
         return resultSet.next()
+    }
+
+    /**
+     * Upon instantiation, this method is called to create the table in the database if it does not exist.
+     */
+    @Throws(DaoException::class)
+    private fun initTable() {
+        val tableQueryBuilder = tableQueryBuilder()
+        val query = tableQueryBuilder.build()
+        try {
+            cursor.executeWrite(query)
+        } catch (e: SQLException) {
+            throw DaoException("Failed to initialize table $tableName", e)
+        }
     }
 
     private fun expandWhereClause(key: PK, preparedQuery: StringBuilder) {
@@ -141,11 +144,5 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
                 preparedQuery.append(";")
             }
         }
-    }
-
-    private fun keyToValues(key: PK): Array<Any> {
-        return key.columnNames().map {
-            key.getValue(it) ?: throw DaoException("Primary key value for column $it is null")
-        }.toTypedArray()
     }
 }

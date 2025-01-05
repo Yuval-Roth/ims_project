@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 object JsonUtils {
-    private val gson: Gson = GsonBuilder()
+    val gson: Gson = GsonBuilder()
         //.setPrettyPrinting()
         .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeAdapter())
         .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
@@ -15,13 +15,13 @@ object JsonUtils {
         .enableComplexMapKeySerialization()
         .create()
 
-    fun <T> serialize(obj: T): String {
+    fun serialize(obj: Any): String {
         if (obj is String) return obj
         return gson.toJson(obj)
     }
 
-    fun <T> deserialize(json: String, typeOfT: Type): T {
-        return gson.fromJson(json, typeOfT)
+    inline fun <reified T> deserialize(json: String): T {
+        return gson.fromJson(json, T::class.java)
     }
 
     private class LocalDateTimeAdapter : JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {

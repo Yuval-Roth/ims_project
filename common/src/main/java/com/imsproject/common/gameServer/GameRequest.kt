@@ -55,6 +55,6 @@ data class GameRequest internal constructor(
         val pong = builder(Type.PONG).build().toJson()
         val heartbeat = builder(Type.HEARTBEAT).build().toJson()
 
-        fun fromJson(json: String) = JsonUtils.deserialize<GameRequest>(json, GameRequest::class.java)
+        fun fromJson(json: String) : GameRequest = JsonUtils.deserialize(json)
     }
 }

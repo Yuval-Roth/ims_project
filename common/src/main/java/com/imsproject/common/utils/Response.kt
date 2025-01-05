@@ -2,12 +2,14 @@ package com.imsproject.common.utils
 
 import com.imsproject.common.utils.JsonUtils.deserialize
 import com.imsproject.common.utils.JsonUtils.serialize
-import java.lang.reflect.Type
 
 class Response {
-    private val message: String?
-    private val success: Boolean
-    private val payload: List<String>?
+    val message: String?
+    val success: Boolean
+    /**
+     * raw payload list, contains either actual strings or serialized objects
+     */
+    val payload: List<String>?
 
     /**
      * Each object in the payload list parameter will be serialized using [JsonUtils.serialize]
@@ -28,31 +30,18 @@ class Response {
      */
     constructor(success: Boolean) : this(null, success, null)
 
-    fun message(): String? {
-        return message
-    }
-
-    fun success(): Boolean {
-        return success
-    }
 
     /**
-     * examples for a type definition:
-     * 1. `Type type = new TypeToken<LinkedList<SomeClass>>(){}.getType();`
-     * 2. `Type type = SomeClass.class;`
-     *
-     * @param typeOfT Type of the object for deserialization
-     * @return Deserialized object of type T. If the payload is null, an empty list will be returned
+     * This method will deserialize the payload list to the specified type and return it as a typed list.
      */
-    fun <T> payload(typeOfT: Type): List<T>? {
+    inline fun <reified T> typedPayload(): List<T>? {
         if (payload == null) {
             return null
+        } else if (T::class == String::class){
+            @Suppress("UNCHECKED_CAST")
+            return payload as List<T>
         }
-        return payload.map{ deserialize(it, typeOfT) }
-    }
-
-    fun payload(): List<String>? {
-        return payload
+        return payload.map{ deserialize(it) }
     }
 
     /**
@@ -67,7 +56,7 @@ class Response {
          * This method will deserialize the json string using [JsonUtils.deserialize]
          */
         fun fromJson(json: String): Response {
-            return deserialize(json, Response::class.java)
+            return deserialize(json)
         }
 
         fun getOk(): String {

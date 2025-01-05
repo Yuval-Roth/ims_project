@@ -42,7 +42,7 @@ class RestHandler(
         @PathVariable action: String,
         @RequestBody body : String
     ): ResponseEntity<String> {
-        val credentials = JsonUtils.deserialize<Credentials>(body, Credentials::class.java)
+        val credentials : Credentials = JsonUtils.deserialize(body)
         try{
             when(action){
                 "add" -> authController.createUser(credentials)

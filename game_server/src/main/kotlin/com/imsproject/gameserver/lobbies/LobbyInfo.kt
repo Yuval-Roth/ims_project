@@ -18,7 +18,7 @@ data class LobbyInfo(
 
     companion object {
         fun fromJson(message: String): LobbyInfo {
-            return JsonUtils.deserialize(message, this::class.java)
+            return JsonUtils.deserialize(message)
         }
     }
 }

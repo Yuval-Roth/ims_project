@@ -23,6 +23,6 @@ class TimeRequest private constructor(
         )
         fun nanoTime() = TimeRequest(Type.NANO_TIME, System.nanoTime())
         fun request(type: Type) = TimeRequest(type, null)
-        fun fromJson(json: String) : TimeRequest = JsonUtils.deserialize(json, TimeRequest::class.java)
+        fun fromJson(json: String) : TimeRequest = JsonUtils.deserialize(json)
     }
 }

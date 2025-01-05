@@ -1,6 +1,7 @@
+@file:Suppress("ClassName")
+
 package com.imsproject.common.dataAccess
 
-@Suppress("ClassName")
 class CreateTableQueryBuilder private constructor(private val tableName: String) {
 
     private val tableColumns: ArrayList<Column> = ArrayList()
@@ -9,75 +10,18 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
     private val checks: ArrayList<String> = ArrayList()
     private val query: StringBuilder = StringBuilder()
 
-    enum class ColumnType {
-        INTEGER,
-        TEXT,
-        REAL,
-        BLOB,
-        NUMERIC
-    }
-
-    enum class ColumnModifier {
-        NOT_NULL,
-        UNIQUE,
-        PRIMARY_KEY,
-        AUTO_INCREMENT;
-
-        override fun toString(): String {
-            return super.toString().replace("_", " ")
-        }
-    }
-
-    enum class ON_DELETE {
-        CASCADE,
-        SET_NULL,
-        SET_DEFAULT,
-        RESTRICT,
-        NO_ACTION;
-
-        override fun toString(): String {
-            return "ON DELETE " + super.toString().replace("_", " ")
-        }
-    }
-
-    enum class ON_UPDATE {
-        CASCADE,
-        SET_NULL,
-        SET_DEFAULT,
-        RESTRICT,
-        NO_ACTION;
-
-        override fun toString(): String {
-            return "ON UPDATE " + super.toString().replace("_", " ")
-        }
-    }
-
-    /**
-     * default value for the column is `null`
-     */
     fun addColumn(
         columnName: String,
         type: ColumnType,
-        vararg modifiers: ColumnModifier
-    ) = addColumn(columnName, type, null, *modifiers)
-
-    fun addColumn(
-        columnName: String,
-        type: ColumnType,
-        defaultValue: String?,
-        vararg modifiers: ColumnModifier
+        defaultValue: String? = null,
+        modifiers: ColumnModifier = ColumnModifier
     ) = apply {
-        val isPrimaryKey = modifiers.contains(ColumnModifier.PRIMARY_KEY)
+        val isPrimaryKey = modifiers.contains(ColumnModifier.Type.PRIMARY_KEY)
         if (isPrimaryKey) {
             primaryKeys.add(columnName)
         }
 
-        val filteredModifiers = modifiers
-            .distinct()
-            .filter{ it != ColumnModifier.PRIMARY_KEY }
-            .toTypedArray()
-
-        tableColumns.add(Column(columnName, type, defaultValue, filteredModifiers))
+        tableColumns.add(Column(columnName, type, defaultValue, modifiers.toArray()))
         return this
     }
 
@@ -224,7 +168,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         val name: String,
         val type: ColumnType = ColumnType.TEXT,
         val defaultValue: String? = null,
-        val modifiers: Array<ColumnModifier> = emptyArray()
+        val modifiers: Array<ColumnModifier.Type> = emptyArray()
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -272,5 +216,63 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         fun create(tableName: String): CreateTableQueryBuilder {
             return CreateTableQueryBuilder(tableName)
         }
+    }
+}
+
+object ColumnModifier {
+    internal enum class Type {
+        NOT_NULL,
+        UNIQUE,
+        PRIMARY_KEY,
+        AUTO_INCREMENT;
+        override fun toString(): String {
+            return super.toString().replace("_", " ")
+        }
+    }
+
+    private val modifiers = mutableSetOf<Type>()
+
+    val NOT_NULL : ColumnModifier
+        get() = apply { modifiers.add(Type.NOT_NULL) }
+    val UNIQUE : ColumnModifier
+        get() = apply { modifiers.add(Type.UNIQUE) }
+    val PRIMARY_KEY : ColumnModifier
+        get() = apply { modifiers.add(Type.PRIMARY_KEY) }
+    val AUTO_INCREMENT : ColumnModifier
+        get() = apply { modifiers.add(Type.AUTO_INCREMENT) }
+
+    internal fun contains(modifier: Type) = modifiers.contains(modifier)
+    internal fun toArray() = modifiers.toTypedArray()
+}
+
+enum class ColumnType {
+    INTEGER,
+    TEXT,
+    REAL,
+    BLOB,
+    NUMERIC
+}
+
+enum class ON_DELETE {
+    CASCADE,
+    SET_NULL,
+    SET_DEFAULT,
+    RESTRICT,
+    NO_ACTION;
+
+    override fun toString(): String {
+        return "ON DELETE " + super.toString().replace("_", " ")
+    }
+}
+
+enum class ON_UPDATE {
+    CASCADE,
+    SET_NULL,
+    SET_DEFAULT,
+    RESTRICT,
+    NO_ACTION;
+
+    override fun toString(): String {
+        return "ON UPDATE " + super.toString().replace("_", " ")
     }
 }
