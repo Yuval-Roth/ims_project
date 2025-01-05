@@ -21,7 +21,7 @@ abstract class CounterDAOBase protected constructor(
         createTableQueryBuilder.addColumn(
             columnName,
             ColumnType.INTEGER,
-            modifiers = ColumnModifier().NOT_NULL
+            modifiers = ColumnModifier.NOT_NULL
         )
 
         var query = createTableQueryBuilder.build()

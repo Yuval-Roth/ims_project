@@ -14,7 +14,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         columnName: String,
         type: ColumnType,
         defaultValue: String? = null,
-        modifiers: ColumnModifier = ColumnModifier()
+        modifiers: ColumnModifier = ColumnModifier.NO_MODIFIERS
     ) = apply {
         val isPrimaryKey = modifiers.contains(ColumnModifier.Type.PRIMARY_KEY)
         if (isPrimaryKey) {
@@ -228,7 +228,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 }
 
 @Suppress("PropertyName")
-class ColumnModifier {
+class ColumnModifier private constructor() {
     internal enum class Type {
         NOT_NULL,
         UNIQUE,
@@ -252,6 +252,19 @@ class ColumnModifier {
 
     internal fun contains(modifier: Type) = modifiers.contains(modifier)
     internal fun toArray() = modifiers.toTypedArray()
+
+    companion object {
+        internal val NO_MODIFIERS : ColumnModifier
+            get() = ColumnModifier()
+        val NOT_NULL : ColumnModifier
+            get() = ColumnModifier().apply { modifiers.add(Type.NOT_NULL) }
+        val UNIQUE : ColumnModifier
+            get() = ColumnModifier().apply { modifiers.add(Type.UNIQUE) }
+        val PRIMARY_KEY : ColumnModifier
+            get() = ColumnModifier().apply { modifiers.add(Type.PRIMARY_KEY) }
+        val AUTO_INCREMENT : ColumnModifier
+            get() = ColumnModifier().apply { modifiers.add(Type.AUTO_INCREMENT) }
+    }
 }
 
 enum class ColumnType {
