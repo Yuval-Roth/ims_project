@@ -14,14 +14,17 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         columnName: String,
         type: ColumnType,
         defaultValue: String? = null,
-        modifiers: ColumnModifier = ColumnModifier
+        modifiers: ColumnModifier = ColumnModifier()
     ) = apply {
         val isPrimaryKey = modifiers.contains(ColumnModifier.Type.PRIMARY_KEY)
         if (isPrimaryKey) {
             primaryKeys.add(columnName)
         }
 
-        tableColumns.add(Column(columnName, type, defaultValue, modifiers.toArray()))
+        val filteredModifiers = modifiers.toArray()
+            .filter { it != ColumnModifier.Type.PRIMARY_KEY }.toTypedArray()
+
+        tableColumns.add(Column(columnName, type, defaultValue, filteredModifiers))
         return this
     }
 
@@ -93,12 +96,14 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 
     private fun buildAllColumns() {
         for ((name, type, defaultValue, modifiers) in tableColumns) {
+            query.append("    ")
             query.append(String.format("\"%s\" %s", name, type))
             for (modifier in modifiers) {
                 query.append(String.format(" %s", modifier))
             }
             if (! defaultValue.isNullOrEmpty()) {
-                query.append(String.format(" DEFAULT %s", defaultValue))
+                val escapedDefaultValue = if (type == ColumnType.TEXT) "'$defaultValue'" else defaultValue
+                query.append(String.format(" DEFAULT %s", escapedDefaultValue))
             }
             query.append(",\n")
         }
@@ -106,6 +111,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 
     private fun buildForeignKeys() {
         for (fk in foreignKeys) {
+            query.append("    ")
             query.append(
                 String.format(
                     "CONSTRAINT FK_%s FOREIGN KEY (%s) REFERENCES \"%s\"(%s)",
@@ -137,6 +143,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 
     private fun buildPrimaryKeys() {
         if (primaryKeys.isNotEmpty()) {
+            query.append("    ")
             query.append(
                 String.format(
                     "PRIMARY KEY(%s),\n",
@@ -149,6 +156,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
     private fun buildChecks() {
         var i = 1
         for (check in checks) {
+            query.append("    ")
             query.append(String.format("CONSTRAINT CHK_%d CHECK (%s),\n", i++, check))
         }
     }
@@ -219,7 +227,8 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
     }
 }
 
-object ColumnModifier {
+@Suppress("PropertyName")
+class ColumnModifier {
     internal enum class Type {
         NOT_NULL,
         UNIQUE,

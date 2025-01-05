@@ -47,7 +47,7 @@ fun cartesianToPolar(x: Double, y:Double) : Pair<Float,Float> {
             x - SCREEN_CENTER.x
         ).toDouble()
     ).toFloat()
-    return Pair(distance, angle)
+    return distance to angle
 }
 
 /**
@@ -66,7 +66,7 @@ fun polarToCartesian(
     val x = centerX + distanceFromCenter * cos(angleRadians)
     val y = centerY + distanceFromCenter * sin(angleRadians)
 
-    return Pair(x.toFloat(), y.toFloat())
+    return x.toFloat() to y.toFloat()
 }
 
 /**
@@ -170,7 +170,7 @@ fun calculateTriangleThirdPoint(
     val p3X = p2X + scaledX
     val p3Y = p2Y + scaledY
 
-    return Pair(p3X, p3Y)
+    return p3X to p3Y
 }
 
 fun Float.sign() = if(this < 0) -1 else if (this > 0) 1 else 0
