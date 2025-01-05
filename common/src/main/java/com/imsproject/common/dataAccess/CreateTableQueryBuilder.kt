@@ -14,15 +14,15 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         columnName: String,
         type: ColumnType,
         defaultValue: String? = null,
-        modifiers: ColumnModifier = ColumnModifier.NO_MODIFIERS
+        modifiers: ColumnModifiers = ColumnModifiers.NO_MODIFIERS
     ) = apply {
-        val isPrimaryKey = modifiers.contains(ColumnModifier.Type.PRIMARY_KEY)
+        val isPrimaryKey = modifiers.contains(ColumnModifiers.Type.PRIMARY_KEY)
         if (isPrimaryKey) {
             primaryKeys.add(columnName)
         }
 
         val filteredModifiers = modifiers.toArray()
-            .filter { it != ColumnModifier.Type.PRIMARY_KEY }.toTypedArray()
+            .filter { it != ColumnModifiers.Type.PRIMARY_KEY }.toTypedArray()
 
         tableColumns.add(Column(columnName, type, defaultValue, filteredModifiers))
         return this
@@ -176,7 +176,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         val name: String,
         val type: ColumnType = ColumnType.TEXT,
         val defaultValue: String? = null,
-        val modifiers: Array<ColumnModifier.Type> = emptyArray()
+        val modifiers: Array<ColumnModifiers.Type> = emptyArray()
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -228,7 +228,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 }
 
 @Suppress("PropertyName")
-class ColumnModifier private constructor() {
+class ColumnModifiers private constructor() {
     internal enum class Type {
         NOT_NULL,
         UNIQUE,
@@ -241,29 +241,29 @@ class ColumnModifier private constructor() {
 
     private val modifiers = mutableSetOf<Type>()
 
-    val NOT_NULL : ColumnModifier
+    val NOT_NULL : ColumnModifiers
         get() = apply { modifiers.add(Type.NOT_NULL) }
-    val UNIQUE : ColumnModifier
+    val UNIQUE : ColumnModifiers
         get() = apply { modifiers.add(Type.UNIQUE) }
-    val PRIMARY_KEY : ColumnModifier
+    val PRIMARY_KEY : ColumnModifiers
         get() = apply { modifiers.add(Type.PRIMARY_KEY) }
-    val AUTO_INCREMENT : ColumnModifier
+    val AUTO_INCREMENT : ColumnModifiers
         get() = apply { modifiers.add(Type.AUTO_INCREMENT) }
 
     internal fun contains(modifier: Type) = modifiers.contains(modifier)
     internal fun toArray() = modifiers.toTypedArray()
 
     companion object {
-        internal val NO_MODIFIERS : ColumnModifier
-            get() = ColumnModifier()
-        val NOT_NULL : ColumnModifier
-            get() = ColumnModifier().apply { modifiers.add(Type.NOT_NULL) }
-        val UNIQUE : ColumnModifier
-            get() = ColumnModifier().apply { modifiers.add(Type.UNIQUE) }
-        val PRIMARY_KEY : ColumnModifier
-            get() = ColumnModifier().apply { modifiers.add(Type.PRIMARY_KEY) }
-        val AUTO_INCREMENT : ColumnModifier
-            get() = ColumnModifier().apply { modifiers.add(Type.AUTO_INCREMENT) }
+        internal val NO_MODIFIERS : ColumnModifiers
+            get() = ColumnModifiers()
+        val NOT_NULL : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.NOT_NULL) }
+        val UNIQUE : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.UNIQUE) }
+        val PRIMARY_KEY : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.PRIMARY_KEY) }
+        val AUTO_INCREMENT : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.AUTO_INCREMENT) }
     }
 }
 
