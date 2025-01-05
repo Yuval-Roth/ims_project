@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -49,18 +49,19 @@ const val UNDEFINED_ANGLE = 600f
 const val ARC_DEFAULT_ALPHA = 0.8f
 const val MAX_ANGLE_SKEW = 60f
 const val MIN_ANGLE_SKEW = 15f
+var OUTER_TOUCH_POINT = 0f
+var INNER_TOUCH_POINT = 0f
 
 // my arc
-const val MY_STROKE_WIDTH = 30
-const val MY_SWEEP_ANGLE = 30f
+const val MY_STROKE_WIDTH = 15
+const val MY_SWEEP_ANGLE = 45f
 var MY_RADIUS_OUTER_EDGE = 0f
-var MY_RADIUS_INNER_EDGE = 0f
 var MY_ARC_TOP_LEFT = Offset(0f,0f)
 var MY_ARC_SIZE = Size(0f,0f)
 
 // opponent arc
-const val OPPONENT_STROKE_WIDTH = 30 / 4
-const val OPPONENT_SWEEP_ANGLE = 60f
+const val OPPONENT_STROKE_WIDTH = 15
+const val OPPONENT_SWEEP_ANGLE = 45f
 var OPPONENT_RADIUS_OUTER_EDGE = 0f
 var OPPONENT_ARC_TOP_LEFT = Offset(0f,0f)
 var OPPONENT_ARC_SIZE = Size(0f,0f)
@@ -106,11 +107,12 @@ fun initProperties(screenWidth : Int, screenHeight : Int){
     RIPPLE_MAX_SIZE = SCREEN_RADIUS.toInt()
 
     // Wine Glasses
-    MY_RADIUS_OUTER_EDGE = SCREEN_RADIUS
-    MY_RADIUS_INNER_EDGE = SCREEN_RADIUS * 0.2f
-    MY_ARC_TOP_LEFT = Offset(SCREEN_CENTER.x - MY_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - MY_RADIUS_OUTER_EDGE)
+    OUTER_TOUCH_POINT = SCREEN_RADIUS
+    INNER_TOUCH_POINT = SCREEN_RADIUS * 0.2f
+    MY_RADIUS_OUTER_EDGE = SCREEN_RADIUS * 0.6f
+    MY_ARC_TOP_LEFT = Offset(SCREEN_CENTER.x - MY_RADIUS_OUTER_EDGE , SCREEN_CENTER.y - MY_RADIUS_OUTER_EDGE)
     MY_ARC_SIZE = Size(MY_RADIUS_OUTER_EDGE * 2, MY_RADIUS_OUTER_EDGE * 2)
-    OPPONENT_RADIUS_OUTER_EDGE = SCREEN_RADIUS * 0.2f
+    OPPONENT_RADIUS_OUTER_EDGE = SCREEN_RADIUS * 0.6f
     OPPONENT_ARC_TOP_LEFT = Offset(SCREEN_CENTER.x - OPPONENT_RADIUS_OUTER_EDGE, SCREEN_CENTER.y - OPPONENT_RADIUS_OUTER_EDGE)
     OPPONENT_ARC_SIZE = Size(OPPONENT_RADIUS_OUTER_EDGE * 2, OPPONENT_RADIUS_OUTER_EDGE * 2)
 

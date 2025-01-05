@@ -16,10 +16,11 @@ import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.INNER_TOUCH_POINT
 import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
-import com.imsproject.watch.MY_RADIUS_INNER_EDGE
 import com.imsproject.watch.MY_SWEEP_ANGLE
+import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.model.Position
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.calculateAngleDiff
@@ -101,7 +102,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     fun setTouchPoint(x: Double, y: Double) {
         val (distance,rawAngle) = cartesianToPolar(x, y)
-        val inBounds = distance in MY_RADIUS_INNER_EDGE..MY_RADIUS_OUTER_EDGE
+        val inBounds = distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
         if(inBounds){
             updateMyArc(rawAngle)
             _released.value = false

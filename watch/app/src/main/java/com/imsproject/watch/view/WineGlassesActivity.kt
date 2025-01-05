@@ -227,6 +227,7 @@ class WineGlassesActivity : ComponentActivity() {
             }
 
             LaunchedEffect(released){
+                var playSound = false // TODO: remove this
                 if(playSound){
                     withContext(Dispatchers.IO){
                         if(released){
@@ -292,13 +293,13 @@ class WineGlassesActivity : ComponentActivity() {
 
             Box(
                 modifier = Modifier
-                    .fillMaxSize(0.8f)
+                    .fillMaxSize()
                     .clip(shape = CircleShape)
                     .background(color = LIGHT_BLUE_COLOR)
             )
             Box(
                 modifier = Modifier
-                    .fillMaxSize(0.6f)
+                    .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
                     .background(color = DARK_BACKGROUND_COLOR)
             )
@@ -332,6 +333,7 @@ class WineGlassesActivity : ComponentActivity() {
                         style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
                     )
                 }
+
                 if(touchingBezel){
                     drawCircle(
                         color = Color.Red.copy(alpha = bezelWarningAlpha),
