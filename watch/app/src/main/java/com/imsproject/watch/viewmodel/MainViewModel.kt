@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.java_websocket.exceptions.WebsocketNotConnectedException
-import java.util.Random
 
 private const val TAG = "MainViewModel"
 
@@ -28,7 +27,7 @@ class MainViewModel() : ViewModel() {
         ERROR
     }
 
-    private val model = MainModel(viewModelScope)
+    private var model = MainModel(viewModelScope)
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -127,10 +126,11 @@ class MainViewModel() : ViewModel() {
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
 
-    private fun handleGameRequest(request: GameRequest){
+    private suspend fun handleGameRequest(request: GameRequest){
         when (request.type){
             GameRequest.Type.PONG -> {}
             GameRequest.Type.HEARTBEAT -> {}
+            GameRequest.Type.END_GAME -> {}
             GameRequest.Type.JOIN_LOBBY -> {
                 val lobbyId = request.lobbyId ?: run {
                     Log.e(TAG, "handleGameRequest: JOIN_LOBBY request missing lobbyId")
@@ -216,10 +216,15 @@ class MainViewModel() : ViewModel() {
     }
 
     private fun fatalError(message: String) {
+        val oldModel = model
         _playerId.value = ""
         _lobbyId.value = ""
         _gameType.value = null
         _timeServerStartTime.value = -1
         showError("The application encountered a fatal error and must be restarted.\n$message")
+        model = MainModel(viewModelScope)
+        viewModelScope.launch(Dispatchers.IO) {
+            oldModel.closeAllResources()
+        }
     }
 }

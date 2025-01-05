@@ -8,7 +8,6 @@ import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.watch.model.MainModel.CallbackNotSetException
-import com.imsproject.watch.viewmodel.WineGlassesViewModel.Angle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -284,6 +283,27 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
+    suspend fun closeAllResources(){
+        try{
+            udpMessageListener?.cancel()
+            tcpMessageListener?.cancel()
+            heartBeatListener?.cancel()
+            udpMessageListener?.join()
+            tcpMessageListener?.join()
+            heartBeatListener?.join()
+            ws.closeBlocking()
+            udp.close()
+            timeServerUdp.close()
+            connected = false
+        } catch(e: Exception){
+            Log.e(TAG, "Failed to close resources", e)
+        }
+    }
+
+    // ======================================================================= |
+    // ======================== Private Methods ============================== |
+    // ======================================================================= |
+
     private suspend fun executeCallback(action: suspend () -> Unit){
         while(true){
             try{
@@ -294,10 +314,6 @@ class MainModel (private val scope : CoroutineScope) {
             }
         }
     }
-
-    // ======================================================================= |
-    // ======================== Private Methods ============================== |
-    // ======================================================================= |
 
     private fun initListeners() {
 
