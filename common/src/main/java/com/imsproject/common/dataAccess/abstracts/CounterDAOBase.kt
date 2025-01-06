@@ -10,10 +10,10 @@ abstract class CounterDAOBase protected constructor(
     private val columnName: String
 ) : CounterDAO {
 
-    init {
-        initTable()
-    }
-
+    /**
+     * Initializes the table in the database if it does not exist.
+     * @throws DaoException if an error occurred while trying to initialize the table
+     */
     @Throws(DaoException::class)
     protected fun initTable() {
         val createTableQueryBuilder = CreateTableQueryBuilder.create(tableName)

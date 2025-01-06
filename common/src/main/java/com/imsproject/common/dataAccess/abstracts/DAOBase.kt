@@ -6,20 +6,20 @@ import com.imsproject.common.dataAccess.OfflineResultSet
 import java.sql.SQLException
 import java.util.*
 
-abstract class DAOBase<T, PK : PrimaryKey>
-/**
- * @param exampleKey an example `PrimaryKey` to build the `WHERE` clause in the SQL queries.
- * The values it contains are irrelevant, only the column names are used.
- */
-protected constructor(
+abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     protected val cursor: SQLExecutor,
     protected val tableName: String,
-    exampleKey: PK
+    columnNames : Array<out String>,
 ) : DAO<T, PK> {
 
-    private val whereClause = buildWhereClause(exampleKey)
-    private val deleteQuery = "DELETE FROM %s %s;".format(tableName, whereClause)
-    private val selectQuery = "SELECT * FROM %s %s;".format(tableName, whereClause)
+    private val deleteQuery: String
+    private val selectQuery: String
+
+    init{
+        val whereClause = buildWhereClause(columnNames)
+        deleteQuery = "DELETE FROM $tableName $whereClause;"
+        selectQuery = "SELECT * FROM $tableName $whereClause;"
+    }
 
     /**
      * Used to automatically create a table in the database if it does not exist.
@@ -37,7 +37,7 @@ protected constructor(
     protected abstract fun buildObjectFromResultSet(resultSet: OfflineResultSet): T
 
     /**
-     * Initializes the table in the database.
+     * Initializes the table in the database if it does not exist.
      */
     @Throws(DaoException::class)
     protected fun initTable() {
@@ -69,7 +69,7 @@ protected constructor(
 
     @Throws(DaoException::class)
     override fun selectAll(): List<T> {
-        val query = "SELECT * FROM %s;".format(tableName)
+        val query = "SELECT * FROM $tableName;"
         val resultSet: OfflineResultSet
         try {
             resultSet = cursor.executeRead(query)
@@ -154,11 +154,10 @@ protected constructor(
         return output
     }
 
-    private fun buildWhereClause(key: PK) {
+    private fun buildWhereClause(columnNames: Array<out String>) {
         val builder = StringBuilder("WHERE ")
-        val columnNames = key.columnNames()
         for (i in columnNames.indices) {
-            builder.append("%s = ?".format(columnNames[i]))
+            builder.append("${columnNames[i]} = ?")
             if (i != columnNames.size - 1) {
                 builder.append(" AND ")
             }
