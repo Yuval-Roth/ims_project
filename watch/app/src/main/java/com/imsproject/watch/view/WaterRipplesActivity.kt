@@ -148,7 +148,7 @@ class WaterRipplesActivity : ComponentActivity() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(color = DARK_BACKGROUND_COLOR)
-                .shadow(elevation = (SCREEN_RADIUS * 0.3f).dp, CircleShape, spotColor = Color.Cyan.copy(alpha = 0.5f))
+                .shadow(elevation = (SCREEN_RADIUS * 0.35f).dp, CircleShape, spotColor = Color.Cyan.copy(alpha = 0.5f))
             ,
             contentAlignment = Alignment.Center
         ) {
