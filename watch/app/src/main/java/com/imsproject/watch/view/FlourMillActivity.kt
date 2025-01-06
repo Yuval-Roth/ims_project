@@ -233,20 +233,24 @@ class FlourMillActivity : ComponentActivity() {
                 modifier = Modifier.Companion
                     .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
-                    .background(color = LIGHT_GRAY_COLOR)
-                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
+                    .background(color = LIGHT_BROWN_COLOR)
+                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = Color.Green)
+                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = Color.Green/*.copy(alpha = 0.5f)*/)
+//                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
+//                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
+//                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
             )
 
             Box( // center axis
                 modifier = Modifier.Companion
-                    .fillMaxSize(0.2f)
+                    .fillMaxSize(0.3f)
                     .clip(shape = CircleShape)
                     .background(color = GLOWING_YELLOW_COLOR)
             )
 
             Box( // center axis filler
                 modifier = Modifier.Companion
-                    .fillMaxSize(0.125f)
+                    .fillMaxSize(0.200f)
                     .clip(shape = CircleShape)
                     .background(color = DARK_BACKGROUND_COLOR)
             )

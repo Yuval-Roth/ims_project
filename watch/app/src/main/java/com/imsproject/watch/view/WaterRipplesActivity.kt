@@ -16,8 +16,10 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,9 +42,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
 import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
+import com.imsproject.watch.GLOWING_YELLOW_COLOR
+import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_WIDTH
@@ -142,13 +148,14 @@ class WaterRipplesActivity : ComponentActivity() {
             modifier = Modifier
                 .fillMaxSize()
                 .background(color = DARK_BACKGROUND_COLOR)
-                .shadow(elevation = (SCREEN_RADIUS * 0.25f).dp, CircleShape, spotColor = Color.Cyan.copy(alpha = 0.5f))
+                .shadow(elevation = (SCREEN_RADIUS * 0.3f).dp, CircleShape, spotColor = Color.Cyan.copy(alpha = 0.5f))
             ,
             contentAlignment = Alignment.Center
         ) {
 
             Button(
                 modifier = Modifier
+                    .border(BorderStroke(2.dp, DARK_BACKGROUND_COLOR.copy(alpha=0.5f)), CircleShape)
                     .size(WATER_RIPPLES_BUTTON_SIZE.dp)
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
@@ -165,6 +172,10 @@ class WaterRipplesActivity : ComponentActivity() {
                         }
                     },
                 onClick = {},
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = LIGHT_GRAY_COLOR,
+                    contentColor = Color.Black
+                )
             ){
                 // button content
             }

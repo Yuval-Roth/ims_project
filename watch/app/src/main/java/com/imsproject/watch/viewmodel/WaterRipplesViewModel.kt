@@ -15,6 +15,7 @@ import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.VIVID_ORANGE_COLOR
@@ -140,7 +141,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         } else {
             val ripple = if(actor == playerId){
                 // My click
-                Ripple(LIGHT_BLUE_COLOR, timestamp = timestamp, actor = actor)
+                Ripple(BLUE_COLOR, timestamp = timestamp, actor = actor)
             } else  {
                 // Other player's click
                 Ripple(GRAY_COLOR,0.5f,timestamp,actor)

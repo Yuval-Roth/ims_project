@@ -37,6 +37,7 @@ import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.ALMOST_WHITE_COLOR
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
@@ -294,7 +295,7 @@ class WineGlassesActivity : ComponentActivity() {
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(shape = CircleShape)
-                    .background(color = ALMOST_WHITE_COLOR)
+                    .background(color = Color(0xFFC0C0C0))
             )
             Box(
                 modifier = Modifier
@@ -325,7 +326,7 @@ class WineGlassesActivity : ComponentActivity() {
                 // draw opponent's arc
                 if (opponentArc.startAngle != UNDEFINED_ANGLE) {
                     drawArc(
-                        color = LIGHT_GRAY_COLOR.copy(alpha = opponentArc.currentAlpha),
+                        color = CYAN_COLOR.copy(alpha = opponentArc.currentAlpha),
                         startAngle = opponentArc.startAngle,
                         sweepAngle = OPPONENT_SWEEP_ANGLE,
                         useCenter = false,
