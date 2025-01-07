@@ -19,8 +19,7 @@ import java.util.*
 class GameRequestHandler(
     private val gameController: GameController,
     private val gameActionHandler: GameActionHandler,
-    private val clientController: ClientController,
-    private val managerEventsHandler: ManagerEventsHandler
+    private val clientController: ClientController
 ) : TextWebSocketHandler() {
 
     companion object {
@@ -84,12 +83,6 @@ class GameRequestHandler(
                     .build()
                     .toJson()
                     .also { session.send(it) }
-
-                //notify the manager
-                val event = ManagerEvent.builder(ManagerEvent.Type.PLAYER_CONNECTED)
-                    .playerId(client.id)
-                    .build()
-                managerEventsHandler.notify(event)
             }
 
             Type.EXIT -> session.close()
@@ -125,11 +118,6 @@ class GameRequestHandler(
         log.debug("Client disconnected: {}", client.id)
         clientController.removeClientHandler(client.id)
         gameController.onClientDisconnect(client)
-        //notify the manager
-        val event = ManagerEvent.builder(ManagerEvent.Type.PLAYER_DISCONNECTED)
-            .playerId(client.id)
-            .build()
-        managerEventsHandler.notify(event)
     }
 
     private fun newClientHandler(wsSession: WebSocketSession) : ClientHandler {

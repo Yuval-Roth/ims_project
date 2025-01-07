@@ -12,7 +12,6 @@ import com.imsproject.gameserver.games.WaterRipplesGame
 import com.imsproject.gameserver.games.WineGlassesGame
 import com.imsproject.gameserver.lobbies.Lobby
 import com.imsproject.gameserver.lobbies.LobbyState
-import com.imsproject.gameserver.networking.ManagerEventsHandler
 import com.imsproject.gameserver.networking.TimeServerHandler
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -23,8 +22,7 @@ import java.util.concurrent.ConcurrentSkipListMap
 @Component
 class GameController(
         private val clientController: ClientController,
-        private val timeServerHandler: TimeServerHandler,
-        private val managerEventsHandler: ManagerEventsHandler
+        private val timeServerHandler: TimeServerHandler
     ) {
 
     private data class Session(
@@ -140,12 +138,6 @@ class GameController(
 
         val success = lobby.toggleReady(clientHandler.id)
         if (success) {
-            // notify the manager
-            val event = ManagerEvent.builder(ManagerEvent.Type.PLAYER_READY_TOGGLE)
-                .playerId(clientHandler.id)
-                .lobbyId(lobbyId)
-                .build()
-            managerEventsHandler.notify(event)
             log.debug("handleToggleReady() successful")
         } else {
             // should not happen
@@ -334,12 +326,7 @@ class GameController(
         clientIdToGame.remove(game.player2.id)
         games.remove(lobby.id)
         lobby.state = LobbyState.WAITING
-
-        // Notify the manager
-        val event = ManagerEvent.builder(ManagerEvent.Type.GAME_ENDED)
-            .lobbyId(lobbyId)
-            .build()
-        managerEventsHandler.notify(event)
+        
         log.debug("handleEndGame() successful")
         return Response.getOk()
     }
