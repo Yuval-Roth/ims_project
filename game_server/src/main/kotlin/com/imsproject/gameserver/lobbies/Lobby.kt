@@ -4,18 +4,9 @@ import com.imsproject.common.gameServer.GameType
 
 class Lobby(
     val id: String,
-    gameType: GameType,
+    var gameType: GameType,
     var gameDuration: Int = -1 // -1 means the game has no time limit
 ) {
-
-    var gameType = gameType
-        set(value) {
-            if (field != value) {
-                field = value
-                player1Ready = false
-                player2Ready = false
-            }
-        }
 
     var player1Id : String? = null
         private set
@@ -50,7 +41,7 @@ class Lobby(
      */
     @Synchronized
     fun remove(player: String) : Boolean {
-        val success = when (player) {
+        return when (player) {
             player1Id -> {
                 if(player2Id != null){
                     player1Id = player2Id
@@ -58,20 +49,16 @@ class Lobby(
                 } else {
                     player1Id = null
                 }
+                player1Ready = false
                 true
             }
             player2Id -> {
                 player2Id = null
+                player2Ready = false
                 true
             }
             else -> false
         }
-        if (success){
-            player2Ready = false
-            player1Ready = false
-        }
-
-        return success
     }
 
     /**
