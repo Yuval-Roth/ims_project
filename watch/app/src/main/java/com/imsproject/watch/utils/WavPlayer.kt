@@ -95,6 +95,14 @@ class WavPlayer(private val context: Context) {
         track.play()
     }
 
+    fun pause(@IntRange(0,31) trackNumber: Int) {
+        tracks[trackNumber]?.pause() ?: throw IllegalArgumentException("Track not loaded")
+    }
+
+    fun resume(@IntRange(0,31) trackNumber: Int) {
+        tracks[trackNumber]?.play() ?: throw IllegalArgumentException("Track not loaded")
+    }
+
     fun release(@IntRange(0,31) trackNumber: Int) {
         tracks[trackNumber]?.release() ?: throw IllegalArgumentException("Track not loaded")
         tracks[trackNumber] = null

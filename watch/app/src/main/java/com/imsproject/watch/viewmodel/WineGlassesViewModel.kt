@@ -11,7 +11,6 @@ import com.imsproject.common.gameServer.GameAction
 import com.imsproject.common.gameServer.GameRequest
 import com.imsproject.common.gameServer.GameType
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
 import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,7 +20,10 @@ import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
+import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.watch.model.Position
+import com.imsproject.watch.utils.FrequencyTracker
+import com.imsproject.watch.utils.addToAngle
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.calculateAngleDiff
 import com.imsproject.watch.utils.isBetweenInclusive
@@ -29,6 +31,7 @@ import com.imsproject.watch.utils.isClockwise
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlin.math.absoluteValue
 
 
 private const val DIRECTION_MAX_OFFSET = 1.0f
@@ -69,6 +72,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     val myArc = Arc()
     val opponentArc = Arc()
+    val myFrequencyTracker = FrequencyTracker()
+    val opponentFrequencyTracker = FrequencyTracker()
 
     private var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
@@ -87,12 +92,14 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             viewModelScope.launch(Dispatchers.IO) {
                 while(true) {
                     var angle = 0.0f
-                    while(angle < 360 * 3){
+                    while(angle < 360 * 15){
                         opponentArc.startAngle = angle
+                        opponentFrequencyTracker.addSample(angle)
                         angle += 4
                         delay(16)
                     }
                     _opponentReleased.value = true
+                    opponentFrequencyTracker.reset()
                     delay(2000)
                     _opponentReleased.value = false
                 }
@@ -106,8 +113,10 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         if(inBounds){
             updateMyArc(rawAngle)
             _released.value = false
+            myFrequencyTracker.addSample(myArc.startAngle)
         } else {
             _released.value = true
+            myFrequencyTracker.reset()
         }
 
         val released = released.value
@@ -122,6 +131,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     fun setReleased() {
         _released.value = true
+        myFrequencyTracker.reset()
         val angle = myArc.startAngle
 
         if(ACTIVITY_DEBUG_MODE) return
@@ -130,6 +140,11 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             model.sendPosition(Angle(angle, true),getCurrentGameTime())
         }
     }
+
+    fun inSync() = !released.value && !opponentReleased.value
+        && (myFrequencyTracker.frequency - opponentFrequencyTracker.frequency)
+            .absoluteValue < WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+
 
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
@@ -156,6 +171,11 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
                 opponentArc.startAngle = position.angle
                 _opponentReleased.value = position.released
+                if(position.released){
+                    opponentFrequencyTracker.reset()
+                } else {
+                    opponentFrequencyTracker.addSample(position.angle)
+                }
             }
             else -> super.handleGameAction(action)
         }
@@ -178,16 +198,18 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         // calculate the skew angle to show the arc ahead of the finger
         // based on the calculations of the previous iteration
         val angleSkew = myArc.angleSkew
-        myArc.startAngle = angle + myArc.direction
-            .coerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET
-        ) * angleSkew - MY_SWEEP_ANGLE / 2
+        myArc.startAngle = addToAngle(angle,
+                myArc.direction.coerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET) * angleSkew
+                - MY_SWEEP_ANGLE / 2
+        )
 
         // ============== for next iteration =============== |
 
         // prepare the skew angle for the next iteration
         val previousAngle = myArc.previousAngle
-        val angleDiff = calculateAngleDiff(previousAngle, angle)
+        var angleDiff = 0f
         if(previousAngle != UNDEFINED_ANGLE){
+            angleDiff = calculateAngleDiff(previousAngle, angle)
             val previousAngleDiff = myArc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
             myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
@@ -211,7 +233,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             } else {
                 direction
             }
-            if(myArc.direction.isBetweenInclusive(-0.1f,0.1f)) myArc.angleSkew = MIN_ANGLE_SKEW
+            if(myArc.direction.isBetweenInclusive(-WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD,
+                    WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+                )) myArc.angleSkew = MIN_ANGLE_SKEW
         }
 
         // current angle becomes previous angle for the next iteration

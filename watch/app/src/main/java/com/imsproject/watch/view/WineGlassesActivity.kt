@@ -70,6 +70,7 @@ import com.imsproject.watch.SCREEN_RADIUS
 private const val LOW_BUILD_IN_TRACK = 0
 private const val LOW_LOOP_TRACK = 1
 private const val LOW_BUILD_OUT_TRACK = 2
+private const val HIGH_LOOP_TRACK = 4
 
 class WineGlassesActivity : ComponentActivity() {
 
@@ -87,6 +88,7 @@ class WineGlassesActivity : ComponentActivity() {
             sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
             sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
             sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
+            sound.load(HIGH_LOOP_TRACK, R.raw.wine_high_loop)
         } catch (e: IllegalArgumentException){
             val msg = e.message ?: "Unknown error"
             viewModel.exitWithError(msg, Result.Code.BAD_RESOURCE)
@@ -227,6 +229,9 @@ class WineGlassesActivity : ComponentActivity() {
                 }
             }
 
+            // ================== Sound effects ================== |
+
+            // play sound when the user touches the screen
             LaunchedEffect(released){
                 if(playSound){
                     withContext(Dispatchers.IO){
@@ -247,6 +252,28 @@ class WineGlassesActivity : ComponentActivity() {
                             }
                         }
                     }
+                }
+            }
+
+            // play high sound when in sync
+            LaunchedEffect(released){
+                if(!released) {
+                    var playing = false
+                    var inSync: Boolean
+                    sound.setVolume(HIGH_LOOP_TRACK, 1.0f)
+                    while (true) {
+                        inSync = viewModel.inSync()
+                        if (!playing && inSync) {
+                            sound.playLooped(HIGH_LOOP_TRACK)
+                            playing = true
+                        } else if (playing && !inSync) {
+                            sound.pause(HIGH_LOOP_TRACK)
+                            playing = false
+                        }
+                        delay(100)
+                    }
+                } else if(sound.isPlaying(HIGH_LOOP_TRACK)) {
+                    sound.stopFadeOut(HIGH_LOOP_TRACK, 20)
                 }
             }
 
@@ -302,8 +329,12 @@ class WineGlassesActivity : ComponentActivity() {
                     .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
                     .background(color = DARK_BACKGROUND_COLOR)
-                    .shadow((SCREEN_RADIUS* 0.3f).dp, CircleShape, spotColor = Color.Red)
-                    .shadow((SCREEN_RADIUS* 0.3f).dp, CircleShape, spotColor = Color.Red.copy(alpha = 0.5f))
+                    .shadow((SCREEN_RADIUS * 0.3f).dp, CircleShape, spotColor = Color.Red)
+                    .shadow(
+                        (SCREEN_RADIUS * 0.3f).dp,
+                        CircleShape,
+                        spotColor = Color.Red.copy(alpha = 0.5f)
+                    )
             )
 
             // =================== Draw arcs =================== |

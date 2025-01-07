@@ -45,7 +45,7 @@ fun cartesianToPolar(x: Double, y:Double) : Pair<Float,Float> {
         atan2(
             y - SCREEN_CENTER.y,
             x - SCREEN_CENTER.x
-        ).toDouble()
+        )
     ).toFloat()
     return distance to angle
 }
