@@ -9,14 +9,14 @@ import java.util.*
 abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     protected val cursor: SQLExecutor,
     protected val tableName: String,
-    columnNames : Array<out String>,
+    primaryKeyColumnNames : Array<out String>,
 ) : DAO<T, PK> {
 
     private val deleteQuery: String
     private val selectQuery: String
 
     init{
-        val whereClause = buildWhereClause(columnNames)
+        val whereClause = buildWhereClause(primaryKeyColumnNames)
         deleteQuery = "DELETE FROM $tableName $whereClause;"
         selectQuery = "SELECT * FROM $tableName $whereClause;"
     }
@@ -24,10 +24,11 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     /**
      * Used to automatically create a table in the database if it does not exist.
      *
-     * in order to add columns and foreign keys to the table use:
+     * in order to add columns, foreign keys and checks to the table use:
      * 1. [CreateTableQueryBuilder.addColumn]
      * 2. [CreateTableQueryBuilder.addForeignKey]
      * 3. [CreateTableQueryBuilder.addCompositeForeignKey]
+     * 4. [CreateTableQueryBuilder.addCheck]
      */
     protected abstract fun getCreateTableQueryBuilder() : CreateTableQueryBuilder
 

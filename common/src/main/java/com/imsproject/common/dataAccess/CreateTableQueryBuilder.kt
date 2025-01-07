@@ -2,7 +2,7 @@
 
 package com.imsproject.common.dataAccess
 
-class CreateTableQueryBuilder private constructor(private val tableName: String) {
+class CreateTableQueryBuilder (private val tableName: String) {
 
     private val tableColumns: ArrayList<Column> = ArrayList()
     private val primaryKeys: ArrayList<String> = ArrayList()
@@ -217,12 +217,6 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
             result = 31 * result + columns.contentHashCode()
             result = 31 * result + references.contentHashCode()
             return result
-        }
-    }
-
-    companion object {
-        fun create(tableName: String): CreateTableQueryBuilder {
-            return CreateTableQueryBuilder(tableName)
         }
     }
 }

@@ -16,19 +16,16 @@ abstract class CounterDAOBase protected constructor(
      */
     @Throws(DaoException::class)
     protected fun initTable() {
-        val createTableQueryBuilder = CreateTableQueryBuilder.create(tableName)
-
-        createTableQueryBuilder.addColumn(
-            columnName,
-            ColumnType.INTEGER,
-            modifiers = ColumnModifiers.NOT_NULL
-        )
-
-        var query = createTableQueryBuilder.build()
+        val query = CreateTableQueryBuilder(tableName)
+            .addColumn(
+                columnName,
+                ColumnType.INTEGER,
+                modifiers = ColumnModifiers.NOT_NULL
+            ).build()
         try {
             cursor.executeWrite(query)
-            query = String.format("SELECT * FROM %s;", tableName)
-            if (cursor.executeRead(query).isEmpty) {
+            val query2 = String.format("SELECT * FROM %s;", tableName)
+            if (cursor.executeRead(query2).isEmpty) {
                 resetCounter()
             }
         } catch (e: SQLException) {
@@ -84,7 +81,7 @@ abstract class CounterDAOBase protected constructor(
     @Throws(DaoException::class)
     override fun incrementCounter() {
         val query = String.format(
-            " UPDATE %s SET %s = (SELECT %s FROM %s) + 1;",
+            "UPDATE %s SET %s = (SELECT %s FROM %s) + 1;",
             tableName,
             columnName,
             columnName,
