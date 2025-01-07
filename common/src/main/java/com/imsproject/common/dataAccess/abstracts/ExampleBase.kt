@@ -1,6 +1,6 @@
 package com.imsproject.common.dataAccess.abstracts
 
-abstract class PrimaryKeyBase (private vararg val columnNames: String) : PrimaryKey {
+abstract class ExampleBase (private vararg val columnNames: String) : Example {
 
     private val values = mutableMapOf<String, Any>()
 
@@ -9,13 +9,13 @@ abstract class PrimaryKeyBase (private vararg val columnNames: String) : Primary
      */
     protected fun setValue(columnName: String, value: Any) {
         if(columnName !in columnNames){
-            throw IllegalArgumentException("Column name $columnName is not a primary key column")
+            throw IllegalArgumentException("$columnName is not a column in the object")
         }
         values[columnName] = value
     }
 
     /**
-     * Returns the values of the primary key columns
+     * @return the names of the columns in the object
      */
     override fun columnNames(): Array<out String> {
         return columnNames

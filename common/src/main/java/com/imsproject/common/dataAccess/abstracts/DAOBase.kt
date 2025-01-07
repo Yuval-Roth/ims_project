@@ -154,6 +154,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         return output
     }
 
+    @Suppress("DuplicatedCode")
     private fun buildWhereClause(columnNames: Array<out String>) {
         val builder = StringBuilder("WHERE ")
         for (i in columnNames.indices) {
