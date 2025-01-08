@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.media.VolumeShaper
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import kotlinx.coroutines.CoroutineScope
@@ -68,24 +69,20 @@ class WavPlayer(private val context: Context) {
         jobs[trackNumber]?.cancel()
     }
 
-    fun stopFadeOut(@IntRange(0,31) trackNumber: Int, @IntRange(10) fadeDuration: Long) {
+    fun stopFadeOut(@IntRange(0,31) trackNumber: Int, fadeDuration: Long) {
         val track = tracks[trackNumber] ?: throw IllegalArgumentException("Track not loaded")
-        val volume = 1.0f
+        val fadeOutConfig = VolumeShaper.Configuration.Builder()
+            .setInterpolatorType(VolumeShaper.Configuration.INTERPOLATOR_TYPE_LINEAR)
+            .setDuration(fadeDuration)
+            .setCurve(floatArrayOf(0f, 1f), floatArrayOf(1f, 0f))
+            .build()
+        val volumeShaper = track.createVolumeShaper(fadeOutConfig)
         jobs[trackNumber]?.cancel()
-        if(fadeDuration <= 10){ // stop immediately
+        scope.launch {
+            volumeShaper.apply(VolumeShaper.Operation.PLAY)
+            delay(fadeDuration)
             track.stop()
-            return
-        }
-        jobs[trackNumber] = scope.launch {
-            val stepDelay = 2L
-            val steps = fadeDuration / stepDelay
-            val stepVolume = volume / steps
-            for(i in 0 until steps){
-                val gain = (volume - stepVolume * i).coerceAtLeast(0.0f)
-                track.setVolume(gain)
-                delay(stepDelay)
-            }
-            track.stop()
+            volumeShaper.close()
         }
     }
 
@@ -97,10 +94,6 @@ class WavPlayer(private val context: Context) {
 
     fun pause(@IntRange(0,31) trackNumber: Int) {
         tracks[trackNumber]?.pause() ?: throw IllegalArgumentException("Track not loaded")
-    }
-
-    fun resume(@IntRange(0,31) trackNumber: Int) {
-        tracks[trackNumber]?.play() ?: throw IllegalArgumentException("Track not loaded")
     }
 
     fun release(@IntRange(0,31) trackNumber: Int) {

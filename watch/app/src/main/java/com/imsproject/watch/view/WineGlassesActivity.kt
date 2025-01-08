@@ -245,9 +245,7 @@ class WineGlassesActivity : ComponentActivity() {
                             sound.play(LOW_BUILD_OUT_TRACK)
                             playSound = false
                         } else {
-                            sound.setVolume(LOW_BUILD_IN_TRACK,1.0f)
                             sound.play(LOW_BUILD_IN_TRACK) {
-                                sound.setVolume(LOW_LOOP_TRACK,1.0f)
                                 sound.playLooped(LOW_LOOP_TRACK)
                             }
                         }
@@ -260,7 +258,6 @@ class WineGlassesActivity : ComponentActivity() {
                 if(!released) {
                     var playing = false
                     var inSync: Boolean
-                    sound.setVolume(HIGH_LOOP_TRACK, 1.0f)
                     while (true) {
                         inSync = viewModel.inSync()
                         if (!playing && inSync) {
