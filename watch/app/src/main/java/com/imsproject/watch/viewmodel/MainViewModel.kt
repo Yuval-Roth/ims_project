@@ -3,9 +3,9 @@ package com.imsproject.watch.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers

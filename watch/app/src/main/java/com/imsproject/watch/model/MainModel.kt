@@ -3,8 +3,8 @@ package com.imsproject.watch.model
 import android.util.Log
 import com.google.gson.JsonParseException
 import com.imsproject.common.etc.TimeRequest
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.watch.model.MainModel.CallbackNotSetException
@@ -37,7 +37,7 @@ private const val TIME_SERVER_PORT = 8642
 
 class MainModel (private val scope : CoroutineScope) {
 
-    class CallbackNotSetException : Exception("Listener not set")
+    class CallbackNotSetException : Exception("Listener not set",null,true,false)
 
     init{
         instance = this
@@ -52,7 +52,8 @@ class MainModel (private val scope : CoroutineScope) {
     var connected = false
         private set
 
-    private val defaultCallback  = { throw CallbackNotSetException() }
+    private val cachedException = CallbackNotSetException()
+    private val defaultCallback  = { throw cachedException }
     private var tcpOnMessageCallback :  suspend (GameRequest) -> Unit = { defaultCallback() }
     private var tcpOnExceptionCallback : suspend (Exception) -> Unit = { defaultCallback() }
     private var udpOnMessageCallback : suspend (GameAction) -> Unit = { defaultCallback() }
@@ -80,6 +81,8 @@ class MainModel (private val scope : CoroutineScope) {
 
         //================== WebSocket Setup ================== |
 
+        Log.d(TAG, "connectToServer: Connecting to server")
+
         if(!ws.connectBlocking(TIMEOUT_MS, TimeUnit.MILLISECONDS)){
             Log.e(TAG, "connectToServer: WebSocket connection timeout")
             return null // timeout
@@ -90,20 +93,20 @@ class MainModel (private val scope : CoroutineScope) {
             .build().toJson()
         ws.send(enterRequest)
         val response = ws.nextMessage(TIMEOUT_MS) ?: run {
-            Log.e(TAG, "connectToServer: Connection timeout")
+            Log.e(TAG, "connectToServer: WebSocket enter request timeout")
             return null // timeout
         }
         val enterResponse = GameRequest.fromJson(response)
 
         // validate response type
         if(enterResponse.type != GameRequest.Type.ENTER){
-            Log.e(TAG, "connectToServer: Invalid response type")
+            Log.e(TAG, "connectToServer: Invalid WebSocket enter response type")
             return null // invalid response
         }
 
         // validate player id
         val playerId = enterResponse.playerId ?: run {
-            Log.e(TAG, "connectToServer: Invalid player id")
+            Log.e(TAG, "connectToServer: Missing player id in response")
             return null // invalid player id
         }
 
@@ -111,7 +114,7 @@ class MainModel (private val scope : CoroutineScope) {
 
         // get the ENTER code from the response from the WebSocket setup
         val udpEnterCode = enterResponse.data?.get(0) ?: run {
-            Log.e(TAG, "connectToServer: Invalid response data")
+            Log.e(TAG, "connectToServer: Missing UDP enter code")
             return null // invalid response
         }
 
@@ -133,14 +136,14 @@ class MainModel (private val scope : CoroutineScope) {
             return null
         }
         // timeout
-        catch(e: SocketTimeoutException){
+        catch(_: SocketTimeoutException){
             Log.e(TAG, "connectToServer: UDP confirmation timeout")
             return null
         }
 
         // validate confirmation
         if(confirmation.type != GameAction.Type.ENTER){
-            Log.e(TAG, "connectToServer: Invalid confirmation message")
+            Log.e(TAG, "connectToServer: Invalid UDP enter response type")
             return null
         }
         udp.setTimeout(0) // remove timeout
@@ -158,6 +161,8 @@ class MainModel (private val scope : CoroutineScope) {
         this.timeServerUdp = timeServerUdp
         this.playerId = playerId
         connected = true
+
+        Log.d(TAG, "connectToServer: Connection established")
 
         // ================== End of UDP Setup ================== |
         // \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/
@@ -214,10 +219,10 @@ class MainModel (private val scope : CoroutineScope) {
 
         if(callback == null){
             tcpOnErrorCallback = {defaultCallback()}
-            Log.d(TAG, "onTcpError: Listener canceled")
+            Log.d(TAG, "onTcpError: callback removed")
         } else {
             tcpOnErrorCallback = callback
-            Log.d(TAG, "onTcpError: Listener set")
+            Log.d(TAG, "onTcpError: callback set")
         }
     }
 
@@ -236,19 +241,21 @@ class MainModel (private val scope : CoroutineScope) {
         sendTcp(request)
     }
 
-    suspend fun sendClick(timestamp: Long) {
+    suspend fun sendClick(timestamp: Long, sequenceNumber: Long) {
         val request = GameAction.builder(GameAction.Type.CLICK)
+            .actor(playerId)
             .timestamp(timestamp.toString())
-            // add more things here if needed
+            .sequenceNumber(sequenceNumber)
             .build().toString()
         sendUdp(request)
     }
 
-    suspend fun sendPosition(position : Position, timestamp: Long) {
+    suspend fun sendPosition(position: Position, timestamp: Long, sequenceNumber: Long) {
         val request = GameAction.builder(GameAction.Type.POSITION)
-            // add more things here if needed
+            .actor(playerId)
             .data(position.toString())
             .timestamp(timestamp.toString())
+            .sequenceNumber(sequenceNumber)
             .build().toString()
         sendUdp(request)
     }
@@ -309,7 +316,7 @@ class MainModel (private val scope : CoroutineScope) {
             try{
                 action()
                 break
-            } catch(e: CallbackNotSetException){
+            } catch(_: CallbackNotSetException){
                 delay(100)
             }
         }
@@ -317,7 +324,10 @@ class MainModel (private val scope : CoroutineScope) {
 
     private fun initListeners() {
 
+        Log.d(TAG, "initListeners: Initializing listeners")
+
         if(connected){
+            Log.d(TAG, "initListeners: Canceling existing listeners")
             udpMessageListener?.cancel()
             tcpMessageListener?.cancel()
             heartBeatListener?.cancel()
@@ -349,7 +359,7 @@ class MainModel (private val scope : CoroutineScope) {
                 } catch(e: JsonParseException){
                     Log.e(TAG, "Failed to parse TCP message", e)
                     executeCallback { tcpOnExceptionCallback(e) }
-                } catch(e: InterruptedException){
+                } catch(_: InterruptedException){
                     Log.d(TAG, "WebSocket listener interrupted")
                 }
             }

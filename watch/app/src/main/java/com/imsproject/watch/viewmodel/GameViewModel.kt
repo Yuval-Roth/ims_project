@@ -2,30 +2,37 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
 import android.os.Vibrator
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.gameserver.SessionEvent
+import com.imsproject.common.networking.PingTracker
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.model.MainModel
+import com.imsproject.watch.model.SessionEventCollector
+import com.imsproject.watch.model.SessionEventCollectorImpl
+import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.net.SocketTimeoutException
-import kotlin.math.absoluteValue
-import kotlin.math.atan2
-import kotlin.math.pow
-import kotlin.math.sqrt
 
-abstract class GameViewModel(gameType: GameType) : ViewModel() {
+
+abstract class GameViewModel(
+    gameType: GameType
+) : ViewModel(), SessionEventCollector by SessionEventCollectorImpl.getInstance() {
 
     enum class State {
         LOADING,
@@ -42,6 +49,8 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
 
     protected lateinit var vibrator: Vibrator
         private set
+    protected val packetTracker: PacketTracker = PacketTracker()
+    private val pingTracker: PingTracker = PingTracker(viewModelScope)
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -87,6 +96,22 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
             } while(true)
             myStartTime = timeServerStartTime + timeServerDelta
             _state.value = State.PLAYING
+
+            // set up packet tracker
+            packetTracker.onOutOfOrderPacket = {
+                addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
+            }
+
+            // start tracking ping
+            viewModelScope.launch(Dispatchers.IO) {
+                pingTracker.onUpdate = { addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it)) }
+                pingTracker.start()
+                while (true) {
+                    model.pingUdp()
+                    pingTracker.sentAt(SystemClock.uptimeMillis())
+                    delay(50)
+                }
+            }
         }
     }
 
@@ -97,19 +122,22 @@ abstract class GameViewModel(gameType: GameType) : ViewModel() {
         _state.value = State.TERMINATED
     }
 
+    fun getCurrentGameTime(): Long {
+        return System.currentTimeMillis() - myStartTime
+    }
+
     // ================================================================================ |
     // ============================ PROTECTED METHODS ================================= |
     // ================================================================================ |
-
-    protected fun getCurrentGameTime(): Long {
-        return System.currentTimeMillis() - myStartTime
-    }
 
     /**
      * handles [GameAction.Type.HEARTBEAT] and everything else is an unexpected request error
      */
     protected open suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
+            GameAction.Type.PONG -> {
+                pingTracker.receivedAt(SystemClock.uptimeMillis())
+            }
             GameAction.Type.HEARTBEAT -> {}
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected action type: ${action.type}")

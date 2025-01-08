@@ -1,6 +1,6 @@
 package com.imsproject.gameserver.networking
 
-import com.imsproject.common.gameServer.GameRequest
+import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.GameController

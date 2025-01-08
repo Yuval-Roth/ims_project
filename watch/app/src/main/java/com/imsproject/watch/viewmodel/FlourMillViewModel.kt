@@ -8,9 +8,10 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.AXLE_STARTING_ANGLE
 import com.imsproject.watch.BRIGHT_CYAN_COLOR
@@ -162,7 +163,10 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Rotation(direction), super.getCurrentGameTime())
+            val timestamp = super.getCurrentGameTime()
+            val position = Rotation(direction)
+            model.sendPosition(position, timestamp, packetTracker.newPacket())
+            addEvent(SessionEvent.position(playerId,timestamp, position.toString()))
         }
     }
 
@@ -207,12 +211,21 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     Log.e(TAG, "handleGameAction: missing position in position action")
                     return
                 }
+                val sequenceNumber = action.sequenceNumber ?: run{
+                    Log.e(TAG, "handleGameAction: missing sequence number in position action")
+                    return
+                }
                 withContext(Dispatchers.Main) {
                     if (actor == playerId) {
                         rotateAxle(myAxleSide, rotation.direction, timestamp)
                     } else {
                         rotateAxle(myAxleSide.otherSide(), rotation.direction, timestamp)
                     }
+                }
+                if(actor == playerId){
+                    packetTracker.receivedMyPacket(sequenceNumber)
+                } else {
+                    packetTracker.receivedOtherPacket(sequenceNumber)
                 }
             }
             else -> super.handleGameAction(action)

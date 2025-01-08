@@ -7,9 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -125,7 +126,10 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         if(ACTIVITY_DEBUG_MODE) return
         // send position to server
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Angle(angle, released),getCurrentGameTime())
+            val timestamp = getCurrentGameTime()
+            val position = Angle(angle, released)
+            model.sendPosition(position, timestamp,packetTracker.newPacket())
+            addEvent(SessionEvent.position(playerId,timestamp,position.toString()))
         }
     }
 
@@ -137,7 +141,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         if(ACTIVITY_DEBUG_MODE) return
         // send position to server
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Angle(angle, true),getCurrentGameTime())
+            model.sendPosition(Angle(angle, true), getCurrentGameTime(), packetTracker.newPacket())
         }
     }
 
@@ -168,6 +172,10 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                     Log.e(TAG, "handleGameAction: missing position in position action")
                     return
                 }
+                val sequenceNumber = action.sequenceNumber ?: run{
+                    Log.e(TAG, "handleGameAction: missing sequence number in position action")
+                    return
+                }
 
                 opponentArc.startAngle = position.angle
                 _opponentReleased.value = position.released
@@ -176,6 +184,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                 } else {
                     opponentFrequencyTracker.addSample(position.angle)
                 }
+
+                packetTracker.receivedOtherPacket(sequenceNumber)
             }
             else -> super.handleGameAction(action)
         }

@@ -1,7 +1,7 @@
 package com.imsproject.gameserver.networking
 
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameRequest.Type
+import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.gameserver.*
 import org.slf4j.Logger

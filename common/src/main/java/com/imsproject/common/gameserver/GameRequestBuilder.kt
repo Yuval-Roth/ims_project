@@ -1,4 +1,4 @@
-package com.imsproject.common.gameServer
+package com.imsproject.common.gameserver
 
 class GameRequestBuilder internal constructor(private val type: GameRequest.Type){
 

@@ -1,7 +1,7 @@
 package com.imsproject.gameserver.networking
 
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameAction.Type
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameAction.Type
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.gameserver.*
 import org.slf4j.LoggerFactory

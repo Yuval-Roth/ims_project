@@ -1,9 +1,9 @@
 package com.imsproject.gameserver
 
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameRequest.Type
-import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.GameRequest.Type
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.gameserver.games.FlourMillGame
@@ -25,7 +25,7 @@ class GameController(
         private val timeServerHandler: TimeServerHandler
     ) {
 
-    private data class Session(
+    private data class Session (
         val sessionId: String,
         val duration: Int,
         val gameType: GameType

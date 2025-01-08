@@ -1,6 +1,6 @@
 package com.imsproject.gameserver.lobbies
 
-import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.gameserver.GameType
 
 class Lobby(
     val id: String,

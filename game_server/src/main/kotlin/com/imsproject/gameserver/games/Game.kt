@@ -1,14 +1,12 @@
 package com.imsproject.gameserver.games
 
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.gameserver.ClientHandler
 
 abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
 
     abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
-
-    abstract fun handleGameRequest(actor : ClientHandler, request: GameRequest)
 
     open fun startGame(timestamp: Long) {
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
@@ -32,7 +30,7 @@ abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
         } catch (ignored: Exception){ }
     }
 
-    protected fun sendGameAction(message: GameAction){
+    protected open fun sendGameAction(message: GameAction){
         val m = message.toString()
         player1.sendUdp(m)
         player2.sendUdp(m)

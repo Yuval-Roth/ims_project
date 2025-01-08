@@ -4,7 +4,7 @@ import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.jvm.optionals.getOrElse
 
-class PingTracker {
+class PingTracker (val scope: CoroutineScope) {
 
     // this will be called periodically to update the current ping
     var onUpdate : (Long) -> Unit = {}
@@ -31,7 +31,7 @@ class PingTracker {
 
     fun start(){
         if(job != null) return
-        job = CoroutineScope(Dispatchers.IO).launch {
+        job = scope.launch(Dispatchers.IO) {
             while(true){
                 val avg : Long = values.stream()
                     .reduce { prev, value -> prev + value }

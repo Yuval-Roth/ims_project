@@ -7,6 +7,7 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.collection.MutableIntList
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -35,12 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
-import com.imsproject.watch.ALMOST_WHITE_COLOR
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
-import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.MARKER_FADE_DURATION
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_ARC_SIZE
@@ -66,6 +65,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.SILVER_COLOR
 
 private const val LOW_BUILD_IN_TRACK = 0
 private const val LOW_LOOP_TRACK = 1
@@ -319,7 +319,7 @@ class WineGlassesActivity : ComponentActivity() {
                 modifier = Modifier
                     .fillMaxSize()
                     .clip(shape = CircleShape)
-                    .background(color = Color(0xFFC0C0C0))
+                    .background(color = SILVER_COLOR)
             )
             Box(
                 modifier = Modifier

@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -39,6 +39,7 @@ val CYAN_COLOR = Color(0xFF00BCD4)
 val BROWN_COLOR = Color(0xFF4E342E)
 val LIGHT_BROWN_COLOR = Color(0xFFAF746C)
 val ALMOST_WHITE_COLOR = Color(0xFFECECEC)
+val SILVER_COLOR = Color(0xFFC0C0C0)
 
 // ================= Water Ripples ================== |
 const val WATER_RIPPLES_SYNC_TIME_THRESHOLD = 50

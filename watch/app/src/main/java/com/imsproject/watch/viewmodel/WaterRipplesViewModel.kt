@@ -11,9 +11,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameType
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRAY_COLOR
@@ -65,7 +66,9 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendClick(super.getCurrentGameTime())
+            val timestamp = super.getCurrentGameTime()
+            model.sendClick(timestamp,packetTracker.newPacket())
+            addEvent(SessionEvent.click(playerId,timestamp))
         }
     }
 
@@ -104,9 +107,18 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                     Log.e(TAG, "handleGameAction: missing timestamp in click action")
                     return
                 }
+                val sequenceNumber = action.sequenceNumber ?: run{
+                    Log.e(TAG, "handleGameAction: missing sequence number in click action")
+                    return
+                }
                 // switch to main thread to update UI
                 withContext(Dispatchers.Main) {
                     showRipple(actor, timestamp)
+                }
+                if(actor == playerId){
+                    packetTracker.receivedMyPacket(sequenceNumber)
+                } else {
+                    packetTracker.receivedOtherPacket(sequenceNumber)
                 }
             }
             else -> super.handleGameAction(action)
@@ -154,7 +166,6 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 vibrator.vibrate(clickVibration)
             }
         }
-
         _counter.value++
     }
 
