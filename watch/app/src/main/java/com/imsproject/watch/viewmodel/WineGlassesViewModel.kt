@@ -82,6 +82,19 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
     private var _opponentReleased = MutableStateFlow(false)
     val opponentReleased : StateFlow<Boolean> = _opponentReleased
 
+    private var inSync = false
+        set(value) {
+            if(field != value){
+                viewModelScope.launch(Dispatchers.IO) {
+                    when (value) {
+                        true -> addEvent(SessionEvent.syncStartTime(playerId, getCurrentGameTime()))
+                        false -> addEvent(SessionEvent.syncEndTime(playerId, getCurrentGameTime()))
+                    }
+                }
+            }
+            field = value
+        }
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -145,9 +158,11 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
     }
 
-    fun inSync() = !released.value && !opponentReleased.value
-        && (myFrequencyTracker.frequency - opponentFrequencyTracker.frequency)
-            .absoluteValue < WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+    fun inSync() = (
+            !released.value && !opponentReleased.value
+            && (myFrequencyTracker.frequency - opponentFrequencyTracker.frequency)
+                .absoluteValue < WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+    ).also { inSync = it }
 
 
     // ================================================================================ |

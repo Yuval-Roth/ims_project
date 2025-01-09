@@ -136,33 +136,38 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     }
 
     private fun showRipple(actor: String, timestamp : Long) {
-        val rippleToCheck = if (actor == playerId){
+        val rippleToCheck = if (actor == playerId) {
             ripples.find { it.actor != playerId }
         } else {
             ripples.find { it.actor == playerId }
         }
 
-        if(rippleToCheck != null
-            && (rippleToCheck.timestamp - timestamp).absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD
-        ){
+        // Synced click
+        if (rippleToCheck != null && (rippleToCheck.timestamp - timestamp)
+                                            .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
             rippleToCheck.color = VIVID_ORANGE_COLOR
-            if(rippleToCheck.actor != playerId){
+            if (rippleToCheck.actor != playerId) {
                 rippleToCheck.startingAlpha = 1.0f
                 rippleToCheck.currentAlpha = (rippleToCheck.currentAlpha * 2).coerceAtMost(1.0f)
             }
-        } else {
-            val ripple = if(actor == playerId){
+            viewModelScope.launch(Dispatchers.IO) {
+                addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
+            }
+        }
+        // not synced click
+        else {
+            val ripple = if (actor == playerId) {
                 // My click
                 Ripple(BLUE_COLOR, timestamp = timestamp, actor = actor)
-            } else  {
+            } else {
                 // Other player's click
-                Ripple(GRAY_COLOR,0.5f,timestamp,actor)
+                Ripple(GRAY_COLOR, 0.5f, timestamp, actor)
             }
-            ripples.add(0,ripple)
+            ripples.add(0, ripple)
         }
-        viewModelScope.launch(Dispatchers.IO) {
-            delay(100)
-            if(actor != playerId){
+        if (actor != playerId) {
+            viewModelScope.launch(Dispatchers.IO) {
+                delay(100)
                 vibrator.vibrate(clickVibration)
             }
         }
