@@ -18,6 +18,7 @@ import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
+import com.imsproject.watch.sensors.SensorsHandler
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
@@ -51,6 +52,7 @@ abstract class GameViewModel(
         private set
     protected val packetTracker: PacketTracker = PacketTracker()
     private val pingTracker: PingTracker = PingTracker(viewModelScope)
+    private lateinit var sensorsHandler: SensorsHandler
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -82,6 +84,7 @@ abstract class GameViewModel(
         }
 
         setupListeners()
+        // set up everything required for the session
         viewModelScope.launch(Dispatchers.IO) {
             var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
             do {
@@ -102,6 +105,9 @@ abstract class GameViewModel(
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
 
+            sensorsHandler = SensorsHandler(viewModelScope,context,this@GameViewModel)
+            sensorsHandler.run()
+
             // start tracking ping
             viewModelScope.launch(Dispatchers.IO) {
                 pingTracker.onUpdate = { addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it)) }
@@ -113,6 +119,7 @@ abstract class GameViewModel(
                 }
             }
         }
+
     }
 
     fun exitWithError(string: String, code: Result.Code) {

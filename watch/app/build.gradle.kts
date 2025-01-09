@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.res.namespaced.getAutoNamespacedLibraryFileName
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -68,4 +70,9 @@ dependencies {
 
     implementation(libs.imsproject.common)
     implementation(libs.kotlinx.coroutines.android)
+
+    implementation (fileTree(
+        "dir" to "libs",
+        "include" to "*.aar"
+    ))
 }

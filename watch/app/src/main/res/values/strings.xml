@@ -7,4 +7,63 @@
     <string name="hello_world">From the Square world,\nHello, %1$s!</string>
     <string name="title_activity_water_ripples">WaterRipplesActivity</string>
     <string name="title_activity_main2">MainActivity2</string>
+
+
+
+    <!--
+                REMOVE WHAT YOU DON'T NEED HERE
+    -->
+
+    <string name="StatusCalculating">Calculating…</string>
+    <string name="StatusDeviceMoving">Device is moving.</string>
+    <string name="StatusLowSignal">Low signal quality.</string>
+    <string name="StatusCompleted">Measurement completed.</string>
+    <string name="SpO2Value">SpO2 value: </string>
+    <string name="StopLabel">Stop</string>
+    <string name="StartLabel">Measure</string>
+    <string name="SpO2">SpO2</string>
+    <string name="HeartRate">Heart Rate</string>
+    <string name="HeartRateStatus">HR Status</string>
+    <string name="Ibi">IBI</string>
+    <string name="IbiStatus">IBI Status</string>
+    <string name="Details">details >></string>
+    <string name="TxtPercent">%</string>
+
+    <string name="StatusDefaultValue">Press Measure to initiate SpO2 measurement.</string>
+    <string name="SpO2DefaultValue">0</string>
+    <string name="HeartRateDefaultValue">0</string>
+    <string name="HeartRateStatusDefaultValue">0</string>
+    <string name="IbiStatusDefaultValue">1</string>
+    <string name="IbiDefaultValue">0</string>
+
+    <string name="ConnectedToHs">Connected to Health Tracking Service.</string>
+    <string name="ConnectionError">Could not connect to Health Tracking Service. Check error log.</string>
+    <string name="HealthPlatformVersionIsOutdated">"Health Platform version is outdated or not installed.</string>
+    <string name="NoPermission">Permissions Check Failed.</string>
+    <string name="SdkPolicyError">SDK Policy denied.</string>
+    <string name="PermissionDeniedPermanently">Permissions denied. Grant permissions in watch settings and start application again.</string>
+    <string name="PermissionDeniedRationale">Body Sensors permission is required to make a measurement.</string>
+    <string name="MeasurementFailed">Measurement failed. Keep your watch tightly on and try again.</string>
+
+    <string name="NoSpo2Support">SpO2 no supported on this device.</string>
+    <string name="NoHrSupport">Heart Rate no supported on this device.</string>
+    <string name="BodySensors">android.permission.BODY_SENSORS</string>
+
+    <string name="ExtraHr">Hr</string>
+    <string name="ExtraHrStatus">HrStatus</string>
+    <string name="ExtraIbi">Ibi</string>
+    <string name="ExtraQualityIbi">QualityIbi</string>
+
+    <string name="DetailsStatusNone">Initial heart rate measuring state.</string>
+    <string name="DetailsStatusFindHr">Successful heart rate measurement.</string>
+    <string name="DetailsStatusAttached">Wearable is attached.</string>
+    <string name="DetailsStatusMoveDetection">Wearable move detection.</string>
+    <string name="DetailsStatusDetached">Wearable is detached.</string>
+    <string name="DetailsStatusLowReliability">PPG signal is weak.</string>
+    <string name="DetailsStatusVeryLowReliability">PPG signal is too weak.</string>
+    <string name="DetailsStatusNoDataFlush">flush() is called but no data.</string>
+
+
+
+
 </resources>
