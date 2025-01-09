@@ -56,7 +56,7 @@ class GameActionHandler(
         }
 
         when (action.type) {
-            Type.CLICK, Type.POSITION, Type.SYNC_TIME -> {
+            Type.USER_INPUT -> {
                 val client = clients.getByHostPort(address.toHostPortString())
                 if (client == null) {
                     log.debug("Client not found for packet from ${address.toHostPortString()}")

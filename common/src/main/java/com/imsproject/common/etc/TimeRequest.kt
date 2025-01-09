@@ -10,8 +10,8 @@ class TimeRequest private constructor(
     val time: Long?
 ) {
     enum class Type {
-        @SerializedName("current_time_Millis") CURRENT_TIME_MILLIS,
-        @SerializedName("nano_time") NANO_TIME,
+        @SerializedName("current_time_Millis")   CURRENT_TIME_MILLIS,
+        @SerializedName("nano_time")             NANO_TIME,
     }
 
     fun toJson() = JsonUtils.serialize(this)

@@ -14,7 +14,6 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.networking.PingTracker
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
@@ -22,7 +21,6 @@ import com.imsproject.watch.sensors.SensorsHandler
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
@@ -137,9 +135,6 @@ abstract class GameViewModel(
     // ============================ PROTECTED METHODS ================================= |
     // ================================================================================ |
 
-    /**
-     * handles [GameAction.Type.HEARTBEAT] and everything else is an unexpected request error
-     */
     protected open suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
             GameAction.Type.PONG -> {
@@ -156,12 +151,21 @@ abstract class GameViewModel(
         }
     }
 
-    /**
-     * handles [GameRequest.Type.HEARTBEAT] and everything else is an unexpected request error
-     */
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
             GameRequest.Type.HEARTBEAT -> {}
+            GameRequest.Type.END_GAME -> {
+                val success = request.success ?: run {
+                    Log.e(TAG, "handleGameRequest: missing success field in END_GAME request")
+                    return
+                }
+
+                if(success){
+                    exitOk()
+                } else {
+                    exitWithError(request.message ?: "Unknown error",Result.Code.GAME_ENDED_WITH_ERROR)
+                }
+            }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
                 val errorMsg = "Unexpected request type received\n" +

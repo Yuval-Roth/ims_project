@@ -10,7 +10,7 @@ class WaterRipplesGame (player1 : ClientHandler, player2 : ClientHandler) : Game
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {
-            GameAction.Type.CLICK -> {
+            GameAction.Type.USER_INPUT -> {
                 sendGameAction(action)
             }
             else -> {

@@ -1,5 +1,6 @@
 package com.imsproject.common.gameserver
 
+import com.google.gson.annotations.SerializedName
 import com.imsproject.common.utils.JsonUtils
 
 data class SessionEvent (
@@ -9,34 +10,48 @@ data class SessionEvent (
     val actor: String,
     val data: String? = null
 ) : Comparable<SessionEvent> {
-    enum class Type{
-        USER_INPUT,
-        SENSOR_DATA,
-        NETWORK_DATA,
-        SYNC_DATA
+
+    enum class Type {
+        @SerializedName("user_input")               USER_INPUT,
+        @SerializedName("sensor_data")              SENSOR_DATA,
+        @SerializedName("network_data")             NETWORK_DATA,
+        @SerializedName("sync_data")                SYNC_DATA
+
+        ;
+
+        override fun toString(): String {
+            return name.lowercase()
+        }
     }
 
     enum class SubType {
         // USER_INPUT
-        CLICK,
-        POSITION,
+        @SerializedName("click")                    CLICK,
+        @SerializedName("angle")                    ANGLE,
+        @SerializedName("rotation")                 ROTATION,
 
         // SENSOR_DATA
-        HEART_RATE,
-        HEART_RATE_VARIABILITY,
-        BLOOD_OXYGEN,
-        GYROSCOPE,
-        ACCELEROMETER,
+        @SerializedName("heart_rate")               HEART_RATE,
+        @SerializedName("heart_rate_variability")   HEART_RATE_VARIABILITY,
+        @SerializedName("blood_oxygen")             BLOOD_OXYGEN,
+        @SerializedName("gyroscope")                GYROSCOPE,
+        @SerializedName("accelerometer")            ACCELEROMETER,
 
         // NETWORK_DATA
-        LATENCY,
-        PACKET_OUT_OF_ORDER,
-        TIMEOUT,
+        @SerializedName("latency")                  LATENCY,
+        @SerializedName("packet_out_of_order")      PACKET_OUT_OF_ORDER,
+        @SerializedName("timeout")                  TIMEOUT,
 
         // SYNC_DATA
-        SYNC_START_TIME,
-        SYNC_END_TIME,
-        SYNCED_AT_TIME
+        @SerializedName("sync_start_time")          SYNC_START_TIME,
+        @SerializedName("sync_end_time")            SYNC_END_TIME,
+        @SerializedName("synced_at_time")           SYNCED_AT_TIME
+
+        ;
+
+        override fun toString(): String {
+            return name.lowercase()
+        }
     }
 
     fun toJson(): String = JsonUtils.serialize(this)
@@ -55,16 +70,22 @@ data class SessionEvent (
 
         // ==================== USER_INPUT ==================== |
 
-        fun position(
-            actor: String,
-            timestamp: Long,
-            data: String
-        ) = SessionEvent(Type.USER_INPUT, SubType.POSITION, timestamp, actor, data)
-
         fun click(
             actor: String,
             timestamp: Long
         ) = SessionEvent(Type.USER_INPUT, SubType.CLICK, timestamp, actor)
+
+        fun angle(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, SubType.ANGLE, timestamp, actor, data)
+
+        fun rotation(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, SubType.ROTATION, timestamp, actor, data)
 
         // ==================== SENSOR_DATA ==================== |
 

@@ -29,7 +29,7 @@ class GameRequestHandler(
     private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(3)
 
     override fun afterConnectionEstablished(@NonNull session: WebSocketSession) {
-        log.debug("New game requests client connected with id: {}", session.id)
+        log.debug("New websocket client connected with id: {}", session.id)
     }
 
     override fun handleTextMessage(@NonNull session: WebSocketSession, message: TextMessage) {

@@ -241,19 +241,10 @@ class MainModel (private val scope : CoroutineScope) {
         sendTcp(request)
     }
 
-    suspend fun sendClick(timestamp: Long, sequenceNumber: Long) {
-        val request = GameAction.builder(GameAction.Type.CLICK)
+    suspend fun sendUserInput(timestamp: Long, sequenceNumber: Long, data: String? = null) {
+        val request = GameAction.builder(GameAction.Type.USER_INPUT)
             .actor(playerId)
-            .timestamp(timestamp.toString())
-            .sequenceNumber(sequenceNumber)
-            .build().toString()
-        sendUdp(request)
-    }
-
-    suspend fun sendPosition(position: Position, timestamp: Long, sequenceNumber: Long) {
-        val request = GameAction.builder(GameAction.Type.POSITION)
-            .actor(playerId)
-            .data(position.toString())
+            .apply{ data?.let { data(it) } }
             .timestamp(timestamp.toString())
             .sequenceNumber(sequenceNumber)
             .build().toString()

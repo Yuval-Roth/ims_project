@@ -101,15 +101,23 @@ class GameController(
     }
 
     fun onClientDisconnect(clientHandler: ClientHandler){
-        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: return // client not in a lobby, nothing to do
+        log.debug("onClientDisconnect() with clientId: {}",clientHandler.id)
+        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: run {
+            // client not in a lobby, nothing to do
+            log.debug("onClientDisconnect: Player not in lobby")
+            return
+        }
+        log.debug("onClientDisconnect: Player was in lobby: {}, removing player from lobby",lobbyId)
         val game = clientIdToGame[clientHandler.id]
         if(game != null){
+            log.debug("onClientDisconnect: Player was in game, ending game")
             val gameEndRequest = GameRequest.builder(Type.END_GAME)
                 .lobbyId(lobbyId)
                 .build()
             handleEndGame(gameEndRequest, "Player ${clientHandler.id} disconnected")
         }
         clientIdToLobbyId.remove(clientHandler.id)
+        log.debug("onClientDisconnect() successful")
     }
 
     // ========================================================================== |

@@ -8,7 +8,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
-import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
@@ -22,7 +21,6 @@ import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
-import com.imsproject.watch.model.Position
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.watch.utils.addToAngle
 import com.imsproject.watch.utils.cartesianToPolar
@@ -48,25 +46,6 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         var currentAlpha by mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
 
-    class Angle (
-        val angle: Float,
-        val released: Boolean
-    ) : Position{
-        override fun toString(): String {
-            return "$angle,$released"
-        }
-
-        companion object {
-            fun fromString(string: String) : Angle {
-                val parts = string.split(",")
-                return Angle(
-                    parts[0].toFloat(),
-                    parts[1].toBoolean()
-                )
-            }
-        }
-    }
-
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
@@ -85,14 +64,15 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
     private var inSync = false
         set(value) {
             if(field != value){
+                val timestamp = getCurrentGameTime()
                 viewModelScope.launch(Dispatchers.IO) {
                     when (value) {
-                        true -> addEvent(SessionEvent.syncStartTime(playerId, getCurrentGameTime()))
-                        false -> addEvent(SessionEvent.syncEndTime(playerId, getCurrentGameTime()))
+                        true -> addEvent(SessionEvent.syncStartTime(playerId, timestamp))
+                        false -> addEvent(SessionEvent.syncEndTime(playerId, timestamp))
                     }
                 }
+                field = value
             }
-            field = value
         }
 
     // ================================================================================ |
@@ -123,7 +103,12 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     fun setTouchPoint(x: Double, y: Double) {
         val (distance,rawAngle) = cartesianToPolar(x, y)
-        val inBounds = distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
+        val inBounds = if(x != -1.0 && y != -1.0){
+            distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
+        } else {
+            false // not touching the screen
+        }
+
         if(inBounds){
             updateMyArc(rawAngle)
             _released.value = false
@@ -133,28 +118,14 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             myFrequencyTracker.reset()
         }
 
-        val released = released.value
-        val angle = myArc.startAngle
-
         if(ACTIVITY_DEBUG_MODE) return
-        // send position to server
+
+        // send input to server
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = getCurrentGameTime()
-            val position = Angle(angle, released)
-            model.sendPosition(position, timestamp,packetTracker.newPacket())
-            addEvent(SessionEvent.position(playerId,timestamp,position.toString()))
-        }
-    }
-
-    fun setReleased() {
-        _released.value = true
-        myFrequencyTracker.reset()
-        val angle = myArc.startAngle
-
-        if(ACTIVITY_DEBUG_MODE) return
-        // send position to server
-        viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Angle(angle, true), getCurrentGameTime(), packetTracker.newPacket())
+            val data = if(inBounds) myArc.startAngle.toString() else UNDEFINED_ANGLE.toString()
+            model.sendUserInput(timestamp, packetTracker.newPacket(),data)
+            addEvent(SessionEvent.angle(playerId,timestamp,data))
         }
     }
 
@@ -174,45 +145,36 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
      */
     override suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.POSITION -> {
+            GameAction.Type.USER_INPUT -> {
                 val actor = action.actor ?: run{
-                    Log.e(TAG, "handleGameAction: missing actor in position action")
+                    Log.e(TAG, "handleGameAction: missing actor in user input action")
                     return
                 }
                 val timestamp = action.timestamp?.toLong() ?: run{
-                    Log.e(TAG, "handleGameAction: missing timestamp in position action")
+                    Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
-                val position = action.data?.let { Angle.fromString(it) } ?: run{
-                    Log.e(TAG, "handleGameAction: missing position in position action")
+                val angle = action.data?.toFloat() ?: run{
+                    Log.e(TAG, "handleGameAction: missing data in user input action")
                     return
                 }
                 val sequenceNumber = action.sequenceNumber ?: run{
-                    Log.e(TAG, "handleGameAction: missing sequence number in position action")
+                    Log.e(TAG, "handleGameAction: missing sequence number in user input action")
                     return
                 }
 
-                opponentArc.startAngle = position.angle
-                _opponentReleased.value = position.released
-                if(position.released){
+                if(angle == UNDEFINED_ANGLE){
+                    _opponentReleased.value = true
                     opponentFrequencyTracker.reset()
                 } else {
-                    opponentFrequencyTracker.addSample(position.angle)
+                    _opponentReleased.value = false
+                    opponentArc.startAngle = angle
+                    opponentFrequencyTracker.addSample(angle)
                 }
 
                 packetTracker.receivedOtherPacket(sequenceNumber)
             }
             else -> super.handleGameAction(action)
-        }
-    }
-
-    /**
-     * handles game requests
-     */
-    override suspend fun handleGameRequest(request: GameRequest) {
-        when (request.type) {
-            GameRequest.Type.END_GAME -> exitOk()
-            else -> super.handleGameRequest(request)
         }
     }
 

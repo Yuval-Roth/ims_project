@@ -12,13 +12,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
-import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRAY_COLOR
-import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.VIVID_ORANGE_COLOR
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
@@ -67,7 +65,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = super.getCurrentGameTime()
-            model.sendClick(timestamp,packetTracker.newPacket())
+            model.sendUserInput(timestamp,packetTracker.newPacket())
             addEvent(SessionEvent.click(playerId,timestamp))
         }
     }
@@ -98,17 +96,17 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
      */
     override suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.CLICK -> {
+            GameAction.Type.USER_INPUT -> {
                 val actor = action.actor ?: run{
-                    Log.e(TAG, "handleGameAction: missing actor in click action")
+                    Log.e(TAG, "handleGameAction: missing actor in user input action")
                     return
                 }
                 val timestamp = action.timestamp?.toLong() ?: run{
-                    Log.e(TAG, "handleGameAction: missing timestamp in click action")
+                    Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
                 val sequenceNumber = action.sequenceNumber ?: run{
-                    Log.e(TAG, "handleGameAction: missing sequence number in click action")
+                    Log.e(TAG, "handleGameAction: missing sequence number in user input action")
                     return
                 }
                 // switch to main thread to update UI
@@ -122,16 +120,6 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 }
             }
             else -> super.handleGameAction(action)
-        }
-    }
-
-    /**
-     * handles game requests
-     */
-    override suspend fun handleGameRequest(request: GameRequest) {
-        when (request.type) {
-            GameRequest.Type.END_GAME -> exitOk()
-            else -> super.handleGameRequest(request)
         }
     }
 

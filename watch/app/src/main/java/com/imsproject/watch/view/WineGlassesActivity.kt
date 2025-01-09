@@ -191,7 +191,7 @@ class WineGlassesActivity : ComponentActivity() {
                                 }
 
                                 PointerEventType.Release -> {
-                                    viewModel.setReleased()
+                                    viewModel.setTouchPoint(-1.0, -1.0)
                                 }
                             }
                             playSound = true
@@ -308,6 +308,7 @@ class WineGlassesActivity : ComponentActivity() {
                                 .coerceAtLeast(0.0f)
                         delay(16)
                     }
+                    opponentArc.startAngle = UNDEFINED_ANGLE
                 } else {
                     opponentArc.currentAlpha = ARC_DEFAULT_ALPHA
                 }
