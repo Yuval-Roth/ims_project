@@ -81,9 +81,11 @@ abstract class GameViewModel(
             return
         }
 
-        setupListeners()
         // set up everything required for the session
         viewModelScope.launch(Dispatchers.IO) {
+
+            // =================== clock synchronization =================== |
+
             var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
             do {
                 try{
@@ -96,9 +98,17 @@ abstract class GameViewModel(
                 break
             } while(true)
             myStartTime = timeServerStartTime + timeServerDelta
-            _state.value = State.PLAYING
 
-            // set up packet tracker
+            // log metadata
+            val timestamp = getCurrentGameTime()
+            addEvent(SessionEvent.serverStartTime(playerId, timestamp,timeServerStartTime.toString()))
+            addEvent(SessionEvent.timeServerDelta(playerId,timestamp+1,timeServerDelta.toString()))
+            addEvent(SessionEvent.clientStartTime(playerId,timestamp+2,myStartTime.toString()))
+
+            // =================== other setup =================== |
+
+            setupListeners()
+
             packetTracker.onOutOfOrderPacket = {
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
@@ -106,8 +116,8 @@ abstract class GameViewModel(
             sensorsHandler = SensorsHandler(viewModelScope,context,this@GameViewModel)
             sensorsHandler.run()
 
-            // start tracking ping
             viewModelScope.launch(Dispatchers.IO) {
+                delay(1000)
                 pingTracker.onUpdate = { addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it)) }
                 pingTracker.start()
                 while (true) {
@@ -116,13 +126,18 @@ abstract class GameViewModel(
                     delay(50)
                 }
             }
+
+            // =================== game start =================== |
+            addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
+            _state.value = State.PLAYING
         }
 
     }
 
-    fun exitWithError(string: String, code: Result.Code) {
+    fun exitWithError(errorMessage: String, code: Result.Code) {
+        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         clearListeners() // clear the listeners to prevent any further messages from being processed.
-        _error.value = string
+        _error.value = errorMessage
         _resultCode.value = code
         _state.value = State.TERMINATED
     }
@@ -163,7 +178,8 @@ abstract class GameViewModel(
                 if(success){
                     exitOk()
                 } else {
-                    exitWithError(request.message ?: "Unknown error",Result.Code.GAME_ENDED_WITH_ERROR)
+                    val errorMessage = request.message ?: "Unknown error"
+                    exitWithError(errorMessage,Result.Code.GAME_ENDED_WITH_ERROR)
                 }
             }
             else -> {
@@ -177,6 +193,7 @@ abstract class GameViewModel(
     }
 
     protected fun exitOk() {
+        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),"ok"))
         clearListeners() // clear the listeners to prevent any further messages from being processed.
         _state.value = State.TERMINATED
     }

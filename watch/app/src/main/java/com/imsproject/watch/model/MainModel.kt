@@ -267,8 +267,7 @@ class MainModel (private val scope : CoroutineScope) {
             val response = timeServerUdp.receive()
             val timeDelta = System.currentTimeMillis() - startTime
             val timeResponse = TimeRequest.fromJson(response)
-            val halfRoundTripTime = timeDelta / 2
-            return timeResponse.time!! - halfRoundTripTime // approximation
+            return timeResponse.time!! - timeDelta / 2 // approximation
         } catch(e: SocketTimeoutException){
             Log.e(TAG, "Time request timeout", e)
             throw e

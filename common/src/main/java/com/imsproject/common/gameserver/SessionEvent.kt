@@ -3,7 +3,7 @@ package com.imsproject.common.gameserver
 import com.google.gson.annotations.SerializedName
 import com.imsproject.common.utils.JsonUtils
 
-data class SessionEvent (
+data class SessionEvent internal constructor (
     val type: Type,
     val subType: SubType,
     val timestamp: Long,
@@ -15,7 +15,8 @@ data class SessionEvent (
         @SerializedName("user_input")               USER_INPUT,
         @SerializedName("sensor_data")              SENSOR_DATA,
         @SerializedName("network_data")             NETWORK_DATA,
-        @SerializedName("sync_data")                SYNC_DATA
+        @SerializedName("sync_data")                SYNC_DATA,
+        @SerializedName("meta_data")                META_DATA,
 
         ;
 
@@ -45,7 +46,14 @@ data class SessionEvent (
         // SYNC_DATA
         @SerializedName("sync_start_time")          SYNC_START_TIME,
         @SerializedName("sync_end_time")            SYNC_END_TIME,
-        @SerializedName("synced_at_time")           SYNCED_AT_TIME
+        @SerializedName("synced_at_time")           SYNCED_AT_TIME,
+
+        // META_DATA
+        @SerializedName("server_start_time")        SERVER_START_TIME,
+        @SerializedName("client_start_time")        CLIENT_START_TIME,
+        @SerializedName("time_server_delta")        TIME_SERVER_DELTA,
+        @SerializedName("session_started")          SESSION_STARTED,
+        @SerializedName("session_ended")            SESSION_ENDED,
 
         ;
 
@@ -153,5 +161,36 @@ data class SessionEvent (
             actor: String,
             timestamp: Long
         ) = SessionEvent(Type.SYNC_DATA, SubType.SYNCED_AT_TIME, timestamp, actor)
+
+        // ==================== META_DATA ==================== |
+
+        fun serverStartTime(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.META_DATA, SubType.SERVER_START_TIME, timestamp, actor, data)
+
+        fun clientStartTime(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.META_DATA, SubType.CLIENT_START_TIME, timestamp, actor, data)
+
+        fun timeServerDelta(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.META_DATA, SubType.TIME_SERVER_DELTA, timestamp, actor, data)
+
+        fun sessionStarted(
+            actor: String,
+            timestamp: Long
+        ) = SessionEvent(Type.META_DATA, SubType.SESSION_STARTED, timestamp, actor)
+
+        fun sessionEnded(
+            actor: String,
+            timestamp: Long,
+            reason: String
+        ) = SessionEvent(Type.META_DATA, SubType.SESSION_ENDED, timestamp, actor, reason)
     }
 }
