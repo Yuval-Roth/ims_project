@@ -29,3 +29,20 @@ services:
       - "5000:5000"
     volumes:
       - /home/admin/volumes/manager:/app/data
+
+  db-server:
+    image: postgres:latest
+    container_name: ims-db-server
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminMTAC
+      POSTGRES_DB: ims-db
+    ports:
+      - "5432:5432"
+    networks:
+      - ims-network
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql #local
+      - ./database/data:/var/lib/postgresql/data #local
+#      - /home/admin/volumes/db_server/data:/var/lib/postgresql/data #remote
+#      - /home/admin/volumes/db_server/init.sql:/docker-entrypoint-initdb.d/init.sql #remote
