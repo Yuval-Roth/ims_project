@@ -19,30 +19,45 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.Picker
+import androidx.wear.compose.material.PickerState
+import androidx.wear.compose.material.rememberPickerState
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
@@ -58,6 +73,8 @@ import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.collections.mutableMapOf
 
 
@@ -77,8 +94,13 @@ class MainActivity : ComponentActivity() {
         val gameManager = getSystemService(GameManager::class.java)
         gameManager.setGameState(GameState(false,GameState.MODE_GAMEPLAY_UNINTERRUPTIBLE))
         setContent {
-            Main(viewModel)
+            Main()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.disconnect()
     }
 
     private fun registerActivities(){
@@ -87,19 +109,14 @@ class MainActivity : ComponentActivity() {
         flourMill = registerForActivityResult(FlourMillResultContract()) { viewModel.afterGame(it) }
     }
 
-    override fun onResume() {
-        super.onResume()
-    }
-
     @Composable
-    private fun Main(viewModel: MainViewModel){
+    private fun Main(){
 
         val state = viewModel.state.collectAsState().value
 
         when(state) {
-            State.DISCONNECTED -> {
-                BlankScreen()
-                viewModel.connect()
+            State.DISCONNECTED -> PickingIdScreen {
+                viewModel.connect(it)
             }
 
             State.CONNECTING -> ConnectingScreen()
@@ -181,6 +198,97 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    @Composable
+    private fun PickingIdScreen(onClick : (String) -> Unit) {
+        val items = remember {
+            @OptIn(ExperimentalStdlibApi::class)
+            mutableListOf<String>().apply {
+                for (i in 0..15) {
+                    add(
+                        i.toHexString(HexFormat.UpperCase)
+                            .let{it.substring(it.length-1)}
+                    )
+                }
+            }
+        }
+        val scope = rememberCoroutineScope()
+        val leftNum = rememberPickerState(16, 0)
+        val middleNum = rememberPickerState(16, 0)
+        val rightNum = rememberPickerState(16, 0)
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DARK_BACKGROUND_COLOR),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(COLUMN_PADDING/2)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                BasicText(
+                    text = "Participant ID",
+                    style = textStyle
+                )
+                Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.04f).dp))
+                Row {
+                    SimplePicker(state = leftNum, items = items)
+                    Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.07f).dp))
+                    SimplePicker(state = middleNum, items = items)
+                    Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.07f).dp))
+                    SimplePicker(state = rightNum, items = items)
+                }
+                Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.04f).dp))
+                Row(
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .size((SCREEN_WIDTH*0.11f).dp),
+                        onClick = {
+                            // randomize the numbers
+                            scope.launch {
+                                leftNum.animateScrollToOption((0..15).random())
+                            }
+                            scope.launch {
+                                middleNum.animateScrollToOption((0..15).random())
+                            }
+                            scope.launch {
+                                rightNum.animateScrollToOption((0..15).random())
+                            }
+                        },
+                        shape = CircleShape,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "shuffle"
+                        )
+                    }
+                    Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.06f).dp))
+                    Button(
+                        modifier = Modifier
+                            .size((SCREEN_WIDTH*0.11f).dp),
+                        onClick = {
+                            val id = items[leftNum.selectedOption] +
+                                     items[middleNum.selectedOption] +
+                                     items[rightNum.selectedOption]
+                            onClick(id)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Next"
+                        )
+                    }
+                }
+            }
+        }
+
     }
 
     @Composable
@@ -334,6 +442,27 @@ class MainActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun SimplePicker(
+        state: PickerState,
+        items: List<String>
+    ) {
+        Picker(
+            modifier = Modifier
+                .size(20.dp,75.dp)
+                .background(Color.Transparent)
+            ,
+            state = state,
+            gradientColor = DARK_BACKGROUND_COLOR,
+            contentDescription = "number",
+        ) {
+            BasicText(
+                text = items[it],
+                style = TextStyle(color = Color.White, fontSize = 30.sp),
+            )
         }
     }
 

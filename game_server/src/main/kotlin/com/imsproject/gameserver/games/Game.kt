@@ -7,8 +7,10 @@ import com.imsproject.gameserver.ClientHandler
 abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
 
     abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
+    var startTime: Long = -1
 
     open fun startGame(timestamp: Long) {
+        startTime = timestamp
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
             .timestamp(timestamp.toString())
             .build().toJson()

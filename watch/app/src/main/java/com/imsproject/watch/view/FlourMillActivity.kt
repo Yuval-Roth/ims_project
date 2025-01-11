@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.AXLE_HANDLE_LENGTH
 import com.imsproject.watch.AXLE_WIDTH
 import com.imsproject.watch.BEZIER_START_DISTANCE
@@ -73,7 +74,7 @@ import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
 
-class FlourMillActivity : ComponentActivity() {
+class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     private val viewModel : FlourMillViewModel by viewModels<FlourMillViewModel>()
 
@@ -92,54 +93,10 @@ class FlourMillActivity : ComponentActivity() {
     fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.LOADING -> {
-                LoadingScreen()
-            }
             GameViewModel.State.PLAYING -> {
                 FlourMill()
             }
-            GameViewModel.State.TERMINATED -> {
-                BlankScreen()
-                val result = viewModel.resultCode.collectAsState().value
-                val intent = IntentSanitizer.Builder()
-                    .allowComponent(componentName)
-                    .build().sanitize(intent) {
-                        Log.d(TAG, "FlourMill: $it")
-                    }
-                if(result != Result.Code.OK){
-                    intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
-                }
-                setResult(result.ordinal,intent)
-                finish()
-            }
-        }
-    }
-
-    @Composable
-    private fun LoadingScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier.Companion
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Companion.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.Companion.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(
-                        strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
-                        modifier = Modifier.Companion.size((SCREEN_WIDTH * 0.2f).dp)
-                    )
-                    Spacer(modifier = Modifier.Companion.height(16.dp))
-                    BasicText(
-                        text = "Loading session...",
-                        style = textStyle
-                    )
-                }
-            }
-        }
+            else -> super.Main(viewModel)}
     }
 
     @Composable
@@ -235,10 +192,7 @@ class FlourMillActivity : ComponentActivity() {
                     .clip(shape = CircleShape)
                     .background(color = LIGHT_BROWN_COLOR)
                     .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = Color.Green)
-                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = Color.Green/*.copy(alpha = 0.5f)*/)
-//                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
-//                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
-//                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = LIGHT_BROWN_COLOR)
+                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = Color.Green)
             )
 
             Box( // center axis
@@ -279,7 +233,7 @@ class FlourMillActivity : ComponentActivity() {
                     val axlePath = Path().apply {
                         moveTo(centerX, centerY)
                         lineTo(bezierStartX, bezierStartY)
-                        quadraticBezierTo(controlX, controlY, stretchX, stretchY)
+                        quadraticTo(controlX, controlY, stretchX, stretchY)
                     }
 
                     val axleEndPath = Path().apply {
@@ -369,20 +323,6 @@ class FlourMillActivity : ComponentActivity() {
 
     private fun getDirection(angle: Float, targetAngle: Float) : Float {
         return if (isClockwise(angle, targetAngle)) 1f else -1f
-    }
-
-    @Composable
-    fun BlankScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier.Companion
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Companion.Center
-            ) {
-
-            }
-        }
     }
 
     companion object {

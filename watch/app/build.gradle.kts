@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.res.namespaced.getAutoNamespacedLibraryFileName
 
 plugins {
     alias(libs.plugins.android.application)
@@ -70,6 +69,7 @@ dependencies {
 
     implementation(libs.imsproject.common)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.material.icons.core)
 
     implementation (fileTree(
         "dir" to "libs",

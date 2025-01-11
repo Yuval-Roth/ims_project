@@ -1,10 +1,15 @@
 package com.imsproject.gameserver
 
+import com.imsproject.common.networking.UdpClient
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ClientController {
+
+    var onClientDisconnect: ((ClientHandler) -> Unit)? = null
 
     private val clientIdToHandler = ConcurrentHashMap<String, ClientHandler>()
     private val wsSessionIdToHandler = ConcurrentHashMap<String, ClientHandler>()
@@ -22,8 +27,8 @@ class ClientController {
         return hostPortToHandler[hostPort]
     }
 
-    fun addClientHandler(sessionId: String, clientHandler: ClientHandler) {
-        wsSessionIdToHandler[sessionId] = clientHandler
+    fun addClientHandler(clientHandler: ClientHandler) {
+        wsSessionIdToHandler[clientHandler.wsSessionId] = clientHandler
         clientIdToHandler[clientHandler.id] = clientHandler
     }
 
@@ -39,6 +44,7 @@ class ClientController {
     fun removeClientHandler(clientId: String) {
         val handler = clientIdToHandler.remove(clientId) ?: return
         wsSessionIdToHandler.remove(handler.wsSessionId)
+        hostPortToHandler.remove(handler.udpAddress.toHostPortString())
     }
 
     fun containsByWsSessionId(sessionId: String): Boolean {
@@ -46,6 +52,10 @@ class ClientController {
     }
 
     fun getAllClientIds(): List<String> {
+        return clientIdToHandler.keys.toList()
+    }
+
+    private fun pruneDeadClients() {
         val iter = clientIdToHandler.iterator()
         while(iter.hasNext()){
             val entry = iter.next()
@@ -56,8 +66,20 @@ class ClientController {
                 wsSessionIdToHandler.remove(entry.value.wsSessionId)
                 hostPortToHandler.remove(handler.udpAddress.toHostPortString())
                 handler.close()
+                onClientDisconnect?.invoke(handler)
             }
         }
-        return clientIdToHandler.keys.toList()
+    }
+
+    private fun run(){
+        while(true){
+            Thread.sleep(10000) // check every 10 seconds
+            pruneDeadClients()
+        }
+    }
+
+    @EventListener
+    fun onApplicationReadyEvent(event: ApplicationReadyEvent){
+        Thread(this::run).start()
     }
 }

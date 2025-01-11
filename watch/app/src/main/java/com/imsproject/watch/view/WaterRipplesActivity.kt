@@ -45,6 +45,7 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
@@ -65,7 +66,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class WaterRipplesActivity : ComponentActivity() {
+class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 
     private val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
     private lateinit var soundPool: SoundPool
@@ -88,60 +89,17 @@ class WaterRipplesActivity : ComponentActivity() {
     fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.LOADING -> {
-                LoadingScreen()
-            }
             GameViewModel.State.PLAYING -> {
                 WaterRipples()
             }
-            GameViewModel.State.TERMINATED -> {
-                BlankScreen()
-                val result = viewModel.resultCode.collectAsState().value
-                val intent = IntentSanitizer.Builder()
-                    .allowComponent(componentName)
-                    .build().sanitize(intent) {
-                        Log.d(TAG, "WaterRipples: $it")
-                    }
-                if(result != Result.Code.OK){
-                    intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
-                }
-                setResult(result.ordinal,intent)
-                finish()
-            }
-        }
-    }
-
-    @Composable
-    private fun LoadingScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(
-                        strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
-                        modifier = Modifier.size((SCREEN_WIDTH *0.2f).dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    BasicText(
-                        text = "Loading session...",
-                        style = textStyle
-                    )
-                }
-            }
+            else -> super.Main(viewModel)
         }
     }
 
     @SuppressLint("ReturnFromAwaitPointerEventScope")
     @Composable
     fun WaterRipples() {
-        var ripples = remember { viewModel.ripples }
+        val ripples = remember { viewModel.ripples }
         val counter by viewModel.counter.collectAsState()
 
         Box(
@@ -237,29 +195,8 @@ class WaterRipplesActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun BlankScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ){
-
-            }
-        }
-    }
-
     companion object {
         private const val TAG = "WaterRipplesActivity"
-    }
-
-    @Preview(device = "id:wearos_large_round", apiLevel = 34)
-    @Composable
-    fun PreviewLoadingScreen() {
-        initProperties(454, 454)
-        LoadingScreen()
     }
 }
 

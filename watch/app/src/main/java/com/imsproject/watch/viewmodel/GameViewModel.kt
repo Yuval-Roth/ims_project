@@ -36,6 +36,7 @@ abstract class GameViewModel(
     enum class State {
         LOADING,
         PLAYING,
+        TRYING_TO_RECONNECT,
         TERMINATED
     }
 
@@ -86,7 +87,7 @@ abstract class GameViewModel(
 
             // =================== clock synchronization =================== |
 
-            var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
+            val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
             do {
                 try{
                     calculateTimeServerDelta()
@@ -169,6 +170,10 @@ abstract class GameViewModel(
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
             GameRequest.Type.HEARTBEAT -> {}
+            GameRequest.Type.EXIT -> {
+                val errorMessage = request.message ?: ""
+                exitWithError(errorMessage,Result.Code.SERVER_CLOSED_CONNECTION)
+            }
             GameRequest.Type.END_GAME -> {
                 val success = request.success ?: run {
                     Log.e(TAG, "handleGameRequest: missing success field in END_GAME request")
@@ -202,22 +207,58 @@ abstract class GameViewModel(
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
 
+    private fun reconnect(onFailure: () -> Unit) {
+        _state.value = State.TRYING_TO_RECONNECT
+        viewModelScope.launch(Dispatchers.IO) {
+            val timeout = System.currentTimeMillis() + 10000
+            var reconnected = false
+            model.closeAllResources()
+            while(!reconnected && System.currentTimeMillis() < timeout){
+                if(model.reconnect()){
+                    reconnected = true
+                }
+            }
+            if(reconnected){
+                addEvent(SessionEvent.reconnected(playerId,getCurrentGameTime()))
+                setupListeners()
+                _state.value = State.PLAYING
+            } else {
+                onFailure()
+            }
+        }
+    }
+
     private fun setupListeners() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
-                exitWithError("Connection lost",Result.Code.CONNECTION_LOST)
+                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),"Connection lost"))
+                reconnect {
+                    exitWithError("Connection lost", Result.Code.CONNECTION_LOST)
+                }
             } else {
-                exitWithError(it.message ?: it.cause?.message ?: "unknown tcp exception",Result.Code.TCP_EXCEPTION)
+                val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp exception"
+                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+                reconnect {
+                    exitWithError(errorMessage, Result.Code.TCP_EXCEPTION)
+                }
             }
         }
         model.onTcpError {
             Log.e(TAG, "tcp error", it)
-            exitWithError(it.message ?: it.cause?.message ?: "unknown tcp error",Result.Code.TCP_ERROR)
+            val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp error"
+            addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+            reconnect {
+                exitWithError(errorMessage, Result.Code.TCP_ERROR)
+            }
         }
         model.onUdpMessage({ handleGameAction(it) }) {
             Log.e(TAG, "udp exception", it)
-            exitWithError(it.message ?: it.cause?.message ?: "unknown udp exception",Result.Code.UDP_EXCEPTION)
+            val errorMessage = it.message ?: it.cause?.message ?: "unknown udp exception"
+            addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+            reconnect {
+                exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
+            }
         }
     }
 

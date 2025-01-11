@@ -41,7 +41,8 @@ data class SessionEvent internal constructor (
         // NETWORK_DATA
         @SerializedName("latency")                  LATENCY,
         @SerializedName("packet_out_of_order")      PACKET_OUT_OF_ORDER,
-        @SerializedName("timeout")                  TIMEOUT,
+        @SerializedName("network_error")            NETWORK_ERROR,
+        @SerializedName("reconnected")              RECONNECTED,
 
         // SYNC_DATA
         @SerializedName("sync_start_time")          SYNC_START_TIME,
@@ -140,10 +141,16 @@ data class SessionEvent internal constructor (
             timestamp: Long,
         ) = SessionEvent(Type.NETWORK_DATA, SubType.PACKET_OUT_OF_ORDER, timestamp, actor)
 
-        fun timeout(
+        fun networkError(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.NETWORK_ERROR, timestamp, actor, data)
+
+        fun reconnected(
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMEOUT, timestamp, actor)
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.RECONNECTED, timestamp, actor)
 
         // ==================== SYNC_DATA ==================== |
 
