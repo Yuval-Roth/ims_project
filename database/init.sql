@@ -47,7 +47,7 @@ CREATE TABLE Sessions (
 );
 
 -- Create the SessionUserInputEvent table
-CREATE TABLE SessionEvents_user_input (
+CREATE TABLE SessionEvents (
                                        event_id SERIAL PRIMARY KEY,
                                         session_id INT,
                                        type session_type_enum NOT NULL,
