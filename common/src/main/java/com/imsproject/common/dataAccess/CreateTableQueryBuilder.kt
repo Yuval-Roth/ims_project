@@ -261,12 +261,28 @@ class ColumnModifiers private constructor() {
     }
 }
 
-enum class ColumnType {
+enum class ColumnType (
+    private val arg: Any?
+) {
     INTEGER,
     TEXT,
     REAL,
     BLOB,
-    NUMERIC
+    NUMERIC,
+    VARCHAR_255(255),
+
+    ;
+
+    constructor() : this(null)
+    override fun toString(): String {
+        val str = super.toString()
+        return if(arg != null) {
+            // remove the last underscore and add the argument in parentheses
+            str.indexOfLast { it == '_' }.let { str.substring(0,it) } + "($arg)"
+        } else {
+            str
+        }
+    }
 }
 
 enum class ON_DELETE {
