@@ -11,6 +11,14 @@ data class SessionEvent internal constructor (
     val data: String? = null
 ) : Comparable<SessionEvent> {
 
+    private data class CompressedSessionEvent(
+        val to: Int, // type ordinal
+        val sto: Int, // subType ordinal
+        val ts: Long, // timestamp
+        val a: String, // actor
+        val d: String? // data
+    )
+
     enum class Type {
         @SerializedName("user_input")               USER_INPUT,
         @SerializedName("sensor_data")              SENSOR_DATA,
@@ -65,6 +73,14 @@ data class SessionEvent internal constructor (
 
     fun toJson(): String = JsonUtils.serialize(this)
 
+    fun toCompressedJson(): String = CompressedSessionEvent(
+        type.ordinal,
+        subType.ordinal,
+        timestamp,
+        actor,
+        data
+    ).let{ JsonUtils.serialize(it) }
+
     override fun compareTo(other: SessionEvent): Int {
         return timestamp.compareTo(other.timestamp)
     }
@@ -74,6 +90,17 @@ data class SessionEvent internal constructor (
     // ================================================================================ |
 
     companion object{
+
+        fun fromCompressedJson(json: String): SessionEvent = JsonUtils.deserialize<CompressedSessionEvent>(json)
+            .let {
+                SessionEvent(
+                    Type.entries[it.to],
+                    SubType.entries[it.sto],
+                    it.ts,
+                    it.a,
+                    it.d
+                )
+            }
 
         fun fromJson(json: String): SessionEvent = JsonUtils.deserialize(json)
 

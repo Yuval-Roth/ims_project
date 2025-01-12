@@ -1,22 +1,14 @@
 package com.imsproject.watch.model
 
-import android.se.omapi.Session
 import com.imsproject.common.gameserver.SessionEvent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import java.util.concurrent.Executors
-import kotlinx.coroutines.launch
-import java.util.TreeSet
+import java.util.concurrent.ConcurrentLinkedDeque
 
 class SessionEventCollectorImpl private constructor() : SessionEventCollector {
 
-    private val events = TreeSet<SessionEvent>()
-    private val executor = Executors.newSingleThreadExecutor()
+    private val events = ConcurrentLinkedDeque<SessionEvent>()
 
     override fun addEvent(event: SessionEvent) {
-        executor.submit {
-            events.add(event)
-        }
+        events.add(event)
     }
 
     override fun getAllEvents(): Iterable<SessionEvent> {
@@ -24,16 +16,14 @@ class SessionEventCollectorImpl private constructor() : SessionEventCollector {
     }
 
     override fun clearEvents() {
-        executor.submit {
-            events.clear()
-        }
+        events.clear()
     }
 
     companion object {
         private val lock = Any()
-        private var instance: SessionEventCollectorImpl? = null
+        private var instance: SessionEventCollector? = null
 
-        fun getInstance(): SessionEventCollectorImpl {
+        fun getInstance(): SessionEventCollector {
             synchronized(lock) {
                 if (instance == null) {
                     instance = SessionEventCollectorImpl()

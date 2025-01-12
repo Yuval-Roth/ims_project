@@ -17,7 +17,7 @@ import javax.net.ssl.SSLEngine
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509ExtendedTrustManager
 
-class RestApiClient private constructor() {
+class RestApiClient {
     private var uri: String? = null
     private val headers: MutableMap<String, String> = HashMap()
     private val params: MutableMap<String, String> = HashMap()
@@ -152,12 +152,6 @@ class RestApiClient private constructor() {
 
         @Throws(CertificateException::class)
         override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String, engine: SSLEngine) {
-        }
-    }
-
-    companion object {
-        fun create(): RestApiClient {
-            return RestApiClient()
         }
     }
 }

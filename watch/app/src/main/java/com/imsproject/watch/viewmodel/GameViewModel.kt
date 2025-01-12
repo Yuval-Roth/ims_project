@@ -37,6 +37,7 @@ abstract class GameViewModel(
         LOADING,
         PLAYING,
         TRYING_TO_RECONNECT,
+        ERROR,
         TERMINATED
     }
 
@@ -136,8 +137,8 @@ abstract class GameViewModel(
     }
 
     fun exitWithError(errorMessage: String, code: Result.Code) {
-        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         clearListeners() // clear the listeners to prevent any further messages from being processed.
+        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         _error.value = errorMessage
         _resultCode.value = code
         _state.value = State.TERMINATED
@@ -145,6 +146,18 @@ abstract class GameViewModel(
 
     fun getCurrentGameTime(): Long {
         return System.currentTimeMillis() - myStartTime
+    }
+
+    fun showError(msg: String) {
+        _error.value = msg
+        _state.value = State.ERROR
+    }
+
+    fun clearError() {
+        if(_state.value == State.ERROR){
+            _error.value = null
+            _state.value = State.PLAYING
+        }
     }
 
     // ================================================================================ |
@@ -162,7 +175,7 @@ abstract class GameViewModel(
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${action.type}\n"+
                         "request content:\n$action"
-                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
+                showError(errorMsg)
             }
         }
     }
@@ -192,7 +205,7 @@ abstract class GameViewModel(
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${request.type}\n"+
                         "request content:\n$request"
-                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
+                showError(errorMsg)
             }
         }
     }
