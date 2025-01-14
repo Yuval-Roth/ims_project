@@ -79,22 +79,15 @@ class MainModel (private val scope : CoroutineScope) {
         Log.d(TAG, "connectToServer: Connecting to server ${if(id!= null) "with id $id" else ""}")
 
         // start setup
-        val (ws, udp) = getNewClients()
+        val (ws, udp, timeUdp) = getNewClients()
         val enterType = if(id!=null) GameRequest.Type.ENTER_WITH_ID else GameRequest.Type.ENTER
         val (playerId, udpEnterCode) = wsSetup(ws, enterType, id) ?: return null
         if(! udpSetup(udp, udpEnterCode)) return null
 
-        // time server
-        val timeServerUdp = UdpClient()
-        timeServerUdp.remoteAddress = SERVER_IP
-        timeServerUdp.remotePort = TIME_SERVER_PORT
-        timeServerUdp.init()
-        timeServerUdp.setTimeout(TIMEOUT_MS.toInt())
-
         // connection established
         this.ws = ws
         this.udp = udp
-        this.timeServerUdp = timeServerUdp
+        this.timeServerUdp = timeUdp
         this.playerId = playerId
         connected = true
         initListeners()
@@ -111,13 +104,14 @@ class MainModel (private val scope : CoroutineScope) {
         }
 
         // start setup
-        val (ws, udp) = getNewClients()
+        val (ws, udp, timeUdp) = getNewClients()
         val (_, udpEnterCode) = wsSetup(ws, GameRequest.Type.RECONNECT, playerId) ?: return false
         if(! udpSetup(udp, udpEnterCode)) return false
 
         // connection established
         this.ws = ws
         this.udp = udp
+        this.timeServerUdp = timeUdp
         connected = true
         initListeners()
 
@@ -265,13 +259,18 @@ class MainModel (private val scope : CoroutineScope) {
     // ======================== Private Methods ============================== |
     // ======================================================================= |
 
-    private fun getNewClients(): Pair<WebSocketClient, UdpClient> {
+    private fun getNewClients(): Triple<WebSocketClient, UdpClient, UdpClient> {
         val ws = WebSocketClient(URI("$SCHEME://$SERVER_IP:$SERVER_WS_PORT/ws"))
         val udp = UdpClient()
         udp.remoteAddress = SERVER_IP
         udp.remotePort = SERVER_UDP_PORT
         udp.init()
-        return Pair(ws, udp)
+        val timeUdp = UdpClient()
+        timeUdp.remoteAddress = SERVER_IP
+        timeUdp.remotePort = TIME_SERVER_PORT
+        timeUdp.init()
+        timeUdp.setTimeout(TIMEOUT_MS.toInt())
+        return Triple(ws, udp, timeUdp)
     }
 
     private fun wsSetup (
