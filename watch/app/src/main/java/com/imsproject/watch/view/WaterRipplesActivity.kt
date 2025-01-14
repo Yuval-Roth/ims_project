@@ -1,34 +1,20 @@
 package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
-import android.app.GameManager
-import android.app.GameState
 import android.media.AudioAttributes
-import android.media.AudioFormat
-import android.media.AudioManager
-import android.media.AudioTrack
 import android.media.SoundPool
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.util.Log
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,27 +23,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.IntentSanitizer
 import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
-import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
-import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RIPPLE_MAX_SIZE
-import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.initProperties
-import com.imsproject.watch.textStyle
-import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import com.imsproject.watch.R
@@ -101,19 +77,27 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
     fun WaterRipples() {
         val ripples = remember { viewModel.ripples }
         val counter by viewModel.counter.collectAsState()
+        val scope = rememberCoroutineScope()
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(color = DARK_BACKGROUND_COLOR)
-                .shadow(elevation = (SCREEN_RADIUS * 0.35f).dp, CircleShape, spotColor = Color.Cyan.copy(alpha = 0.5f))
+                .shadow(
+                    elevation = (SCREEN_RADIUS * 0.35f).dp,
+                    CircleShape,
+                    spotColor = Color.Cyan.copy(alpha = 0.5f)
+                )
             ,
             contentAlignment = Alignment.Center
         ) {
 
             Button(
                 modifier = Modifier
-                    .border(BorderStroke(2.dp, DARK_BACKGROUND_COLOR.copy(alpha=0.5f)), CircleShape)
+                    .border(
+                        BorderStroke(2.dp, DARK_BACKGROUND_COLOR.copy(alpha = 0.5f)),
+                        CircleShape
+                    )
                     .size(WATER_RIPPLES_BUTTON_SIZE.dp)
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
@@ -158,12 +142,16 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
                     }
                     // ================================================= |
 
+                    if (! ripple.updated) continue
+                    ripple.updated = false
+                    ripple.animationJob?.cancel()
+
                     // animate the ripple that is not at max size
 
                     val sizeAnimStep = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
                     val alphaAnimStep =  ripple.startingAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
 
-                    launch {
+                    ripple.animationJob = scope.launch {
                         while (ripple.size < RIPPLE_MAX_SIZE) {
                             ripple.size += sizeAnimStep
                             if(ripple.size >= RIPPLE_MAX_SIZE){

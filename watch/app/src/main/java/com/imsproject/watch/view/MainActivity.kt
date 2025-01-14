@@ -84,6 +84,15 @@ class MainActivity : ComponentActivity() {
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
     private lateinit var flourMill: ActivityResultLauncher<Map<String,Any>>
+    private val idsList = mutableListOf<String>().apply {
+            for (i in 0..15) {
+                add(
+                    @OptIn(ExperimentalStdlibApi::class)
+                    i.toHexString(HexFormat.UpperCase)
+                        .let{it.substring(it.length-1)}
+                )
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,8 +107,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onStop() {
-        super.onStop()
+    override fun onDestroy() {
+        super.onDestroy()
         viewModel.disconnect()
     }
 
@@ -202,17 +211,6 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun PickingIdScreen(onClick : (String) -> Unit) {
-        val items = remember {
-            @OptIn(ExperimentalStdlibApi::class)
-            mutableListOf<String>().apply {
-                for (i in 0..15) {
-                    add(
-                        i.toHexString(HexFormat.UpperCase)
-                            .let{it.substring(it.length-1)}
-                    )
-                }
-            }
-        }
         val scope = rememberCoroutineScope()
         val leftNum = rememberPickerState(16, 0)
         val middleNum = rememberPickerState(16, 0)
@@ -237,11 +235,11 @@ class MainActivity : ComponentActivity() {
                 )
                 Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.04f).dp))
                 Row {
-                    SimplePicker(state = leftNum, items = items)
+                    SimplePicker(state = leftNum, items = idsList)
                     Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.07f).dp))
-                    SimplePicker(state = middleNum, items = items)
+                    SimplePicker(state = middleNum, items = idsList)
                     Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.07f).dp))
-                    SimplePicker(state = rightNum, items = items)
+                    SimplePicker(state = rightNum, items = idsList)
                 }
                 Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.04f).dp))
                 Row(
@@ -274,9 +272,9 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .size((SCREEN_WIDTH*0.11f).dp),
                         onClick = {
-                            val id = items[leftNum.selectedOption] +
-                                     items[middleNum.selectedOption] +
-                                     items[rightNum.selectedOption]
+                            val id = idsList[leftNum.selectedOption] +
+                                     idsList[middleNum.selectedOption] +
+                                     idsList[rightNum.selectedOption]
                             onClick(id)
                         },
                     ) {

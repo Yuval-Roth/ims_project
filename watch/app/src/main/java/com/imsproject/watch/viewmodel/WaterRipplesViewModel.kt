@@ -21,6 +21,7 @@ import com.imsproject.watch.VIVID_ORANGE_COLOR
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -40,6 +41,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         var color by mutableStateOf(color)
         var size by mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
         var currentAlpha by mutableFloatStateOf(startingAlpha)
+        var updated = true
+        var animationJob: Job? = null
     }
 
     private lateinit var clickVibration : VibrationEffect
@@ -137,6 +140,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             if (rippleToCheck.actor != playerId) {
                 rippleToCheck.startingAlpha = 1.0f
                 rippleToCheck.currentAlpha = (rippleToCheck.currentAlpha * 2).coerceAtMost(1.0f)
+                rippleToCheck.updated = true
             }
             viewModelScope.launch(Dispatchers.IO) {
                 addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
