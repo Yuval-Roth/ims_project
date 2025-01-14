@@ -444,6 +444,10 @@ class GameController(
 
         // game.startGame() notifies the clients
         game.startGame(timeServerHandler.timeServerCurrentTimeMillis())
+        if(lobby.gameDuration > 0){
+            log.debug("handleStartGame: Setting time limit of {} seconds",lobby.gameDuration)
+            game.setTimeLimit(lobby.gameDuration)
+        }
 
         log.debug("handleStartGame() successful")
         return Response.getOk()
