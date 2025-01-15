@@ -76,8 +76,9 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
     @Composable
     fun WaterRipples() {
         val ripples = remember { viewModel.ripples }
-        val counter by viewModel.counter.collectAsState()
-        val scope = rememberCoroutineScope()
+
+        // this is used only to to trigger recomposition
+        viewModel.counter.collectAsState().value
 
         Box(
             modifier = Modifier
@@ -126,42 +127,27 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
             // =============== Ripple Effect =================== |
             // ================================================= |
 
-            LaunchedEffect(counter) {
-                val rippleIterator = ripples.listIterator()
-                while (rippleIterator.hasNext()) {
-                    val ripple = rippleIterator.next()
+            LaunchedEffect(Unit){
+                while(true){
+                    val rippleIterator = ripples.iterator()
+                    while (rippleIterator.hasNext()) {
+                        val ripple = rippleIterator.next()
 
-                    // ================================================= |
-                    // we add new ripples at the beginning of the list
-                    // in this code, we reached ripples that are already at max size
-                    // and we don't want to animate them anymore
-                    // so we remove them from the list
-                    if(ripple.size >= RIPPLE_MAX_SIZE) {
-                        rippleIterator.remove()
-                        continue
-                    }
-                    // ================================================= |
+                        // remove ripples that are done animating
+                        if(ripple.size >= RIPPLE_MAX_SIZE){
+                            rippleIterator.remove()
+                            continue
+                        }
 
-                    if (! ripple.updated) continue
-                    ripple.updated = false
-                    ripple.animationJob?.cancel()
-
-                    // animate the ripple that is not at max size
-
-                    val sizeAnimStep = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-                    val alphaAnimStep =  ripple.startingAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-
-                    ripple.animationJob = scope.launch {
-                        while (ripple.size < RIPPLE_MAX_SIZE) {
-                            ripple.size += sizeAnimStep
-                            if(ripple.size >= RIPPLE_MAX_SIZE){
-                                ripple.currentAlpha = 0f
-                            } else {
-                                ripple.currentAlpha = (ripple.currentAlpha-alphaAnimStep).coerceAtLeast(0f)
-                            }
-                            delay(16)
+                        // animation step
+                        ripple.size += ripple.sizeStep
+                        ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
+                            0f
+                        } else {
+                            (ripple.currentAlpha - ripple.alphaStep).coerceAtLeast(0f)
                         }
                     }
+                    delay(16)
                 }
             }
 
