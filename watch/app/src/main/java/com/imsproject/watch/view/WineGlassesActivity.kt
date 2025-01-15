@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
@@ -72,7 +73,7 @@ private const val LOW_LOOP_TRACK = 1
 private const val LOW_BUILD_OUT_TRACK = 2
 private const val HIGH_LOOP_TRACK = 4
 
-class WineGlassesActivity : ComponentActivity() {
+class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
     private val viewModel : WineGlassesViewModel by viewModels<WineGlassesViewModel>()
     private lateinit var sound: WavPlayer
@@ -103,53 +104,10 @@ class WineGlassesActivity : ComponentActivity() {
     fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.LOADING -> {
-                LoadingScreen()
-            }
             GameViewModel.State.PLAYING -> {
                 WineGlasses()
             }
-            GameViewModel.State.TERMINATED -> {
-                BlankScreen()
-                val result = viewModel.resultCode.collectAsState().value
-                val intent = IntentSanitizer.Builder()
-                    .allowComponent(componentName)
-                    .build().sanitize(intent) {
-                        Log.d(TAG, "WineGlasses: $it")
-                    }
-                if(result != Result.Code.OK){
-                    intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
-                }
-                setResult(result.ordinal,intent)
-                finish()
-            }
-        }
-    }
-
-    @Composable
-    private fun LoadingScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(
-                        strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
-                        modifier = Modifier.size((SCREEN_WIDTH *0.2f).dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    BasicText(
-                        text = "Loading session...",
-                        style = textStyle
-                    )
-                }
-            }
+            else -> super.Main(viewModel)
         }
     }
 
@@ -379,20 +337,6 @@ class WineGlassesActivity : ComponentActivity() {
                         style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
                     )
                 }
-            }
-        }
-    }
-
-    @Composable
-    fun BlankScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ){
-
             }
         }
     }

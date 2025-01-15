@@ -140,19 +140,24 @@ class LogsProvider {
     fun readLog(path: String, rows:Int): ResponseEntity<String> {
         try {
             val logFile = File(path)
-            val file = logFile.readText()
-            return if (rows > 0) {
+            var file = logFile.readText()
+            file = if (rows > 0) {
                 val split = file.split("\n")
-                split.takeLast(rows).joinToString("<br/>").toResponseEntity()
+                split.takeLast(rows).joinToString("<br/>")
             } else {
-                file.replace("\n", "<br/>").toResponseEntity()
+                file.replace("\n", "<br/>")
             }
+            file += """
+                <script>
+                    window.scrollTo(0, document.body.scrollHeight);
+                </script>
+              """.trimIndent()
+            return file.toResponseEntity()
         } catch (e: Exception) {
             return "Error while fetching log file:<br/>${
                 e.stackTraceToString()
                     .replace("\n", "<br/>")
-            }"
-                .toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+            }".toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 

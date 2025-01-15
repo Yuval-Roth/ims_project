@@ -36,6 +36,8 @@ abstract class GameViewModel(
     enum class State {
         LOADING,
         PLAYING,
+        TRYING_TO_RECONNECT,
+        ERROR,
         TERMINATED
     }
 
@@ -86,7 +88,7 @@ abstract class GameViewModel(
 
             // =================== clock synchronization =================== |
 
-            var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
+            val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
             do {
                 try{
                     calculateTimeServerDelta()
@@ -135,8 +137,8 @@ abstract class GameViewModel(
     }
 
     fun exitWithError(errorMessage: String, code: Result.Code) {
-        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         clearListeners() // clear the listeners to prevent any further messages from being processed.
+        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         _error.value = errorMessage
         _resultCode.value = code
         _state.value = State.TERMINATED
@@ -144,6 +146,18 @@ abstract class GameViewModel(
 
     fun getCurrentGameTime(): Long {
         return System.currentTimeMillis() - myStartTime
+    }
+
+    fun showError(msg: String) {
+        _error.value = msg
+        _state.value = State.ERROR
+    }
+
+    fun clearError() {
+        if(_state.value == State.ERROR){
+            _error.value = null
+            _state.value = State.PLAYING
+        }
     }
 
     // ================================================================================ |
@@ -161,7 +175,7 @@ abstract class GameViewModel(
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${action.type}\n"+
                         "request content:\n$action"
-                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
+                showError(errorMsg)
             }
         }
     }
@@ -169,6 +183,10 @@ abstract class GameViewModel(
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
             GameRequest.Type.HEARTBEAT -> {}
+            GameRequest.Type.EXIT -> {
+                val errorMessage = request.message ?: ""
+                exitWithError(errorMessage,Result.Code.SERVER_CLOSED_CONNECTION)
+            }
             GameRequest.Type.END_GAME -> {
                 val success = request.success ?: run {
                     Log.e(TAG, "handleGameRequest: missing success field in END_GAME request")
@@ -187,7 +205,7 @@ abstract class GameViewModel(
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${request.type}\n"+
                         "request content:\n$request"
-                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
+                showError(errorMsg)
             }
         }
     }
@@ -202,22 +220,58 @@ abstract class GameViewModel(
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
 
+    private fun reconnect(onFailure: () -> Unit) {
+        _state.value = State.TRYING_TO_RECONNECT
+        viewModelScope.launch(Dispatchers.IO) {
+            val timeout = System.currentTimeMillis() + 10000
+            var reconnected = false
+            model.closeAllResources()
+            while(!reconnected && System.currentTimeMillis() < timeout){
+                if(model.reconnect()){
+                    reconnected = true
+                }
+            }
+            if(reconnected){
+                addEvent(SessionEvent.reconnected(playerId,getCurrentGameTime()))
+                setupListeners()
+                _state.value = State.PLAYING
+            } else {
+                onFailure()
+            }
+        }
+    }
+
     private fun setupListeners() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
-                exitWithError("Connection lost",Result.Code.CONNECTION_LOST)
+                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),"Connection lost"))
+                reconnect {
+                    exitWithError("Connection lost", Result.Code.CONNECTION_LOST)
+                }
             } else {
-                exitWithError(it.message ?: it.cause?.message ?: "unknown tcp exception",Result.Code.TCP_EXCEPTION)
+                val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp exception"
+                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+                reconnect {
+                    exitWithError(errorMessage, Result.Code.TCP_EXCEPTION)
+                }
             }
         }
         model.onTcpError {
             Log.e(TAG, "tcp error", it)
-            exitWithError(it.message ?: it.cause?.message ?: "unknown tcp error",Result.Code.TCP_ERROR)
+            val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp error"
+            addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+            reconnect {
+                exitWithError(errorMessage, Result.Code.TCP_ERROR)
+            }
         }
         model.onUdpMessage({ handleGameAction(it) }) {
             Log.e(TAG, "udp exception", it)
-            exitWithError(it.message ?: it.cause?.message ?: "unknown udp exception",Result.Code.UDP_EXCEPTION)
+            val errorMessage = it.message ?: it.cause?.message ?: "unknown udp exception"
+            addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+            reconnect {
+                exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
+            }
         }
     }
 

@@ -11,6 +11,14 @@ data class SessionEvent internal constructor (
     val data: String? = null
 ) : Comparable<SessionEvent> {
 
+    private data class CompressedSessionEvent(
+        val to: Int, // type ordinal
+        val sto: Int, // subType ordinal
+        val ts: Long, // timestamp
+        val a: String, // actor
+        val d: String? // data
+    )
+
     enum class Type {
         @SerializedName("user_input")               USER_INPUT,
         @SerializedName("sensor_data")              SENSOR_DATA,
@@ -41,7 +49,8 @@ data class SessionEvent internal constructor (
         // NETWORK_DATA
         @SerializedName("latency")                  LATENCY,
         @SerializedName("packet_out_of_order")      PACKET_OUT_OF_ORDER,
-        @SerializedName("timeout")                  TIMEOUT,
+        @SerializedName("network_error")            NETWORK_ERROR,
+        @SerializedName("reconnected")              RECONNECTED,
 
         // SYNC_DATA
         @SerializedName("sync_start_time")          SYNC_START_TIME,
@@ -64,6 +73,14 @@ data class SessionEvent internal constructor (
 
     fun toJson(): String = JsonUtils.serialize(this)
 
+    fun toCompressedJson(): String = CompressedSessionEvent(
+        type.ordinal,
+        subType.ordinal,
+        timestamp,
+        actor,
+        data
+    ).let{ JsonUtils.serialize(it) }
+
     override fun compareTo(other: SessionEvent): Int {
         return timestamp.compareTo(other.timestamp)
     }
@@ -73,6 +90,17 @@ data class SessionEvent internal constructor (
     // ================================================================================ |
 
     companion object{
+
+        fun fromCompressedJson(json: String): SessionEvent = JsonUtils.deserialize<CompressedSessionEvent>(json)
+            .let {
+                SessionEvent(
+                    Type.entries[it.to],
+                    SubType.entries[it.sto],
+                    it.ts,
+                    it.a,
+                    it.d
+                )
+            }
 
         fun fromJson(json: String): SessionEvent = JsonUtils.deserialize(json)
 
@@ -140,10 +168,16 @@ data class SessionEvent internal constructor (
             timestamp: Long,
         ) = SessionEvent(Type.NETWORK_DATA, SubType.PACKET_OUT_OF_ORDER, timestamp, actor)
 
-        fun timeout(
+        fun networkError(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.NETWORK_ERROR, timestamp, actor, data)
+
+        fun reconnected(
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMEOUT, timestamp, actor)
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.RECONNECTED, timestamp, actor)
 
         // ==================== SYNC_DATA ==================== |
 
