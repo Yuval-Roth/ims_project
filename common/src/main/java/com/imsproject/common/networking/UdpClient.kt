@@ -3,27 +3,13 @@ package com.imsproject.common.networking
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.net.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
-/**
- * A simple UDP client that can send and receive messages to one remote address.
- *
- * A couple of things to keep in mind when using this class:
- * 1. You must call the [init] method to initialize the client before using it.
- * 2. To manually receive messages, call the [receive] method.
- * Otherwise, set the [onMessage] property and call the [startListener] method.
- * In this case, you should also set the [onListenerException] property.
- * Otherwise, any exception will be thrown and the listener thread will die.
- * 3. Once a listener is started, you can't call the [receive] or [setTimeout] methods.
- * 4. To stop the listener, call the [reset] method.
- */
+
+private const val INTERRUPT_MESSAGE = "<!@#%^&*()INTERRUPT()*&^%#@!>"
+
 class UdpClient {
 
     private var client: DatagramSocket? = null
-    private var listener: Thread? = null
-    private var listenerRunning : Boolean = false
-    private val executor : ExecutorService = Executors.newSingleThreadExecutor()
 
     /**
      * remote address that will be used in [send]
@@ -47,20 +33,7 @@ class UdpClient {
      *
      * If not set, the client will bind to a random local port.
      */
-    var localPort: Int? = null
-
-    /**
-     * Setting this property will start a listener that will call the lambda every time
-     * a message is received. Can't use the [receive] and [setTimeout] methods
-     * while this property is set.
-     */
-    var onMessage : ((String) -> Unit) = {}
-        set(value) {
-            if(listenerRunning){
-                throw IllegalStateException("This property can't be set after the listener has been started.")
-            }
-            field = value
-        }
+    var localPort: Int = -1
 
     /**
      * This lambda will be called every time an exception occurs on the listener thread.
@@ -76,11 +49,10 @@ class UdpClient {
             throw IllegalStateException("Client is already initialized.")
         }
 
-        val port = localPort
-        val newClient = if(port == null){
+        val newClient = if(localPort < 0){
             DatagramSocket()
         } else {
-            DatagramSocket(port)
+            DatagramSocket(localPort)
         }
         client = newClient
         localPort = newClient.localPort
@@ -122,29 +94,39 @@ class UdpClient {
     /**
      * @throws IOException if an I/O error occurs
      * @throws SocketTimeoutException if the timeout expires
+     * @throws InterruptedException if an interrupt message is received
      */
-    @Throws(SocketTimeoutException::class, IOException::class)
+    @Throws(SocketTimeoutException::class, IOException::class, InterruptedException::class)
     fun receive() : String {
         val client = assertClientInitialized()
-        assertListenerNotRunning()
         val buffer = ByteArray(1024)
         val packet = DatagramPacket(buffer, buffer.size)
         client.receive(packet)
-        return String(packet.data, 0, packet.length)
+        val message = String(packet.data, 0, packet.length)
+        if(message == INTERRUPT_MESSAGE){
+            throw InterruptedException("Received interrupt message")
+        }
+        return message
     }
 
     /**
      * @return the raw [DatagramPacket] received
      * @throws IOException if an I/O error occurs
      * @throws SocketTimeoutException if the timeout expires
+     * @throws InterruptedException if an interrupt message is received
      */
-    @Throws(SocketTimeoutException::class, IOException::class)
+    @Throws(SocketTimeoutException::class, IOException::class, InterruptedException::class)
     fun receiveRaw() : DatagramPacket {
         val client = assertClientInitialized()
-        assertListenerNotRunning()
         val buffer = ByteArray(1024)
         val packet = DatagramPacket(buffer, buffer.size)
         client.receive(packet)
+        if(packet.length == INTERRUPT_MESSAGE.length){
+            val message = String(packet.data, 0, packet.length)
+            if(message == INTERRUPT_MESSAGE){
+                throw InterruptedException("Received interrupt message")
+            }
+        }
         return packet
     }
 
@@ -156,72 +138,33 @@ class UdpClient {
      */
     fun setTimeout(timeout: Int){
         val client = assertClientInitialized()
-        if(listenerRunning) {
-            throw IllegalStateException("Listener is running. Cannot set timeout manually.")
-        }
         client.soTimeout = timeout
     }
 
-    /**
-     * Starts a listener that will call the [onMessage] lambda every time a message is received.
-     */
-    fun startListener(){
-        val client = assertClientInitialized()
-        assertListenerNotRunning()
-        listenerRunning = true
-        client.soTimeout = 0
-        val listener = Thread {
-            while(true){
-                try{
-                    val buffer = ByteArray(1024)
-                    val packet = DatagramPacket(buffer, buffer.size)
-                    client.receive(packet)
-                    val msg = String(packet.data, 0, packet.length)
-                    executor.submit{onMessage(msg)}
-                } catch (e: Exception){
-                    if(listenerRunning.not()){
-                        break
-                    }
-                    onListenerException?.run {
-                        executor.submit{invoke(e)}
-                    } ?: throw e
-                }
-            }
-        }.apply{start()}
-
-        this.listener = listener
+    fun interrupt(){
+        send(INTERRUPT_MESSAGE, "127.0.0.1",localPort)
     }
 
-    /**
-     * This method performs a controlled reset of the client, stopping the listener if it's running and closing the socket.
-     * The client will be reinitialized with the same local port.
-     * [onMessage] and [onListenerException] will be reset to their default values.
-     */
-    fun reset(){
-        val oldClient = assertClientInitialized()
-        listenerRunning = false
-        listener = null
-        client = null
-        onMessage = {}
-        onListenerException = null
-        oldClient.close()
-        init()
+    fun clearPendingMessages(): Int {
+        val client = assertClientInitialized()
+        val oldTimeout = client.soTimeout
+        client.soTimeout = 100
+        var clearedCount = 0
+        while(true){
+            try{
+                receive()
+                clearedCount++
+            } catch (e: SocketTimeoutException){
+                break
+            }
+        }
+        client.soTimeout = oldTimeout
+        return clearedCount
     }
 
     fun close(){
         val client = assertClientInitialized()
         client.close()
-    }
-
-    fun isReady() : Boolean {
-        return client != null
-                && client?.isClosed == false
-    }
-
-    private fun assertListenerNotRunning() {
-        if (listenerRunning) {
-            throw IllegalStateException("Cant call this method while the listener is running.")
-        }
     }
 
     private fun assertClientInitialized() : DatagramSocket {

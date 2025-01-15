@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 private const val TAG = "MainViewModel"
@@ -20,6 +21,7 @@ class MainViewModel() : ViewModel() {
 
     enum class State {
         DISCONNECTED,
+        SELECTING_ID,
         CONNECTING,
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
@@ -61,18 +63,44 @@ class MainViewModel() : ViewModel() {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    fun connect(selectedId: String? = null) {
+
+    fun connect() {
         viewModelScope.launch(Dispatchers.IO){
             _state.value = State.CONNECTING
             while(true){
-                val id = model.connectToServer(selectedId)
-                if (id != null) {
-                    _playerId.value = id
+                if(model.connectToServer()){
+                    break
+                }
+            }
+            _state.value = State.SELECTING_ID
+        }
+    }
+
+    fun enter(selectedId: String? = null){
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.value = State.CONNECTING
+            while (true) {
+                val playerId = model.enter(selectedId)
+                if (playerId != null) {
+                    _playerId.value = playerId
                     _state.value = State.CONNECTED_NOT_IN_LOBBY
                     setupListeners() // setup the listeners to start receiving messages
                     return@launch
                 }
             }
+        }
+    }
+
+    fun exit() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if(_state.value != State.CONNECTED_NOT_IN_LOBBY){
+                showError("Cannot exit at the current state")
+                return@launch
+            }
+            model.exit()
+            _playerId.value = ""
+            _timeServerStartTime.value = -1
+            _state.value = State.SELECTING_ID
         }
     }
 
@@ -122,8 +150,10 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    fun disconnect() {
-        model.disconnect()
+    fun onDestroy() {
+        runBlocking(Dispatchers.Main){
+            model.closeAllResources()
+        }
     }
 
     // ================================================================================ |

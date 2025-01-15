@@ -53,13 +53,14 @@ class GameRequestHandler(
             Type.EXIT -> {
                 clientController.getByWsSessionId(session.id)?.let {
                     clientController.removeClientHandler(it.id)
+                    log.debug("Client disconnected: {}", it.id)
                 }
             }
             Type.HEARTBEAT -> {
                 clientController.getByWsSessionId(session.id)?.let {
                     it.lastHeartbeat = LocalDateTime.now()
-                    session.send(GameRequest.heartbeat)
                 }
+                session.send(GameRequest.heartbeat)
             }
 
             Type.ENTER_WITH_ID -> {
@@ -67,6 +68,8 @@ class GameRequestHandler(
                     log.error("No client id provided")
                     return
                 }
+
+                log.debug("New client: {}",id)
 
                 // Check if the id is already connected from elsewhere
                 // and if so, disconnect the old connection
@@ -89,7 +92,6 @@ class GameRequestHandler(
                     // client is new, create a new client handler
                     client = newClientHandler(session, id)
                     clientController.addClientHandler(client)
-                    log.debug("New client: {}", client.id)
                 }
 
                 // generate code to add the client to the udp socket handler

@@ -227,8 +227,10 @@ abstract class GameViewModel(
             var reconnected = false
             model.closeAllResources()
             while(!reconnected && System.currentTimeMillis() < timeout){
-                if(model.reconnect()){
-                    reconnected = true
+                if(model.connectToServer()){
+                    if(model.reconnect()){
+                        reconnected = true
+                    }
                 }
             }
             if(reconnected){
