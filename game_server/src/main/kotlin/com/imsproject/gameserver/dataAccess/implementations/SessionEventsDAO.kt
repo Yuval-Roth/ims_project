@@ -1,3 +1,5 @@
+package com.imsproject.gameserver.dataAccess.implementations
+
 class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEvent, PrimaryKey>(cursor, "SessionEvents", arrayOf("event_id")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         val builder = CreateTableQueryBuilder("SessionEvents")

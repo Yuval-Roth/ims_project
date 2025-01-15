@@ -1,4 +1,4 @@
-package com.imsproject.common.dataAccess.models
+package com.imsproject.gameserver.dataAccess.models
 
 data class Participant(
     val pid: Int,

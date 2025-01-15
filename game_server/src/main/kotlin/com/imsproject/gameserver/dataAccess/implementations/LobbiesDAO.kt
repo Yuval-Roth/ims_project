@@ -1,3 +1,5 @@
+package com.imsproject.gameserver.dataAccess.implementations
+
 class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, PrimaryKey>(cursor, "Lobbies", arrayOf("lobby_id")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         val builder = CreateTableQueryBuilder("Lobbies")
