@@ -18,6 +18,15 @@ android {
 
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("${rootDir}/../watch_keystore.jks")
+            storePassword = "qwerty"
+            keyAlias = "key0"
+            keyPassword = "qwerty"
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled = false
@@ -31,6 +40,7 @@ android {
             }
         }
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -66,6 +76,7 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+    implementation(libs.fragment.ktx)
 
     implementation(libs.imsproject.common)
     implementation(libs.kotlinx.coroutines.android)

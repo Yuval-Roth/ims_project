@@ -94,14 +94,15 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+    init{
+        registerActivities()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
-        registerActivities()
-        val gameManager = getSystemService(GameManager::class.java)
-        gameManager.setGameState(GameState(false,GameState.MODE_GAMEPLAY_UNINTERRUPTIBLE))
         setContent {
             Main()
         }
