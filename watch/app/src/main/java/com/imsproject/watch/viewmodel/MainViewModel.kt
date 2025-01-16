@@ -139,7 +139,11 @@ class MainViewModel() : ViewModel() {
     }
 
     fun showError(string: String) {
-        _error.value = string
+        _error.value = if(_error.value != null){
+            string + "\n- - - - - - -\n" + _error.value
+        } else {
+            string
+        }
         _state.value = State.ERROR
     }
 
@@ -263,9 +267,9 @@ class MainViewModel() : ViewModel() {
         _gameType.value = null
         _timeServerStartTime.value = -1
         showError(message)
-        model = MainModel(viewModelScope)
         viewModelScope.launch(Dispatchers.IO) {
             oldModel.closeAllResources()
         }
+        model = MainModel(viewModelScope)
     }
 }

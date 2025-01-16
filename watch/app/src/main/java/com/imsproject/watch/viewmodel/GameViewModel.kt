@@ -89,16 +89,7 @@ abstract class GameViewModel(
             // =================== clock synchronization =================== |
 
             val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
-            do {
-                try{
-                    calculateTimeServerDelta()
-                } catch (e: SocketTimeoutException){
-                    Log.e(TAG, "Failed to get time server delta", e)
-                    continue
-                }
-                Log.d(TAG,"Time server delta: $timeServerDelta")
-                break
-            } while(true)
+            timeServerDelta = model.calculateTimeServerDelta()
             myStartTime = timeServerStartTime + timeServerDelta
 
             // log metadata
@@ -275,15 +266,6 @@ abstract class GameViewModel(
                 exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
             }
         }
-    }
-
-    private fun calculateTimeServerDelta(){
-        val data : List<Long> = List(100) {
-            val currentLocal = System.currentTimeMillis()
-            val currentTimeServer = model.getTimeServerCurrentTimeMillis()
-            currentLocal-currentTimeServer
-        }
-        timeServerDelta = data.average().toLong()
     }
 
     private fun clearListeners(){
