@@ -25,6 +25,10 @@ class GameController(
         private val timeServerHandler: TimeServerHandler
     ) {
 
+    init{
+        clientController.onClientDisconnect = { onClientDisconnect(it) }
+    }
+
     private data class Session (
         val sessionId: String,
         val duration: Int,
@@ -101,15 +105,61 @@ class GameController(
     }
 
     fun onClientDisconnect(clientHandler: ClientHandler){
-        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: return // client not in a lobby, nothing to do
+        log.debug("onClientDisconnect() with clientId: {}",clientHandler.id)
+        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: run {
+            // client not in a lobby, nothing to do
+            log.debug("onClientDisconnect: Player not in lobby")
+            return
+        }
+        log.debug("onClientDisconnect: Player was in lobby: {}, removing player from lobby",lobbyId)
         val game = clientIdToGame[clientHandler.id]
         if(game != null){
+            log.debug("onClientDisconnect: Player was in game, ending game")
             val gameEndRequest = GameRequest.builder(Type.END_GAME)
                 .lobbyId(lobbyId)
                 .build()
             handleEndGame(gameEndRequest, "Player ${clientHandler.id} disconnected")
         }
         clientIdToLobbyId.remove(clientHandler.id)
+        log.debug("onClientDisconnect() successful")
+    }
+
+    fun onClientReconnect(client: ClientHandler) {
+        log.debug("onClientReconnect() with clientId: {}",client.id)
+
+        // ================== check if the client was in a lobby ================== |
+
+        val lobbyId = clientIdToLobbyId[client.id] ?: run {
+            // client not in a lobby, nothing to do
+            log.debug("onClientReconnect: Player not in lobby")
+            return
+        }
+        log.debug("onClientReconnect: Player was in lobby: {}, adding player back to lobby",lobbyId)
+        val lobby = lobbies[lobbyId] ?: run {
+            // should not happen
+            log.error("onClientReconnect: lobbyId found for client, but Lobby not found. client: {}",client.id)
+            return
+        }
+        GameRequest.builder(Type.JOIN_LOBBY)
+            .lobbyId(lobbyId)
+            .gameType(lobby.gameType)
+            .build().toJson()
+            .also{ client.sendTcp(it) } // notify the client
+
+        // ================== check if the client was in a game ================== |
+
+        val game = clientIdToGame[client.id] ?: run {
+            // client not in a game, nothing to do
+            log.debug("onClientReconnect: Player not in game")
+            return
+        }
+        log.debug("onClientReconnect: Player was in game, rejoining player to game")
+        GameRequest.builder(Type.RECONNECT_TO_GAME)
+            .timestamp(game.startTime.toString())
+            .build().toJson()
+            .also{ client.sendTcp(it) } // notify the client
+
+        log.debug("onClientReconnect() successful")
     }
 
     // ========================================================================== |
@@ -394,6 +444,10 @@ class GameController(
 
         // game.startGame() notifies the clients
         game.startGame(timeServerHandler.timeServerCurrentTimeMillis())
+        if(lobby.gameDuration > 0){
+            log.debug("handleStartGame: Setting time limit of {} seconds",lobby.gameDuration)
+            game.setTimeLimit(lobby.gameDuration)
+        }
 
         log.debug("handleStartGame() successful")
         return Response.getOk()

@@ -10,24 +10,16 @@ class WineGlassesGame (player1 : ClientHandler, player2 : ClientHandler) : Game(
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {
-            GameAction.Type.POSITION -> {
-                sendGameAction(action)
+            GameAction.Type.USER_INPUT -> {
+                if(actor.id == player1.id) {
+                    player2.sendUdp(action.toString())
+                } else {
+                    player1.sendUdp(action.toString())
+                }
             }
             else -> {
                 log.debug("Unexpected action type: {}", action.type)
             }
-        }
-    }
-
-    override fun sendGameAction(message: GameAction) {
-        val actor = message.actor ?: run {
-            log.error("No actor in message: $message")
-            return
-        }
-        if(actor == player1.id) {
-            player2.sendUdp(message.toString())
-        } else {
-            player1.sendUdp(message.toString())
         }
     }
 

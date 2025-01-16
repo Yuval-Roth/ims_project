@@ -7,7 +7,7 @@ import org.springframework.web.socket.WebSocketSession
 import java.net.SocketAddress
 import java.time.LocalDateTime
 
-const val HEARTBEAT_TIMEOUT_THRESHOLD = 30L
+const val HEARTBEAT_TIMEOUT_THRESHOLD = 60L
 
 fun WebSocketSession.send(message: String) {
     this.sendMessage(TextMessage(message))

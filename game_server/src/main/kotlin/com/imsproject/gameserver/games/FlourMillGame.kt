@@ -10,7 +10,7 @@ class FlourMillGame (player1 : ClientHandler, player2 : ClientHandler) : Game(pl
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {
-            GameAction.Type.POSITION -> {
+            GameAction.Type.USER_INPUT -> {
                 sendGameAction(action)
             }
             else -> {
@@ -20,6 +20,7 @@ class FlourMillGame (player1 : ClientHandler, player2 : ClientHandler) : Game(pl
     }
 
     override fun startGame(timestamp: Long) {
+        startTime = timestamp
         val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
             .timestamp(timestamp.toString())
         player1.sendTcp(toSend.data(listOf("left")).build().toJson())

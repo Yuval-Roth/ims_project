@@ -5,17 +5,14 @@ data class GameAction internal constructor(
     val actor : String?,
     val data : String?,
     val timestamp : String?,
-    val sequenceNumber : Long? = null
-    //TODO: Add more fields if needed
+    val sequenceNumber : Long?
 ) {
     enum class Type {
         ENTER,
         PING,
         PONG,
-        POSITION,
-        CLICK,
-        HEARTBEAT,
-        SYNC_TIME
+        USER_INPUT,
+        HEARTBEAT
     }
 
     override fun toString(): String {

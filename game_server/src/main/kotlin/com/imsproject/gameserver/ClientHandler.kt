@@ -7,11 +7,12 @@ import java.time.LocalDateTime
 
 class ClientHandler internal constructor(
     val id: String,
-    private val wsSession: WebSocketSession,
+    var wsSession: WebSocketSession,
     private val sendUdp: (String,SocketAddress) -> Unit
 ) {
 
-    val wsSessionId: String = wsSession.id
+    val wsSessionId: String
+        get() = wsSession.id
     var lastHeartbeat: LocalDateTime = LocalDateTime.now()
     lateinit var udpAddress: SocketAddress
 

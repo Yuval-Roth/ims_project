@@ -10,6 +10,8 @@ data class Result(val code: Code, val errorMessage: String? = null) {
         UNEXPECTED_REQUEST,
         BAD_REQUEST,
         UNKNOWN_ERROR,
+        GAME_ENDED_WITH_ERROR,
+        SERVER_CLOSED_CONNECTION,
         BAD_RESOURCE;
 
         fun prettyName(): String{

@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
-import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
@@ -20,7 +19,6 @@ import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RESET_COOLDOWN_WAIT_TIME
 import com.imsproject.watch.STRETCH_PEAK
-import com.imsproject.watch.model.Position
 import com.imsproject.watch.utils.addToAngle
 import kotlin.math.absoluteValue
 import kotlinx.coroutines.launch
@@ -90,18 +88,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
     }
 
-    class Rotation(val direction : Int) : Position {
-        init {
-            if(direction != 1 && direction != -1) throw IllegalArgumentException("direction must be either 1 or -1")
-        }
-        override fun toString(): String {
-            return direction.toString()
-        }
-        companion object {
-            fun fromString(string: String) = Rotation(string.toInt())
-        }
-    }
-
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
@@ -141,17 +127,25 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         resetCooldownTime = System.currentTimeMillis()
     }
 
-    fun isSynced(side: AxleSide) = when(side){
-        AxleSide.LEFT -> {
-            val inSync = !leftSyncStatusObserved
-            leftSyncStatusObserved = true
-            inSync
+    fun isSynced(side: AxleSide): Boolean {
+        val inSync : Boolean
+        when (side) {
+                AxleSide.LEFT -> {
+                    inSync = !leftSyncStatusObserved
+                    leftSyncStatusObserved = true
+                }
+
+                AxleSide.RIGHT -> {
+                    inSync = !rightSyncStatusObserved
+                    rightSyncStatusObserved = true
+                }
         }
-        AxleSide.RIGHT -> {
-            val inSync = !rightSyncStatusObserved
-            rightSyncStatusObserved = true
-            inSync
+        if(inSync && side == myAxleSide){
+            viewModelScope.launch(Dispatchers.IO) {
+                addEvent(SessionEvent.syncedAtTime(playerId,super.getCurrentGameTime()))
+            }
         }
+        return inSync
     }
 
     fun rotateMyAxleEnd(direction: Int){
@@ -164,9 +158,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = super.getCurrentGameTime()
-            val position = Rotation(direction)
-            model.sendPosition(position, timestamp, packetTracker.newPacket())
-            addEvent(SessionEvent.position(playerId,timestamp, position.toString()))
+            model.sendUserInput(timestamp, packetTracker.newPacket(), direction.toString())
+            addEvent(SessionEvent.rotation(playerId,timestamp, direction.toString()))
         }
     }
 
@@ -198,28 +191,28 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
      */
     override suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.POSITION -> {
+            GameAction.Type.USER_INPUT -> {
                 val actor = action.actor ?: run{
-                    Log.e(TAG, "handleGameAction: missing actor in position action")
+                    Log.e(TAG, "handleGameAction: missing actor in user input action")
                     return
                 }
                 val timestamp = action.timestamp?.toLong() ?: run{
-                    Log.e(TAG, "handleGameAction: missing timestamp in position action")
+                    Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
-                val rotation = action.data?.let { Rotation.fromString(it) } ?: run{
-                    Log.e(TAG, "handleGameAction: missing position in position action")
+                val direction = action.data?.toInt() ?: run{
+                    Log.e(TAG, "handleGameAction: missing data in user input action")
                     return
                 }
                 val sequenceNumber = action.sequenceNumber ?: run{
-                    Log.e(TAG, "handleGameAction: missing sequence number in position action")
+                    Log.e(TAG, "handleGameAction: missing sequence number in user input action")
                     return
                 }
                 withContext(Dispatchers.Main) {
                     if (actor == playerId) {
-                        rotateAxle(myAxleSide, rotation.direction, timestamp)
+                        rotateAxle(myAxleSide, direction, timestamp)
                     } else {
-                        rotateAxle(myAxleSide.otherSide(), rotation.direction, timestamp)
+                        rotateAxle(myAxleSide.otherSide(), direction, timestamp)
                     }
                 }
                 if(actor == playerId){
@@ -229,16 +222,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 }
             }
             else -> super.handleGameAction(action)
-        }
-    }
-
-    /**
-     * handles game requests
-     */
-    override suspend fun handleGameRequest(request: GameRequest) {
-        when (request.type) {
-            GameRequest.Type.END_GAME -> exitOk()
-            else -> super.handleGameRequest(request)
         }
     }
 

@@ -29,7 +29,7 @@ class GameRequestHandler(
     private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(3)
 
     override fun afterConnectionEstablished(@NonNull session: WebSocketSession) {
-        log.debug("New game requests client connected with id: {}", session.id)
+        log.debug("New websocket client connected with id: {}", session.id)
     }
 
     override fun handleTextMessage(@NonNull session: WebSocketSession, message: TextMessage) {
@@ -50,11 +50,61 @@ class GameRequestHandler(
 
             Type.PING -> session.send(GameRequest.pong)
             Type.PONG -> {}
+            Type.EXIT -> {
+                clientController.getByWsSessionId(session.id)?.let {
+                    clientController.removeClientHandler(it.id)
+                    log.debug("Client disconnected: {}", it.id)
+                }
+            }
             Type.HEARTBEAT -> {
                 clientController.getByWsSessionId(session.id)?.let {
                     it.lastHeartbeat = LocalDateTime.now()
-                    session.send(GameRequest.heartbeat)
                 }
+                session.send(GameRequest.heartbeat)
+            }
+
+            Type.ENTER_WITH_ID -> {
+                val id = gameMessage.playerId ?: run {
+                    log.error("No client id provided")
+                    return
+                }
+
+                log.debug("New client: {}",id)
+
+                // Check if the id is already connected from elsewhere
+                // and if so, disconnect the old connection
+                var client = clientController.getByClientId(id)
+                if (client != null) {
+                    log.debug("Client with id {} already connected, disconnecting old connection", id)
+                    val msg = GameRequest.builder(Type.EXIT)
+                        .message("Client with id $id connected from another location")
+                        .build().toJson()
+                    try{
+                        client.sendTcp(msg) // send a message to the old client
+                    } catch (_: Exception) { }
+
+                    // map the client to the new wsSession
+                    clientController.removeClientHandler(client.id) // clear old mappings
+                    client.wsSession = session
+                    clientController.addClientHandler(client)
+
+                } else {
+                    // client is new, create a new client handler
+                    client = newClientHandler(session, id)
+                    clientController.addClientHandler(client)
+                }
+
+                // generate code to add the client to the udp socket handler
+                // the client will use this code to identify itself
+                val udpCode = UUID.randomUUID().toString()
+                gameActionHandler.addClient(client, udpCode)
+
+                // send the udp code to the client
+                GameRequest.builder(Type.ENTER_WITH_ID)
+                    .data(listOf(udpCode))
+                    .build()
+                    .toJson()
+                    .also { session.send(it) }
             }
 
             Type.ENTER -> {
@@ -67,7 +117,7 @@ class GameRequestHandler(
 
                 // create a new client handler for the session
                 val client = newClientHandler(session)
-                clientController.addClientHandler(session.id,client)
+                clientController.addClientHandler(client)
 
                 log.debug("New client: {}",client.id)
 
@@ -85,7 +135,38 @@ class GameRequestHandler(
                     .also { session.send(it) }
             }
 
-            Type.EXIT -> session.close()
+            Type.RECONNECT -> {
+                val id = gameMessage.playerId ?: run {
+                    log.error("No client id provided")
+                    return
+                }
+
+                // Check that a client exists
+                val client = clientController.getByClientId(id) ?: run {
+                    log.error("Client not found for id: {}", id)
+                    return
+                }
+                // map the client to the new wsSession
+                clientController.removeClientHandler(client.id) // clear old mappings
+                client.wsSession = session
+                clientController.addClientHandler(client)
+                client.lastHeartbeat = LocalDateTime.now()
+
+                log.debug("Reconnected client: {}", client.id)
+
+                // generate code to add the client to the udp socket handler
+                // the client will use this code to identify itself
+                val udpCode = UUID.randomUUID().toString()
+                gameActionHandler.addClient(client, udpCode)
+
+                // send the client id and the udp code to the client
+                GameRequest.builder(Type.RECONNECT)
+                    .data(listOf(udpCode))
+                    .build()
+                    .toJson()
+                    .also { session.send(it) }
+
+            }
 
             else -> {
                 // get the client handler for the session if it exists
@@ -116,12 +197,10 @@ class GameRequestHandler(
     override fun afterConnectionClosed(session: WebSocketSession, @NonNull status: CloseStatus) {
         val client = clientController.getByWsSessionId(session.id) ?: return
         log.debug("Client disconnected: {}", client.id)
-        clientController.removeClientHandler(client.id)
-        gameController.onClientDisconnect(client)
     }
 
-    private fun newClientHandler(wsSession: WebSocketSession) : ClientHandler {
-        val id = idGenerator.generate()
+    private fun newClientHandler(wsSession: WebSocketSession, selectedId: String? = null) : ClientHandler {
+        val id = selectedId ?: idGenerator.generate()
         return ClientHandler(id, wsSession) { message, address ->
             gameActionHandler.send(message, address)
         }

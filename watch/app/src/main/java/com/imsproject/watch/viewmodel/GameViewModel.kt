@@ -14,7 +14,6 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.networking.PingTracker
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
@@ -22,7 +21,6 @@ import com.imsproject.watch.sensors.SensorsHandler
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
@@ -38,6 +36,8 @@ abstract class GameViewModel(
     enum class State {
         LOADING,
         PLAYING,
+        TRYING_TO_RECONNECT,
+        ERROR,
         TERMINATED
     }
 
@@ -83,24 +83,25 @@ abstract class GameViewModel(
             return
         }
 
-        setupListeners()
         // set up everything required for the session
         viewModelScope.launch(Dispatchers.IO) {
-            var timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
-            do {
-                try{
-                    calculateTimeServerDelta()
-                } catch (e: SocketTimeoutException){
-                    Log.e(TAG, "Failed to get time server delta", e)
-                    continue
-                }
-                Log.d(TAG,"Time server delta: $timeServerDelta")
-                break
-            } while(true)
-            myStartTime = timeServerStartTime + timeServerDelta
-            _state.value = State.PLAYING
 
-            // set up packet tracker
+            // =================== clock synchronization =================== |
+
+            val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
+            timeServerDelta = model.calculateTimeServerDelta()
+            myStartTime = timeServerStartTime + timeServerDelta
+
+            // log metadata
+            val timestamp = getCurrentGameTime()
+            addEvent(SessionEvent.serverStartTime(playerId, timestamp,timeServerStartTime.toString()))
+            addEvent(SessionEvent.timeServerDelta(playerId,timestamp+1,timeServerDelta.toString()))
+            addEvent(SessionEvent.clientStartTime(playerId,timestamp+2,myStartTime.toString()))
+
+            // =================== other setup =================== |
+
+            setupListeners()
+
             packetTracker.onOutOfOrderPacket = {
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
@@ -108,8 +109,8 @@ abstract class GameViewModel(
             sensorsHandler = SensorsHandler(viewModelScope,context,this@GameViewModel)
             sensorsHandler.run()
 
-            // start tracking ping
             viewModelScope.launch(Dispatchers.IO) {
+                delay(1000)
                 pingTracker.onUpdate = { addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it)) }
                 pingTracker.start()
                 while (true) {
@@ -118,13 +119,18 @@ abstract class GameViewModel(
                     delay(50)
                 }
             }
+
+            // =================== game start =================== |
+            addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
+            _state.value = State.PLAYING
         }
 
     }
 
-    fun exitWithError(string: String, code: Result.Code) {
+    fun exitWithError(errorMessage: String, code: Result.Code) {
         clearListeners() // clear the listeners to prevent any further messages from being processed.
-        _error.value = string
+        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
+        _error.value = errorMessage
         _resultCode.value = code
         _state.value = State.TERMINATED
     }
@@ -133,13 +139,22 @@ abstract class GameViewModel(
         return System.currentTimeMillis() - myStartTime
     }
 
+    fun showError(msg: String) {
+        _error.value = msg
+        _state.value = State.ERROR
+    }
+
+    fun clearError() {
+        if(_state.value == State.ERROR){
+            _error.value = null
+            _state.value = State.PLAYING
+        }
+    }
+
     // ================================================================================ |
     // ============================ PROTECTED METHODS ================================= |
     // ================================================================================ |
 
-    /**
-     * handles [GameAction.Type.HEARTBEAT] and everything else is an unexpected request error
-     */
     protected open suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
             GameAction.Type.PONG -> {
@@ -151,28 +166,43 @@ abstract class GameViewModel(
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${action.type}\n"+
                         "request content:\n$action"
-                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
+                showError(errorMsg)
             }
         }
     }
 
-    /**
-     * handles [GameRequest.Type.HEARTBEAT] and everything else is an unexpected request error
-     */
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
             GameRequest.Type.HEARTBEAT -> {}
+            GameRequest.Type.EXIT -> {
+                val errorMessage = request.message ?: ""
+                exitWithError(errorMessage,Result.Code.SERVER_CLOSED_CONNECTION)
+            }
+            GameRequest.Type.END_GAME -> {
+                val success = request.success ?: run {
+                    Log.e(TAG, "handleGameRequest: missing success field in END_GAME request")
+                    return
+                }
+
+                if(success){
+                    exitOk()
+                } else {
+                    val errorMessage = request.message ?: "Unknown error"
+                    exitWithError(errorMessage,Result.Code.GAME_ENDED_WITH_ERROR)
+                }
+            }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
                 val errorMsg = "Unexpected request type received\n" +
                         "request type: ${request.type}\n"+
                         "request content:\n$request"
-                exitWithError(errorMsg,Result.Code.UNEXPECTED_REQUEST)
+                showError(errorMsg)
             }
         }
     }
 
     protected fun exitOk() {
+        addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),"ok"))
         clearListeners() // clear the listeners to prevent any further messages from being processed.
         _state.value = State.TERMINATED
     }
@@ -181,32 +211,61 @@ abstract class GameViewModel(
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
 
+    private fun reconnect(onFailure: () -> Unit) {
+        _state.value = State.TRYING_TO_RECONNECT
+        viewModelScope.launch(Dispatchers.IO) {
+            val timeout = System.currentTimeMillis() + 10000
+            var reconnected = false
+            model.closeAllResources()
+            while(!reconnected && System.currentTimeMillis() < timeout){
+                if(model.connectToServer()){
+                    if(model.reconnect()){
+                        reconnected = true
+                    }
+                }
+            }
+            if(reconnected){
+                addEvent(SessionEvent.reconnected(playerId,getCurrentGameTime()))
+                setupListeners()
+                _state.value = State.PLAYING
+            } else {
+                onFailure()
+            }
+        }
+    }
+
     private fun setupListeners() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
-                exitWithError("Connection lost",Result.Code.CONNECTION_LOST)
+                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),"Connection lost"))
+                reconnect {
+                    exitWithError("Connection lost", Result.Code.CONNECTION_LOST)
+                }
             } else {
-                exitWithError(it.message ?: it.cause?.message ?: "unknown tcp exception",Result.Code.TCP_EXCEPTION)
+                val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp exception"
+                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+                reconnect {
+                    exitWithError(errorMessage, Result.Code.TCP_EXCEPTION)
+                }
             }
         }
         model.onTcpError {
             Log.e(TAG, "tcp error", it)
-            exitWithError(it.message ?: it.cause?.message ?: "unknown tcp error",Result.Code.TCP_ERROR)
+            val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp error"
+            addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+            reconnect {
+                exitWithError(errorMessage, Result.Code.TCP_ERROR)
+            }
         }
         model.onUdpMessage({ handleGameAction(it) }) {
             Log.e(TAG, "udp exception", it)
-            exitWithError(it.message ?: it.cause?.message ?: "unknown udp exception",Result.Code.UDP_EXCEPTION)
+            val errorMessage = it.message ?: it.cause?.message ?: "unknown udp exception"
+            addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+            reconnect {
+                exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
+            }
         }
-    }
-
-    private fun calculateTimeServerDelta(){
-        val data : List<Long> = List(100) {
-            val currentLocal = System.currentTimeMillis()
-            val currentTimeServer = model.getTimeServerCurrentTimeMillis()
-            currentLocal-currentTimeServer
-        }
-        timeServerDelta = data.average().toLong()
     }
 
     private fun clearListeners(){

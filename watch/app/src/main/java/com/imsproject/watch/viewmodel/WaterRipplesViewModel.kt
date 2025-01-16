@@ -12,36 +12,44 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
-import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRAY_COLOR
-import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.VIVID_ORANGE_COLOR
+import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
 
 class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     class Ripple(
-        color: Color,
-        var startingAlpha: Float = 1f,
+        var color: Color,
+        startingAlpha: Float = 1f,
         val timestamp: Long,
         val actor: String
     ) {
-        var color by mutableStateOf(color)
-        var size by mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
+        //TODO: ADJUST THE STARTING SIZE EVERYWHERE
+        var size by mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat()*0.9f)
         var currentAlpha by mutableFloatStateOf(startingAlpha)
+        val sizeStep = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+        var alphaStep = startingAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+
+        fun updateAlphaStep(){
+            alphaStep =  currentAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+        }
     }
 
     private lateinit var clickVibration : VibrationEffect
@@ -50,10 +58,10 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    val ripples = mutableStateListOf<Ripple>()
+    val ripples = ConcurrentLinkedDeque<Ripple>()
 
     private var _counter = MutableStateFlow(0)
-    val counter : StateFlow<Int> = _counter
+    val counter: StateFlow<Int> = _counter
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -67,7 +75,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = super.getCurrentGameTime()
-            model.sendClick(timestamp,packetTracker.newPacket())
+            model.sendUserInput(timestamp,packetTracker.newPacket())
             addEvent(SessionEvent.click(playerId,timestamp))
         }
     }
@@ -98,23 +106,22 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
      */
     override suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.CLICK -> {
+            GameAction.Type.USER_INPUT -> {
                 val actor = action.actor ?: run{
-                    Log.e(TAG, "handleGameAction: missing actor in click action")
+                    Log.e(TAG, "handleGameAction: missing actor in user input action")
                     return
                 }
                 val timestamp = action.timestamp?.toLong() ?: run{
-                    Log.e(TAG, "handleGameAction: missing timestamp in click action")
+                    Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
                 val sequenceNumber = action.sequenceNumber ?: run{
-                    Log.e(TAG, "handleGameAction: missing sequence number in click action")
+                    Log.e(TAG, "handleGameAction: missing sequence number in user input action")
                     return
                 }
-                // switch to main thread to update UI
-                withContext(Dispatchers.Main) {
-                    showRipple(actor, timestamp)
-                }
+
+                showRipple(actor, timestamp)
+                
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
@@ -122,16 +129,6 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 }
             }
             else -> super.handleGameAction(action)
-        }
-    }
-
-    /**
-     * handles game requests
-     */
-    override suspend fun handleGameRequest(request: GameRequest) {
-        when (request.type) {
-            GameRequest.Type.END_GAME -> exitOk()
-            else -> super.handleGameRequest(request)
         }
     }
 
@@ -147,8 +144,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                                             .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
             rippleToCheck.color = VIVID_ORANGE_COLOR
             if (rippleToCheck.actor != playerId) {
-                rippleToCheck.startingAlpha = 1.0f
                 rippleToCheck.currentAlpha = (rippleToCheck.currentAlpha * 2).coerceAtMost(1.0f)
+                rippleToCheck.updateAlphaStep()
             }
             viewModelScope.launch(Dispatchers.IO) {
                 addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
@@ -163,7 +160,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 // Other player's click
                 Ripple(GRAY_COLOR, 0.5f, timestamp, actor)
             }
-            ripples.add(0, ripple)
+            ripples.addFirst(ripple)
         }
         if (actor != playerId) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -171,7 +168,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 vibrator.vibrate(clickVibration)
             }
         }
-        _counter.value++
+        _counter.value++ // used to trigger recomposition
     }
 
     companion object {

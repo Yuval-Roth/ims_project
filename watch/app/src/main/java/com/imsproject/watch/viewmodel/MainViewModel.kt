@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 private const val TAG = "MainViewModel"
@@ -20,6 +21,7 @@ class MainViewModel() : ViewModel() {
 
     enum class State {
         DISCONNECTED,
+        SELECTING_ID,
         CONNECTING,
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
@@ -54,25 +56,51 @@ class MainViewModel() : ViewModel() {
     private var _timeServerStartTime = MutableStateFlow(-1L)
     val gameStartTime : StateFlow<Long> = _timeServerStartTime
 
-    private var _additionalData = MutableStateFlow<String>("")
+    private var _additionalData = MutableStateFlow("")
     val additionalData : StateFlow<String> = _additionalData
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
+
     fun connect() {
         viewModelScope.launch(Dispatchers.IO){
             _state.value = State.CONNECTING
             while(true){
-                val id = model.connectToServer()
-                if (id != null) {
-                    _playerId.value = id
+                if(model.connectToServer()){
+                    break
+                }
+            }
+            _state.value = State.SELECTING_ID
+        }
+    }
+
+    fun enter(selectedId: String? = null){
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.value = State.CONNECTING
+            while (true) {
+                val playerId = model.enter(selectedId)
+                if (playerId != null) {
+                    _playerId.value = playerId
                     _state.value = State.CONNECTED_NOT_IN_LOBBY
                     setupListeners() // setup the listeners to start receiving messages
                     return@launch
                 }
             }
+        }
+    }
+
+    fun exit() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if(_state.value != State.CONNECTED_NOT_IN_LOBBY){
+                showError("Cannot exit at the current state")
+                return@launch
+            }
+            model.exit()
+            _playerId.value = ""
+            _timeServerStartTime.value = -1
+            _state.value = State.SELECTING_ID
         }
     }
 
@@ -111,7 +139,11 @@ class MainViewModel() : ViewModel() {
     }
 
     fun showError(string: String) {
-        _error.value = string
+        _error.value = if(_error.value != null){
+            string + "\n- - - - - - -\n" + _error.value
+        } else {
+            string
+        }
         _state.value = State.ERROR
     }
 
@@ -119,6 +151,12 @@ class MainViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             model.toggleReady()
             _ready.value = !_ready.value
+        }
+    }
+
+    fun onDestroy() {
+        runBlocking(Dispatchers.Main){
+            model.closeAllResources()
         }
     }
 
@@ -131,6 +169,9 @@ class MainViewModel() : ViewModel() {
             GameRequest.Type.PONG -> {}
             GameRequest.Type.HEARTBEAT -> {}
             GameRequest.Type.END_GAME -> {}
+            GameRequest.Type.EXIT -> {
+                fatalError(request.message ?: "Connection closed by server")
+            }
             GameRequest.Type.JOIN_LOBBY -> {
                 val lobbyId = request.lobbyId ?: run {
                     Log.e(TAG, "handleGameRequest: JOIN_LOBBY request missing lobbyId")
@@ -152,6 +193,10 @@ class MainViewModel() : ViewModel() {
                 _state.value = State.CONNECTED_NOT_IN_LOBBY
             }
             GameRequest.Type.START_GAME -> {
+                if(_state.value != State.CONNECTED_IN_LOBBY){
+                    Log.e(TAG, "handleGameRequest: START_GAME request received while not in lobby")
+                    return
+                }
                 // ===================================|
                 // clear the listeners to prevent any further messages from being processed.
                 // let the game activity handle the messages from here on out.
@@ -221,10 +266,10 @@ class MainViewModel() : ViewModel() {
         _lobbyId.value = ""
         _gameType.value = null
         _timeServerStartTime.value = -1
-        showError("The application encountered a fatal error and must be restarted.\n$message")
-        model = MainModel(viewModelScope)
+        showError(message)
         viewModelScope.launch(Dispatchers.IO) {
             oldModel.closeAllResources()
         }
+        model = MainModel(viewModelScope)
     }
 }
