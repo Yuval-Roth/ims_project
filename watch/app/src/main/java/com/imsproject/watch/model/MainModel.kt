@@ -6,8 +6,8 @@ import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.networking.UdpClient
+import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.common.networking.WebSocketClient
-import com.imsproject.watch.model.MainModel.CallbackNotSetException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,7 +18,6 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
-import java.util.concurrent.TimeUnit
 
 // set these values to run the app locally
 private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
@@ -259,6 +258,15 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
+    fun getLatencyTracker(): LatencyTracker {
+        return LatencyTracker(
+            scope,
+            GameAction.ping,
+            SERVER_IP,
+            SERVER_UDP_PORT
+        )
+    }
+
     // ======================================================================= |
     // ======================== Private Methods ============================== |
     // ======================================================================= |
@@ -395,7 +403,7 @@ class MainModel (private val scope : CoroutineScope) {
         Log.d(TAG, "Starting heartbeat listener")
 
         heartBeatListener = scope.launch(Dispatchers.IO){
-            while(true){
+            while(isActive){
                 delay(5000)
                 try{
                     ws.send(GameRequest.heartbeat)
@@ -420,9 +428,8 @@ class MainModel (private val scope : CoroutineScope) {
 
         // UDP
         udpMessageListener = scope.launch(Dispatchers.IO) {
-            while (true) {
+            while (isActive) {
                 try {
-                    if(! isActive) return@launch
                     val message = udp.receive()
                     val action = GameAction.fromString(message)
                     executeCallback { udpOnMessageCallback(action) }
@@ -442,9 +449,8 @@ class MainModel (private val scope : CoroutineScope) {
         }
 
         tcpMessageListener = scope.launch(Dispatchers.IO){
-            while(true){
+            while(isActive){
                 try{
-                    if(! isActive) return@launch
                     val message = ws.nextMessageBlocking()
                     val request = GameRequest.fromJson(message)
                     executeCallback { tcpOnMessageCallback(request) }

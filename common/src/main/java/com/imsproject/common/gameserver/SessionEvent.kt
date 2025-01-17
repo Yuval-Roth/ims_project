@@ -48,6 +48,15 @@ data class SessionEvent internal constructor (
 
         // NETWORK_DATA
         @SerializedName("latency")                  LATENCY,
+        @SerializedName("timed_out")                TIMED_OUT,
+        @SerializedName("average_latency")          AVERAGE_LATENCY,
+        @SerializedName("min_latency")              MIN_LATENCY,
+        @SerializedName("max_latency")              MAX_LATENCY,
+        @SerializedName("jitter")                   JITTER,
+        @SerializedName("median_latency")           MEDIAN_LATENCY,
+        @SerializedName("measurement_count")        MEASUREMENT_COUNT,
+        @SerializedName("timeout_threshold")        TIMEOUT_THRESHOLD,
+        @SerializedName("timeouts_count")           TIMEOUTS_COUNT,
         @SerializedName("packet_out_of_order")      PACKET_OUT_OF_ORDER,
         @SerializedName("network_error")            NETWORK_ERROR,
         @SerializedName("reconnected")              RECONNECTED,
@@ -128,20 +137,20 @@ data class SessionEvent internal constructor (
         fun heartRate(
             actor: String,
             timestamp: Long,
-            value: Int
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.HEART_RATE, timestamp, actor, value.toString())
+            data: String
+        ) = SessionEvent(Type.SENSOR_DATA, SubType.HEART_RATE, timestamp, actor, data)
 
         fun heartRateVariability(
             actor: String,
             timestamp: Long,
-            value: Int
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.HEART_RATE_VARIABILITY, timestamp, actor, value.toString())
+            data: String
+        ) = SessionEvent(Type.SENSOR_DATA, SubType.HEART_RATE_VARIABILITY, timestamp, actor, data)
 
         fun bloodOxygen(
             actor: String,
             timestamp: Long,
-            value: Int
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.BLOOD_OXYGEN, timestamp, actor, value.toString())
+            data: String
+        ) = SessionEvent(Type.SENSOR_DATA, SubType.BLOOD_OXYGEN, timestamp, actor, data)
 
         fun gyroscope(
             actor: String,
@@ -160,8 +169,61 @@ data class SessionEvent internal constructor (
         fun latency(
             actor: String,
             timestamp: Long,
-            value: Long
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.LATENCY, timestamp, actor, value.toString())
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.LATENCY, timestamp, actor, data)
+
+        fun timedOut(
+            actor: String,
+            timestamp: Long
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMED_OUT, timestamp, actor)
+
+        fun averageLatency(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.AVERAGE_LATENCY, timestamp, actor, data)
+
+        fun minLatency(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.MIN_LATENCY, timestamp, actor, data)
+
+        fun maxLatency(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.MAX_LATENCY, timestamp, actor, data)
+
+        fun jitter(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.JITTER, timestamp, actor, data)
+
+        fun medianLatency(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.MEDIAN_LATENCY, timestamp, actor, data)
+
+        fun measurementCount(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.MEASUREMENT_COUNT, timestamp, actor, data)
+
+        fun timeoutThreshold(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMEOUT_THRESHOLD, timestamp, actor, data)
+
+        fun timeoutsCount(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMEOUTS_COUNT, timestamp, actor, data)
 
         fun packetOutOfOrder(
             actor: String,

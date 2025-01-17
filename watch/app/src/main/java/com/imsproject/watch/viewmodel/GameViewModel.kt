@@ -2,7 +2,6 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
-import android.os.SystemClock
 import android.os.Vibrator
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -11,13 +10,13 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
-import com.imsproject.common.networking.PingTracker
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
 import com.imsproject.watch.sensors.SensorsHandler
+import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +25,6 @@ import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
-import java.net.SocketTimeoutException
 
 
 abstract class GameViewModel(
@@ -50,8 +48,8 @@ abstract class GameViewModel(
 
     protected lateinit var vibrator: Vibrator
         private set
-    protected val packetTracker: PacketTracker = PacketTracker()
-    private val pingTracker: PingTracker = PingTracker(viewModelScope)
+    protected val packetTracker = PacketTracker()
+    private lateinit var latencyTracker : LatencyTracker
     private lateinit var sensorsHandler: SensorsHandler
 
     // ================================================================================ |
@@ -95,8 +93,8 @@ abstract class GameViewModel(
             // log metadata
             val timestamp = getCurrentGameTime()
             addEvent(SessionEvent.serverStartTime(playerId, timestamp,timeServerStartTime.toString()))
-            addEvent(SessionEvent.timeServerDelta(playerId,timestamp+1,timeServerDelta.toString()))
-            addEvent(SessionEvent.clientStartTime(playerId,timestamp+2,myStartTime.toString()))
+            addEvent(SessionEvent.timeServerDelta(playerId,timestamp,timeServerDelta.toString()))
+            addEvent(SessionEvent.clientStartTime(playerId,timestamp,myStartTime.toString()))
 
             // =================== other setup =================== |
 
@@ -109,14 +107,30 @@ abstract class GameViewModel(
             sensorsHandler = SensorsHandler(viewModelScope,context,this@GameViewModel)
             sensorsHandler.run()
 
+            latencyTracker = model.getLatencyTracker()
+            latencyTracker.onReceive = {
+                addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it.toString()))
+            }
+            latencyTracker.onTimeout = {
+                addEvent(SessionEvent.timedOut(playerId,getCurrentGameTime()))
+            }
+
+            // start collecting latency statistics
+            latencyTracker.start()
             viewModelScope.launch(Dispatchers.IO) {
-                delay(1000)
-                pingTracker.onUpdate = { addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it)) }
-                pingTracker.start()
-                while (true) {
-                    model.pingUdp()
-                    pingTracker.sentAt(SystemClock.uptimeMillis())
-                    delay(50)
+                while(true){
+                    delay(1000)
+                    @Suppress("NAME_SHADOWING")
+                    val timestamp = getCurrentGameTime()
+                    val statistics = latencyTracker.collectStatistics()
+                    addEvent(SessionEvent.averageLatency(playerId,timestamp,statistics.averageLatency.toString()))
+                    addEvent(SessionEvent.minLatency(playerId,timestamp,statistics.minLatency.toString()))
+                    addEvent(SessionEvent.maxLatency(playerId,timestamp,statistics.maxLatency.toString()))
+                    addEvent(SessionEvent.jitter(playerId,timestamp,statistics.jitter.toString()))
+                    addEvent(SessionEvent.medianLatency(playerId,timestamp,statistics.median.toString()))
+                    addEvent(SessionEvent.measurementCount(playerId,timestamp,statistics.measurementCount.toString()))
+                    addEvent(SessionEvent.timeoutThreshold(playerId,timestamp,statistics.timeoutThreshold.toString()))
+                    addEvent(SessionEvent.timeoutsCount(playerId,timestamp,statistics.timeoutsCount.toString()))
                 }
             }
 
@@ -157,9 +171,7 @@ abstract class GameViewModel(
 
     protected open suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.PONG -> {
-                pingTracker.receivedAt(SystemClock.uptimeMillis())
-            }
+            GameAction.Type.PONG -> {}
             GameAction.Type.HEARTBEAT -> {}
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected action type: ${action.type}")
