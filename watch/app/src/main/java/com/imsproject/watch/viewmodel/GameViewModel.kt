@@ -140,6 +140,7 @@ abstract class GameViewModel(
 
             // =================== game start =================== |
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
+            Log.d(TAG, "onCreate: session started")
             _state.value = State.PLAYING
         }
 
