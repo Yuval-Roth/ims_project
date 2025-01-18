@@ -1,23 +1,23 @@
-package com.imsproject.gameserver.networking
+package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
-import com.imsproject.gameserver.GameController
-import com.imsproject.gameserver.auth.AuthController
-import com.imsproject.gameserver.auth.Credentials
+import com.imsproject.gameserver.business.GameRequestFacade
+import com.imsproject.gameserver.business.auth.AuthController
+import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.toResponseEntity
+import org.slf4j.LoggerFactory
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.io.File
 import java.util.*
 
 @RestController
 class RestHandler(
-    private val gameController: GameController,
+    private val gameRequestFacade: GameRequestFacade,
     private val authController: AuthController,
     private val resources : ResourceLoader
     ) : ErrorController {
@@ -30,10 +30,12 @@ class RestHandler(
         } catch(e: Exception){
             return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
         }
-        return try{
-            gameController.handleGameRequest(request).toResponseEntity()
-        } catch(e: Exception){
-            Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+
+        try {
+            return gameRequestFacade.handleGameRequest(request).toResponseEntity()
+        } catch (e: Exception) {
+            log.error("Error handling game request", e)
+            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -100,5 +102,9 @@ class RestHandler(
     private fun readHtmlFile(path: String): String {
         return resources.getResource("classpath:$path").inputStream
             .bufferedReader().use { it.readText() }
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(RestHandler::class.java)
     }
 }

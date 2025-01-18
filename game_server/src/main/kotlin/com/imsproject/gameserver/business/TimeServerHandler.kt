@@ -1,4 +1,4 @@
-package com.imsproject.gameserver.networking
+package com.imsproject.gameserver.business
 
 import com.google.gson.JsonParseException
 import com.imsproject.common.etc.TimeRequest

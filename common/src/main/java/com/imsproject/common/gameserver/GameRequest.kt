@@ -43,7 +43,8 @@ data class GameRequest internal constructor(
         @SerializedName("create_session")           CREATE_SESSION,
         @SerializedName("remove_session")           REMOVE_SESSION,
         @SerializedName("get_sessions")             GET_SESSIONS,
-        @SerializedName("change_sessions_order")    CHANGE_SESSIONS_ORDER
+        @SerializedName("change_sessions_order")    CHANGE_SESSIONS_ORDER,
+        @SerializedName("start_experiment")         START_EXPERIMENT,
 
         ;
         

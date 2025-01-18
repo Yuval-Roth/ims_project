@@ -1,4 +1,4 @@
-package com.imsproject.gameserver.auth
+package com.imsproject.gameserver.business.auth
 
 import org.springframework.stereotype.Component
 import java.io.File
