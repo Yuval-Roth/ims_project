@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 
 abstract class GameViewModel(
@@ -86,12 +87,14 @@ abstract class GameViewModel(
         }
 
         // set up everything required for the session
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.Default) {
 
             // =================== clock synchronization =================== |
 
             val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
-            timeServerDelta = model.calculateTimeServerDelta()
+            withContext(Dispatchers.IO){
+                timeServerDelta = model.calculateTimeServerDelta()
+            }
             myStartTime = timeServerStartTime + timeServerDelta
 
             // log metadata
@@ -121,7 +124,7 @@ abstract class GameViewModel(
 
             // start collecting latency statistics
             latencyTracker.start()
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 while(true){
                     delay(1000)
                     @Suppress("NAME_SHADOWING")

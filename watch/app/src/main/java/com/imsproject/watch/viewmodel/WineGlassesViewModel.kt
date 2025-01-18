@@ -65,7 +65,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         set(value) {
             if(field != value){
                 val timestamp = getCurrentGameTime()
-                viewModelScope.launch(Dispatchers.IO) {
+                viewModelScope.launch(Dispatchers.Default) {
                     when (value) {
                         true -> addEvent(SessionEvent.syncStartTime(playerId, timestamp))
                         false -> addEvent(SessionEvent.syncEndTime(playerId, timestamp))
@@ -83,7 +83,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         super.onCreate(intent,context)
 
         if(ACTIVITY_DEBUG_MODE){
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 while(true) {
                     var angle = 0.0f
                     while(angle < 360 * 15){

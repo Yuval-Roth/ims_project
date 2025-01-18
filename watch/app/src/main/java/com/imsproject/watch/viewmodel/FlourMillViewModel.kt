@@ -141,7 +141,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 }
         }
         if(inSync && side == myAxleSide){
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 addEvent(SessionEvent.syncedAtTime(playerId,super.getCurrentGameTime()))
             }
         }
@@ -169,7 +169,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         if(ACTIVITY_DEBUG_MODE) {
             myAxleSide = AxleSide.RIGHT
             axle = Axle(AXLE_STARTING_ANGLE, myAxleSide)
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 while (true) {
                     delay(1000)
                     rotateAxle(AxleSide.LEFT, 1, System.currentTimeMillis())
