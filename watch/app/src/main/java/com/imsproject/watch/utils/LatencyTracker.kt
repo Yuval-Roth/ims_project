@@ -75,12 +75,8 @@ class LatencyTracker(
                     e.printStackTrace()
                 }
             }
+            udpClient.close()
         }
-    }
-
-    fun stop() {
-        job?.cancel()
-        job = null
     }
 
     /**

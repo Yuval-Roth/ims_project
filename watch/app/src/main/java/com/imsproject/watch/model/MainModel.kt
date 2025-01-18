@@ -242,6 +242,7 @@ class MainModel (private val scope : CoroutineScope) {
                 Log.e(TAG, "Failed to fetch time", e)
             }
         }
+        timeServerUdp.close()
         return data.average().toLong()
     }
 
