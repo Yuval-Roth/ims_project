@@ -36,6 +36,10 @@ class MainViewModel() : ViewModel() {
     // ================================================================================ |
 
     private var _state = MutableStateFlow(State.DISCONNECTED)
+        set(value) {
+            field = value
+            Log.d(TAG, "state changed to: $value")
+        }
     val state : StateFlow<State> = _state
 
     private var _playerId = MutableStateFlow("")

@@ -57,6 +57,10 @@ abstract class GameViewModel(
     // ================================================================================ |
 
     private var _state = MutableStateFlow(State.LOADING)
+        set(value){
+            field = value
+            Log.d(TAG, "state changed to $value")
+        }
     val state : StateFlow<State> = _state
 
     private var _error = MutableStateFlow<String?>(null)
@@ -142,6 +146,7 @@ abstract class GameViewModel(
     }
 
     fun exitWithError(errorMessage: String, code: Result.Code) {
+        Log.d(TAG, "exitWithError: game ended with code: $code and error: $errorMessage")
         clearListeners() // clear the listeners to prevent any further messages from being processed.
         addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         _error.value = errorMessage
@@ -154,12 +159,14 @@ abstract class GameViewModel(
     }
 
     fun showError(msg: String) {
+        Log.d(TAG, "showError: $msg")
         _error.value = msg
         _state.value = State.ERROR
     }
 
     fun clearError() {
         if(_state.value == State.ERROR){
+            Log.d(TAG, "clearError: clearing error")
             _error.value = null
             _state.value = State.PLAYING
         }
@@ -214,6 +221,7 @@ abstract class GameViewModel(
     }
 
     protected fun exitOk() {
+        Log.d(TAG, "exitOk: game ended successfully")
         addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),"ok"))
         clearListeners() // clear the listeners to prevent any further messages from being processed.
         _state.value = State.TERMINATED
@@ -235,6 +243,7 @@ abstract class GameViewModel(
                         reconnected = true
                     }
                 }
+                Log.d(TAG, "reconnect: reconnected = $reconnected")
             }
             if(reconnected){
                 addEvent(SessionEvent.reconnected(playerId,getCurrentGameTime()))
