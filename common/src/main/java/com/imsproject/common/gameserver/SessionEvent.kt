@@ -36,8 +36,11 @@ data class SessionEvent internal constructor (
     enum class SubType {
         // USER_INPUT
         @SerializedName("click")                    CLICK,
+        @SerializedName("opponent_click")           OPPONENT_CLICK,
         @SerializedName("angle")                    ANGLE,
+        @SerializedName("opponent_angle")           OPPONENT_ANGLE,
         @SerializedName("rotation")                 ROTATION,
+        @SerializedName("opponent_rotation")        OPPONENT_ROTATION,
 
         // SENSOR_DATA
         @SerializedName("heart_rate")               HEART_RATE,
@@ -120,17 +123,34 @@ data class SessionEvent internal constructor (
             timestamp: Long
         ) = SessionEvent(Type.USER_INPUT, SubType.CLICK, timestamp, actor)
 
+        fun opponentClick(
+            actor: String,
+            timestamp: Long
+        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_CLICK, timestamp, actor)
+
         fun angle(
             actor: String,
             timestamp: Long,
             data: String
         ) = SessionEvent(Type.USER_INPUT, SubType.ANGLE, timestamp, actor, data)
 
+        fun opponentAngle(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_ANGLE, timestamp, actor, data)
+
         fun rotation(
             actor: String,
             timestamp: Long,
             data: String
         ) = SessionEvent(Type.USER_INPUT, SubType.ROTATION, timestamp, actor, data)
+
+        fun opponentRotation(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_ROTATION, timestamp, actor, data)
 
         // ==================== SENSOR_DATA ==================== |
 

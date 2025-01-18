@@ -208,6 +208,9 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     Log.e(TAG, "handleGameAction: missing sequence number in user input action")
                     return
                 }
+
+                val arrivedTimestamp = getCurrentGameTime()
+
                 withContext(Dispatchers.Main) {
                     if (actor == playerId) {
                         rotateAxle(myAxleSide, direction, timestamp)
@@ -219,6 +222,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
                     packetTracker.receivedOtherPacket(sequenceNumber)
+                    addEvent(SessionEvent.opponentRotation(playerId,arrivedTimestamp,direction.toString()))
                 }
             }
             else -> super.handleGameAction(action)

@@ -52,8 +52,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     val myArc = Arc()
     val opponentArc = Arc()
-    val myFrequencyTracker = FrequencyTracker()
-    val opponentFrequencyTracker = FrequencyTracker()
+    private val myFrequencyTracker = FrequencyTracker()
+    private val opponentFrequencyTracker = FrequencyTracker()
 
     private var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
@@ -163,6 +163,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                     return
                 }
 
+                val arrivedTimestamp = getCurrentGameTime()
+
                 if(angle == UNDEFINED_ANGLE){
                     _opponentReleased.value = true
                     opponentFrequencyTracker.reset()
@@ -173,6 +175,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                 }
 
                 packetTracker.receivedOtherPacket(sequenceNumber)
+                addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,angle.toString()))
             }
             else -> super.handleGameAction(action)
         }

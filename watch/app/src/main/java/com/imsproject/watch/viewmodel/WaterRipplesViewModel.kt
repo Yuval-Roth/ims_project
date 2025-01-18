@@ -120,12 +120,14 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                     return
                 }
 
+                val arrivedTimestamp = getCurrentGameTime()
                 showRipple(actor, timestamp)
                 
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
                     packetTracker.receivedOtherPacket(sequenceNumber)
+                    addEvent(SessionEvent.opponentClick(playerId, arrivedTimestamp))
                 }
             }
             else -> super.handleGameAction(action)
