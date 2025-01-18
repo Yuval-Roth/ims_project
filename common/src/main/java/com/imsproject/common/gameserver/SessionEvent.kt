@@ -41,6 +41,8 @@ data class SessionEvent internal constructor (
         @SerializedName("opponent_angle")           OPPONENT_ANGLE,
         @SerializedName("rotation")                 ROTATION,
         @SerializedName("opponent_rotation")        OPPONENT_ROTATION,
+        @SerializedName("frequency")                FREQUENCY,
+        @SerializedName("opponent_frequency")       OPPONENT_FREQUENCY,
 
         // SENSOR_DATA
         @SerializedName("heart_rate")               HEART_RATE,
@@ -75,6 +77,8 @@ data class SessionEvent internal constructor (
         @SerializedName("time_server_delta")        TIME_SERVER_DELTA,
         @SerializedName("session_started")          SESSION_STARTED,
         @SerializedName("session_ended")            SESSION_ENDED,
+        @SerializedName("sync_tolerance")           SYNC_TOLERANCE,
+        @SerializedName("sync_window_length")       SYNC_WINDOW_LENGTH,
 
         ;
 
@@ -151,6 +155,18 @@ data class SessionEvent internal constructor (
             timestamp: Long,
             data: String
         ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_ROTATION, timestamp, actor, data)
+
+        fun frequency(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, SubType.FREQUENCY, timestamp, actor, data)
+
+        fun opponentFrequency(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_FREQUENCY, timestamp, actor, data)
 
         // ==================== SENSOR_DATA ==================== |
 
@@ -308,5 +324,18 @@ data class SessionEvent internal constructor (
             timestamp: Long,
             reason: String
         ) = SessionEvent(Type.META_DATA, SubType.SESSION_ENDED, timestamp, actor, reason)
+
+        fun syncTolerance(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.META_DATA, SubType.SYNC_TOLERANCE, timestamp, actor, data)
+
+        fun syncWindowLength(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.META_DATA, SubType.SYNC_WINDOW_LENGTH, timestamp, actor, data)
+
     }
 }

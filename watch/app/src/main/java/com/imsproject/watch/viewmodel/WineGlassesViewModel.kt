@@ -98,6 +98,18 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                     _opponentReleased.value = false
                 }
             }
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.Default){
+            while(true){
+                delay(100) // run this loop roughly 10 times per second
+                if(inSync){
+                    val timestamp = getCurrentGameTime()
+                    addEvent(SessionEvent.frequency(playerId, timestamp, myFrequencyTracker.frequency.toString()))
+                    addEvent(SessionEvent.opponentFrequency(playerId, timestamp, opponentFrequencyTracker.frequency.toString()))
+                }
+            }
         }
     }
 
