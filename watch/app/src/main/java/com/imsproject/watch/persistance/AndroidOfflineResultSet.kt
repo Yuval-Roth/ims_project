@@ -6,7 +6,7 @@ import com.imsproject.common.dataAccess.OfflineResultSet
 class AndroidOfflineResultSet(
     cursor: Cursor
 ) : OfflineResultSet {
-    private val rows: List<HashMap<String, Any>>
+    private val rows: List<HashMap<String, Any?>>
     val columnNames: Array<String>
     val columnCount: Int
     var currentRow: Int
@@ -14,8 +14,8 @@ class AndroidOfflineResultSet(
     override val isEmpty: Boolean
         get() = rows.isEmpty()
 
-    private var currentRowData: HashMap<String, Any>? = null
-    private var iterator: ListIterator<HashMap<String, Any>>? = null
+    private var currentRowData: HashMap<String, Any?>? = null
+    private var iterator: ListIterator<HashMap<String, Any?>>? = null
 
     init {
         currentRow = -1
@@ -24,9 +24,9 @@ class AndroidOfflineResultSet(
 
         rows = mutableListOf()
         while (cursor.moveToNext()) {
-            val row = HashMap<String, Any>()
+            val row = HashMap<String, Any?>()
             for (i in 0 until columnCount) {
-                row[columnNames[i]] = cursor.getAny(i)!!
+                row[columnNames[i]] = cursor.getAny(i)
             }
             rows.add(row)
         }
@@ -52,6 +52,7 @@ class AndroidOfflineResultSet(
 
     fun Cursor.getAny(index: Int): Any? {
         return when (getType(index)) {
+            Cursor.FIELD_TYPE_NULL -> null
             Cursor.FIELD_TYPE_INTEGER -> getLong(index)
             Cursor.FIELD_TYPE_FLOAT -> getDouble(index)
             Cursor.FIELD_TYPE_STRING -> getString(index)
