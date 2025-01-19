@@ -1,5 +1,6 @@
-package com.imsproject.gameserver.dataAccess
+package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.dataAccess
 
+import com.imsproject.common.dataAccess.OfflineResultSet
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import java.sql.*
 import java.util.*

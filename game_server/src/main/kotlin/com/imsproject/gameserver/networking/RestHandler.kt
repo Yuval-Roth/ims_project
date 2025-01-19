@@ -6,7 +6,7 @@ import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.GameController
 import com.imsproject.gameserver.auth.AuthController
 import com.imsproject.gameserver.auth.Credentials
-import com.imsproject.gameserver.dataAccess.models.Models
+import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.toResponseEntity
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
@@ -20,21 +20,21 @@ import java.util.*
 class RestHandler(
     private val gameController: GameController,
     private val authController: AuthController,
-    private val authController: DAOController,
+    private val daoController: DAOController,
     private val resources : ResourceLoader
     ) : ErrorController {
 
     @PostMapping("/manager")
-    fun manager(@RequestBody body : String): ResponseEntity<String> {
+    fun manager(@RequestBody body: String): ResponseEntity<String> {
         val request: GameRequest?
-        try{
+        try {
             request = GameRequest.fromJson(body)
-        } catch(e: Exception){
+        } catch (e: Exception) {
             return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
         }
-        return try{
+        return try {
             gameController.handleGameRequest(request).toResponseEntity()
-        } catch(e: Exception){
+        } catch (e: Exception) {
             Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
@@ -42,18 +42,18 @@ class RestHandler(
     @PostMapping("/operators/{action}")
     fun operators(
         @PathVariable action: String,
-        @RequestBody body : String
+        @RequestBody body: String
     ): ResponseEntity<String> {
-        val credentials : Credentials = JsonUtils.deserialize(body)
-        try{
-            when(action){
+        val credentials: Credentials = JsonUtils.deserialize(body)
+        try {
+            when (action) {
                 "add" -> authController.createUser(credentials)
                 "remove" -> authController.deleteUser(credentials.userId)
                 else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
             }
-        } catch(e: IllegalArgumentException){
+        } catch (e: IllegalArgumentException) {
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
-        } catch(e: Exception){
+        } catch (e: Exception) {
             return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
         return Response.getOk().toResponseEntity()
@@ -61,24 +61,21 @@ class RestHandler(
 
 
     @PostMapping("/data")
-    fun data(@RequestBody body : String): ResponseEntity<String> {
+    fun data(@RequestBody body: String): ResponseEntity<String> {
         return "Not implemented".toResponseEntity()
     }
 
     @PostMapping("/dataCheck/{section}/{action}")
-    fun data(@PathVariable section: String,
-             @PathVariable action: String,
-             @RequestBody body : String): ResponseEntity<String> {
+    fun data(
+            @PathVariable section: String,
+            @PathVariable action: String,
+            @RequestBody body: String
+        ): ResponseEntity<String> {
 
-        try{
-            when(section){
-                "participant" -> {
-                    val participant : Participant = JsonUtils.deserialize(body)
-                    daoController.handleParticipants(action, participant)
-                }
-                else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
-            }
-        } catch(e: Exception){
+        try {
+            daoController.handle(section, action, body)
+        } catch(e: Exception)
+        {
             return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
 

@@ -1,33 +1,28 @@
-package com.imsproject.gameserver.dataAccess.implementations
+package com.imsproject.gameserver.dataAccess.implementations//package com.imsproject.gameserver.dataAccess.implementations
 
-class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, Int>(cursor, "Participants", arrayOf("pid")) {
+import com.imsproject.common.dataAccess.CreateTableQueryBuilder
+import com.imsproject.common.dataAccess.DaoException
+import com.imsproject.common.dataAccess.OfflineResultSet
+import com.imsproject.common.dataAccess.abstracts.DAOBase
+import com.imsproject.common.dataAccess.abstracts.PrimaryKey
+import com.imsproject.common.dataAccess.abstracts.SQLExecutor
+import com.imsproject.common.utils.JsonUtils
+import com.imsproject.gameserver.dataAccess.models.GenderEnum
+import com.imsproject.gameserver.dataAccess.models.Participant
+import java.sql.SQLException
+
+class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, PrimaryKey>(cursor, "Participants", arrayOf("pid")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
-        return CreateTableQueryBuilder("Participants")
-            .addColumn("pid", "SERIAL PRIMARY KEY")
-            .addColumn("first_name", "VARCHAR(50) NOT NULL")
-            .addColumn("last_name", "VARCHAR(50) NOT NULL")
-            .addColumn("age", "INT")
-            .addColumn("gender", "gender_enum")
-            .addColumn("phone", "VARCHAR(15)")
-            .addColumn("email", "VARCHAR(100) UNIQUE")
+        throw UnsupportedOperationException("Not yet implemented")
     }
 
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Participant {
-        return Participant(
-            pid = resultSet.getInt("pid"),
-            firstName = resultSet.getString("first_name"),
-            lastName = resultSet.getString("last_name"),
-            age = resultSet.getIntOrNull("age"),
-            gender = resultSet.getEnum("gender", GenderEnum::class),
-            phone = resultSet.getStringOrNull("phone"),
-            email = resultSet.getString("email")
-        )
+        throw UnsupportedOperationException("Not yet implemented")
     }
 
-    fun handleParticipants(action: string,participant: Participant): Unit {
+    fun handleParticipants(action: String,participant: Participant): Unit {
         when(action){
             "insert" -> {
-                val participant : Participant = JsonUtils.deserialize(body)
                 insert(participant)
             }
             else -> throw Exception("Invalid action for participants")
@@ -36,15 +31,22 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, Int>(cursor, "
     }
 
     @Throws(DaoException::class)
-    fun insert(participant: Participant): Unit {
+    override fun insert(participant: Participant): Unit {
             val columns = arrayOf("first_name", "last_name", "age", "gender", "phone", "email")
-            val values = "'" + participant.first_name + "', '" + participant.last_name + "', " + participant.age + ", '" + participant.gender + "', '" + participant.phone + "', '" + participant.email + "'"
+            val values = "'" + participant.firstName + "', '" + participant.lastName + "', " + participant.age + ", '" + participant.gender + "', '" + participant.phone + "', '" + participant.email + "'"
             val insertQuery = "INSERT INTO ${tableName} (${columns.joinToString(", ")}) VALUES (${values});"
             try {
-                cursor.executeWrite(insertQuery)
+                cursor.executeWrite(insertQuery) // returns number of lines changed. can be used to check for errors. log if anything
+                //if succeed return id somehow
             } catch (e: SQLException) {
                 throw DaoException("Failed to delete from table $tableName", e)
             }
     }
+
+    @Throws(DaoException::class)
+    override fun update(participant: Participant): Unit {
+
+    }
+
 
 }

@@ -28,7 +28,7 @@ CREATE TABLE Participants (
 );
 
 -- Create the Lobby table
-CREATE TABLE Lobbies (
+CREATE TABLE Lobbies ( -- CHANGE NAME TO EXPERIMENT
                        lobby_id SERIAL PRIMARY KEY,
                        pid1 INT,
                        pid2 INT,
@@ -37,22 +37,24 @@ CREATE TABLE Lobbies (
 );
 
 -- Create the Sessions table
-CREATE TABLE Sessions (
+CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
                           session_id SERIAL PRIMARY KEY,
                           lobby_id INT,
                           duration INT,
                           session_type session_type_enum,
                           session_order INT,
+    -- tolerance INT (ms)
+    -- window_length INT (ms)
                           FOREIGN KEY (lobby_id) REFERENCES Lobbies(lobby_id) ON DELETE CASCADE
 );
 
 -- Create the SessionUserInputEvent table
-CREATE TABLE SessionEvents (
+CREATE TABLE SessionEvents ( -- AT THE END OF EVERY SESSION, A LIST OF EVENTS WILL BE PASSED
                                        event_id SERIAL PRIMARY KEY,
                                         session_id INT,
                                        type session_type_enum NOT NULL,
                                        subtype session_subtype_enum NOT NULL,
-                                       timestamp BIGINT NOT NULL,
+                                       timestamp BIGINT NOT NULL, --ms from start of session, can be INT
                                        actor VARCHAR(100) NOT NULL,
                                        data TEXT,
                                        FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
