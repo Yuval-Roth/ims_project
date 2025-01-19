@@ -1,7 +1,7 @@
 package com.imsproject.common.gameserver
 
 import com.google.gson.annotations.SerializedName
-import com.imsproject.common.utils.JsonUtils
+import com.imsproject.common.utils.toJson
 
 data class GameRequest internal constructor(
     val type: Type,
@@ -45,15 +45,7 @@ data class GameRequest internal constructor(
         @SerializedName("get_sessions")             GET_SESSIONS,
         @SerializedName("change_sessions_order")    CHANGE_SESSIONS_ORDER,
         @SerializedName("start_experiment")         START_EXPERIMENT,
-
-        ;
-        
-        override fun toString(): String {
-            return name.lowercase()
-        }
     }
-
-    fun toJson() = JsonUtils.serialize(this)
 
     companion object {
         fun builder(type: Type) = GameRequestBuilder(type)
@@ -61,7 +53,5 @@ data class GameRequest internal constructor(
         val ping = builder(Type.PING).build().toJson()
         val pong = builder(Type.PONG).build().toJson()
         val heartbeat = builder(Type.HEARTBEAT).build().toJson()
-
-        fun fromJson(json: String) : GameRequest = JsonUtils.deserialize(json)
     }
 }
