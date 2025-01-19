@@ -49,7 +49,7 @@ class SQLiteExecutor (dbUrl: String) : SQLExecutor {
     }
 
     @Throws(SQLException::class)
-    override fun executeRead(query: String, vararg params: Any): OfflineResultSet {
+    override fun executeRead(query: String, vararg params: Any?): OfflineResultSet {
         if (query.isBlank()) {
             if (inTransaction()) {
                 rollback()
@@ -74,7 +74,7 @@ class SQLiteExecutor (dbUrl: String) : SQLExecutor {
     }
 
     @Throws(SQLException::class)
-    override fun executeWrite(query: String, vararg params: Any): Int {
+    override fun executeWrite(query: String, vararg params: Any?): Int {
         if (query.isBlank()) {
             if (inTransaction()) {
                 rollback()
@@ -122,9 +122,13 @@ class SQLiteExecutor (dbUrl: String) : SQLExecutor {
     }
 
     @Throws(SQLException::class)
-    private fun prepareStatement(params: Array<out Any>, s: PreparedStatement) {
+    private fun prepareStatement(params: Array<out Any?>, s: PreparedStatement) {
         for (i in params.indices) {
-            s.setObject(i + 1, params[i])
+            if(params[i] == null){
+                s.setNull(i + 1, Types.NULL)
+            } else {
+                s.setObject(i + 1, params[i])
+            }
         }
     }
 
