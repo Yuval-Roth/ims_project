@@ -46,6 +46,7 @@ abstract class GameViewModel(
         Log.e(TAG, "init: missing player ID")
         "unknown player ID"
     }
+    var sessionId = "" // TODO: get session ID from the server
 
     protected lateinit var vibrator: Vibrator
         private set

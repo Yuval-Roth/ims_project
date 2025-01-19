@@ -7,7 +7,7 @@ import java.sql.SQLException
 import java.util.*
 
 abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
-    protected val cursor: SQLExecutor,
+    private val cursor: SQLExecutor,
     protected val tableName: String,
     primaryKeyColumnNames : Array<out String>,
 ) : DAO<T, PK> {
@@ -41,7 +41,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
      * Initializes the table in the database if it does not exist.
      */
     @Throws(DaoException::class)
-    protected fun initTable() {
+    fun initTable() {
         val tableQueryBuilder = getCreateTableQueryBuilder()
         val query = tableQueryBuilder.build()
         try {

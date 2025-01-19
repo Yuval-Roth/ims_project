@@ -1,70 +1,27 @@
+@file:JvmName("JavaOfflineResultSetKt")
+
 package com.imsproject.common.dataAccess
 
-import java.sql.ResultSet
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
-class OfflineResultSet(rs: ResultSet) {
-    private val rows: LinkedList<HashMap<String?, Any>>
-    val columnNames: Array<String?>
-    val columnCount: Int
-    var currentRow: Int
-        private set
+interface OfflineResultSet {
     val isEmpty: Boolean
-        get() = rows.isEmpty()
-
-    private var currentRowData: HashMap<String?, Any>? = null
-    private var iterator: ListIterator<HashMap<String?, Any>>? = null
-
-    init {
-        currentRow = -1
-        val metaData = rs.metaData
-        columnCount = metaData.columnCount
-        columnNames = arrayOfNulls(columnCount)
-        for (i in 0 until columnCount) {
-            columnNames[i] = metaData.getColumnName(i + 1).lowercase(Locale.getDefault())
-        }
-
-        rows = LinkedList()
-        while (rs.next()) {
-            val row = HashMap<String?, Any>()
-            for (i in 0 until columnCount) {
-                row[columnNames[i]] = rs.getObject(i + 1)
-            }
-            rows.add(row)
-        }
-    }
-
-    fun next(): Boolean {
-        val iterator = this.iterator ?: run {
-            val newIterator = rows.listIterator()
-            newIterator
-        }
-        if (iterator.hasNext()) {
-            currentRow++
-            currentRowData = iterator.next()
-            return true
-        }
-        return false
-    }
-
-    inline fun <reified T> getTyped(columnName: String): T? {
-        val obj = getObject(columnName) ?: return null
-        if(T::class == LocalDateTime::class)
-            return LocalDateTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE_TIME) as T
-        if(T::class == LocalDate::class)
-            return LocalDate.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE) as T
-        if(T::class == LocalTime::class)
-            return LocalTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_TIME) as T
-
-        return obj as T
-    }
-
-    fun getObject(columnName: String): Any? {
-        val row = currentRowData ?: return null
-        return row[columnName.lowercase(Locale.getDefault())]
-    }
+    fun next(): Boolean
+    fun getObject(columnName: String): Any?
 }
+
+inline fun <reified T> OfflineResultSet.getTyped(columnName: String): T? {
+    val obj = getObject(columnName) ?: return null
+    if(T::class == LocalDateTime::class)
+        return LocalDateTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE_TIME) as T
+    if(T::class == LocalDate::class)
+        return LocalDate.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE) as T
+    if(T::class == LocalTime::class)
+        return LocalTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_TIME) as T
+
+    return obj as T
+}
+

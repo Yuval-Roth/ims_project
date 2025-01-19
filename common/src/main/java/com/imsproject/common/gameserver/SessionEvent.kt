@@ -3,7 +3,8 @@ package com.imsproject.common.gameserver
 import com.google.gson.annotations.SerializedName
 import com.imsproject.common.utils.JsonUtils
 
-data class SessionEvent internal constructor (
+data class SessionEvent (
+    val sessionId: String,
     val type: Type,
     val subType: SubType,
     val timestamp: Long,
@@ -12,6 +13,7 @@ data class SessionEvent internal constructor (
 ) : Comparable<SessionEvent> {
 
     private data class CompressedSessionEvent(
+        val sid: String, // sessionId
         val to: Int, // type ordinal
         val sto: Int, // subType ordinal
         val ts: Long, // timestamp
@@ -90,6 +92,7 @@ data class SessionEvent internal constructor (
     fun toJson(): String = JsonUtils.serialize(this)
 
     fun toCompressedJson(): String = CompressedSessionEvent(
+        sessionId,
         type.ordinal,
         subType.ordinal,
         timestamp,
@@ -110,6 +113,7 @@ data class SessionEvent internal constructor (
         fun fromCompressedJson(json: String): SessionEvent = JsonUtils.deserialize<CompressedSessionEvent>(json)
             .let {
                 SessionEvent(
+                    it.sid,
                     Type.entries[it.to],
                     SubType.entries[it.sto],
                     it.ts,
@@ -123,219 +127,255 @@ data class SessionEvent internal constructor (
         // ==================== USER_INPUT ==================== |
 
         fun click(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.USER_INPUT, SubType.CLICK, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.CLICK, timestamp, actor)
 
         fun opponentClick(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_CLICK, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.OPPONENT_CLICK, timestamp, actor)
 
         fun angle(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.USER_INPUT, SubType.ANGLE, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.ANGLE, timestamp, actor, data)
 
         fun opponentAngle(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_ANGLE, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.OPPONENT_ANGLE, timestamp, actor, data)
 
         fun rotation(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.USER_INPUT, SubType.ROTATION, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.ROTATION, timestamp, actor, data)
 
         fun opponentRotation(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_ROTATION, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.OPPONENT_ROTATION, timestamp, actor, data)
 
         fun frequency(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.USER_INPUT, SubType.FREQUENCY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.FREQUENCY, timestamp, actor, data)
 
         fun opponentFrequency(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.USER_INPUT, SubType.OPPONENT_FREQUENCY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.USER_INPUT, SubType.OPPONENT_FREQUENCY, timestamp, actor, data)
 
         // ==================== SENSOR_DATA ==================== |
 
         fun heartRate(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.HEART_RATE, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.SENSOR_DATA, SubType.HEART_RATE, timestamp, actor, data)
 
         fun heartRateVariability(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.HEART_RATE_VARIABILITY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.SENSOR_DATA, SubType.HEART_RATE_VARIABILITY, timestamp, actor, data)
 
         fun bloodOxygen(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.BLOOD_OXYGEN, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.SENSOR_DATA, SubType.BLOOD_OXYGEN, timestamp, actor, data)
 
         fun gyroscope(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.GYROSCOPE, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.SENSOR_DATA, SubType.GYROSCOPE, timestamp, actor, data)
 
         fun accelerometer(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, SubType.ACCELEROMETER, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.SENSOR_DATA, SubType.ACCELEROMETER, timestamp, actor, data)
 
         // ==================== NETWORK_DATA ==================== |
 
         fun latency(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.LATENCY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.LATENCY, timestamp, actor, data)
 
         fun timedOut(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMED_OUT, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.TIMED_OUT, timestamp, actor)
 
         fun averageLatency(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.AVERAGE_LATENCY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.AVERAGE_LATENCY, timestamp, actor, data)
 
         fun minLatency(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.MIN_LATENCY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.MIN_LATENCY, timestamp, actor, data)
 
         fun maxLatency(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.MAX_LATENCY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.MAX_LATENCY, timestamp, actor, data)
 
         fun jitter(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.JITTER, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.JITTER, timestamp, actor, data)
 
         fun medianLatency(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.MEDIAN_LATENCY, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.MEDIAN_LATENCY, timestamp, actor, data)
 
         fun measurementCount(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.MEASUREMENT_COUNT, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.MEASUREMENT_COUNT, timestamp, actor, data)
 
         fun timeoutThreshold(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMEOUT_THRESHOLD, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.TIMEOUT_THRESHOLD, timestamp, actor, data)
 
         fun timeoutsCount(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMEOUTS_COUNT, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.TIMEOUTS_COUNT, timestamp, actor, data)
 
         fun packetOutOfOrder(
+            sessionId: String,
             actor: String,
             timestamp: Long,
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.PACKET_OUT_OF_ORDER, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.PACKET_OUT_OF_ORDER, timestamp, actor)
 
         fun networkError(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.NETWORK_ERROR, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.NETWORK_ERROR, timestamp, actor, data)
 
         fun reconnected(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.RECONNECTED, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.NETWORK_DATA, SubType.RECONNECTED, timestamp, actor)
 
         // ==================== SYNC_DATA ==================== |
 
         fun syncStartTime(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.SYNC_DATA, SubType.SYNC_START_TIME, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.SYNC_DATA, SubType.SYNC_START_TIME, timestamp, actor)
 
         fun syncEndTime(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.SYNC_DATA, SubType.SYNC_END_TIME, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.SYNC_DATA, SubType.SYNC_END_TIME, timestamp, actor)
 
         fun syncedAtTime(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.SYNC_DATA, SubType.SYNCED_AT_TIME, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.SYNC_DATA, SubType.SYNCED_AT_TIME, timestamp, actor)
 
         // ==================== META_DATA ==================== |
 
         fun serverStartTime(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.META_DATA, SubType.SERVER_START_TIME, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.META_DATA, SubType.SERVER_START_TIME, timestamp, actor, data)
 
         fun clientStartTime(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.META_DATA, SubType.CLIENT_START_TIME, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.META_DATA, SubType.CLIENT_START_TIME, timestamp, actor, data)
 
         fun timeServerDelta(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.META_DATA, SubType.TIME_SERVER_DELTA, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.META_DATA, SubType.TIME_SERVER_DELTA, timestamp, actor, data)
 
         fun sessionStarted(
+            sessionId: String,
             actor: String,
             timestamp: Long
-        ) = SessionEvent(Type.META_DATA, SubType.SESSION_STARTED, timestamp, actor)
+        ) = SessionEvent(sessionId, Type.META_DATA, SubType.SESSION_STARTED, timestamp, actor)
 
         fun sessionEnded(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             reason: String
-        ) = SessionEvent(Type.META_DATA, SubType.SESSION_ENDED, timestamp, actor, reason)
+        ) = SessionEvent(sessionId, Type.META_DATA, SubType.SESSION_ENDED, timestamp, actor, reason)
 
         fun syncTolerance(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.META_DATA, SubType.SYNC_TOLERANCE, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.META_DATA, SubType.SYNC_TOLERANCE, timestamp, actor, data)
 
         fun syncWindowLength(
+            sessionId: String,
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.META_DATA, SubType.SYNC_WINDOW_LENGTH, timestamp, actor, data)
+        ) = SessionEvent(sessionId, Type.META_DATA, SubType.SYNC_WINDOW_LENGTH, timestamp, actor, data)
 
     }
 }
