@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
                 viewModel.enter(it)
             }
 
-            State.CONNECTING -> ConnectingScreen()
+            State.CONNECTING -> LoadingScreen("Connecting...")
 
             State.CONNECTED_NOT_IN_LOBBY -> {
                 val userId = viewModel.playerId.collectAsState().value
@@ -147,6 +147,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            State.UPLOADING_EVENTS -> LoadingScreen("Uploading events...")
+
             State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
                 ErrorScreen(error) {
@@ -171,7 +173,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun ConnectingScreen() {
+    private fun LoadingScreen(text: String) {
         MaterialTheme {
             Box(
                 modifier = Modifier
@@ -189,7 +191,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     BasicText(
-                        text = "Connecting...",
+                        text = text,
                         style = textStyle
                     )
                 }

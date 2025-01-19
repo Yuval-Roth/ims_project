@@ -16,7 +16,7 @@ interface SessionEventCollector {
      *
      * @return A list of all collected session events.
      */
-    fun getAllEvents(): Iterable<SessionEvent>
+    fun getAllEvents(): Collection<SessionEvent>
 
 
     /**
