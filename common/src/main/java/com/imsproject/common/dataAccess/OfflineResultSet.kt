@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 
 class OfflineResultSet(rs: ResultSet) {
-    private val rows: LinkedList<HashMap<String?, Any>>
+    private val rows: LinkedList<HashMap<String?, Any?>>
     val columnNames: Array<String?>
     val columnCount: Int
     var currentRow: Int
@@ -16,8 +16,8 @@ class OfflineResultSet(rs: ResultSet) {
     val isEmpty: Boolean
         get() = rows.isEmpty()
 
-    private var currentRowData: HashMap<String?, Any>? = null
-    private var iterator: ListIterator<HashMap<String?, Any>>? = null
+    private var currentRowData: HashMap<String?, Any?>? = null
+    private var iterator: ListIterator<HashMap<String?, Any?>>? = null
 
     init {
         currentRow = -1
@@ -25,12 +25,12 @@ class OfflineResultSet(rs: ResultSet) {
         columnCount = metaData.columnCount
         columnNames = arrayOfNulls(columnCount)
         for (i in 0 until columnCount) {
-            columnNames[i] = metaData.getColumnName(i + 1).lowercase(Locale.getDefault())
+            columnNames[i] = metaData.getColumnName(i + 1).lowercase()
         }
 
         rows = LinkedList()
         while (rs.next()) {
-            val row = HashMap<String?, Any>()
+            val row = HashMap<String?, Any?>()
             for (i in 0 until columnCount) {
                 row[columnNames[i]] = rs.getObject(i + 1)
             }
@@ -59,12 +59,19 @@ class OfflineResultSet(rs: ResultSet) {
             return LocalDate.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE) as T
         if(T::class == LocalTime::class)
             return LocalTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_TIME) as T
+        if(T::class.java.isEnum){
+            val enumConstants = T::class.java.enumConstants
+            for (enumConstant in enumConstants) {
+                if((enumConstant as Enum<*>).name == obj)
+                    return enumConstant
+            }
+        }
 
         return obj as T
     }
 
     fun getObject(columnName: String): Any? {
         val row = currentRowData ?: return null
-        return row[columnName.lowercase(Locale.getDefault())]
+        return row[columnName.lowercase()]
     }
 }

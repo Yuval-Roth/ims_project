@@ -34,7 +34,7 @@ interface SQLExecutor {
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    fun executeRead(query: String, vararg params: Any): OfflineResultSet
+    fun executeRead(query: String, vararg params: Any?): OfflineResultSet
 
     /**
      * Executes a write query by using [java.sql.PreparedStatement]
@@ -44,5 +44,5 @@ interface SQLExecutor {
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    fun executeWrite(query: String, vararg params: Any): Int
+    fun executeWrite(query: String, vararg params: Any?): Int
 }
