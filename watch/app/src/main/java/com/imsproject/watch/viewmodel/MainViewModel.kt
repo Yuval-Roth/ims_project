@@ -143,9 +143,6 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    private fun uploadSessionEvents() {
-    }
-
     fun clearError() {
         _error.value = null
 
