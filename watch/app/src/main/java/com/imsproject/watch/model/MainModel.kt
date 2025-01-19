@@ -5,9 +5,11 @@ import com.google.gson.JsonParseException
 import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.networking.RestApiClient
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.common.networking.WebSocketClient
+import com.imsproject.common.utils.Response
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -18,6 +20,7 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
+import java.util.stream.Collectors
 
 // set these values to run the app locally
 private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
@@ -29,8 +32,9 @@ private const val TIMEOUT_MS = 2000L
 private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
 private val LOCAL_IP = if(RUNNING_ON_EMULATOR) "10.0.2.2" else COMPUTER_NETWORK_IP
 private val SERVER_IP = if (RUNNING_LOCAL_GAME_SERVER) LOCAL_IP else REMOTE_IP
-private val SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "ws" else "wss"
-private val SERVER_WS_PORT = if (RUNNING_LOCAL_GAME_SERVER) 8080 else 8640
+private val WS_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "ws" else "wss"
+private val REST_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "http" else "https"
+private val SERVER_HTTP_PORT = if (RUNNING_LOCAL_GAME_SERVER) 8080 else 8640
 private const val SERVER_UDP_PORT = 8641
 private const val TIME_SERVER_PORT = 8642
 // ================================|
@@ -273,7 +277,7 @@ class MainModel (private val scope : CoroutineScope) {
     // ======================================================================= |
 
     private fun getNewClients(): Pair<WebSocketClient,UdpClient> {
-        val ws = WebSocketClient(URI("$SCHEME://$SERVER_IP:$SERVER_WS_PORT/ws"))
+        val ws = WebSocketClient(URI("$WS_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/ws"))
         ws.connectionLostTimeout = -1
         val udp = UdpClient()
         udp.remoteAddress = SERVER_IP
@@ -502,6 +506,27 @@ class MainModel (private val scope : CoroutineScope) {
             Log.e(TAG, "Failed to send UDP message", e)
             executeCallback { udpOnExceptionCallback(e) }
         }
+    }
+
+    fun uploadSessionEvents(): Boolean {
+        Log.d(TAG, "Uploading session events")
+        val eventCollector = SessionEventCollectorImpl.getInstance()
+        val events = eventCollector.getAllEvents().stream()
+            .map { it.toCompressedJson() }
+            .reduce("") { acc, s -> "$acc\n$s" }
+        val returned = RestApiClient()
+            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+            .withBody(events)
+            .withPost()
+            .send()
+        val response = Response.fromJson(returned)
+        if(response.success){
+            Log.d(TAG, "uploadSessionEvents: Success")
+            eventCollector.clearEvents()
+        } else {
+            Log.e(TAG, "uploadSessionEvents: Failed to upload events")
+        }
+        return response.success
     }
 
     companion object {
