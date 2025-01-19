@@ -13,7 +13,7 @@ import java.sql.SQLException
 @Component
 class DAOController {
     private val cursor: SQLExecutor = PostgreSQLExecutor(
-        "db-server", 5432 ,"ims-db", "admin", "adminMTAC"
+        "localhost", 5432 ,"ims-db", "admin", "adminMTAC"
     )
 // seperate cursor to each
     val participantDAO: ParticipantsDAO = ParticipantsDAO(cursor)

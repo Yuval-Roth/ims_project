@@ -7,6 +7,7 @@ import com.imsproject.gameserver.GameController
 import com.imsproject.gameserver.auth.AuthController
 import com.imsproject.gameserver.auth.Credentials
 import com.imsproject.gameserver.dataAccess.DAOController
+import com.imsproject.gameserver.dataAccess.models.Participant
 import com.imsproject.gameserver.toResponseEntity
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
@@ -59,19 +60,12 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
-
-    @PostMapping("/data")
-    fun data(@RequestBody body: String): ResponseEntity<String> {
-        return "Not implemented".toResponseEntity()
-    }
-
-    @PostMapping("/dataCheck/{section}/{action}")
-    fun data(
+    @PostMapping("/data/{section}/{action}")
+    fun dataCheck(
             @PathVariable section: String,
             @PathVariable action: String,
             @RequestBody body: String
         ): ResponseEntity<String> {
-
         try {
             daoController.handle(section, action, body)
         } catch(e: Exception)
