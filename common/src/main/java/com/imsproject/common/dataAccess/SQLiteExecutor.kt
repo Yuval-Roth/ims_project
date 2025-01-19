@@ -110,6 +110,27 @@ class SQLiteExecutor (dbUrl: String) : SQLExecutor {
         }
     }
 
+    /**
+     * Executes an insert query by using [java.sql.PreparedStatement]
+     * @param query A sql prepared query. Use '?' for parameters
+     * @param params The parameters to be used in the query in order
+     * @return An [Int] representing the id of the inserted row
+     */
+    override fun executeInsert(query: String, vararg params: Any?): Int {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * Executes an update or delete query by using [java.sql.PreparedStatement]
+     * @param query A sql prepared query. Use '?' for parameters
+     * @param params The parameters to be used in the query in order
+     * @return The number of rows affected by the query
+     * @throws SQLException if an error occurs while executing the query
+     */
+    override fun executeUpdateDelete(query: String, vararg params: Any?): Int {
+        TODO("Not yet implemented")
+    }
+
     @Throws(SQLException::class)
     private fun inTransaction(): Boolean {
         return transactionConnection != null && transactionConnection!!.isClosed.not()
