@@ -1,7 +1,8 @@
 package com.imsproject.common.gameserver
 
 import com.google.gson.annotations.SerializedName
-import com.imsproject.common.utils.JsonUtils
+import com.imsproject.common.utils.fromJson
+import com.imsproject.common.utils.toJson
 
 data class SessionEvent internal constructor (
     val type: Type,
@@ -25,12 +26,6 @@ data class SessionEvent internal constructor (
         @SerializedName("network_data")             NETWORK_DATA,
         @SerializedName("sync_data")                SYNC_DATA,
         @SerializedName("meta_data")                META_DATA,
-
-        ;
-
-        override fun toString(): String {
-            return name.lowercase()
-        }
     }
 
     enum class SubType {
@@ -79,15 +74,7 @@ data class SessionEvent internal constructor (
         @SerializedName("session_ended")            SESSION_ENDED,
         @SerializedName("sync_tolerance")           SYNC_TOLERANCE,
         @SerializedName("sync_window_length")       SYNC_WINDOW_LENGTH,
-
-        ;
-
-        override fun toString(): String {
-            return name.lowercase()
-        }
     }
-
-    fun toJson(): String = JsonUtils.serialize(this)
 
     fun toCompressedJson(): String = CompressedSessionEvent(
         type.ordinal,
@@ -95,7 +82,7 @@ data class SessionEvent internal constructor (
         timestamp,
         actor,
         data
-    ).let{ JsonUtils.serialize(it) }
+    ).toJson()
 
     override fun compareTo(other: SessionEvent): Int {
         return timestamp.compareTo(other.timestamp)
@@ -107,7 +94,7 @@ data class SessionEvent internal constructor (
 
     companion object{
 
-        fun fromCompressedJson(json: String): SessionEvent = JsonUtils.deserialize<CompressedSessionEvent>(json)
+        fun fromCompressedJson(json: String): SessionEvent = fromJson<CompressedSessionEvent>(json)
             .let {
                 SessionEvent(
                     Type.entries[it.to],
@@ -117,8 +104,6 @@ data class SessionEvent internal constructor (
                     it.d
                 )
             }
-
-        fun fromJson(json: String): SessionEvent = JsonUtils.deserialize(json)
 
         // ==================== USER_INPUT ==================== |
 

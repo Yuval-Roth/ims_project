@@ -10,6 +10,8 @@ import com.imsproject.common.networking.UdpClient
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.common.utils.Response
+import com.imsproject.common.utils.fromJson
+import com.imsproject.common.utils.toJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,7 +22,6 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
-import java.util.stream.Collectors
 
 // set these values to run the app locally
 private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
@@ -234,7 +235,7 @@ class MainModel (private val scope : CoroutineScope) {
                 timeServerUdp.send(request, SERVER_IP, TIME_SERVER_PORT)
                 val response = timeServerUdp.receive()
                 val timeDelta = System.currentTimeMillis() - currentLocalTime
-                val timeResponse = TimeRequest.fromJson(response)
+                val timeResponse = fromJson<TimeRequest>(response)
                 val currentServerTime = timeResponse.time!! - timeDelta / 2 // approximation
                 data.add(currentLocalTime-currentServerTime)
                 count++
@@ -324,7 +325,7 @@ class MainModel (private val scope : CoroutineScope) {
                 return null // timeout
             }
             try{
-                enterResponse = GameRequest.fromJson(response)
+                enterResponse = fromJson(response)
             } catch(e: JsonParseException){
                 Log.e(TAG, "wsSetup: Failed to parse WebSocket response", e)
                 return null // invalid response
@@ -457,7 +458,7 @@ class MainModel (private val scope : CoroutineScope) {
             while(isActive){
                 try{
                     val message = ws.nextMessageBlocking()
-                    val request = GameRequest.fromJson(message)
+                    val request = fromJson<GameRequest>(message)
                     executeCallback { tcpOnMessageCallback(request) }
                 } catch(e: JsonParseException){
                     Log.e(TAG, "Failed to parse TCP message", e)
@@ -519,7 +520,7 @@ class MainModel (private val scope : CoroutineScope) {
             .withBody(events)
             .withPost()
             .send()
-        val response = Response.fromJson(returned)
+        val response = fromJson<Response>(returned)
         if(response.success){
             Log.d(TAG, "uploadSessionEvents: Success")
             eventCollector.clearEvents()
