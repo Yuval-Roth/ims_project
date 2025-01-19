@@ -15,8 +15,8 @@ class SessionEventDAO(
 
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionEvent {
         val sessionId = resultSet.getTyped<String>("sessionId")!!
-        val type = SessionEvent.Type.valueOf(resultSet.getTyped<String>("type")!!)
-        val subtype = SessionEvent.SubType.valueOf(resultSet.getTyped<String>("subtype")!!)
+        val type = resultSet.getTyped<SessionEvent.Type>("type")!!
+        val subtype = resultSet.getTyped<SessionEvent.SubType>("subtype")!!
         val timestamp = resultSet.getTyped<Long>("timestamp")!!
         val actor = resultSet.getTyped<String>("actor")!!
         val data = resultSet.getTyped<String>("data")
@@ -65,7 +65,7 @@ class SessionEventDAO(
     }
 
     private fun SessionEvent.toParams(): Array<out Any?> {
-        return arrayOf(sessionId, type.toString(), subType.toString(), timestamp, actor, data)
+        return arrayOf(sessionId, type.name, subType.name, timestamp, actor, data)
 
     }
 

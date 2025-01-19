@@ -21,6 +21,13 @@ inline fun <reified T> OfflineResultSet.getTyped(columnName: String): T? {
         return LocalDate.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE) as T
     if(T::class == LocalTime::class)
         return LocalTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_TIME) as T
+    if(T::class.java.isEnum){
+        val enumConstants = T::class.java.enumConstants
+        for (enumConstant in enumConstants) {
+            if((enumConstant as Enum<*>).name == obj)
+                return enumConstant
+        }
+    }
 
     return obj as T
 }
