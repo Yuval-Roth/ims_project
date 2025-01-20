@@ -29,8 +29,7 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
             "delete" -> {
                 if(participant.pid == null)
                     throw Exception("A participant id was not provided for deletion")
-                val ppk = ParticipantPK(participant.pid)
-                delete(ppk)
+                delete(ParticipantPK(participant.pid))
                 return Response.getOk()
             }
             else -> throw Exception("Invalid action for participants")

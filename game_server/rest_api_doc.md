@@ -412,14 +412,97 @@ This request type is used to change the order of sessions in a lobby.
 
 ---
 
-### 3. POST `/data`
-**Description**  
-Currently a placeholder endpoint, not implemented.
+### 3. **POST** `/data/{section}`
 
-**Response**  
-"Not Implemented" - Always returned since this endpoint is not yet functional.
+#### Description
+This endpoint is used to add a new entity to the database.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant: 
+    ```json
+    {
+      "firstName": "string",
+      "lastName": "string",
+      "age": "integer",
+      "gender": "string",
+      "phone": "string",
+      "email": "string"
+    }
+    ```
+    - lobby:
+    ```json
+    {
+      "placeholder": "bluh bluh"
+    }
+    ```
+
+#### **Response**
+
+- **Success**:
+  ```json
+  {
+    "success": true,
+    "payload": ["id"]
+  }
+  ```
+  or
+  ```json
+  {
+    "message": "User removed successfully",
+    "success": true
+  }
+  ```
+
+- **Failure**:
+  ```json
+  {
+    "message": "Failed to insert to table Participants",
+    "success": false,
+    "payload": ["error details"]
+  }
+  ```
 
 ---
+
+### 3. **DELETE** `/data/{section}`
+
+#### Description
+This endpoint is used to delete an existing entity from the database.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant:
+    ```json
+    {
+      "pid": "id"
+    }
+    ```
+    - lobby:
+    ```json
+    {
+      "placeholder": "bluh bluh"
+    }
+    ```
+
 
 ### 4. POST `/operators/{action}`
 

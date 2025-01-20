@@ -9,6 +9,7 @@ import com.imsproject.gameserver.auth.Credentials
 import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.dataAccess.models.Participant
 import com.imsproject.gameserver.toResponseEntity
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
@@ -60,12 +61,20 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
-    @PostMapping("/data/{section}/{action}")
-    fun dataCheck(
+    @RequestMapping("/data/{section}", method = [RequestMethod.POST, RequestMethod.DELETE])
+    fun data(
             @PathVariable section: String,
-            @PathVariable action: String,
-            @RequestBody body: String
+            @RequestBody body: String,
+            request: HttpServletRequest
         ): ResponseEntity<String> {
+        val action = when (request.method) {
+            "POST" -> "insert"
+            "GET" -> "select"
+            "PUT" -> "update"
+            "DELETE" -> "delete"
+            else -> throw IllegalArgumentException("Unsupported method: ${request.method}")
+        }
+
         try {
             return (daoController.handle(section, action, body)).toResponseEntity()
         } catch(e: Exception)
