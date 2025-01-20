@@ -30,10 +30,14 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, PrimaryKey>(cu
     @Throws(DaoException::class)
     override fun insert(obj: Participant): Unit {
             val columns = arrayOf("first_name", "last_name", "age", "gender", "phone", "email")
-            val values = "'" + obj.firstName + "', '" + obj.lastName + "', " + obj.age + ", '" + obj.gender + "', '" + obj.phone + "', '" + obj.email + "'"
-            val insertQuery = "INSERT INTO ${tableName} (${columns.joinToString(", ")}) VALUES (${values}) RETURNING pid;"
+
+            // Yuval: joinToString() default separator is ", "
+            //        Also, I think you should use PreparedStatement instead of string concatenation
+            val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
+            val insertQuery = "INSERT INTO $tableName (${columns.joinToString()}) VALUES (?, ?, ?, ?, ?, ?) RETURNING pid"
             try {
-                cursor.executeWrite(insertQuery) // returns number of lines changed. can be used to check for errors. log if anything
+                // Yuval: look at what i added in SQLExecutor interface - executeInsert which can be used here
+                val pid = cursor.executeInsert(insertQuery,*values)
                 //if succeed return id somehow
                 // todo: get back to it, added "RETURNING pid", need to change executeWrite to retrieve the id.
             } catch (e: SQLException) {

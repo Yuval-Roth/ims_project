@@ -36,6 +36,10 @@ class PostgreSQLExecutor(
         }
     }
 
+    /**
+     * Begins a transaction
+     * @throws SQLException if an error occurs while starting the transaction
+     */
     @Throws(SQLException::class)
     override fun beginTransaction() {
         val connection = DriverManager.getConnection(url, properties)
@@ -43,6 +47,10 @@ class PostgreSQLExecutor(
         transactionConnection = connection
     }
 
+    /**
+     * Commits the transaction
+     * @throws SQLException if an error occurs while committing the transaction
+     */
     @Throws(SQLException::class)
     override fun commit() {
         val transactionConnection = transactionConnection
@@ -52,6 +60,10 @@ class PostgreSQLExecutor(
         transactionConnection.use { it.commit() }
     }
 
+    /**
+     * Rolls back the transaction
+     * @throws SQLException if an error occurs while rolling back the transaction
+     */
     @Throws(SQLException::class)
     override fun rollback() {
         val transactionConnection = transactionConnection
@@ -61,8 +73,15 @@ class PostgreSQLExecutor(
         transactionConnection.use { it.rollback() }
     }
 
+    /**
+     * Executes a read query by using [java.sql.PreparedStatement]
+     * @param query A sql prepared query. Use '?' for parameters
+     * @param params The parameters to be used in the query in order
+     * @return An [OfflineResultSet] containing the result of the query
+     * @throws SQLException if an error occurs while executing the query
+     */
     @Throws(SQLException::class)
-    override fun executeRead(query: String, vararg params: Any): OfflineResultSet {
+    override fun executeRead(query: String, vararg params: Any?): OfflineResultSet {
         if (query.isBlank()) {
             if (inTransaction()) {
                 rollback()
@@ -86,8 +105,16 @@ class PostgreSQLExecutor(
         }
     }
 
+    /**
+     * Executes a generic write query by using [java.sql.PreparedStatement].
+     * Can be used for either insert, update, delete
+     * @param query A sql prepared query. Use '?' for parameters
+     * @param params The parameters to be used in the query in order
+     * @return The number of rows affected by the query
+     * @throws SQLException if an error occurs while executing the query
+     */
     @Throws(SQLException::class)
-    override fun executeWrite(query: String, vararg params: Any): Int {
+    override fun executeWrite(query: String, vararg params: Any?): Int {
         if (query.isBlank()) {
             if (inTransaction()) {
                 rollback()
@@ -123,6 +150,27 @@ class PostgreSQLExecutor(
         }
     }
 
+    /**
+     * Executes an update or delete query by using [java.sql.PreparedStatement]
+     * @param query A sql prepared query. Use '?' for parameters
+     * @param params The parameters to be used in the query in order
+     * @return The number of rows affected by the query
+     * @throws SQLException if an error occurs while executing the query
+     */
+    override fun executeUpdateDelete(query: String, vararg params: Any?): Int {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * Executes an insert query by using [java.sql.PreparedStatement]
+     * @param query A sql prepared query. Use '?' for parameters
+     * @param params The parameters to be used in the query in order
+     * @return An [Int] representing the id of the inserted row
+     */
+    override fun executeInsert(query: String, vararg params: Any?): Int {
+        TODO("Not yet implemented")
+    }
+
     @Throws(SQLException::class)
     private fun inTransaction(): Boolean {
         return transactionConnection != null && transactionConnection!!.isClosed.not()
@@ -135,9 +183,13 @@ class PostgreSQLExecutor(
     }
 
     @Throws(SQLException::class)
-    private fun prepareStatement(params: Array<out Any>, s: PreparedStatement) {
+    private fun prepareStatement(params: Array<out Any?>, s: PreparedStatement) {
         for (i in params.indices) {
-            s.setObject(i + 1, params[i])
+            if(params[i] == null){
+                s.setNull(i + 1, Types.NULL)
+            } else {
+                s.setObject(i + 1, params[i])
+            }
         }
     }
 }
