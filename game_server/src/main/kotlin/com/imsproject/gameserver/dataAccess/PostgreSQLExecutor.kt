@@ -4,7 +4,6 @@ import com.imsproject.common.dataAccess.OfflineResultSet
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import java.sql.*
 import java.util.*
-import kotlin.concurrent.Volatile
 
 private const val URL_PREFIX = "jdbc:postgresql://"
 
@@ -24,17 +23,16 @@ class PostgreSQLExecutor(
     password: String
 ) : SQLExecutor {
     private val url: String = "$URL_PREFIX$dbHost:$dbPort/$dbName"
-    private val properties: Properties
+    private val properties: Properties = Properties().apply {
+        put("user", user)
+        put("password", password)
+    }
 
-    @Volatile
     private var transactionConnection: Connection? = null
 
-    init {
-        properties = Properties().apply {
-            put("user", user)
-            put("password", password)
-        }
-    }
+    // ==================================================================== |
+    // ====================== PUBLIC METHODS ============================== |
+    // ==================================================================== |
 
     /**
      * Begins a transaction
@@ -54,7 +52,7 @@ class PostgreSQLExecutor(
     @Throws(SQLException::class)
     override fun commit() {
         val transactionConnection = transactionConnection
-        check(!(transactionConnection == null || transactionConnection.isClosed)) {
+        check((transactionConnection != null && ! transactionConnection.isClosed)) {
             "commit() called when not in a transaction"
         }
         transactionConnection.use { it.commit() }
@@ -67,7 +65,7 @@ class PostgreSQLExecutor(
     @Throws(SQLException::class)
     override fun rollback() {
         val transactionConnection = transactionConnection
-        check(!(transactionConnection == null || transactionConnection.isClosed)) {
+        check((transactionConnection != null && ! transactionConnection.isClosed)) {
             "rollback() called when not in a transaction"
         }
         transactionConnection.use { it.rollback() }
@@ -82,26 +80,8 @@ class PostgreSQLExecutor(
      */
     @Throws(SQLException::class)
     override fun executeRead(query: String, vararg params: Any?): OfflineResultSet {
-        if (query.isBlank()) {
-            if (inTransaction()) {
-                rollback()
-            }
-            throw SQLException("query is empty")
-        }
-
-        val cleanQuery = cleanQuery(query)
-
-        if (inTransaction()) {
-            val statement = transactionConnection!!.prepareStatement(cleanQuery)
-            prepareStatement(params, statement)
-            return OfflineResultSet(statement.executeQuery())
-        } else {
-            DriverManager.getConnection(url, properties).use { connection ->
-                val statement = connection.prepareStatement(cleanQuery)
-                prepareStatement(params, statement)
-                val resultSet = statement.executeQuery()
-                return OfflineResultSet(resultSet)
-            }
+        requireConnection {
+            return executeRead(it, query, *params)
         }
     }
 
@@ -115,38 +95,8 @@ class PostgreSQLExecutor(
      */
     @Throws(SQLException::class)
     override fun executeWrite(query: String, vararg params: Any?): Int {
-        if (query.isBlank()) {
-            if (inTransaction()) {
-                rollback()
-            }
-            throw SQLException("query is empty")
-        }
-
-        val cleanQuery = cleanQuery(query)
-
-        if (inTransaction()) {
-            try {
-                val statement = transactionConnection!!.prepareStatement(cleanQuery)
-                prepareStatement(params, statement)
-                return statement.executeUpdate()
-            } catch (e: SQLException) {
-                rollback()
-                throw e
-            }
-        } else {
-            DriverManager.getConnection(url, properties).use { connection ->
-                connection.autoCommit = false
-                val statement = connection.prepareStatement(cleanQuery)
-                prepareStatement(params, statement)
-                try {
-                    val rowsChanged = statement.executeUpdate()
-                    connection.commit()
-                    return rowsChanged
-                } catch (e: SQLException) {
-                    connection.rollback()
-                    throw e
-                }
-            }
+        requireConnection {
+            return executeWrite(it, query, *params)
         }
     }
 
@@ -158,7 +108,9 @@ class PostgreSQLExecutor(
      * @throws SQLException if an error occurs while executing the query
      */
     override fun executeUpdateDelete(query: String, vararg params: Any?): Int {
-        TODO("Not yet implemented")
+        requireConnection {
+            return executeWrite(it, query, *params)
+        }
     }
 
     /**
@@ -167,29 +119,101 @@ class PostgreSQLExecutor(
      * @param params The parameters to be used in the query in order
      * @return An [Int] representing the id of the inserted row
      */
-    override fun executeInsert(query: String, vararg params: Any?): Int {
-        TODO("Not yet implemented")
+    override fun executeInsert(query: String, vararg params: Any?): OfflineResultSet {
+        requireConnection {
+            return executeInsert(it, query, *params)
+        }
+    }
+
+    // ==================================================================== |
+    // ====================== PRIVATE METHODS ============================= |
+    // ==================================================================== |
+
+    private fun executeRead(connection: Connection, query: String, vararg params: Any?): OfflineResultSet {
+        try{
+            val statement = connection.prepareStatement(query.trim())
+            bindParams(statement, params)
+            return OfflineResultSet(statement.executeQuery())
+        } finally{
+            if(! inTransaction()){
+                connection.close()
+            }
+        }
+    }
+
+    private fun executeWrite(connection: Connection, query: String, vararg params: Any?): Int {
+        try {
+            val statement = connection.prepareStatement(query.trim())
+            bindParams(statement, params)
+            val rowsUpdated = statement.executeUpdate()
+            if(! inTransaction()){
+                connection.commit()
+            }
+            return rowsUpdated
+        } catch(e: SQLException){
+            try{
+                connection.rollback()
+            } catch(e2: Exception){
+                e.addSuppressed(e2)
+            }
+            connection.close()
+            throw e
+        } finally{
+            if(! inTransaction()){
+                connection.close()
+            }
+        }
+    }
+
+    private fun executeInsert(connection: Connection, query: String, vararg params: Any?): OfflineResultSet {
+        try {
+            val statement = connection.prepareStatement(query.trim())
+            bindParams(statement, params)
+            statement.executeUpdate()
+            val keysResultSet = OfflineResultSet(statement.generatedKeys)
+            if(keysResultSet.isEmpty){
+                throw SQLException("Inserting row failed, no ID obtained.")
+            }
+            if(! inTransaction()){
+                connection.commit()
+            }
+            return keysResultSet
+        } catch(e: SQLException){
+            try{
+                connection.rollback()
+            } catch(e2: Exception){
+                e.addSuppressed(e2)
+            }
+            connection.close()
+            throw e
+        } finally{
+            if(! inTransaction()){
+                connection.close()
+            }
+        }
     }
 
     @Throws(SQLException::class)
     private fun inTransaction(): Boolean {
-        return transactionConnection != null && transactionConnection!!.isClosed.not()
-    }
-
-    private fun cleanQuery(query: String): String {
-        var output = query.trim()
-        output = if (output[output.length - 1] == ';') output else "$output;"
-        return output
+        val connection = transactionConnection ?: return false
+        return ! connection.isClosed
     }
 
     @Throws(SQLException::class)
-    private fun prepareStatement(params: Array<out Any?>, s: PreparedStatement) {
+    private fun bindParams(statement: PreparedStatement, params: Array<out Any?>) {
         for (i in params.indices) {
             if(params[i] == null){
-                s.setNull(i + 1, Types.NULL)
+                statement.setNull(i + 1, Types.NULL)
             } else {
-                s.setObject(i + 1, params[i])
+                statement.setObject(i + 1, params[i])
             }
         }
+    }
+
+    private inline fun <T> requireConnection(toExecute: (connection: Connection) -> T) : T {
+        val connection = transactionConnection ?: let {
+            DriverManager.getConnection(url, properties).apply{ autoCommit = false }
+        }
+        return toExecute(connection)
     }
 }

@@ -116,7 +116,7 @@ class SQLiteExecutor (dbUrl: String) : SQLExecutor {
      * @param params The parameters to be used in the query in order
      * @return An [Int] representing the id of the inserted row
      */
-    override fun executeInsert(query: String, vararg params: Any?): Int {
+    override fun executeInsert(query: String, vararg params: Any?): OfflineResultSet {
         TODO("Not yet implemented")
     }
 
