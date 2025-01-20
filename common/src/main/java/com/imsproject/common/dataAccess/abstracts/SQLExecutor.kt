@@ -51,10 +51,10 @@ interface SQLExecutor {
      * Executes an insert query by using [java.sql.PreparedStatement]
      * @param query A sql prepared query. Use '?' for parameters
      * @param params The parameters to be used in the query in order
-     * @return An [Int] representing the id of the inserted row
+     * @return A [OfflineResultSet] containing the generated keys
      */
     @Throws(SQLException::class)
-    fun executeInsert(query: String, vararg params: Any?): Int
+    fun executeInsert(query: String, vararg params: Any?): OfflineResultSet
 
     /**
      * Executes an update or delete query by using [java.sql.PreparedStatement]

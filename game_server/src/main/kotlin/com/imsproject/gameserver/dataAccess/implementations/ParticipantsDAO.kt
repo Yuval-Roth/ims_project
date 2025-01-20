@@ -37,7 +37,7 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, PrimaryKey>(cu
             val insertQuery = "INSERT INTO $tableName (${columns.joinToString()}) VALUES (?, ?, ?, ?, ?, ?) RETURNING pid"
             try {
                 // Yuval: look at what i added in SQLExecutor interface - executeInsert which can be used here
-                val pid = cursor.executeInsert(insertQuery,*values)
+                val keysResultSet = cursor.executeInsert(insertQuery,*values)
                 //if succeed return id somehow
                 // todo: get back to it, added "RETURNING pid", need to change executeWrite to retrieve the id.
             } catch (e: SQLException) {
