@@ -1,20 +1,3 @@
--- Define the enum types
-CREATE TYPE gender_enum AS ENUM ('Male', 'Female');
-CREATE TYPE session_type_enum AS ENUM (
-    'user_input', 'sensor_data', 'network_data', 'sync_data', 'meta_data'
-);
-CREATE TYPE session_subtype_enum AS ENUM (
-    -- USER_INPUT
-    'click', 'angle', 'rotation',
-    -- SENSOR_DATA
-    'heart_rate', 'heart_rate_variability', 'blood_oxygen', 'gyroscope', 'accelerometer',
-    -- NETWORK_DATA
-    'latency', 'packet_out_of_order', 'timeout',
-    -- SYNC_DATA
-    'sync_start_time', 'sync_end_time', 'synced_at_time',
-    -- META_DATA
-    'server_start_time', 'client_start_time', 'time_server_delta', 'session_started', 'session_ended'
-);
 
 -- Create the Participants table
 CREATE TABLE Participants (
@@ -22,7 +5,7 @@ CREATE TABLE Participants (
                               first_name VARCHAR(50) NOT NULL,
                               last_name VARCHAR(50) NOT NULL,
                               age INT,
-                              gender gender_enum,
+                              gender VARCHAR(15),
                               phone VARCHAR(15),
                               email VARCHAR(100) UNIQUE
 );
@@ -41,7 +24,7 @@ CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
                           session_id SERIAL PRIMARY KEY,
                           lobby_id INT,
                           duration INT,
-                          session_type session_type_enum,
+                          session_type VARCHAR(50),
                           session_order INT,
     -- tolerance INT (ms)
     -- window_length INT (ms)
@@ -52,8 +35,8 @@ CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
 CREATE TABLE SessionEvents ( -- AT THE END OF EVERY SESSION, A LIST OF EVENTS WILL BE PASSED
                                        event_id SERIAL PRIMARY KEY,
                                         session_id INT,
-                                       type session_type_enum NOT NULL,
-                                       subtype session_subtype_enum NOT NULL,
+                                       type VARCHAR(50) NOT NULL,
+                                       subtype VARCHAR(50) NOT NULL,
                                        timestamp BIGINT NOT NULL, --ms from start of session, can be INT
                                        actor VARCHAR(100) NOT NULL,
                                        data TEXT,

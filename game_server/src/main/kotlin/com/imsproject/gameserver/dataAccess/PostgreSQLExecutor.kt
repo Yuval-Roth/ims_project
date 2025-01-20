@@ -167,7 +167,7 @@ class PostgreSQLExecutor(
 
     private fun executeInsert(connection: Connection, query: String, vararg params: Any?): OfflineResultSet {
         try {
-            val statement = connection.prepareStatement(query.trim())
+            val statement = connection.prepareStatement(query.trim(), Statement.RETURN_GENERATED_KEYS)
             bindParams(statement, params)
             statement.executeUpdate()
             val keysResultSet = OfflineResultSet(statement.generatedKeys)

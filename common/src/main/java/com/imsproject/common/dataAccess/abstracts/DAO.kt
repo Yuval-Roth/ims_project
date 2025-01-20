@@ -16,7 +16,7 @@ interface DAO<T, PK : PrimaryKey> {
     fun selectAll(keys: List<PK>): List<T>
 
     @Throws(DaoException::class)
-    fun insert(obj: T)
+    fun insert(obj: T) : Int
 
     @Throws(DaoException::class)
     fun insertAll(objs: List<T>)
