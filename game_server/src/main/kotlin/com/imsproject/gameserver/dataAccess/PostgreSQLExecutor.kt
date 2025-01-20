@@ -211,9 +211,8 @@ class PostgreSQLExecutor(
     }
 
     private inline fun <T> requireConnection(toExecute: (connection: Connection) -> T) : T {
-        val connection = transactionConnection ?: let {
-            DriverManager.getConnection(url, properties).apply{ autoCommit = false }
-        }
+        val connection = if(inTransaction()) transactionConnection!!
+        else DriverManager.getConnection(url, properties).apply{ autoCommit = false }
         return toExecute(connection)
     }
 }
