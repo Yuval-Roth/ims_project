@@ -45,18 +45,13 @@ class GameController(
 
     fun onClientDisconnect(clientHandler: ClientHandler){
         log.debug("onClientDisconnect() with clientId: {}",clientHandler.id)
-        val lobby = lobbies.getByClientId(clientHandler.id) ?: run {
-            // client not in a lobby, nothing to do
-            log.debug("onClientDisconnect: Player not in lobby")
-            return
-        }
-        log.debug("onClientDisconnect: Player was in lobby: {}, removing player from lobby",lobby.id)
         val game = clientIdToGame[clientHandler.id]
         if(game != null){
             log.debug("onClientDisconnect: Player was in game, ending game")
-            endGame(lobby.id, "Player ${clientHandler.id} disconnected")
+            endGame(game.lobbyId, "Player ${clientHandler.id} disconnected")
+        } else  {
+            log.debug("onClientDisconnect: Player not in game")
         }
-        lobbies.removeByClientId(clientHandler.id)
         log.debug("onClientDisconnect() successful")
     }
 
@@ -94,22 +89,18 @@ class GameController(
     fun endGame(lobbyId: String, errorMessage: String? = null) {
         log.debug("endGame() with lobbyId: {}", lobbyId)
 
-        // === check if the lobby and game exist === |
-        val notFound = mutableListOf<String>()
-        val errorMsg2 = "The following were not found: "
-        /*(1)*/ val lobby = lobbies[lobbyId] ?: run { notFound.add("Lobby") ; null }
-        /*(2)*/ val game = games[lobbyId] ?: run { notFound.add("Game") ; null }
-        if(lobby == null || game == null){
-            log.debug("endGame: {} {}",errorMsg2, notFound.joinToString())
-            throw IllegalArgumentException("$errorMsg2 ${notFound.joinToString()}")
+        // check if the game exists
+        val game = games[lobbyId] ?: run {
+            log.debug("endGame: Game not found for lobby {}", lobbyId)
+            throw IllegalArgumentException("Game not found for lobby $lobbyId")
         }
-        // ======================================== |
 
         game.endGame(errorMessage) // game.endGame() notifies the clients
         clientIdToGame.remove(game.player1.id)
         clientIdToGame.remove(game.player2.id)
-        games.remove(lobby.id)
-        lobby.state = LobbyState.WAITING
+        games.remove(game.lobbyId)
+        val lobby = lobbies[lobbyId]
+        lobby?.state = LobbyState.WAITING
         
         log.debug("endGame() successful")
     }
@@ -148,15 +139,15 @@ class GameController(
         val game = when(lobby.gameType){
                 GameType.WATER_RIPPLES -> {
                     log.debug("startGame: Selected WaterRipplesGame")
-                    WaterRipplesGame(player1Handler, player2Handler)
+                    WaterRipplesGame(lobbyId,player1Handler, player2Handler)
                 }
                 GameType.WINE_GLASSES -> {
                     log.debug("startGame: Selected WineGlassesGame")
-                    WineGlassesGame(player1Handler, player2Handler)
+                    WineGlassesGame(lobbyId,player1Handler, player2Handler)
                 }
                 GameType.FLOUR_MILL -> {
                     log.debug("startGame: Selected FlourMillGame")
-                    FlourMillGame(player1Handler, player2Handler)
+                    FlourMillGame(lobbyId,player1Handler, player2Handler)
                 }
                 else -> {
                     log.debug("startGame: Invalid game type")
@@ -172,6 +163,10 @@ class GameController(
         game.startGame(timeServer.timeServerCurrentTimeMillis())
 
         log.debug("startGame() successful")
+    }
+
+    fun getLobbiesWithRunningGames() : List<String> {
+        return games.keys.toList()
     }
 
     companion object{

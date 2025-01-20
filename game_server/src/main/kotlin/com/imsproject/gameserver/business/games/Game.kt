@@ -6,7 +6,11 @@ import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
 import kotlinx.coroutines.*
 
-abstract class Game (val player1 : ClientHandler, val player2 : ClientHandler) {
+abstract class Game (
+    val lobbyId: String,
+    val player1 : ClientHandler,
+    val player2 : ClientHandler
+) {
 
     abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
     var startTime: Long = -1

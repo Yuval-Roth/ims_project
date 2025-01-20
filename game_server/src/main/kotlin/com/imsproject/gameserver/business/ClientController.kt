@@ -14,8 +14,11 @@ class ClientController {
         const val HEARTBEAT_TIMEOUT_THRESHOLD = 60L
     }
 
-
-    var onClientDisconnect: ((ClientHandler) -> Unit)? = null
+    var onClientDisconnect: ((ClientHandler) -> Unit) = {}
+        set(value) {
+            _onClientDisconnect.add(value)
+        }
+    private val _onClientDisconnect = mutableListOf<((ClientHandler) -> Unit)>()
 
     private val clientIdToHandler = ConcurrentHashMap<String, ClientHandler>()
     private val wsSessionIdToHandler = ConcurrentHashMap<String, ClientHandler>()
@@ -72,7 +75,7 @@ class ClientController {
                 wsSessionIdToHandler.remove(entry.value.wsSessionId)
                 hostPortToHandler.remove(handler.udpAddress.toHostPortString())
                 handler.close()
-                onClientDisconnect?.invoke(handler)
+                _onClientDisconnect.forEach { it(handler) }
             }
         }
     }

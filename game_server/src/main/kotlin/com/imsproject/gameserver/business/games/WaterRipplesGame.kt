@@ -5,7 +5,11 @@ import com.imsproject.gameserver.business.ClientHandler
 import org.slf4j.LoggerFactory
 
 
-class WaterRipplesGame (player1 : ClientHandler, player2 : ClientHandler) : Game(player1, player2) {
+class WaterRipplesGame(
+    lobbyId: String,
+    player1: ClientHandler,
+    player2: ClientHandler
+) : Game(lobbyId, player1, player2) {
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {

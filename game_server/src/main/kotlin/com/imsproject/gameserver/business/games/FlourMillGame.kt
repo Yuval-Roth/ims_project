@@ -7,7 +7,11 @@ import com.imsproject.gameserver.business.ClientHandler
 import org.slf4j.LoggerFactory
 
 
-class FlourMillGame (player1 : ClientHandler, player2 : ClientHandler) : Game(player1, player2) {
+class FlourMillGame(
+    lobbyId: String,
+    player1: ClientHandler,
+    player2: ClientHandler
+) : Game(lobbyId, player1, player2) {
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {

@@ -17,6 +17,10 @@ class LobbyController(
     private val clients: ClientController
 ) {
 
+    init{
+        clients.onClientDisconnect = { onClientDisconnect(it) }
+    }
+
     private val lobbies = ConcurrentHashMap<String, Lobby>()
     private val clientIdToLobbyId = ConcurrentHashMap<String, String>()
     private val lobbyIdGenerator = SimpleIdGenerator(4)
@@ -40,9 +44,17 @@ class LobbyController(
     fun getByClientId(clientId: String): Lobby? {
         return clientIdToLobbyId[clientId]?.let { lobbies[it] }
     }
-    
-    fun removeByClientId(clientId: String) {
-        clientIdToLobbyId.remove(clientId)
+
+    fun onClientDisconnect(clientHandler: ClientHandler){
+        log.debug("onClientDisconnect() with clientId: {}",clientHandler.id)
+        val lobbyId = clientIdToLobbyId[clientHandler.id]
+        if(lobbyId != null){
+            log.debug("onClientDisconnect: Player was in lobby: {}, removing player from lobby",lobbyId)
+            leaveLobby(lobbyId, clientHandler.id,false)
+        } else  {
+            log.debug("onClientDisconnect: Player not in lobby")
+        }
+        log.debug("onClientDisconnect() successful")
     }
 
     fun createLobby(gameType: GameType) : String {
@@ -110,7 +122,7 @@ class LobbyController(
         return lobby.getInfo()
     }
 
-    fun leaveLobby(lobbyId: String,clientId: String) {
+    fun leaveLobby(lobbyId: String,clientId: String,notifyClient: Boolean = true) {
         log.debug("leaveLobby() with lobbyId: {}, playerId: {}",lobbyId,clientId)
 
         // check if the lobby and player exist
@@ -127,7 +139,12 @@ class LobbyController(
         if(success){
             clientIdToLobbyId.remove(clientId)
             // notify the client
-            clientHandler.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
+            if(notifyClient){
+                clientHandler.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
+            }
+            if(lobby.isEmpty()){
+                lobbies.remove(lobbyId)
+            }
             log.debug("leaveLobby() successful")
         } else {
             log.debug("leaveLobby() failed: Player not in lobby")
@@ -187,6 +204,11 @@ class LobbyController(
             throw IllegalArgumentException("Lobby not found")
         }
 
+        if(lobby.gameType == gameType){
+            log.debug("setLobbyType: Game type is already set to {}",gameType)
+            return
+        }
+
         lobby.gameType = gameType
         // Notify the clients
         lobby.getPlayers()
@@ -211,18 +233,12 @@ class LobbyController(
             throw IllegalArgumentException("Lobby not found")
         }
 
-        lobby.gameDuration = duration
-        // Notify the clients
-        lobby.getPlayers()
-            .map {clients.getByClientId(it)}
-            .forEach {
-                it?.sendTcp(
-                    GameRequest.builder(Type.SET_GAME_DURATION)
-                        .data(listOf(duration.toString()))
-                        .build().toJson()
-                )
-            }
+        if(duration <= 0) {
+            log.debug("setGameDuration: Duration must be greater than 0")
+            throw IllegalArgumentException("Duration must be greater than 0")
+        }
 
+        lobby.gameDuration = duration
         log.debug("setGameDuration() successful")
     }
 
