@@ -89,7 +89,7 @@ nb-configuration.xml
 ##############################
 *.log
 *.log.*
-database/
+database/data/
 
 **/__pycache__/
 *.jks
