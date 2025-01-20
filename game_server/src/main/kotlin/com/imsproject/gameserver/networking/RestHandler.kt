@@ -66,15 +66,12 @@ class RestHandler(
             @PathVariable action: String,
             @RequestBody body: String
         ): ResponseEntity<String> {
-        val res
         try {
-            res = daoController.handle(section, action, body)
+            return (daoController.handle(section, action, body)).toResponseEntity()
         } catch(e: Exception)
         {
             return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
-
-        return res.toResponseEntity()
     }
 
     @GetMapping("/login")

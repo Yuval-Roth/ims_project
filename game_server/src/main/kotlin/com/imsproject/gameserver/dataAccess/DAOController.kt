@@ -1,8 +1,8 @@
 package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.dataAccess
 
-import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
+import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 //import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
 //import com.imsproject.gameserver.dataAccess.implementations.SessionsDAO
 //import com.imsproject.gameserver.dataAccess.implementations.SessionEventsDAO
@@ -25,21 +25,16 @@ class DAOController {
     // route the request to the relevant DAO
     // *************************************
     @Throws(SQLException::class)
-    fun handle(section: String, action: String ,body : String): Unit {
+    fun handle(section: String, action: String ,body : String): String {
 //        participantDAO.handle(action, participant);
         when (section) { // unserialized data can be
             "participant" -> { //return id from db
                 val participant: Participant = JsonUtils.deserialize(body)
-                participantDAO.handleParticipants(action, participant)
+                return participantDAO.handleParticipants(action, participant)
             }
-
             else -> throw (SQLException("horrible stuff happened"))
         }
     }
-
-            // *************************************
-    // if not exist, initialize tables
-    // *************************************
 
     //create logger like in gamecotroller (something companion)
 }

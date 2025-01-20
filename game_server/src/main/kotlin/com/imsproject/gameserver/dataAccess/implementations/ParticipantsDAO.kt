@@ -3,16 +3,16 @@ package com.imsproject.gameserver.dataAccess.implementations//package com.imspro
 import com.imsproject.common.dataAccess.CreateTableQueryBuilder
 import com.imsproject.common.dataAccess.DaoException
 import com.imsproject.common.dataAccess.OfflineResultSet
+import com.imsproject.common.utils.Response
+
 import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
-import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.dataAccess.models.Participant
-import com.imsproject.gameserver.toResponseEntity
-import org.springframework.http.ResponseEntity
+
 import java.sql.SQLException
 
-class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, PrimaryKey>(cursor, "Participants", arrayOf("pid")) {
+class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>(cursor, "Participants", ParticipantPK.primaryColumnsList) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }
@@ -25,6 +25,13 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, PrimaryKey>(cu
         when(action){
             "insert" -> {
                 return Response.getOk(insert(participant))
+            }
+            "delete" -> {
+                if(participant.pid == null)
+                    throw Exception("A participant id was not provided for deletion")
+                val ppk = ParticipantPK(participant.pid)
+                delete(ppk)
+                return Response.getOk()
             }
             else -> throw Exception("Invalid action for participants")
         }
@@ -50,7 +57,26 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, PrimaryKey>(cu
     }
 
     @Throws(DaoException::class)
-    override fun update(participant: Participant): Unit {
+    override fun update(obj: Participant): Unit {
 
+    }
+}
+
+data class ParticipantPK(
+    val pid: Int // Primary key column in the "Participants" table
+) : PrimaryKey {
+    companion object {
+        val primaryColumnsList = arrayOf("pid")
+    }
+
+    override fun columnNames(): Array<out String> {
+        return primaryColumnsList
+    }
+
+    override fun getValue(columnName: String): Any? {
+        return when (columnName) {
+            "pid" -> pid
+            else -> null
+        }
     }
 }
