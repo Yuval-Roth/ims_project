@@ -149,7 +149,11 @@ class LogsProvider {
             }
             file += """
                 <script>
-                    window.scrollTo(0, document.body.scrollHeight);
+                    window.onload = function() {
+                        setTimeout(function() {
+                            window.scrollTo(0, document.body.scrollHeight);
+                        }, 10);
+                    }
                 </script>
               """.trimIndent()
             return file.toResponseEntity()
