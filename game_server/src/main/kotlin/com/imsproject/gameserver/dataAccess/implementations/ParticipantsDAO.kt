@@ -18,7 +18,15 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
     }
 
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Participant {
-        throw UnsupportedOperationException("Not yet implemented")
+        return Participant(
+            pid = (resultSet.getObject("pid") as? Int),
+            firstName = resultSet.getObject("first_name") as? String,
+            lastName = resultSet.getObject("last_name") as? String,
+            age = (resultSet.getObject("age") as? Int),
+            gender = resultSet.getObject("gender") as? String,
+            phone = resultSet.getObject("phone") as? String,
+            email = resultSet.getObject("email") as? String
+        )
     }
 
     fun handleParticipants(action: String,participant: Participant): String {
@@ -37,6 +45,12 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
                     throw Exception("A participant id was not provided for update")
                 update(participant)
                 return Response.getOk()
+            }
+            "select" -> {
+                if(participant.pid == null)
+                    return Response.getOk(selectAll())
+                else
+                    return Response.getOk(select(ParticipantPK(participant.pid)))
             }
             else -> throw Exception("Invalid action for participants")
         }
@@ -99,24 +113,6 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
         } catch (e: SQLException) {
             throw DaoException("Failed to update table $tableName", e)
         }
-    }
-
-    fun buildUpdateQuery(participant: Participant): String {
-        val updates = mutableListOf<String>()
-
-        participant.firstName?.let { updates.add("first_name = '$it'") }
-        participant.lastName?.let { updates.add("last_name = '$it'") }
-        participant.age?.let { updates.add("age = $it") }
-        participant.gender?.let { updates.add("gender = '$it'") }
-        participant.phone?.let { updates.add("phone = '$it'") }
-        participant.email?.let { updates.add("email = '$it'") }
-
-        if (updates.isEmpty() || participant.pid == null) {
-            throw IllegalArgumentException("No fields to update or ID is missing")
-        }
-
-        val updateString = updates.joinToString(", ")
-        return "UPDATE $tableName SET $updateString WHERE pid = ${participant.pid};"
     }
 }
 

@@ -534,6 +534,37 @@ This endpoint is used to update an existing entity from the database.
     ```
 
 
+### 3. **GET** `/data/{section}`
+
+#### Description
+This endpoint is used to get an existing entity from the database, or all of the data in a table.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant:
+      - In order to get a specific participant, provide pid.
+      - To get all of the table, provide no additional fields
+        ```json
+        {
+          "pid": "id"
+        }
+        ```
+        - lobby:
+        ```json
+        {
+          "placeholder": "bluh bluh"
+        }
+        ```
+
 
 ### 4. POST `/operators/{action}`
 
