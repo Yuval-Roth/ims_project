@@ -32,6 +32,12 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
                 delete(ParticipantPK(participant.pid))
                 return Response.getOk()
             }
+            "update" -> {
+                if(participant.pid == null)
+                    throw Exception("A participant id was not provided for update")
+                update(participant)
+                return Response.getOk()
+            }
             else -> throw Exception("Invalid action for participants")
         }
     }
@@ -57,7 +63,60 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
 
     @Throws(DaoException::class)
     override fun update(obj: Participant): Unit {
+        try {
+            // Validate ID
+            val id = obj.pid ?: throw IllegalArgumentException("Participant ID (pid) must not be null")
 
+            // Build the query dynamically
+            val updates = mutableListOf<String>()
+            val params = mutableListOf<Any?>()
+
+            val fields = mapOf(
+                "first_name" to obj.firstName,
+                "last_name" to obj.lastName,
+                "age" to obj.age,
+                "gender" to obj.gender,
+                "phone" to obj.phone,
+                "email" to obj.email
+            )
+
+            fields.forEach { (column, value) ->
+                value?.let {
+                    updates.add("$column = ?")
+                    params.add(it)
+                }
+            }
+
+            if (updates.isEmpty()) {
+                throw IllegalArgumentException("No fields to update")
+            }
+
+            val query = "UPDATE participants SET ${updates.joinToString(", ")} WHERE pid = ?"
+            params.add(id)
+
+            // Execute the query
+            cursor.executeWrite(query, *params.toTypedArray())
+        } catch (e: SQLException) {
+            throw DaoException("Failed to update table $tableName", e)
+        }
+    }
+
+    fun buildUpdateQuery(participant: Participant): String {
+        val updates = mutableListOf<String>()
+
+        participant.firstName?.let { updates.add("first_name = '$it'") }
+        participant.lastName?.let { updates.add("last_name = '$it'") }
+        participant.age?.let { updates.add("age = $it") }
+        participant.gender?.let { updates.add("gender = '$it'") }
+        participant.phone?.let { updates.add("phone = '$it'") }
+        participant.email?.let { updates.add("email = '$it'") }
+
+        if (updates.isEmpty() || participant.pid == null) {
+            throw IllegalArgumentException("No fields to update or ID is missing")
+        }
+
+        val updateString = updates.joinToString(", ")
+        return "UPDATE $tableName SET $updateString WHERE pid = ${participant.pid};"
     }
 }
 

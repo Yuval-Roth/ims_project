@@ -503,6 +503,37 @@ This endpoint is used to delete an existing entity from the database.
     }
     ```
 
+### 3. **PUT** `/data/{section}`
+
+#### Description
+This endpoint is used to update an existing entity from the database.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant:
+  pid must be provided. every other field is optional.
+    ```json
+    {
+      "pid": "id"
+    }
+    ```
+    - lobby:
+    ```json
+    {
+      "placeholder": "bluh bluh"
+    }
+    ```
+
+
 
 ### 4. POST `/operators/{action}`
 
