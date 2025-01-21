@@ -1,5 +1,7 @@
-package com.imsproject.gameserver
+package com.imsproject.gameserver.business
 
+import com.imsproject.gameserver.send
+import org.slf4j.LoggerFactory
 import org.springframework.web.socket.WebSocketSession
 import java.io.IOException
 import java.net.SocketAddress
@@ -18,7 +20,11 @@ class ClientHandler internal constructor(
 
     @Throws(IOException::class)
     fun sendTcp(message: String) {
-        wsSession.send(message)
+        if(wsSession.isOpen){
+            wsSession.send(message)
+        } else {
+            log.debug("Attempted to send message to closed session: {}", message)
+        }
     }
 
     @Throws(IOException::class)
@@ -29,5 +35,9 @@ class ClientHandler internal constructor(
 
     fun close() {
         wsSession.close()
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(ClientHandler::class.java)
     }
 }

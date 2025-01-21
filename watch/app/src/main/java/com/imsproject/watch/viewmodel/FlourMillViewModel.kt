@@ -141,7 +141,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 }
         }
         if(inSync && side == myAxleSide){
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 addEvent(SessionEvent.syncedAtTime(playerId,super.getCurrentGameTime()))
             }
         }
@@ -169,7 +169,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         if(ACTIVITY_DEBUG_MODE) {
             myAxleSide = AxleSide.RIGHT
             axle = Axle(AXLE_STARTING_ANGLE, myAxleSide)
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 while (true) {
                     delay(1000)
                     rotateAxle(AxleSide.LEFT, 1, System.currentTimeMillis())
@@ -208,6 +208,9 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     Log.e(TAG, "handleGameAction: missing sequence number in user input action")
                     return
                 }
+
+                val arrivedTimestamp = getCurrentGameTime()
+
                 withContext(Dispatchers.Main) {
                     if (actor == playerId) {
                         rotateAxle(myAxleSide, direction, timestamp)
@@ -219,6 +222,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
                     packetTracker.receivedOtherPacket(sequenceNumber)
+                    addEvent(SessionEvent.opponentRotation(playerId,arrivedTimestamp,direction.toString()))
                 }
             }
             else -> super.handleGameAction(action)

@@ -11,7 +11,7 @@ class SessionEventCollectorImpl private constructor() : SessionEventCollector {
         events.add(event)
     }
 
-    override fun getAllEvents(): Iterable<SessionEvent> {
+    override fun getAllEvents(): Collection<SessionEvent> {
         return events
     }
 

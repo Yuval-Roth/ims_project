@@ -1,6 +1,5 @@
 package com.imsproject.common.utils
 
-import com.imsproject.common.utils.JsonUtils.deserialize
 import com.imsproject.common.utils.JsonUtils.serialize
 
 class Response {
@@ -41,23 +40,10 @@ class Response {
             @Suppress("UNCHECKED_CAST")
             return payload as List<T>
         }
-        return payload.map{ deserialize(it) }
-    }
-
-    /**
-     * This method will serialize the response object using [JsonUtils.serialize]
-     */
-    fun toJson(): String {
-        return serialize(this)
+        return payload.map{ fromJson(it) }
     }
 
     companion object {
-        /**
-         * This method will deserialize the json string using [JsonUtils.deserialize]
-         */
-        fun fromJson(json: String): Response {
-            return deserialize(json)
-        }
 
         fun getOk(): String {
             return Response(true).toJson()

@@ -1,9 +1,12 @@
-package com.imsproject.gameserver.networking
+package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.gameserver.*
+import com.imsproject.gameserver.business.ClientController
+import com.imsproject.gameserver.business.ClientHandler
+import com.imsproject.gameserver.business.GameRequestFacade
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.lang.NonNull
@@ -16,14 +19,14 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Component
-class GameRequestHandler(
-    private val gameController: GameController,
-    private val gameActionHandler: GameActionHandler,
+class WsGameRequestHandler(
+    private val facade: GameRequestFacade,
+    private val gameActionHandler: UdpGameActionHandler,
     private val clientController: ClientController
 ) : TextWebSocketHandler() {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(GameRequestHandler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(WsGameRequestHandler::class.java)
     }
 
     private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(3)
@@ -178,7 +181,7 @@ class GameRequestHandler(
                     return
                 }
                 try {
-                    gameController.handleGameRequest(client, gameMessage)
+                    facade.handleGameRequest(client, gameMessage)
                 } catch (e: Exception) {
                     log.error("Error handling message", e)
 

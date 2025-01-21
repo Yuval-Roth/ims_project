@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
+import kotlinx.coroutines.withContext
 
 private const val TAG = "MainViewModel"
 
@@ -26,6 +27,7 @@ class MainViewModel() : ViewModel() {
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
         IN_GAME,
+        UPLOADING_EVENTS,
         ERROR
     }
 
@@ -36,6 +38,10 @@ class MainViewModel() : ViewModel() {
     // ================================================================================ |
 
     private var _state = MutableStateFlow(State.DISCONNECTED)
+        set(value) {
+            field = value
+            Log.d(TAG, "state changed to: $value")
+        }
     val state : StateFlow<State> = _state
 
     private var _playerId = MutableStateFlow("")
@@ -105,21 +111,35 @@ class MainViewModel() : ViewModel() {
     }
 
     fun afterGame(result: Result) {
-        setupListeners() // take back control of the listeners
-        _ready.value = false
-        when(result.code){
-            Result.Code.OK ->{
-                _timeServerStartTime.value = -1
-                _state.value = State.CONNECTED_IN_LOBBY
+        viewModelScope.launch(Dispatchers.Default) {
+            _ready.value = false
+            _timeServerStartTime.value = -1
+            when (result.code) {
+                Result.Code.OK -> {
+/*
+                    TODO: uncomment this when the data endpoint is ready
+                    _state.value = State.UPLOADING_EVENTS
+                    withContext(Dispatchers.IO) {
+                    do {
+                        if(model.uploadSessionEvents()){
+                            break
+                        }
+                    } while(true)
+                    _state.value = State.CONNECTED_IN_LOBBY
+*/
+                }
+
+                else -> {
+                    // typically, when reaching here, the game ended due to a network error
+                    // or some other issue that hasn't been discovered yet.
+                    // so we want to display an error message to the user
+                    // and restart the application.
+                    val error =
+                        "${result.code.prettyName()}:\n${result.errorMessage ?: "no error message"}"
+                    fatalError(error)
+                }
             }
-            else -> {
-                // typically, when reaching here, the game ended due to a network error
-                // or some other issue that hasn't been discovered yet.
-                // so we want to display an error message to the user
-                // and restart the application.
-                val error = "${result.code.prettyName()}:\n${result.errorMessage ?: "no error message"}"
-                fatalError(error)
-            }
+            setupListeners() // take back control of the listeners
         }
     }
 

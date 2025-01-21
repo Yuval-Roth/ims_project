@@ -8,6 +8,7 @@ import android.media.VolumeShaper
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
@@ -19,8 +20,7 @@ class WavPlayer(private val context: Context) {
     private val tracks = Array<AudioTrack?>(32) { null }
     private val wavs = Array<WavFile?>(32) { null }
     private val jobs = Array<Job?>(32) { null }
-    val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    val scope = CoroutineScope(dispatcher)
+    val scope = CoroutineScope(Dispatchers.Default)
 
     /**
      * Load a wav file into a track

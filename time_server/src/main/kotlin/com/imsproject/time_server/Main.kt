@@ -2,6 +2,8 @@ package com.imsproject.time_server
 
 import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.networking.UdpClient
+import com.imsproject.common.utils.fromJson
+import com.imsproject.common.utils.toJson
 import java.time.LocalDateTime
 
 fun main() {
@@ -18,7 +20,7 @@ fun main() {
         val request: TimeRequest
         val json = String(packet.data, 0, packet.length)
         try{
-            request = TimeRequest.fromJson(json)
+            request = fromJson(json)
         } catch(e: Exception){
             System.err.println("${LocalDateTime.now().prettyPrint()} - Error parsing message: $json\n${e.stackTraceToString()}")
             continue

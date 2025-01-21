@@ -86,12 +86,10 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 while(true){
                     delay(1000)
-                    withContext(Dispatchers.Main){
-                        showRipple("player1", System.currentTimeMillis())
-                    }
+                    showRipple("player1", System.currentTimeMillis())
                 }
             }
         }
@@ -120,12 +118,14 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                     return
                 }
 
+                val arrivedTimestamp = getCurrentGameTime()
                 showRipple(actor, timestamp)
                 
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
                     packetTracker.receivedOtherPacket(sequenceNumber)
+                    addEvent(SessionEvent.opponentClick(playerId, arrivedTimestamp))
                 }
             }
             else -> super.handleGameAction(action)
@@ -147,7 +147,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 rippleToCheck.currentAlpha = (rippleToCheck.currentAlpha * 2).coerceAtMost(1.0f)
                 rippleToCheck.updateAlphaStep()
             }
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch(Dispatchers.Default) {
                 addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
             }
         }

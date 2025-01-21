@@ -1,4 +1,4 @@
-package com.imsproject.gameserver.lobbies
+package com.imsproject.gameserver.business.lobbies
 
 import com.imsproject.common.gameserver.GameType
 
