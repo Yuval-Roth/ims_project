@@ -100,6 +100,11 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.onDestroy()
+    }
+
     @Composable
     fun Main(){
         val state by viewModel.state.collectAsState()

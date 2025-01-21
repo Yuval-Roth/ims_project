@@ -67,7 +67,7 @@ class LocationSensorsHandler(
     }
 
     // Method to start listening to the sensors
-    fun run() {
+    fun start() {
         gyroscopeSensor?.let {
             sensorManager.registerListener(
                 gyroscopeListener, it, SensorManager.SENSOR_DELAY_UI
@@ -81,7 +81,7 @@ class LocationSensorsHandler(
     }
 
     // Method to stop listening to the sensors
-    fun cleanup() {
+    fun stop() {
         sensorManager.unregisterListener(gyroscopeListener)
         sensorManager.unregisterListener(accelerometerListener)
     }

@@ -6,13 +6,9 @@ import android.os.Looper
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.samsung.android.service.health.tracking.HealthTrackerException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 class SensorsHandler(
-    val scope: CoroutineScope,
     val context: Context,
     val gameViewModel: GameViewModel
 ) : ConnectionObserver {
@@ -123,22 +119,20 @@ class SensorsHandler(
         connectionManager.initSpO2(spO2Listener!!)
     }
 
-    fun cleanup() {
+    fun stop() {
         heartRateListener?.stopTracker()
         spO2Listener?.stopTracker()
         TrackerDataNotifier.getInstance().removeObserver(trackerDataObserver)
         connectionManager.disconnect()
     }
 
-    fun run() {
-        scope.launch(Dispatchers.IO) {
-            if (!isMeasurementRunning.get()) {
-                // Start the measurement process
-                previousStatus = SpO2Status.INITIAL_STATUS
-                spO2Listener?.startTracker()  // Start measuring SpO2
-                heartRateListener?.startTracker()  // Optionally, you can start heart rate tracking too
-                isMeasurementRunning.set(true)
-            }
+    fun start() {
+        if (!isMeasurementRunning.get()) {
+            // Start the measurement process
+            previousStatus = SpO2Status.INITIAL_STATUS
+            spO2Listener?.startTracker()  // Start measuring SpO2
+            heartRateListener?.startTracker()  // Optionally, you can start heart rate tracking too
+            isMeasurementRunning.set(true)
         }
     }
 

@@ -89,6 +89,11 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.onDestroy()
+    }
+
     @Composable
     fun Main(){
         val state by viewModel.state.collectAsState()

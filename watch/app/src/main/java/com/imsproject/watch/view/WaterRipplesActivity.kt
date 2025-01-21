@@ -61,6 +61,11 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.onDestroy()
+    }
+
     @Composable
     fun Main(){
         val state by viewModel.state.collectAsState()

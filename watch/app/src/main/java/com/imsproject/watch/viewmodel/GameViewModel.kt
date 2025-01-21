@@ -15,6 +15,7 @@ import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
+import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.sensors.SensorsHandler
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.watch.utils.PacketTracker
@@ -52,6 +53,7 @@ abstract class GameViewModel(
     protected val packetTracker = PacketTracker()
     private lateinit var latencyTracker : LatencyTracker
     private lateinit var sensorsHandler: SensorsHandler
+    private lateinit var locationSensorHandler: LocationSensorsHandler
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -88,32 +90,31 @@ abstract class GameViewModel(
 
         // set up everything required for the session
         viewModelScope.launch(Dispatchers.Default) {
-
-            // =================== clock synchronization =================== |
-
+            // clock setup
             val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
             withContext(Dispatchers.IO){
                 timeServerDelta = model.calculateTimeServerDelta()
             }
             myStartTime = timeServerStartTime + timeServerDelta
 
-            // log metadata
+            // log clock metadata
             val timestamp = getCurrentGameTime()
             addEvent(SessionEvent.serverStartTime(playerId, timestamp,timeServerStartTime.toString()))
             addEvent(SessionEvent.timeServerDelta(playerId,timestamp,timeServerDelta.toString()))
             addEvent(SessionEvent.clientStartTime(playerId,timestamp,myStartTime.toString()))
 
-            // =================== other setup =================== |
+            setupListeners() // start listening for messages
 
-            setupListeners()
-
+            // packet tracker setup
             packetTracker.onOutOfOrderPacket = {
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
 
-            sensorsHandler = SensorsHandler(viewModelScope,context,this@GameViewModel)
-            sensorsHandler.run()
+            // sensors setup
+            sensorsHandler = SensorsHandler(context, this@GameViewModel)
+            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
 
+            // latency tracker setup
             latencyTracker = model.getLatencyTracker()
             latencyTracker.onReceive = {
                 addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it.toString()))
@@ -123,8 +124,8 @@ abstract class GameViewModel(
             }
 
             // start collecting latency statistics
-            latencyTracker.start()
             viewModelScope.launch(Dispatchers.Default) {
+                latencyTracker.start()
                 while(true){
                     delay(1000)
                     @Suppress("NAME_SHADOWING")
@@ -144,9 +145,16 @@ abstract class GameViewModel(
             // =================== game start =================== |
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
             Log.d(TAG, "onCreate: session started")
+            locationSensorHandler.start()
+            sensorsHandler.start()
             _state.value = State.PLAYING
         }
 
+    }
+
+    fun onDestroy() {
+        sensorsHandler.stop()
+        locationSensorHandler.stop()
     }
 
     fun exitWithError(errorMessage: String, code: Result.Code) {
