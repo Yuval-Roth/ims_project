@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.viewmodel.GameViewModel
-import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.samsung.android.service.health.tracking.HealthTrackerException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +24,6 @@ class SensorsHandler(
     private var previousStatus = SpO2Status.INITIAL_STATUS
     private var heartRateDataLast = HeartRateData()
     private val handler = Handler(Looper.getMainLooper())
-    private val measurementProgress: CircularProgressIndicator
 
     private val trackerDataObserver = object : TrackerDataObserver {
         override fun onHeartRateTrackerDataChanged(hrData: HeartRateData) {
@@ -36,8 +34,7 @@ class SensorsHandler(
                         SessionEvent.heartRate(
                             gameViewModel.playerId,
                             gameViewModel.getCurrentGameTime(),
-                            hrData.hr,
-                            hrData.ibi
+                            "${hrData.hr};${hrData.ibi}"
                         )
                     )
                 } else {
@@ -97,7 +94,7 @@ class SensorsHandler(
                             SessionEvent.bloodOxygen(
                                 gameViewModel.playerId,
                                 gameViewModel.getCurrentGameTime(),
-                                spO2Value
+                                spO2Value.toString()
                             )
                         )
                     }
@@ -116,11 +113,6 @@ class SensorsHandler(
         // Create instances of connectionManager and measurementProgress in the constructor
         connectionManager = ConnectionManager(this).apply {
             connect(context)
-        }
-
-        measurementProgress = CircularProgressIndicator(context).apply {
-            isIndeterminate = false
-            max = 100  // Just a placeholder; won't be used since we're no longer counting time
         }
 
         heartRateListener = HeartRateListener()
@@ -143,7 +135,6 @@ class SensorsHandler(
             if (!isMeasurementRunning.get()) {
                 // Start the measurement process
                 previousStatus = SpO2Status.INITIAL_STATUS
-                measurementProgress.progress = 0
                 spO2Listener?.startTracker()  // Start measuring SpO2
                 heartRateListener?.startTracker()  // Optionally, you can start heart rate tracking too
                 isMeasurementRunning.set(true)
