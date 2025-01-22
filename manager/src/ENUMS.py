@@ -4,8 +4,7 @@ from enum import Enum
 class GAME_TYPE(Enum):
     water_ripples = 'Water Ripples'
     wine_glasses = 'Wine Glasses'
-    flour_mill = 'Flour Mill'
-    poc = 'Poc'
+    # flour_mill = 'Flour Mill'
     chess = 'Chess'
     tic_tac_toe = 'Tic Tac Toe'
     racing = 'Racing'

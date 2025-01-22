@@ -9,44 +9,9 @@
 </head>
 <body>
     <div class="main-menu-container">
-<<<<<<< HEAD
         <h1>Main Menu</h1>
         <button onclick="window.location.href='/lobbies'" class="main-menu-button">Lobbies</button>
         <button onclick="window.location.href='/participants'" class="main-menu-button">Participants</button>
     </div>
-=======
-    <h1>Online Participants</h1>
-    <form action="{{ url_for('main_menu') }}" method="post" style="width:100%">
-        <div class="table-container">
-            <table class="online-participants-table">
-                <thead>
-                    <tr>
-                        <th>Participant Name</th>
-                        <th>Select</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for participant in participants %}
-                    <tr>
-                        <td>{{ participant.name }}</td>
-                        <td><input type="checkbox" name="selected_participants" value="{{ participant.id }}"></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <label for="game-type">Select Game Type:</label>
-        <select id="game-type" name="game_type" required>
-            <option value="water_ripples">Water Ripples</option>
-            <option value="wine_glasses">Wine Glasses</option>
-            {# enable when releasing flour mill #}
-{#            <option value="flour_mill">Flour Mill</option>#}
-            <option value="poc">PoC</option>
-        </select>
-        <button type="submit" class="create-lobby-button">Create Lobby</button>
-    </form>
-</div>
-
->>>>>>> 3983a245c73f59db3e598d93d00bfb470aed519f
 </body>
 </html>
