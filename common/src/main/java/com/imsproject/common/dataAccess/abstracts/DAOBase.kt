@@ -168,7 +168,8 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     }
 
     fun buildQueryAndInsert(columns: Array<String>,  idColumnName: String, vararg values: Any?): Int {
-        val insertQuery = "INSERT INTO $tableName (${columns.joinToString()}) VALUES (?, ?, ?, ?, ?, ?) RETURNING $idColumnName"
+        val questionmarks = List(columns.size) { "?" }.joinToString(", "); //don't ask please
+        val insertQuery = "INSERT INTO $tableName (${columns.joinToString()}) VALUES (${questionmarks}) RETURNING $idColumnName"
         try {
             val keysResultSet = cursor.executeInsert(insertQuery,*values)
             if(keysResultSet.next()) {

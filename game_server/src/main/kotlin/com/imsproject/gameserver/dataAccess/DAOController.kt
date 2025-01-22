@@ -3,6 +3,8 @@ package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
+import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
+import com.imsproject.gameserver.dataAccess.models.Lobby
 //import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
 //import com.imsproject.gameserver.dataAccess.implementations.SessionsDAO
 //import com.imsproject.gameserver.dataAccess.implementations.SessionEventsDAO
@@ -15,22 +17,23 @@ class DAOController {
     private val cursor: SQLExecutor = PostgreSQLExecutor(
         "localhost", 5432 ,"ims-db", "admin", "adminMTAC"
     )
+
 // seperate cursor to each
     val participantDAO: ParticipantsDAO = ParticipantsDAO(cursor)
-//    val lobbyDAO: LobbiesDAO = LobbiesDAO(cursor)
+    val lobbyDAO: LobbiesDAO = LobbiesDAO(cursor)
 //    val sessionDAO: SessionsDAO = SessionsDAO(cursor)
 //    val sessionEventDAO: SessionEventsDAO = SessionEventsDAO(cursor)
 
-    // *************************************
-    // route the request to the relevant DAO
-    // *************************************
     @Throws(SQLException::class)
     fun handle(section: String, action: String ,body : String): String {
-//        participantDAO.handle(action, participant);
         when (section) { // unserialized data can be
             "participant" -> { //return id from db
                 val participant: Participant = JsonUtils.deserialize(body)
                 return participantDAO.handleParticipants(action, participant)
+            }
+            "lobby" -> {
+                val lobby: Lobby = JsonUtils.deserialize(body)
+                return lobbyDAO.handleLobbies(action, lobby)
             }
             else -> throw (SQLException("horrible stuff happened"))
         }

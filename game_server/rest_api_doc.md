@@ -442,7 +442,8 @@ This endpoint is used to add a new entity to the database.
     - lobby:
     ```json
     {
-      "placeholder": "bluh bluh"
+      "pid1": "integer",
+      "pid2": "integer"
     }
     ```
 
@@ -453,13 +454,6 @@ This endpoint is used to add a new entity to the database.
   {
     "success": true,
     "payload": ["id"]
-  }
-  ```
-  or
-  ```json
-  {
-    "message": "User removed successfully",
-    "success": true
   }
   ```
 
@@ -499,7 +493,7 @@ This endpoint is used to delete an existing entity from the database.
     - lobby:
     ```json
     {
-      "placeholder": "bluh bluh"
+      "lobbyId": "integer"
     }
     ```
 
@@ -564,7 +558,33 @@ This endpoint is used to get an existing entity from the database, or all of the
           "placeholder": "bluh bluh"
         }
         ```
+#### **Response**
 
+- **Success**:
+  ```json
+  {
+    "success": true,
+    "payload": ["json data of asked entity"]
+  }
+  ```
+  or
+```json
+  {
+    "success": true,
+    "payload": ["json data of entity1 in table",
+                "json data of entity2 in table",
+                "json data of entity3 in table"]
+  }
+  ```
+
+- **Failure**:
+  ```json
+  {
+    "message": "Failed to select table Participants",
+    "success": false,
+    "payload": ["error details"]
+  }
+  ```
 
 ### 4. POST `/operators/{action}`
 

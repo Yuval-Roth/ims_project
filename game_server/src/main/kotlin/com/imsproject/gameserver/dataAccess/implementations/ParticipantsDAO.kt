@@ -94,7 +94,7 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
                 throw IllegalArgumentException("No fields to update")
             }
 
-            val query = "UPDATE participants SET ${updates.joinToString(", ")} WHERE pid = ?"
+            val query = "UPDATE $tableName SET ${updates.joinToString(", ")} WHERE pid = ?"
             params.add(id)
 
             // Execute the query

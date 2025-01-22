@@ -9,6 +9,7 @@ import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.dataAccess.models.Lobby
+import java.sql.SQLException
 
 
 class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies", LobbyPK.primaryColumnsList) {
@@ -56,13 +57,47 @@ class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies
 
     @Throws(DaoException::class)
     override fun insert(obj: Lobby): Int {
-        throw UnsupportedOperationException("Not yet implemented")
+        val columns = arrayOf("pid1", "pid2")
+        val values = arrayOf(obj.pid1,obj.pid2)
+        val idColName = LobbyPK.primaryColumnsList.joinToString()
+        return buildQueryAndInsert(columns, idColName, *values)
 
     }
 
     @Throws(DaoException::class)
     override fun update(obj: Lobby): Unit {
-        throw UnsupportedOperationException("Not yet implemented")
+        try {
+            // Validate ID
+            val id = obj.lobbyId ?: throw IllegalArgumentException("Lobby ID must not be null")
+
+            // Build the query dynamically
+            val updates = mutableListOf<String>()
+            val params = mutableListOf<Any?>()
+            val idColName = LobbyPK.primaryColumnsList.joinToString()
+
+            val fields = mapOf(
+                "pid1" to obj.pid1,
+                "pid2" to obj.pid2,
+            )
+
+            fields.forEach { (column, value) ->
+                value?.let {
+                    updates.add("$column = ?")
+                    params.add(it)
+                }
+            }
+
+            if (updates.isEmpty()) {
+                throw IllegalArgumentException("No fields to update")
+            }
+
+            val query = "UPDATE $tableName SET ${updates.joinToString(", ")} WHERE $idColName = ?"
+            params.add(id)
+
+            cursor.executeWrite(query, *params.toTypedArray())
+        } catch (e: SQLException) {
+            throw DaoException("Failed to update table $tableName", e)
+        }
     }
 
 }
