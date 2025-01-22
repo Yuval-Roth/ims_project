@@ -224,6 +224,25 @@
                 .catch(error => console.error('Error:', error));
         }
     });
+
+    new Sortable(sessionTableBody, {
+            animation: 150,
+            onEnd: function () {
+                const sessionOrder = Array.from(sessionTableBody.children).map(row => row.dataset.sessionId);
+                fetch('/update_session_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        alert('Failed to update session order.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
 });
 
 
