@@ -63,14 +63,21 @@ def lobbies_menu():
 
 @app.route('/create_lobby', methods=['POST'])
 def create_lobby_action():
-    participant1 = request.form['participant1']
-    participant2 = request.form['participant2']
-    lobby_id = create_lobby([participant1, participant2])
-    if lobby_id:
-        flash("Lobby created successfully!")
-    else:
-        flash("Failed to create lobby.")
-    return redirect(url_for('lobbies_menu'))
+    try:
+        selected_participants = request.form.getlist('selected_participants')  # Get all selected participants
+        if len(selected_participants) != 2:  # Ensure exactly two participants are selected
+            return "Exactly two participants must be selected to create a lobby.", 400
+        
+        lobby_id = create_lobby(selected_participants)
+        if not lobby_id:
+            return "Failed to create lobby.", 500
+        
+        return redirect(url_for('lobby', lobby_id=lobby_id, selected_participants=",".join(selected_participants)))
+
+    except Exception as e:
+        Logger.log_error(f"Error creating lobby: {e}")
+        return f"Error: {e}", 500
+
 
 
 @app.route('/delete_lobby', methods=['GET'])

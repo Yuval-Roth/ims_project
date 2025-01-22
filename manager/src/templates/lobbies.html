@@ -151,7 +151,7 @@ document.querySelectorAll('.lobby-row').forEach(row => {
                     data.forEach(participant => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            <td>${participant.name}</td>
+                            <td>${participant.first_name} ${participant.last_name}</td>
                             <td><input type="checkbox" name="selected_participants" value="${participant.id}"></td>
                         `;
                         checkboxesContainer.appendChild(row);
