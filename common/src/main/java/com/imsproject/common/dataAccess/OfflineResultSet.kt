@@ -39,14 +39,14 @@ class OfflineResultSet(rs: ResultSet) {
     }
 
     fun next(): Boolean {
-        if (iterator == null) {
-            iterator = rows.listIterator()  // Initialize iterator only once
+        val iterator = this.iterator ?: run {
+            val newIterator = rows.listIterator()
+            this.iterator = newIterator
+            newIterator
         }
-
-        val iter = iterator as ListIterator<HashMap<String?, Any?>>  // Explicit cast
-        if (iter.hasNext()) {
+        if (iterator.hasNext()) {
             currentRow++
-            currentRowData = iter.next()
+            currentRowData = iterator.next()
             return true
         }
         return false
