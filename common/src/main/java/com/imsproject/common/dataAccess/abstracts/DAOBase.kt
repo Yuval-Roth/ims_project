@@ -166,4 +166,21 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         }
         return builder.toString()
     }
+
+    fun buildQueryAndInsert(columns: Array<String>,  idColumnName: String, vararg values: Any?): Int {
+        val insertQuery = "INSERT INTO $tableName (${columns.joinToString()}) VALUES (?, ?, ?, ?, ?, ?) RETURNING $idColumnName"
+        try {
+            val keysResultSet = cursor.executeInsert(insertQuery,*values)
+            if(keysResultSet.next()) {
+                val id = keysResultSet.getTyped<Int>(idColumnName)
+                if(id != null){
+                    return id;
+                }
+            }
+        } catch (e: SQLException) {
+            throw DaoException("Failed to insert to table $tableName", e)
+        }
+        throw DaoException("Error in insertion to $tableName")
+    }
+
 }

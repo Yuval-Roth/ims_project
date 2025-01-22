@@ -1,27 +1,88 @@
-//package com.imsproject.gameserver.dataAccess.implementations//package com.imsproject.gameserver.dataAccess.implementations
-//import com.imsproject.common.dataAccess.CreateTableQueryBuilder
-//import com.imsproject.common.dataAccess.OfflineResultSet
-//import com.imsproject.common.dataAccess.abstracts.DAOBase
-//import com.imsproject.common.dataAccess.abstracts.PrimaryKey
-//import com.imsproject.common.dataAccess.abstracts.SQLExecutor
-//import com.imsproject.gameserver.dataAccess.models.Lobby
-//
-//
-//class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, PrimaryKey>(cursor, "Lobbies", arrayOf("lobby_id")) {
-//    override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
-//        val builder = CreateTableQueryBuilder("Lobbies")
-//        builder.addColumn("pid1", "INT")
-//        builder.addColumn("pid2", "INT")
-//        builder.addForeignKey("pid1", "Participants(pid)")
-//        builder.addForeignKey("pid2", "Participants(pid)")
-//        return builder
-//    }
-//
-//    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Lobby {
-//        val lobbyId = resultSet.getInt("lobby_id")
-//        val pid1 = resultSet.getInt("pid1")
-//        val pid2 = resultSet.getInt("pid2")
-//
-//        return Lobby(lobbyId, pid1, pid2)
-//    }
-//}
+package com.imsproject.gameserver.dataAccess.implementations//package com.imsproject.gameserver.dataAccess.implementations
+
+import com.imsproject.common.dataAccess.CreateTableQueryBuilder
+import com.imsproject.common.dataAccess.DaoException
+import com.imsproject.common.dataAccess.OfflineResultSet
+
+import com.imsproject.common.dataAccess.abstracts.DAOBase
+import com.imsproject.common.dataAccess.abstracts.PrimaryKey
+import com.imsproject.common.dataAccess.abstracts.SQLExecutor
+import com.imsproject.common.utils.Response
+import com.imsproject.gameserver.dataAccess.models.Lobby
+
+
+class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies", LobbyPK.primaryColumnsList) {
+    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Lobby {
+        return Lobby(   lobbyId = (resultSet.getObject("lobby_id") as? Int),
+                        pid1 = (resultSet.getObject("pid1") as? Int),
+                        pid2 = (resultSet.getObject("pid2") as? Int)
+        )
+
+    }
+
+    fun handleLobbies(action: String,lobby: Lobby): String
+    {
+        when(action){
+            "insert" -> {
+                return Response.getOk(insert(lobby))
+            }
+            "delete" -> {
+                if(lobby.lobbyId == null)
+                    throw Exception("A lobby id was not provided for deletion")
+                delete(LobbyPK(lobby.lobbyId))
+                return Response.getOk()
+            }
+            "update" -> {
+                if(lobby.lobbyId == null)
+                    throw Exception("A lobby id was not provided for update")
+                update(lobby)
+                return Response.getOk()
+            }
+            "select" -> {
+                if(lobby.lobbyId == null)
+                    return Response.getOk(selectAll())
+                else
+                    return Response.getOk(select(LobbyPK(lobby.lobbyId)))
+            }
+            else -> throw Exception("Invalid action for participants")
+        }
+
+    }
+
+    override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
+        throw UnsupportedOperationException("Not yet implemented")
+    }
+
+
+    @Throws(DaoException::class)
+    override fun insert(obj: Lobby): Int {
+        throw UnsupportedOperationException("Not yet implemented")
+
+    }
+
+    @Throws(DaoException::class)
+    override fun update(obj: Lobby): Unit {
+        throw UnsupportedOperationException("Not yet implemented")
+    }
+
+}
+
+
+data class LobbyPK(
+    val lobby_id: Int
+) : PrimaryKey {
+    companion object {
+        val primaryColumnsList = arrayOf("lobby_id")
+    }
+
+    override fun columnNames(): Array<out String> {
+        return primaryColumnsList
+    }
+
+    override fun getValue(columnName: String): Any? {
+        return when (columnName) {
+            "lobby_id" -> lobby_id
+            else -> null
+        }
+    }
+}

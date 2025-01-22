@@ -60,19 +60,8 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
     override fun insert(obj: Participant): Int {
             val columns = arrayOf("first_name", "last_name", "age", "gender", "phone", "email")
             val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
-            val insertQuery = "INSERT INTO $tableName (${columns.joinToString()}) VALUES (?, ?, ?, ?, ?, ?) RETURNING pid"
-            try {
-                val keysResultSet = cursor.executeInsert(insertQuery,*values)
-                if(keysResultSet.next()) {
-                    val pid = keysResultSet.getTyped<Int>("pid")
-                    if(pid != null){
-                        return pid;
-                    }
-                }
-            } catch (e: SQLException) {
-                throw DaoException("Failed to insert to table $tableName", e)
-            }
-        throw DaoException("Error in insertion to $tableName")
+            val idColName = ParticipantPK.primaryColumnsList.joinToString()
+            return buildQueryAndInsert(columns, idColName, *values)
     }
 
     @Throws(DaoException::class)

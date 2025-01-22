@@ -11,7 +11,7 @@ data class Participant(
 )
 
 data class Lobby(
-    val lobbyId: Int,
+    val lobbyId: Int?,
     val pid1: Int?,
     val pid2: Int?
 )
