@@ -136,6 +136,15 @@ class WebSocketClient (serverUri: URI) : org.java_websocket.client.WebSocketClie
         return message!!
     }
 
+    fun clearPendingMessages(): Int {
+        val clearedCount: Int
+        synchronized(lock){
+            clearedCount = messagesQueue.size
+            messagesQueue.clear()
+        }
+        return clearedCount
+    }
+
     override fun onMessage(message: String?) {
         onMessageListener(message)
     }

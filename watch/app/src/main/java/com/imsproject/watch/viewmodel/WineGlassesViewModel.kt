@@ -1,59 +1,49 @@
 package com.imsproject.watch.viewmodel
 
+import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.gameServer.GameAction
-import com.imsproject.common.gameServer.GameRequest
-import com.imsproject.common.gameServer.GameType
-import com.imsproject.watch.MY_RADIUS_OUTER_EDGE
-import com.imsproject.watch.SCREEN_CENTER
+import com.imsproject.common.gameserver.GameAction
+import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.gameserver.SessionEvent
+import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.INNER_TOUCH_POINT
 import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
-import com.imsproject.watch.MY_RADIUS_INNER_EDGE
 import com.imsproject.watch.MY_SWEEP_ANGLE
-import com.imsproject.watch.model.Position
+import com.imsproject.watch.OUTER_TOUCH_POINT
+import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+import com.imsproject.watch.utils.FrequencyTracker
+import com.imsproject.watch.utils.addToAngle
+import com.imsproject.watch.utils.cartesianToPolar
+import com.imsproject.watch.utils.calculateAngleDiff
+import com.imsproject.watch.utils.isBetweenInclusive
+import com.imsproject.watch.utils.isClockwise
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
-import kotlin.math.atan2
-import kotlin.math.pow
-import kotlin.math.sqrt
 
 
-class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
+private const val DIRECTION_MAX_OFFSET = 1.0f
+
+class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     class Arc{
-        var startAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
+        var startAngle by mutableFloatStateOf(UNDEFINED_ANGLE)
         var angleSkew = 0f
         var direction = 0f
-        var previousAngle = mutableFloatStateOf(UNDEFINED_ANGLE)
+        var previousAngle by mutableFloatStateOf(UNDEFINED_ANGLE)
         var previousAngleDiff = 0f
-        var currentAlpha = mutableFloatStateOf(ARC_DEFAULT_ALPHA)
-    }
-
-    class Angle (
-        val angle: Float,
-        val released: Boolean
-    ) : Position{
-        override fun toString(): String {
-            return "$angle,$released"
-        }
-
-        companion object {
-            fun fromString(string: String) : Angle {
-                val parts = string.split(",")
-                return Angle(
-                    parts[0].toFloat(),
-                    parts[1].toBoolean()
-                )
-            }
-        }
+        var currentAlpha by mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
 
     // ================================================================================ |
@@ -62,51 +52,101 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
 
     val myArc = Arc()
     val opponentArc = Arc()
+    private val myFrequencyTracker = FrequencyTracker()
+    private val opponentFrequencyTracker = FrequencyTracker()
 
-    private var _released = MutableStateFlow(false)
+    private var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
 
     private var _opponentReleased = MutableStateFlow(false)
     val opponentReleased : StateFlow<Boolean> = _opponentReleased
 
+    private var inSync = false
+        set(value) {
+            if(field != value){
+                val timestamp = getCurrentGameTime()
+                viewModelScope.launch(Dispatchers.Default) {
+                    when (value) {
+                        true -> addEvent(SessionEvent.syncStartTime(playerId, timestamp))
+                        false -> addEvent(SessionEvent.syncEndTime(playerId, timestamp))
+                    }
+                }
+                field = value
+            }
+        }
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    override fun onCreate(intent: Intent) {
-        super.onCreate(intent)
+    override fun onCreate(intent: Intent, context: Context) {
+        super.onCreate(intent,context)
+
+        if(ACTIVITY_DEBUG_MODE){
+            viewModelScope.launch(Dispatchers.Default) {
+                while(true) {
+                    var angle = 0.0f
+                    while(angle < 360 * 15){
+                        opponentArc.startAngle = angle
+                        opponentFrequencyTracker.addSample(angle)
+                        angle += 4
+                        delay(16)
+                    }
+                    _opponentReleased.value = true
+                    opponentFrequencyTracker.reset()
+                    delay(2000)
+                    _opponentReleased.value = false
+                }
+            }
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.Default){
+            while(true){
+                delay(100) // run this loop roughly 10 times per second
+                if(inSync){
+                    val timestamp = getCurrentGameTime()
+                    addEvent(SessionEvent.frequency(playerId, timestamp, myFrequencyTracker.frequency.toString()))
+                    addEvent(SessionEvent.opponentFrequency(playerId, timestamp, opponentFrequencyTracker.frequency.toString()))
+                }
+            }
+        }
     }
 
     fun setTouchPoint(x: Double, y: Double) {
-        val rawAngle = calculateAngle(x, y)
-        val distance = calculateDistance(x, y)
+        val (distance,rawAngle) = cartesianToPolar(x, y)
+        val inBounds = if(x != -1.0 && y != -1.0){
+            distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
+        } else {
+            false // not touching the screen
+        }
 
-        val inBounds = MY_RADIUS_INNER_EDGE <= distance && distance <= MY_RADIUS_OUTER_EDGE
         if(inBounds){
             updateMyArc(rawAngle)
             _released.value = false
+            myFrequencyTracker.addSample(myArc.startAngle)
         } else {
             _released.value = true
+            myFrequencyTracker.reset()
         }
 
-        val released = released.value
-        val angle = myArc.startAngle.floatValue
+        if(ACTIVITY_DEBUG_MODE) return
 
-        // send position to server
+        // send input to server
         viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Angle(angle, released),getCurrentGameTime())
+            val timestamp = getCurrentGameTime()
+            val data = if(inBounds) myArc.startAngle.toString() else UNDEFINED_ANGLE.toString()
+            model.sendUserInput(timestamp, packetTracker.newPacket(),data)
+            addEvent(SessionEvent.angle(playerId,timestamp,data))
         }
     }
 
-    fun setReleased() {
-        _released.value = true
+    fun inSync() = (
+            !released.value && !opponentReleased.value
+            && (myFrequencyTracker.frequency - opponentFrequencyTracker.frequency)
+                .absoluteValue < WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+    ).also { inSync = it }
 
-        val angle = myArc.startAngle.floatValue
-        // send position to server
-        viewModelScope.launch(Dispatchers.IO) {
-            model.sendPosition(Angle(angle, true),getCurrentGameTime())
-        }
-    }
 
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
@@ -117,50 +157,40 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
      */
     override suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.POSITION -> {
+            GameAction.Type.USER_INPUT -> {
                 val actor = action.actor ?: run{
-                    Log.e(TAG, "handleGameAction: missing actor in position action")
+                    Log.e(TAG, "handleGameAction: missing actor in user input action")
                     return
                 }
                 val timestamp = action.timestamp?.toLong() ?: run{
-                    Log.e(TAG, "handleGameAction: missing timestamp in position action")
+                    Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
-                val position = action.data?.let { Angle.fromString(it) } ?: run{
-                    Log.e(TAG, "handleGameAction: missing position in position action")
+                val angle = action.data?.toFloat() ?: run{
+                    Log.e(TAG, "handleGameAction: missing data in user input action")
+                    return
+                }
+                val sequenceNumber = action.sequenceNumber ?: run{
+                    Log.e(TAG, "handleGameAction: missing sequence number in user input action")
                     return
                 }
 
-                opponentArc.startAngle.floatValue = position.angle
-                _opponentReleased.value = position.released
+                val arrivedTimestamp = getCurrentGameTime()
+
+                if(angle == UNDEFINED_ANGLE){
+                    _opponentReleased.value = true
+                    opponentFrequencyTracker.reset()
+                } else {
+                    _opponentReleased.value = false
+                    opponentArc.startAngle = angle
+                    opponentFrequencyTracker.addSample(angle)
+                }
+
+                packetTracker.receivedOtherPacket(sequenceNumber)
+                addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,angle.toString()))
             }
             else -> super.handleGameAction(action)
         }
-    }
-
-    /**
-     * handles game requests
-     */
-    override suspend fun handleGameRequest(request: GameRequest) {
-        when (request.type) {
-            GameRequest.Type.END_GAME -> exitOk()
-            else -> super.handleGameRequest(request)
-        }
-    }
-
-    private fun calculateAngle(x: Double, y:Double) : Float {
-        return Math.toDegrees(
-            atan2(
-                y - SCREEN_CENTER.y,
-                x - SCREEN_CENTER.x
-            ).toDouble()
-        ).toFloat()
-    }
-
-    private fun calculateDistance(x: Double, y: Double) : Double {
-        return sqrt(
-            (x - SCREEN_CENTER.x).pow(2) + (y - SCREEN_CENTER.y).pow(2)
-        )
     }
 
     private fun updateMyArc(angle: Float){
@@ -170,14 +200,18 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         // calculate the skew angle to show the arc ahead of the finger
         // based on the calculations of the previous iteration
         val angleSkew = myArc.angleSkew
-        myArc.startAngle.floatValue = angle + myArc.direction * angleSkew - MY_SWEEP_ANGLE / 2
+        myArc.startAngle = addToAngle(angle,
+                myArc.direction.coerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET) * angleSkew
+                - MY_SWEEP_ANGLE / 2
+        )
 
         // ============== for next iteration =============== |
 
         // prepare the skew angle for the next iteration
-        val previousAngle = myArc.previousAngle.floatValue
-        val angleDiff = normalizedAngleDiff(previousAngle, angle)
+        val previousAngle = myArc.previousAngle
+        var angleDiff = 0f
         if(previousAngle != UNDEFINED_ANGLE){
+            angleDiff = calculateAngleDiff(previousAngle, angle)
             val previousAngleDiff = myArc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
             myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
@@ -190,55 +224,26 @@ class WineGlassesViewModel() : GameViewModel(GameType.WINE_GLASSES) {
         }
 
         // prepare the direction for the next iteration
-        if (previousAngle != UNDEFINED_ANGLE /*&& angleDiff > 2*/){
+        // we add a bit to the max offset to prevent random jitter in the direction
+        // we clamp the direction to the max offset when calculating the skewed angle
+        if (previousAngle != UNDEFINED_ANGLE){
             val direction = myArc.direction
             myArc.direction = if(isClockwise(previousAngle, angle)){
-                (direction + angleDiff * 0.2f).coerceAtMost(1f)
+                (direction + angleDiff * 0.2f).coerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
             } else if (! isClockwise(previousAngle, angle)){
-                (direction - angleDiff * 0.2f).coerceAtLeast(-1f)
+                (direction - angleDiff * 0.2f).coerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
             } else {
                 direction
             }
-            if(myArc.direction.isBetweenInclusive(-0.1f,0.1f)) myArc.angleSkew = MIN_ANGLE_SKEW
+            if(myArc.direction.isBetweenInclusive(-WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD,
+                    WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+                )) myArc.angleSkew = MIN_ANGLE_SKEW
         }
 
         // current angle becomes previous angle for the next iteration
-        myArc.previousAngle.floatValue = angle
+        myArc.previousAngle = angle
         myArc.previousAngleDiff = angleDiff
     }
-
-    private fun normalizedAngleDiff(angle1: Float, angle2: Float) : Float {
-        // angles are in the range of -180 to 180
-        // and there is a 360 degree jump between the 2nd and 3rd quadrant
-        // so we need to normalize the angles to calculate the difference
-
-        // Problematic cases:
-        // angle1 is in 2nd quadrant and angle2 is in 3rd quadrant
-        return if(angle1.isBetweenInclusive(90f,180f) && angle2.isBetweenInclusive(-179.999999f,-90f)){
-            angle1 - (angle2+360)
-        }
-        // angle1 is in 3rd quadrant and angle2 is in 2nd quadrant
-        else if(angle1.isBetweenInclusive(-179.999999f,-90f) && angle2.isBetweenInclusive(90f,180f)){
-            (angle1+360) - angle2
-        }
-        // simple case
-        else {
-            angle1 - angle2
-        }.absoluteValue
-    }
-
-    private fun isClockwise(angle1: Float, angle2: Float) : Boolean {
-        //handle the gap between 3rd and 4th quadrants
-        return if(angle1.isBetweenInclusive(90f,180f) && angle2.isBetweenInclusive(-179.999999f,-90f)){
-            true
-        } else if(angle1.isBetweenInclusive(-179.999999f,-90f) && angle2.isBetweenInclusive(90f,180f)){
-            false
-        } else {
-            angle1 < angle2
-        }
-    }
-
-    private fun Float.isBetweenInclusive(min: Float, max: Float) =  min <= this && this <= max
 
     companion object {
         private const val TAG = "WineGlassesViewModel"

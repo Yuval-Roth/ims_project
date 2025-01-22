@@ -3,9 +3,11 @@ package com.imsproject.common.networking
 import java.io.IOException
 import java.net.Socket
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
 import java.security.KeyManagementException
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
@@ -17,7 +19,7 @@ import javax.net.ssl.SSLEngine
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509ExtendedTrustManager
 
-class RestApiClient private constructor() {
+class RestApiClient {
     private var uri: String? = null
     private val headers: MutableMap<String, String> = HashMap()
     private val params: MutableMap<String, String> = HashMap()
@@ -31,35 +33,25 @@ class RestApiClient private constructor() {
         val uri = this.uri ?: throw IllegalStateException("URI is required")
 
         // build full URI
-        val fullUri = params.entries.stream()
-            .reduce(uri,
-                { acc , entry ->
-                    "%s%s%s=%s".format(
-                        acc,
-                        (if (acc!!.contains("?")) "&" else "?"),
-                        entry.key,
-                        entry.value
-                    )
-                },
-                { acc, _ -> acc }) ?: uri
-
+        val fullUri = params.entries.fold(uri) { acc, entry ->
+            val separator = if (acc.contains("?")) "&" else "?"
+            val encodedKey = URLEncoder.encode(entry.key, StandardCharsets.UTF_8.toString())
+            val encodedValue = URLEncoder.encode(entry.value, StandardCharsets.UTF_8.toString())
+            "$acc$separator$encodedKey=$encodedValue"
+        }
 
         // build request
-        val builder = HttpRequest.newBuilder()
+        val request = HttpRequest.newBuilder()
             .uri(URI.create(fullUri))
-        if (isPost) {
-            builder.POST(HttpRequest.BodyPublishers.ofString(body))
-        } else {
-            builder.GET()
-        }
-        headers.forEach { (name: String?, value: String?) -> builder.header(name, value) }
-        val request = builder.build()
+            .header("Content-Type", "application/json")
+            .apply{
+                if (isPost) POST(HttpRequest.BodyPublishers.ofString(body))
+                headers.forEach { (name, value) -> header(name, value) }
+            }.build()
 
         // send request
-        val response: HttpResponse<String>
-
-        val client: HttpClient? = if (trustAllCertificates) createHttpClientTrustAllCertificates() else HttpClient.newHttpClient()
-        response = client!!.send(request, HttpResponse.BodyHandlers.ofString())
+        val client = if (trustAllCertificates) createHttpClientTrustAllCertificates() else HttpClient.newHttpClient()!!
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
 
@@ -152,12 +144,6 @@ class RestApiClient private constructor() {
 
         @Throws(CertificateException::class)
         override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String, engine: SSLEngine) {
-        }
-    }
-
-    companion object {
-        fun create(): RestApiClient {
-            return RestApiClient()
         }
     }
 }

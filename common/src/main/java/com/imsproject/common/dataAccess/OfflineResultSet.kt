@@ -13,6 +13,9 @@ class OfflineResultSet(rs: ResultSet) {
     val columnCount: Int
     var currentRow: Int
         private set
+    val isEmpty: Boolean
+        get() = rows.isEmpty()
+
     private var currentRowData: HashMap<String?, Any>? = null
     private var iterator: ListIterator<HashMap<String?, Any>>? = null
 
@@ -48,65 +51,20 @@ class OfflineResultSet(rs: ResultSet) {
         return false
     }
 
-    fun previous(): Boolean {
-        val iterator = this.iterator ?: return false // if iterator is null, there are no previous rows
-        if (iterator.hasPrevious()) {
-            currentRow--
-            currentRowData = iterator.previous()
-            return true
-        }
-        return false
-    }
+    inline fun <reified T> getTyped(columnName: String): T? {
+        val obj = getObject(columnName) ?: return null
+        if(T::class == LocalDateTime::class)
+            return LocalDateTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE_TIME) as T
+        if(T::class == LocalDate::class)
+            return LocalDate.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE) as T
+        if(T::class == LocalTime::class)
+            return LocalTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_TIME) as T
 
-    fun reset() {
-        iterator = null
-        currentRow = -1
-        currentRowData = null
+        return obj as T
     }
-
-    val isEmpty: Boolean
-        get() = rows.isEmpty()
 
     fun getObject(columnName: String): Any? {
         val row = currentRowData ?: return null
         return row[columnName.lowercase(Locale.getDefault())]
-    }
-
-    fun getString(columnName: String): String? {
-        val row = currentRowData ?: return null
-        return row[columnName.lowercase(Locale.getDefault())] as String?
-    }
-
-    fun getInt(columnName: String): Int? {
-        val row = currentRowData ?: return null
-        return row[columnName.lowercase(Locale.getDefault())] as Int?
-    }
-
-    fun getBoolean(columnName: String): Boolean? {
-        val row = currentRowData ?: return null
-        return row[columnName.lowercase(Locale.getDefault())] as Boolean?
-    }
-
-    fun getDouble(columnName: String): Double? {
-        val row = currentRowData ?: return null
-        return row[columnName.lowercase(Locale.getDefault())] as Double?
-    }
-
-    fun getLocalDateTime(columnName: String): LocalDateTime? {
-        val rawString = getString(columnName.lowercase(Locale.getDefault())) ?: return null
-        return LocalDateTime.parse(
-            rawString,
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME
-        )
-    }
-
-    fun getLocalDate(columnName: String): LocalDate? {
-        val rawString = getString(columnName.lowercase(Locale.getDefault())) ?: return null
-        return LocalDate.parse(rawString, DateTimeFormatter.ISO_LOCAL_DATE)
-    }
-
-    fun getLocalTime(columnName: String): LocalTime? {
-        val rawString = getString(columnName.lowercase(Locale.getDefault())) ?: return null
-        return LocalTime.parse(rawString, DateTimeFormatter.ISO_LOCAL_TIME)
     }
 }

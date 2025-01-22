@@ -6,6 +6,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+fun Any.toJson(): String = JsonUtils.serialize(this)
+inline fun <reified T> fromJson(json: String): T = JsonUtils.deserialize(json, T::class.java)
+
 object JsonUtils {
     private val gson: Gson = GsonBuilder()
         //.setPrettyPrinting()
@@ -15,13 +18,13 @@ object JsonUtils {
         .enableComplexMapKeySerialization()
         .create()
 
-    fun <T> serialize(obj: T): String {
+    fun serialize(obj: Any): String {
         if (obj is String) return obj
         return gson.toJson(obj)
     }
 
-    fun <T> deserialize(json: String, typeOfT: Type): T {
-        return gson.fromJson(json, typeOfT)
+    fun <T> deserialize(json: String, type: Type): T {
+        return gson.fromJson(json, type)
     }
 
     private class LocalDateTimeAdapter : JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime> {

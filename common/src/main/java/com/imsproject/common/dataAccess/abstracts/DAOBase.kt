@@ -8,103 +8,142 @@ import java.util.*
 
 abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     protected val cursor: SQLExecutor,
-    protected val TABLE_NAME: String
+    protected val tableName: String,
+    primaryKeyColumnNames : Array<out String>,
 ) : DAO<T, PK> {
 
-    protected val createTableQueryBuilder = CreateTableQueryBuilder.create(TABLE_NAME)
+    private val deleteQuery: String
+    private val selectQuery: String
 
-    init {
-        initTable()
-    }
-
-    @Throws(DaoException::class)
-    protected fun initTable() {
-        initializeCreateTableQueryBuilder()
-        val query = createTableQueryBuilder.build()
-        try {
-            cursor.executeWrite(query)
-        } catch (e: SQLException) {
-            throw DaoException("Failed to initialize table $TABLE_NAME", e)
-        }
+    init{
+        val whereClause = buildWhereClause(primaryKeyColumnNames)
+        deleteQuery = "DELETE FROM $tableName $whereClause;"
+        selectQuery = "SELECT * FROM $tableName $whereClause;"
     }
 
     /**
-     * Used to insert data into [DAOBase.createTableQueryBuilder].
+     * Used to automatically create a table in the database if it does not exist.
      *
-     * in order to add columns and foreign keys to the table use:
+     * in order to add columns, foreign keys and checks to the table use:
      * 1. [CreateTableQueryBuilder.addColumn]
-     * 2. [CreateTableQueryBuilder.addForeignKey]<br></br><br></br>
+     * 2. [CreateTableQueryBuilder.addForeignKey]
      * 3. [CreateTableQueryBuilder.addCompositeForeignKey]
+     * 4. [CreateTableQueryBuilder.addCheck]
      */
-    protected abstract fun initializeCreateTableQueryBuilder()
+    protected abstract fun getCreateTableQueryBuilder() : CreateTableQueryBuilder
 
-    protected abstract fun getObjectFromResultSet(resultSet: OfflineResultSet): T
+    /**
+     * Build a single object from a single row in the database.
+     */
+    protected abstract fun buildObjectFromResultSet(resultSet: OfflineResultSet): T
+
+    /**
+     * Initializes the table in the database if it does not exist.
+     */
+    @Throws(DaoException::class)
+    protected fun initTable() {
+        val tableQueryBuilder = getCreateTableQueryBuilder()
+        val query = tableQueryBuilder.build()
+        try {
+            cursor.executeWrite(query)
+        } catch (e: SQLException) {
+            throw DaoException("Failed to initialize table $tableName", e)
+        }
+    }
 
     @Throws(DaoException::class)
     override fun select(key: PK): T {
-        val values = keyToValues(key)
-        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
-        expandWhereClause(key, preparedQuery)
-
+        val values = key.values()
         val resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(preparedQuery.toString(), *values)
+            resultSet = cursor.executeRead(selectQuery, *values)
         } catch (e: SQLException) {
-            throw DaoException("Failed to select from table $TABLE_NAME", e)
+            throw DaoException("Failed to select from table $tableName", e)
         }
 
         if (resultSet.next()) {
-            return getObjectFromResultSet(resultSet)
+            return buildObjectFromResultSet(resultSet)
         } else {
-            throw DaoException("Failed to select from table $TABLE_NAME")
+            throw DaoException("Failed to select from table $tableName")
         }
     }
 
     @Throws(DaoException::class)
     override fun selectAll(): List<T> {
-        val query = "SELECT * FROM %s;".format(TABLE_NAME)
+        val query = "SELECT * FROM $tableName;"
         val resultSet: OfflineResultSet
         try {
             resultSet = cursor.executeRead(query)
         } catch (e: SQLException) {
-            throw DaoException("Failed to select all from table $TABLE_NAME", e)
+            throw DaoException("Failed to select all from table $tableName", e)
         }
         val objects: MutableList<T> = LinkedList()
         while (resultSet.next()) {
-            objects.add(getObjectFromResultSet(resultSet))
+            objects.add(buildObjectFromResultSet(resultSet))
         }
         return objects
     }
 
     @Throws(DaoException::class)
     override fun delete(key: PK) {
-        val values = keyToValues(key)
-        val preparedQuery = StringBuilder("DELETE FROM %s WHERE ".format(TABLE_NAME))
-        expandWhereClause(key, preparedQuery)
-
+        val values = key.values()
         try {
-            cursor.executeWrite(preparedQuery.toString(), *values)
+            cursor.executeWrite(deleteQuery, *values)
         } catch (e: SQLException) {
-            throw DaoException("Failed to delete from table $TABLE_NAME", e)
+            throw DaoException("Failed to delete from table $tableName", e)
         }
     }
 
     @Throws(DaoException::class)
+    override fun exists(key: PK): Boolean {
+        val values = key.values()
+        val resultSet: OfflineResultSet
+        try {
+            resultSet = cursor.executeRead(selectQuery, *values)
+        } catch (e: SQLException) {
+            throw DaoException("Failed to check if exists in table $tableName", e)
+        }
+
+        return resultSet.next()
+    }
+
+    override fun selectAll(keys: List<PK>): List<T> {
+        return doForAll(keys) { key -> select(key) }
+    }
+
+    @Throws(DaoException::class)
+    override fun updateAll(objs: List<T>) {
+        doForAll(objs) { obj -> update(obj) }
+    }
+
+    @Throws(DaoException::class)
+    override fun insertAll(objs: List<T>) {
+        doForAll(objs) { obj -> insert(obj) }
+    }
+
+    @Throws(DaoException::class)
     override fun deleteAll(keys: List<PK>) {
+        doForAll(keys) { key -> delete(key) }
+    }
+
+    private inline fun <I,O> doForAll(objs: List<I>, action: (I) -> O) : List<O> {
         try {
             cursor.beginTransaction()
         } catch (e: SQLException) {
             throw DaoException("Failed to start transaction", e)
         }
 
+        val output = mutableListOf<O>()
         try {
-            for (key in keys) {
-                delete(key)
+            for (obj in objs) {
+                output.add(action(obj))
             }
         } catch (e: DaoException) {
             try {
                 cursor.rollback()
-            } catch (ignored: SQLException) { }
+            } catch (e2: SQLException) {
+                e.addSuppressed(e2)
+            }
             throw e
         }
 
@@ -113,39 +152,17 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         } catch (e: SQLException) {
             throw DaoException("Failed to commit transaction", e)
         }
+        return output
     }
 
-    @Throws(DaoException::class)
-    override fun exists(key: PK): Boolean {
-        val values = keyToValues(key)
-        val preparedQuery = StringBuilder("SELECT * FROM %s WHERE ".format(TABLE_NAME))
-        expandWhereClause(key, preparedQuery)
-
-        val resultSet: OfflineResultSet
-        try {
-            resultSet = cursor.executeRead(preparedQuery.toString(), *values)
-        } catch (e: SQLException) {
-            throw DaoException("Failed to check if exists in table $TABLE_NAME", e)
-        }
-
-        return resultSet.next()
-    }
-
-    private fun expandWhereClause(key: PK, preparedQuery: StringBuilder) {
-        val columnNames = key.columnNames()
+    @Suppress("DuplicatedCode")
+    private fun buildWhereClause(columnNames: Array<out String>) {
+        val builder = StringBuilder("WHERE ")
         for (i in columnNames.indices) {
-            preparedQuery.append("%s = ?".format(columnNames[i]))
+            builder.append("${columnNames[i]} = ?")
             if (i != columnNames.size - 1) {
-                preparedQuery.append(" AND ")
-            } else {
-                preparedQuery.append(";")
+                builder.append(" AND ")
             }
         }
-    }
-
-    private fun keyToValues(key: PK): Array<Any> {
-        return key.columnNames().map {
-            key.getValue(it) ?: throw DaoException("Primary key value for column $it is null")
-        }.toTypedArray()
     }
 }

@@ -1,7 +1,8 @@
+@file:Suppress("ClassName")
+
 package com.imsproject.common.dataAccess
 
-@Suppress("ClassName")
-class CreateTableQueryBuilder private constructor(private val tableName: String) {
+class CreateTableQueryBuilder (private val tableName: String) {
 
     private val tableColumns: ArrayList<Column> = ArrayList()
     private val primaryKeys: ArrayList<String> = ArrayList()
@@ -9,73 +10,19 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
     private val checks: ArrayList<String> = ArrayList()
     private val query: StringBuilder = StringBuilder()
 
-    enum class ColumnType {
-        INTEGER,
-        TEXT,
-        REAL,
-        BLOB,
-        NUMERIC
-    }
-
-    enum class ColumnModifier {
-        NOT_NULL,
-        UNIQUE,
-        PRIMARY_KEY,
-        AUTO_INCREMENT;
-
-        override fun toString(): String {
-            return super.toString().replace("_", " ")
-        }
-    }
-
-    enum class ON_DELETE {
-        CASCADE,
-        SET_NULL,
-        SET_DEFAULT,
-        RESTRICT,
-        NO_ACTION;
-
-        override fun toString(): String {
-            return "ON DELETE " + super.toString().replace("_", " ")
-        }
-    }
-
-    enum class ON_UPDATE {
-        CASCADE,
-        SET_NULL,
-        SET_DEFAULT,
-        RESTRICT,
-        NO_ACTION;
-
-        override fun toString(): String {
-            return "ON UPDATE " + super.toString().replace("_", " ")
-        }
-    }
-
-    /**
-     * default value for the column is `null`
-     */
     fun addColumn(
         columnName: String,
         type: ColumnType,
-        vararg modifiers: ColumnModifier
-    ) = addColumn(columnName, type, null, *modifiers)
-
-    fun addColumn(
-        columnName: String,
-        type: ColumnType,
-        defaultValue: String?,
-        vararg modifiers: ColumnModifier
+        defaultValue: String? = null,
+        modifiers: ColumnModifiers = ColumnModifiers.NO_MODIFIERS
     ) = apply {
-        val isPrimaryKey = modifiers.contains(ColumnModifier.PRIMARY_KEY)
+        val isPrimaryKey = modifiers.contains(ColumnModifiers.Type.PRIMARY_KEY)
         if (isPrimaryKey) {
             primaryKeys.add(columnName)
         }
 
-        val filteredModifiers = modifiers
-            .distinct()
-            .filter{ it != ColumnModifier.PRIMARY_KEY }
-            .toTypedArray()
+        val filteredModifiers = modifiers.toArray()
+            .filter { it != ColumnModifiers.Type.PRIMARY_KEY }.toTypedArray()
 
         tableColumns.add(Column(columnName, type, defaultValue, filteredModifiers))
         return this
@@ -149,12 +96,14 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 
     private fun buildAllColumns() {
         for ((name, type, defaultValue, modifiers) in tableColumns) {
+            query.append("    ")
             query.append(String.format("\"%s\" %s", name, type))
             for (modifier in modifiers) {
                 query.append(String.format(" %s", modifier))
             }
             if (! defaultValue.isNullOrEmpty()) {
-                query.append(String.format(" DEFAULT %s", defaultValue))
+                val escapedDefaultValue = if (type == ColumnType.TEXT) "'$defaultValue'" else defaultValue
+                query.append(String.format(" DEFAULT %s", escapedDefaultValue))
             }
             query.append(",\n")
         }
@@ -162,6 +111,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 
     private fun buildForeignKeys() {
         for (fk in foreignKeys) {
+            query.append("    ")
             query.append(
                 String.format(
                     "CONSTRAINT FK_%s FOREIGN KEY (%s) REFERENCES \"%s\"(%s)",
@@ -193,6 +143,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
 
     private fun buildPrimaryKeys() {
         if (primaryKeys.isNotEmpty()) {
+            query.append("    ")
             query.append(
                 String.format(
                     "PRIMARY KEY(%s),\n",
@@ -205,6 +156,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
     private fun buildChecks() {
         var i = 1
         for (check in checks) {
+            query.append("    ")
             query.append(String.format("CONSTRAINT CHK_%d CHECK (%s),\n", i++, check))
         }
     }
@@ -224,7 +176,7 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
         val name: String,
         val type: ColumnType = ColumnType.TEXT,
         val defaultValue: String? = null,
-        val modifiers: Array<ColumnModifier> = emptyArray()
+        val modifiers: Array<ColumnModifiers.Type> = emptyArray()
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -267,10 +219,76 @@ class CreateTableQueryBuilder private constructor(private val tableName: String)
             return result
         }
     }
+}
+
+@Suppress("PropertyName")
+class ColumnModifiers private constructor() {
+    internal enum class Type {
+        NOT_NULL,
+        UNIQUE,
+        PRIMARY_KEY,
+        AUTO_INCREMENT;
+        override fun toString(): String {
+            return super.toString().replace("_", " ")
+        }
+    }
+
+    private val modifiers = mutableSetOf<Type>()
+
+    val NOT_NULL : ColumnModifiers
+        get() = apply { modifiers.add(Type.NOT_NULL) }
+    val UNIQUE : ColumnModifiers
+        get() = apply { modifiers.add(Type.UNIQUE) }
+    val PRIMARY_KEY : ColumnModifiers
+        get() = apply { modifiers.add(Type.PRIMARY_KEY) }
+    val AUTO_INCREMENT : ColumnModifiers
+        get() = apply { modifiers.add(Type.AUTO_INCREMENT) }
+
+    internal fun contains(modifier: Type) = modifiers.contains(modifier)
+    internal fun toArray() = modifiers.toTypedArray()
 
     companion object {
-        fun create(tableName: String): CreateTableQueryBuilder {
-            return CreateTableQueryBuilder(tableName)
-        }
+        internal val NO_MODIFIERS : ColumnModifiers
+            get() = ColumnModifiers()
+        val NOT_NULL : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.NOT_NULL) }
+        val UNIQUE : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.UNIQUE) }
+        val PRIMARY_KEY : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.PRIMARY_KEY) }
+        val AUTO_INCREMENT : ColumnModifiers
+            get() = ColumnModifiers().apply { modifiers.add(Type.AUTO_INCREMENT) }
+    }
+}
+
+enum class ColumnType {
+    INTEGER,
+    TEXT,
+    REAL,
+    BLOB,
+    NUMERIC
+}
+
+enum class ON_DELETE {
+    CASCADE,
+    SET_NULL,
+    SET_DEFAULT,
+    RESTRICT,
+    NO_ACTION;
+
+    override fun toString(): String {
+        return "ON DELETE " + super.toString().replace("_", " ")
+    }
+}
+
+enum class ON_UPDATE {
+    CASCADE,
+    SET_NULL,
+    SET_DEFAULT,
+    RESTRICT,
+    NO_ACTION;
+
+    override fun toString(): String {
+        return "ON UPDATE " + super.toString().replace("_", " ")
     }
 }
