@@ -12,7 +12,7 @@ import com.imsproject.gameserver.dataAccess.models.Participant
 
 import java.sql.SQLException
 
-class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>(cursor, "Participants", ParticipantPK.primaryColumnsList) {
+class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>(cursor, "Participants", ParticipantPK.primaryColumnsList, arrayOf("first_name", "last_name", "age", "gender", "phone", "email")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }
@@ -58,50 +58,17 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
 
     @Throws(DaoException::class)
     override fun insert(obj: Participant): Int {
-            val columns = arrayOf("first_name", "last_name", "age", "gender", "phone", "email")
             val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
             val idColName = ParticipantPK.primaryColumnsList.joinToString()
-            return buildQueryAndInsert(columns, idColName, *values)
+            return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: Participant): Unit {
-        try {
-            // Validate ID
-            val id = obj.pid ?: throw IllegalArgumentException("Participant ID (pid) must not be null")
-
-            // Build the query dynamically
-            val updates = mutableListOf<String>()
-            val params = mutableListOf<Any?>()
-
-            val fields = mapOf(
-                "first_name" to obj.firstName,
-                "last_name" to obj.lastName,
-                "age" to obj.age,
-                "gender" to obj.gender,
-                "phone" to obj.phone,
-                "email" to obj.email
-            )
-
-            fields.forEach { (column, value) ->
-                value?.let {
-                    updates.add("$column = ?")
-                    params.add(it)
-                }
-            }
-
-            if (updates.isEmpty()) {
-                throw IllegalArgumentException("No fields to update")
-            }
-
-            val query = "UPDATE $tableName SET ${updates.joinToString(", ")} WHERE pid = ?"
-            params.add(id)
-
-            // Execute the query
-            cursor.executeWrite(query, *params.toTypedArray())
-        } catch (e: SQLException) {
-            throw DaoException("Failed to update table $tableName", e)
-        }
+        val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
+        val id = obj.pid ?: throw IllegalArgumentException("Participant ID (pid) must not be null")
+        val idColName = primaryKeyColumnNames.joinToString()
+        buildQueryAndUpdate(idColName, id, *values)
     }
 }
 

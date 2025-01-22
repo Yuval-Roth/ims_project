@@ -9,7 +9,8 @@ import java.util.*
 abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     protected val cursor: SQLExecutor,
     protected val tableName: String,
-    primaryKeyColumnNames : Array<out String>,
+    protected val primaryKeyColumnNames : Array<out String>,
+    protected val nonKeyColumnNames : Array<out String>
 ) : DAO<T, PK> {
 
     private val deleteQuery: String
@@ -167,9 +168,9 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         return builder.toString()
     }
 
-    fun buildQueryAndInsert(columns: Array<String>,  idColumnName: String, vararg values: Any?): Int {
-        val questionmarks = List(columns.size) { "?" }.joinToString(", "); //don't ask please
-        val insertQuery = "INSERT INTO $tableName (${columns.joinToString()}) VALUES (${questionmarks}) RETURNING $idColumnName"
+    fun buildQueryAndInsert(idColumnName: String, vararg values: Any?): Int {
+        val questionmarks = List(nonKeyColumnNames.size) { "?" }.joinToString(", "); //don't ask please
+        val insertQuery = "INSERT INTO $tableName (${nonKeyColumnNames.joinToString()}) VALUES (${questionmarks}) RETURNING $idColumnName"
         try {
             val keysResultSet = cursor.executeInsert(insertQuery,*values)
             if(keysResultSet.next()) {
@@ -184,13 +185,13 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         throw DaoException("Error in insertion to $tableName")
     }
 
-    fun buildQueryAndUpdate(columns: Array<String>,  idColumnName: String, id: Int, vararg values: Any?): Unit {
+    fun buildQueryAndUpdate(idColumnName: String, id: Int, vararg values: Any?): Unit {
         try {
             // Build the query dynamically
             val updates = mutableListOf<String>()
             val params = mutableListOf<Any?>()
 
-            val fields = columns.zip(values).toMap()
+            val fields = nonKeyColumnNames.zip(values).toMap()
 
             fields.forEach { (column, value) ->
                 value?.let {

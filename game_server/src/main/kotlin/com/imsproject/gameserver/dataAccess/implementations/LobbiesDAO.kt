@@ -12,7 +12,7 @@ import com.imsproject.gameserver.dataAccess.models.Lobby
 import java.sql.SQLException
 
 
-class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies", LobbyPK.primaryColumnsList) {
+class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies", LobbyPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Lobby {
         return Lobby(   lobbyId = (resultSet.getObject("lobby_id") as? Int),
                         pid1 = (resultSet.getObject("pid1") as? Int),
@@ -57,49 +57,18 @@ class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies
 
     @Throws(DaoException::class)
     override fun insert(obj: Lobby): Int {
-        val columns = arrayOf("pid1", "pid2")
         val values = arrayOf(obj.pid1,obj.pid2)
-        val idColName = LobbyPK.primaryColumnsList.joinToString()
-        return buildQueryAndInsert(columns, idColName, *values)
-
+        val idColName = primaryKeyColumnNames.joinToString()
+        return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: Lobby): Unit {
-        try {
-            // Validate ID
-            val id = obj.lobbyId ?: throw IllegalArgumentException("Lobby ID must not be null")
-
-            // Build the query dynamically
-            val updates = mutableListOf<String>()
-            val params = mutableListOf<Any?>()
-            val idColName = LobbyPK.primaryColumnsList.joinToString()
-
-            val fields = mapOf(
-                "pid1" to obj.pid1,
-                "pid2" to obj.pid2,
-            )
-
-            fields.forEach { (column, value) ->
-                value?.let {
-                    updates.add("$column = ?")
-                    params.add(it)
-                }
-            }
-
-            if (updates.isEmpty()) {
-                throw IllegalArgumentException("No fields to update")
-            }
-
-            val query = "UPDATE $tableName SET ${updates.joinToString(", ")} WHERE $idColName = ?"
-            params.add(id)
-
-            cursor.executeWrite(query, *params.toTypedArray())
-        } catch (e: SQLException) {
-            throw DaoException("Failed to update table $tableName", e)
-        }
+        val values = arrayOf(obj.pid1,obj.pid2)
+        val id = obj.lobbyId ?: throw IllegalArgumentException("Lobby ID must not be null")
+        val idColName = primaryKeyColumnNames.joinToString()
+        buildQueryAndUpdate(idColName, id, *values)
     }
-
 }
 
 

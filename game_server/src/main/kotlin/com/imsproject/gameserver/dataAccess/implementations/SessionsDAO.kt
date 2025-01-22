@@ -8,12 +8,11 @@ import com.imsproject.common.utils.Response
 import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
-import com.imsproject.gameserver.dataAccess.models.Participant
 import com.imsproject.gameserver.dataAccess.models.Session
 import java.sql.SQLException
 
 
-class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Sessions", SessionPK.primaryColumnsList) {
+class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Sessions", SessionPK.primaryColumnsList, arrayOf("lobby_id", "duration", "session_type", "session_order", "tolerance", "window_length")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }
@@ -60,24 +59,19 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Se
 
     @Throws(DaoException::class)
     override fun insert(obj: Session): Int {
-        val columns = arrayOf("lobby_id", "duration", "session_type", "session_order", "tolerance", "window_length")
         val values = arrayOf(obj.lobbyId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val idColName = SessionPK.primaryColumnsList.joinToString()
-        return buildQueryAndInsert(columns, idColName, *values)
+        return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: Session): Unit {
-        // Validate ID
-        val columns = arrayOf("lobby_id", "duration", "session_type", "session_order", "tolerance", "window_length")
         val values = arrayOf(obj.lobbyId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val id = obj.sessionId ?: throw IllegalArgumentException("session ID must not be null")
-        val idColName = SessionPK.primaryColumnsList.joinToString()
-
-        buildQueryAndUpdate(columns, idColName, id, *values)
-
-}
+        val idColName = primaryKeyColumnNames.joinToString()
+        buildQueryAndUpdate(idColName, id, *values)
     }
+}
 
 
 data class SessionPK(
