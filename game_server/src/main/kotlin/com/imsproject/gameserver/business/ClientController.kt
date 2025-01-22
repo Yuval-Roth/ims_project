@@ -37,7 +37,7 @@ class ClientController {
     }
 
     fun addClientHandler(clientHandler: ClientHandler) {
-        wsSessionIdToHandler[clientHandler.wsSessionId] = clientHandler
+        wsSessionIdToHandler[clientHandler.wsSession.id] = clientHandler
         clientIdToHandler[clientHandler.id] = clientHandler
     }
 
@@ -52,7 +52,7 @@ class ClientController {
 
     fun removeClientHandler(clientId: String) {
         val handler = clientIdToHandler.remove(clientId) ?: return
-        wsSessionIdToHandler.remove(handler.wsSessionId)
+        wsSessionIdToHandler.remove(handler.wsSession.id)
         hostPortToHandler.remove(handler.udpAddress.toHostPortString())
     }
 
@@ -72,7 +72,7 @@ class ClientController {
             val isAlive = handler.lastHeartbeat.isMoreThanSecondsAgo(HEARTBEAT_TIMEOUT_THRESHOLD)
             if(!isAlive){
                 iter.remove()
-                wsSessionIdToHandler.remove(entry.value.wsSessionId)
+                wsSessionIdToHandler.remove(entry.value.wsSession.id)
                 hostPortToHandler.remove(handler.udpAddress.toHostPortString())
                 handler.close()
                 _onClientDisconnect.forEach { it(handler) }

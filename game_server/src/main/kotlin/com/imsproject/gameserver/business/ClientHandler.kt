@@ -13,8 +13,6 @@ class ClientHandler internal constructor(
     private val sendUdp: (String,SocketAddress) -> Unit
 ) {
 
-    val wsSessionId: String
-        get() = wsSession.id
     var lastHeartbeat: LocalDateTime = LocalDateTime.now()
     lateinit var udpAddress: SocketAddress
 
