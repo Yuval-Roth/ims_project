@@ -29,7 +29,7 @@ body {
 }
 
 .online-participants-table-container {
-    max-height: 400px; /* Enable scrolling within the table */
+    max-height: 800px; /* Enable scrolling within the table */
     overflow-y: auto;
     overflow-x: hidden;
 }
@@ -55,6 +55,8 @@ body {
 .online-participants-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto; /* Adjust column widths dynamically */
+    font-size: 16px; /* Increase font size for better readability */
 }
 
 .online-participants-table th {
