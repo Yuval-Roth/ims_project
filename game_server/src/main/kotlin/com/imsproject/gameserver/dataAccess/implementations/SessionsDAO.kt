@@ -8,17 +8,16 @@ import com.imsproject.common.utils.Response
 import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
-import com.imsproject.gameserver.dataAccess.models.Session
-import java.sql.SQLException
+import com.imsproject.gameserver.dataAccess.models.SessionDTO
 
 
-class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Sessions", SessionPK.primaryColumnsList, arrayOf("exp_id", "duration", "session_type", "session_order", "tolerance", "window_length")) {
+class SessionsDAO(cursor: SQLExecutor) : DAOBase<SessionDTO, SessionPK>(cursor, "Sessions", SessionPK.primaryColumnsList, arrayOf("exp_id", "duration", "session_type", "session_order", "tolerance", "window_length")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }
 
-    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Session {
-        return Session(
+    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionDTO {
+        return SessionDTO(
             sessionId = (resultSet.getObject("session_id") as? Int),
             expId = resultSet.getObject("exp_id") as? Int,
             duration = resultSet.getObject("duration") as? Int,
@@ -29,28 +28,28 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Se
         )
     }
 
-    fun handleSessions(action: String,session: Session): String {
+    fun handleSessions(action: String, sessionDTO: SessionDTO): String {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(session))
+                return Response.getOk(insert(sessionDTO))
             }
             "delete" -> {
-                if(session.sessionId == null)
+                if(sessionDTO.sessionId == null)
                     throw Exception("A session id was not provided for deletion")
-                delete(SessionPK(session.sessionId))
+                delete(SessionPK(sessionDTO.sessionId))
                 return Response.getOk()
             }
             "update" -> {
-                if(session.sessionId == null)
+                if(sessionDTO.sessionId == null)
                     throw Exception("A session id was not provided for update")
-                update(session)
+                update(sessionDTO)
                 return Response.getOk()
             }
             "select" -> {
-                if(session.sessionId == null)
+                if(sessionDTO.sessionId == null)
                     return Response.getOk(selectAll())
                 else
-                    return Response.getOk(select(SessionPK(session.sessionId)))
+                    return Response.getOk(select(SessionPK(sessionDTO.sessionId)))
             }
             else -> throw Exception("Invalid action for sessions")
         }
@@ -58,14 +57,14 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Se
 
 
     @Throws(DaoException::class)
-    override fun insert(obj: Session): Int {
+    override fun insert(obj: SessionDTO): Int {
         val values = arrayOf(obj.expId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val idColName = SessionPK.primaryColumnsList.joinToString()
         return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: Session): Unit {
+    override fun update(obj: SessionDTO): Unit {
         val values = arrayOf(obj.expId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val id = obj.sessionId ?: throw IllegalArgumentException("session ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()

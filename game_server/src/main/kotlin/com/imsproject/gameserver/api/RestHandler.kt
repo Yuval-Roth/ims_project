@@ -1,17 +1,13 @@
 package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
-import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.dataAccess.DAOController
-import com.imsproject.gameserver.dataAccess.models.Participant
 import com.imsproject.gameserver.toResponseEntity
-import jakarta.servlet.http.HttpServletRequest
 import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
-import com.imsproject.gameserver.toResponseEntity
 import org.slf4j.LoggerFactory
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader

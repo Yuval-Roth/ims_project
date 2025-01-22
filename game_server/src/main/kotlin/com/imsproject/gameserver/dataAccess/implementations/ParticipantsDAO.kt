@@ -8,17 +8,15 @@ import com.imsproject.common.utils.Response
 import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
-import com.imsproject.gameserver.dataAccess.models.Participant
+import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 
-import java.sql.SQLException
-
-class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>(cursor, "Participants", ParticipantPK.primaryColumnsList, arrayOf("first_name", "last_name", "age", "gender", "phone", "email")) {
+class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<ParticipantDTO, ParticipantPK>(cursor, "Participants", ParticipantPK.primaryColumnsList, arrayOf("first_name", "last_name", "age", "gender", "phone", "email")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }
 
-    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Participant {
-        return Participant(
+    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ParticipantDTO {
+        return ParticipantDTO(
             pid = (resultSet.getObject("pid") as? Int),
             firstName = resultSet.getObject("first_name") as? String,
             lastName = resultSet.getObject("last_name") as? String,
@@ -29,42 +27,42 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<Participant, ParticipantPK>
         )
     }
 
-    fun handleParticipants(action: String,participant: Participant): String {
+    fun handleParticipants(action: String, participantDTO: ParticipantDTO): String {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(participant))
+                return Response.getOk(insert(participantDTO))
             }
             "delete" -> {
-                if(participant.pid == null)
+                if(participantDTO.pid == null)
                     throw Exception("A participant id was not provided for deletion")
-                delete(ParticipantPK(participant.pid))
+                delete(ParticipantPK(participantDTO.pid))
                 return Response.getOk()
             }
             "update" -> {
-                if(participant.pid == null)
+                if(participantDTO.pid == null)
                     throw Exception("A participant id was not provided for update")
-                update(participant)
+                update(participantDTO)
                 return Response.getOk()
             }
             "select" -> {
-                if(participant.pid == null)
+                if(participantDTO.pid == null)
                     return Response.getOk(selectAll())
                 else
-                    return Response.getOk(select(ParticipantPK(participant.pid)))
+                    return Response.getOk(select(ParticipantPK(participantDTO.pid)))
             }
             else -> throw Exception("Invalid action for participants")
         }
     }
 
     @Throws(DaoException::class)
-    override fun insert(obj: Participant): Int {
+    override fun insert(obj: ParticipantDTO): Int {
             val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
             val idColName = ParticipantPK.primaryColumnsList.joinToString()
             return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: Participant): Unit {
+    override fun update(obj: ParticipantDTO): Unit {
         val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
         val id = obj.pid ?: throw IllegalArgumentException("Participant ID (pid) must not be null")
         val idColName = primaryKeyColumnNames.joinToString()

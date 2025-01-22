@@ -8,19 +8,19 @@ import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.Response
-import com.imsproject.gameserver.dataAccess.models.Experiment
+import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 
 
-class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<Experiment, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
-    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Experiment {
-        return Experiment(   expId = (resultSet.getObject("exp_id") as? Int),
+class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
+    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ExperimentDTO {
+        return ExperimentDTO(   expId = (resultSet.getObject("exp_id") as? Int),
                         pid1 = (resultSet.getObject("pid1") as? Int),
                         pid2 = (resultSet.getObject("pid2") as? Int)
         )
 
     }
 
-    fun handleLobbies(action: String, exp: Experiment): String
+    fun handleExperiments(action: String, exp: ExperimentDTO): String
     {
         when(action){
             "insert" -> {
@@ -55,14 +55,14 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<Experiment, ExperimentPK>(cu
 
 
     @Throws(DaoException::class)
-    override fun insert(obj: Experiment): Int {
+    override fun insert(obj: ExperimentDTO): Int {
         val values = arrayOf(obj.pid1,obj.pid2)
         val idColName = primaryKeyColumnNames.joinToString()
         return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: Experiment): Unit {
+    override fun update(obj: ExperimentDTO): Unit {
         val values = arrayOf(obj.pid1,obj.pid2)
         val id = obj.expId ?: throw IllegalArgumentException("Lobby ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()

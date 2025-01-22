@@ -8,15 +8,15 @@ import com.imsproject.common.utils.Response
 import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
-import com.imsproject.gameserver.dataAccess.models.SessionEvent
+import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
 
-class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEvent, SessionEventPK>(cursor, "SessionEvents", SessionEventPK.primaryColumnsList, arrayOf("session_id", "type", "subtype", "timestamp", "actor", "data")) {
+class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEventPK>(cursor, "SessionEvents", SessionEventPK.primaryColumnsList, arrayOf("session_id", "type", "subtype", "timestamp", "actor", "data")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }
 
-    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionEvent {
-        return SessionEvent(
+    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionEventDTO {
+        return SessionEventDTO(
             eventId = (resultSet.getObject("event_id") as? Int),
             sessionId = resultSet.getObject("session_id") as? Int,
             type = resultSet.getObject("type") as? String,
@@ -27,42 +27,42 @@ class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEvent, SessionEvent
         )
     }
 
-    fun handleSessionEvents(action: String,sessionEvent: SessionEvent): String {
+    fun handleSessionEvents(action: String, sessionEventDTO: SessionEventDTO): String {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(sessionEvent))
+                return Response.getOk(insert(sessionEventDTO))
             }
             "delete" -> {
-                if(sessionEvent.eventId == null)
+                if(sessionEventDTO.eventId == null)
                     throw Exception("A session event id was not provided for deletion")
-                delete(SessionEventPK(sessionEvent.eventId))
+                delete(SessionEventPK(sessionEventDTO.eventId))
                 return Response.getOk()
             }
             "update" -> {
-                if(sessionEvent.eventId == null)
+                if(sessionEventDTO.eventId == null)
                     throw Exception("A session event id was not provided for update")
-                update(sessionEvent)
+                update(sessionEventDTO)
                 return Response.getOk()
             }
             "select" -> {
-                if(sessionEvent.eventId == null)
+                if(sessionEventDTO.eventId == null)
                     return Response.getOk(selectAll())
                 else
-                    return Response.getOk(select(SessionEventPK(sessionEvent.eventId)))
+                    return Response.getOk(select(SessionEventPK(sessionEventDTO.eventId)))
             }
             else -> throw Exception("Invalid action for session events")
         }
     }
 
     @Throws(DaoException::class)
-    override fun insert(obj: SessionEvent): Int {
+    override fun insert(obj: SessionEventDTO): Int {
         val values = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
         val idColName = SessionEventPK.primaryColumnsList.joinToString()
         return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: SessionEvent): Unit {
+    override fun update(obj: SessionEventDTO): Unit {
         val values = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
         val id = obj.eventId ?: throw IllegalArgumentException("Session Event ID  must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
