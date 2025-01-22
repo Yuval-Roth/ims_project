@@ -3,6 +3,7 @@ package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
+import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
 import com.imsproject.gameserver.dataAccess.models.Lobby
 //import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
@@ -31,11 +32,11 @@ class DAOController {
     fun handle(section: String, action: String ,body : String): String {
         when (section) { // unserialized data can be
             "participant" -> { //return id from db
-                val participant: Participant = JsonUtils.deserialize(body)
+                val participant: Participant = fromJson(body)
                 return participantDAO.handleParticipants(action, participant)
             }
             "lobby" -> {
-                val lobby: Lobby = JsonUtils.deserialize(body)
+                val lobby: Lobby = fromJson(body)
                 return lobbyDAO.handleLobbies(action, lobby)
             }
             else -> throw (SQLException("horrible stuff happened"))
