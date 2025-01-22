@@ -130,9 +130,9 @@ body {
     width: 50%;
     height: 70%;
     max-width: 500px;
-    /* make it scrollble */
-    overflow-y: auto;
-
+    overflow-y: auto; /* Enable scrolling if necessary */
+    /* display: flex; */
+    flex-direction: column;
 }
 
 /* Custom Scrollbar Styling for the Modal */
@@ -157,17 +157,57 @@ body {
 
 /* Adjust for cross-browser compatibility */
 .modal-content {
+    flex-grow: 1; /* Allow the content to grow */
     scrollbar-width: thin; /* For Firefox: thin scrollbar */
     scrollbar-color: #888 #f1f1f1; /* Thumb and track colors */
-}
-
-
-.modal-content {
     display: flex;
     flex-direction: column;
     gap: 20px; /* Add spacing between elements inside the modal */
     position: relative;
-    padding-bottom: 20px; /* Add padding at the bottom to ensure space between content and the modal border */
+    padding-bottom: 20px;
+}
+
+/* Buttons Container Docked to Bottom */
+.modal-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto; /* Push buttons to the bottom */
+    padding-top: 10px; /* Add space above the buttons */
+    border-top: 1px solid #ddd; /* Optional: visual separation */
+}
+
+.create-lobby-button, .cancel-button {
+    width: 48%;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.3s;
+}
+
+.create-lobby-button {
+    background-color: #28a745;
+}
+
+.create-lobby-button:hover {
+    background-color: #218838;
+}
+
+.create-lobby-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.cancel-button {
+    background-color: #dc3545;
+}
+
+.cancel-button:hover {
+    background-color: #c82333;
 }
 
 /* Modal Overlay */
@@ -192,7 +232,6 @@ body {
     border-radius: 8px;
     margin-bottom: 20px; /* Add spacing below the table container */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    /*padding: 10px; !* Add padding inside the table container *!*/
 }
 
 .table-container::-webkit-scrollbar {
@@ -213,49 +252,12 @@ body {
     background: #555;
 }
 
-/* Buttons inside the Modal */
-.create-lobby-button, .cancel-button {
-    width: 100%; /* Make buttons take the full width of the modal */
-    max-width: 200px; /* Limit the maximum width */
-    margin: 0 auto; /* Center align buttons */
-    padding: 10px 15px; /* Add padding inside buttons */
-}
-
-.create-lobby-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-
-.cancel-button {
-    background-color: #dc3545;
-}
-
-.cancel-button:hover {
-    background-color: #c82333;
-}
-
-footer {
-            text-align: center;
-            padding: 15px 0;
-            margin-top: 40px;
-            font-size: 1em;
-            color: #666;
-            border-top: 1px solid #ddd;
-
-        }
-
-/* <select id="gender" name="gender" required>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-            </select> */
-
-
+/* Select Field Styling */
 .modal-content select {
     width: 30%;
     padding: 10px;
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    /* add padding to the bottom */
     margin-bottom: 10px;
 }
