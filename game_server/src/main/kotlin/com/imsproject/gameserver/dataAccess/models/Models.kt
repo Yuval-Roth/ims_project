@@ -1,5 +1,7 @@
 package com.imsproject.gameserver.dataAccess.models
 
+// change names to _DTO
+
 data class Participant(
     val pid: Int?,
     val firstName: String?,
@@ -10,19 +12,21 @@ data class Participant(
     val email: String?
 )
 
-data class Lobby(
+data class Lobby( // CHANGE TO EXPERIMENT
     val lobbyId: Int?,
     val pid1: Int?,
     val pid2: Int?
 )
 
 data class Session(
-    val sessionId: Int,
-    val lobbyId: Int,
+    val sessionId: Int?,
+    val lobbyId: Int?,
     val duration: Int?,
-    val sessionType: String,
-    val sessionOrder: Int
-)
+    val sessionType: String?,
+    val sessionOrder: Int?,
+    val tolerance: Int?,
+    val windowLength: Int?
+) // add a companion object for static func of factory creation -> will receive all fields without ids
 
 
 data class SessionEvent(
@@ -33,4 +37,12 @@ data class SessionEvent(
     val timestamp: Long,
     val actor: String,
     val data: String?
+)
+
+//todo: expose this to yuval , and then build my dtos from that
+data class experimentWithSessions(
+    val pid1: Int?,
+    val pid2: Int?,
+
+
 )

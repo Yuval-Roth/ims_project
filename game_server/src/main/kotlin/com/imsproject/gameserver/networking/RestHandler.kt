@@ -61,6 +61,7 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
+    //todo: change to only post mapping
     @RequestMapping("/data/{section}", method = [RequestMethod.POST, RequestMethod.DELETE, RequestMethod.PUT, RequestMethod.GET])
     fun data(
             @PathVariable section: String,

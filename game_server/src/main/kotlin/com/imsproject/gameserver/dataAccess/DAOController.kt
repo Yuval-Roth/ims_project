@@ -24,6 +24,9 @@ class DAOController {
 //    val sessionDAO: SessionsDAO = SessionsDAO(cursor)
 //    val sessionEventDAO: SessionEventsDAO = SessionEventsDAO(cursor)
 
+
+    // todo: (later) add cotrollers for input check
+    // todo: (now) change add lobby to be with session list.
     @Throws(SQLException::class)
     fun handle(section: String, action: String ,body : String): String {
         when (section) { // unserialized data can be
