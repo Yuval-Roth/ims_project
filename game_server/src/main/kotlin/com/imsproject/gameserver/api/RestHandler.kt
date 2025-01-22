@@ -3,6 +3,7 @@ package com.imsproject.gameserver.api
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
+import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
@@ -24,9 +25,9 @@ class RestHandler(
 
     @PostMapping("/manager")
     fun manager(@RequestBody body : String): ResponseEntity<String> {
-        val request: GameRequest?
+        val request: GameRequest
         try{
-            request = GameRequest.fromJson(body)
+            request = fromJson(body)
         } catch(e: Exception){
             return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
         }
@@ -44,7 +45,7 @@ class RestHandler(
         @PathVariable action: String,
         @RequestBody body : String
     ): ResponseEntity<String> {
-        val credentials : Credentials = JsonUtils.deserialize(body)
+        val credentials : Credentials = fromJson(body)
         try{
             when(action){
                 "add" -> authController.createUser(credentials)

@@ -10,15 +10,5 @@ data class LobbyInfo(
     val gameDuration: Int,
     val players: List<String>,
     val readyStatus: List<Boolean>
-){
+)
 
-    fun toJson(): String {
-        return JsonUtils.serialize(this)
-    }
-
-    companion object {
-        fun fromJson(message: String): LobbyInfo {
-            return JsonUtils.deserialize(message)
-        }
-    }
-}

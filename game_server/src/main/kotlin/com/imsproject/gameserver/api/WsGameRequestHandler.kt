@@ -3,6 +3,8 @@ package com.imsproject.gameserver.api
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.utils.SimpleIdGenerator
+import com.imsproject.common.utils.fromJson
+import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.*
 import com.imsproject.gameserver.business.ClientController
 import com.imsproject.gameserver.business.ClientHandler
@@ -42,7 +44,7 @@ class WsGameRequestHandler(
         // Parse the message
         val gameMessage: GameRequest
         try {
-            gameMessage = GameRequest.fromJson(rawPayload)
+            gameMessage = fromJson(rawPayload)
         } catch (e: Exception) {
             log.error("Error parsing message: {}", rawPayload)
             return

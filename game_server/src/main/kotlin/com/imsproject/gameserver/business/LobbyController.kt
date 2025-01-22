@@ -5,6 +5,7 @@ import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.SimpleIdGenerator
+import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.lobbies.Lobby
 import com.imsproject.gameserver.business.lobbies.LobbyInfo
 import org.slf4j.LoggerFactory
