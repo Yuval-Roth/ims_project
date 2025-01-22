@@ -12,15 +12,15 @@ data class Participant(
     val email: String?
 )
 
-data class Lobby( // CHANGE TO EXPERIMENT
-    val lobbyId: Int?,
+data class Experiment( // CHANGE TO EXPERIMENT
+    val expId: Int?,
     val pid1: Int?,
     val pid2: Int?
 )
 
 data class Session(
     val sessionId: Int?,
-    val lobbyId: Int?,
+    val expId: Int?,
     val duration: Int?,
     val sessionType: String?,
     val sessionOrder: Int?,

@@ -8,42 +8,41 @@ import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.Response
-import com.imsproject.gameserver.dataAccess.models.Lobby
-import java.sql.SQLException
+import com.imsproject.gameserver.dataAccess.models.Experiment
 
 
-class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies", LobbyPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
-    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Lobby {
-        return Lobby(   lobbyId = (resultSet.getObject("lobby_id") as? Int),
+class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<Experiment, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
+    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Experiment {
+        return Experiment(   expId = (resultSet.getObject("exp_id") as? Int),
                         pid1 = (resultSet.getObject("pid1") as? Int),
                         pid2 = (resultSet.getObject("pid2") as? Int)
         )
 
     }
 
-    fun handleLobbies(action: String,lobby: Lobby): String
+    fun handleLobbies(action: String, exp: Experiment): String
     {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(lobby))
+                return Response.getOk(insert(exp))
             }
             "delete" -> {
-                if(lobby.lobbyId == null)
+                if(exp.expId == null)
                     throw Exception("A lobby id was not provided for deletion")
-                delete(LobbyPK(lobby.lobbyId))
+                delete(ExperimentPK(exp.expId))
                 return Response.getOk()
             }
             "update" -> {
-                if(lobby.lobbyId == null)
+                if(exp.expId == null)
                     throw Exception("A lobby id was not provided for update")
-                update(lobby)
+                update(exp)
                 return Response.getOk()
             }
             "select" -> {
-                if(lobby.lobbyId == null)
+                if(exp.expId == null)
                     return Response.getOk(selectAll())
                 else
-                    return Response.getOk(select(LobbyPK(lobby.lobbyId)))
+                    return Response.getOk(select(ExperimentPK(exp.expId)))
             }
             else -> throw Exception("Invalid action for participants")
         }
@@ -56,27 +55,27 @@ class LobbiesDAO(cursor: SQLExecutor) : DAOBase<Lobby, LobbyPK>(cursor, "Lobbies
 
 
     @Throws(DaoException::class)
-    override fun insert(obj: Lobby): Int {
+    override fun insert(obj: Experiment): Int {
         val values = arrayOf(obj.pid1,obj.pid2)
         val idColName = primaryKeyColumnNames.joinToString()
         return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: Lobby): Unit {
+    override fun update(obj: Experiment): Unit {
         val values = arrayOf(obj.pid1,obj.pid2)
-        val id = obj.lobbyId ?: throw IllegalArgumentException("Lobby ID must not be null")
+        val id = obj.expId ?: throw IllegalArgumentException("Lobby ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
         buildQueryAndUpdate(idColName, id, *values)
     }
 }
 
 
-data class LobbyPK(
-    val lobby_id: Int
+data class ExperimentPK(
+    val exp_id: Int
 ) : PrimaryKey {
     companion object {
-        val primaryColumnsList = arrayOf("lobby_id")
+        val primaryColumnsList = arrayOf("exp_id")
     }
 
     override fun columnNames(): Array<out String> {
@@ -85,7 +84,7 @@ data class LobbyPK(
 
     override fun getValue(columnName: String): Any? {
         return when (columnName) {
-            "lobby_id" -> lobby_id
+            "exp_id" -> exp_id
             else -> null
         }
     }

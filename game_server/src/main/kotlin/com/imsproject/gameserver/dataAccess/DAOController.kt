@@ -4,12 +4,12 @@ import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.fromJson
 
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
-import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
+import com.imsproject.gameserver.dataAccess.implementations.ExperimentsDAO
 import com.imsproject.gameserver.dataAccess.implementations.SessionsDAO
 import com.imsproject.gameserver.dataAccess.implementations.SessionEventsDAO
 
 import com.imsproject.gameserver.dataAccess.models.Participant
-import com.imsproject.gameserver.dataAccess.models.Lobby
+import com.imsproject.gameserver.dataAccess.models.Experiment
 import com.imsproject.gameserver.dataAccess.models.Session
 import com.imsproject.gameserver.dataAccess.models.SessionEvent
 
@@ -24,7 +24,7 @@ class DAOController {
 
 // todo: seperate cursor to each
     val participantDAO: ParticipantsDAO = ParticipantsDAO(cursor)
-    val lobbyDAO: LobbiesDAO = LobbiesDAO(cursor)
+    val experimentDAO: ExperimentsDAO = ExperimentsDAO(cursor)
     val sessionDAO: SessionsDAO = SessionsDAO(cursor)
     val sessionEventDAO: SessionEventsDAO = SessionEventsDAO(cursor)
 
@@ -33,14 +33,14 @@ class DAOController {
     // todo: (now) change add lobby to be with session list.
     @Throws(SQLException::class)
     fun handle(section: String, action: String ,body : String): String {
-        when (section) { // unserialized data can be
-            "participant" -> { //return id from db
+        when (section) {
+            "participant" -> {
                 val participant: Participant = fromJson(body)
                 return participantDAO.handleParticipants(action, participant)
             }
-            "lobby" -> {
-                val lobby: Lobby = fromJson(body)
-                return lobbyDAO.handleLobbies(action, lobby)
+            "experiment" -> {
+                val exp: Experiment = fromJson(body)
+                return experimentDAO.handleLobbies(action, exp)
             }
             "session" -> {
                 val session: Session = fromJson(body)

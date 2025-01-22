@@ -11,8 +11,8 @@ CREATE TABLE Participants (
 );
 
 -- Create the Lobby table
-CREATE TABLE Lobbies ( -- CHANGE NAME TO EXPERIMENT
-                       lobby_id SERIAL PRIMARY KEY,
+CREATE TABLE Experiments ( -- CHANGE NAME TO EXPERIMENT
+                       exp_id SERIAL PRIMARY KEY,
                        pid1 INT,
                        pid2 INT,
                        FOREIGN KEY (pid1) REFERENCES Participants(pid) ON DELETE SET NULL,
@@ -22,13 +22,13 @@ CREATE TABLE Lobbies ( -- CHANGE NAME TO EXPERIMENT
 -- Create the Sessions table
 CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
                           session_id SERIAL PRIMARY KEY,
-                          lobby_id INT,
+                          exp_id INT,
                           duration INT,
                           session_type VARCHAR(50),
                           session_order INT,
                           tolerance INT,
                           window_length INT,
-                          FOREIGN KEY (lobby_id) REFERENCES Lobbies(lobby_id) ON DELETE CASCADE
+                          FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
 );
 
 -- Create the SessionUserInputEvent table

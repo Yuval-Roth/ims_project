@@ -12,7 +12,7 @@ import com.imsproject.gameserver.dataAccess.models.Session
 import java.sql.SQLException
 
 
-class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Sessions", SessionPK.primaryColumnsList, arrayOf("lobby_id", "duration", "session_type", "session_order", "tolerance", "window_length")) {
+class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Sessions", SessionPK.primaryColumnsList, arrayOf("exp_id", "duration", "session_type", "session_order", "tolerance", "window_length")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }
@@ -20,7 +20,7 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Se
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): Session {
         return Session(
             sessionId = (resultSet.getObject("session_id") as? Int),
-            lobbyId = resultSet.getObject("lobby_id") as? Int,
+            expId = resultSet.getObject("exp_id") as? Int,
             duration = resultSet.getObject("duration") as? Int,
             sessionType = (resultSet.getObject("session_type") as? String),
             sessionOrder = resultSet.getObject("session_order") as? Int,
@@ -59,14 +59,14 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<Session, SessionPK>(cursor, "Se
 
     @Throws(DaoException::class)
     override fun insert(obj: Session): Int {
-        val values = arrayOf(obj.lobbyId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
+        val values = arrayOf(obj.expId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val idColName = SessionPK.primaryColumnsList.joinToString()
         return buildQueryAndInsert(idColName, *values)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: Session): Unit {
-        val values = arrayOf(obj.lobbyId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
+        val values = arrayOf(obj.expId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val id = obj.sessionId ?: throw IllegalArgumentException("session ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
         buildQueryAndUpdate(idColName, id, *values)

@@ -65,20 +65,12 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
-    //todo: change to only post mapping
-    @RequestMapping("/data/{section}", method = [RequestMethod.POST, RequestMethod.DELETE, RequestMethod.PUT, RequestMethod.GET])
+    @PostMapping("/data/{section}/{action}")
     fun data(
             @PathVariable section: String,
+            @PathVariable action: String,
             @RequestBody body: String,
-            request: HttpServletRequest
         ): ResponseEntity<String> {
-        val action = when (request.method) {
-            "POST" -> "insert"
-            "GET" -> "select"
-            "PUT" -> "update"
-            "DELETE" -> "delete"
-            else -> throw IllegalArgumentException("Unsupported method: ${request.method}")
-        }
 
         try {
             return (daoController.handle(section, action, body)).toResponseEntity()
