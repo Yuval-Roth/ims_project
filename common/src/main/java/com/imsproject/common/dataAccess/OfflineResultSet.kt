@@ -16,9 +16,6 @@ class OfflineResultSet(rs: ResultSet) {
     val isEmpty: Boolean
         get() = rows.isEmpty()
 
-    private var currentRowData: HashMap<String?, Any?>? = null
-    private var iterator: ListIterator<HashMap<String?, Any?>>? = null
-
     init {
         currentRow = -1
         val metaData = rs.metaData
@@ -37,16 +34,14 @@ class OfflineResultSet(rs: ResultSet) {
             rows.add(row)
         }
     }
+    
+    private var currentRowData: HashMap<String?, Any?>? = null
+    private val iterator: ListIterator<HashMap<String?, Any?>> by lazy{ rows.listIterator() }
 
     fun next(): Boolean {
-        if (iterator == null) {
-            iterator = rows.listIterator()  // Initialize iterator only once
-        }
-
-        val iter = iterator as ListIterator<HashMap<String?, Any?>>  // Explicit cast
-        if (iter.hasNext()) {
+        if (iterator.hasNext()) {
             currentRow++
-            currentRowData = iter.next()
+            currentRowData = iterator.next()
             return true
         }
         return false
