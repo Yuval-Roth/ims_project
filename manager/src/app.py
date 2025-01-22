@@ -217,9 +217,17 @@ def operators_menu():
         return redirect(url_for('login'))
     return render_template('operators.html')
 
-@app.route('/save_operator', methods=['POST'])
-def save_operator():
-    return jsonify({"status": "success"})
+@app.route('/add_operator', methods=['POST'])
+def add_operator():
+    return jsonify({"success":True, "id": 123})
+
+@app.route('/remove_operator', methods=['DELETE'])
+def remove_operator():
+    return jsonify({"success":True})
+
+@app.route('/edit_operator', methods=['PUT'])
+def edit_operator():
+    return jsonify({"success":True})
 
 if __name__ == '__main__':
     # run on port 80

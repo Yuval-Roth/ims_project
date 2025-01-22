@@ -88,12 +88,9 @@ body {
 }
 
 /* Highlight selected row */
-.participant-row.selected {
+.operator-row.selected {
     background-color: #cce5ff !important; /* Light blue for selected row */
-}
-
-.lobby-row.selected {
-    background-color: #cce5ff !important; /* Light blue for selected row */
+    /* color: white; Change text color for better contrast */
 }
 
 /* Action Buttons */
@@ -141,7 +138,7 @@ body {
     height: 40%; /* Adjust height as needed */
     max-width: 500px;
     overflow-y: auto; /* Enable scrolling if necessary */
-    display: flex;
+    /* display: flex; */
     flex-direction: column; /* Ensure content and buttons align in a column */
     justify-content: space-between; /* Push buttons to the bottom */
 }
@@ -177,7 +174,6 @@ body {
     position: relative;
     overflow-y: auto; /* Add scrolling for the content if needed */
 }
-
 
 /* Buttons Container Docked to Bottom */
 .modal-buttons {
