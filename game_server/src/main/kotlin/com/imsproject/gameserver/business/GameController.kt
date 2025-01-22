@@ -101,6 +101,7 @@ class GameController(
         games.remove(game.lobbyId)
         val lobby = lobbies[lobbyId]
         lobby?.state = LobbyState.WAITING
+        lobby?.resetReady()
         
         log.debug("endGame() successful")
     }

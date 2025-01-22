@@ -14,7 +14,9 @@ data class GameRequest internal constructor(
     val sessionId: String?,
     val sessionIds: List<String>?,
     val data : List<String>?,
-    val timestamp: String?
+    val timestamp: String?,
+    val syncWindowLength: Long?,
+    val syncTolerance: Long?,
 ){
     enum class Type {
         @SerializedName("ping")                     PING,

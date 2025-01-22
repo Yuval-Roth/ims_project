@@ -2,6 +2,7 @@ package com.imsproject.gameserver.business
 
 import com.imsproject.gameserver.isMoreThanSecondsAgo
 import com.imsproject.gameserver.toHostPortString
+import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -12,6 +13,7 @@ class ClientController {
 
     companion object{
         const val HEARTBEAT_TIMEOUT_THRESHOLD = 60L
+        private val log = LoggerFactory.getLogger(ClientController::class.java)
     }
 
     var onClientDisconnect: ((ClientHandler) -> Unit) = {}
@@ -64,6 +66,12 @@ class ClientController {
         return clientIdToHandler.keys.toList()
     }
 
+    fun onExit(clientId: String){
+        val handler = clientIdToHandler[clientId] ?: return
+        removeClientHandler(clientId)
+        _onClientDisconnect.forEach { it(handler) }
+    }
+
     private fun pruneDeadClients() {
         val iter = clientIdToHandler.iterator()
         while(iter.hasNext()){
@@ -83,7 +91,11 @@ class ClientController {
     private fun run(){
         while(true){
             Thread.sleep(10000) // check every 10 seconds
-            pruneDeadClients()
+            try{
+                pruneDeadClients()
+            } catch (e: Exception){
+                log.debug(e.message,e)
+            }
         }
     }
 

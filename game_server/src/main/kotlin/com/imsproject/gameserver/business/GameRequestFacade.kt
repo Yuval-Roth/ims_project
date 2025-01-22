@@ -5,9 +5,7 @@ import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.utils.Response
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import kotlin.reflect.full.findParameterByName
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.reflect
 
 @Component
 final class GameRequestFacade(
@@ -141,11 +139,13 @@ final class GameRequestFacade(
     }
 
     private fun handleCreateSession(request: GameRequest) : String {
-        return requireParams(request, "lobbyId", "duration", "gameType") {
+        return requireParams(request, "lobbyId", "duration", "gameType", "syncWindowLength", "syncTolerance") {
             val lobbyId = request.lobbyId!!
             val duration = request.duration!!
             val gameType = request.gameType!!
-            sessions.createSession(lobbyId, duration, gameType)
+            val syncWindowLength = request.syncWindowLength!!
+            val syncTolerance = request.syncTolerance!!
+            sessions.createSession(lobbyId, gameType, duration, syncWindowLength, syncTolerance)
         }
     }
 

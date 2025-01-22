@@ -5,7 +5,9 @@ import com.imsproject.common.gameserver.GameType
 class Lobby(
     val id: String,
     var gameType: GameType,
-    var gameDuration: Int = -1 // -1 means the game has no time limit
+    var gameDuration: Int = -1, // seconds. -1 means the game has no time limit
+    var syncTolerance: Long = -1, // millis. -1 means the game has no sync tolerance
+    var syncWindowLength: Long = -1 // millis. -1 means the game has no window length
 ) {
 
     var player1Id : String? = null
@@ -77,6 +79,11 @@ class Lobby(
             }
             else -> false
         }
+    }
+
+    fun resetReady(){
+        player1Ready = false
+        player2Ready = false
     }
 
     fun isFull() = player1Id != null && player2Id != null

@@ -251,15 +251,14 @@ class MainModel (private val scope : CoroutineScope) {
         return data.average().toLong()
     }
 
-    fun uploadSessionEvents(): Boolean {
+    fun uploadSessionEvents(sessionId: String): Boolean {
         Log.d(TAG, "Uploading session events")
         val eventCollector = SessionEventCollectorImpl.getInstance()
         val events = eventCollector.getAllEvents().stream()
             .map { it.toCompressedJson() }
-            .reduce("") { acc, s -> "$acc\n$s" }
 
         val body = object {
-            val sessionId = "sessionId"
+            val sessionId = sessionId
             val events = events
         }
 

@@ -12,6 +12,8 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     private var sessionIds : List<String>? = null
     private var data : List<String> ? = null
     private var timestamp : String? = null
+    private var syncWindowLength: Long? = null
+    private var syncTolerance: Long? = null
 
     fun playerId(playerId: String) = apply { this.playerId = playerId }
     fun lobbyId(lobbyId: String) = apply { this.lobbyId = lobbyId }
@@ -23,6 +25,9 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     fun sessionIds(sessionIds: List<String>) = apply { this.sessionIds = sessionIds }
     fun data(data: List<String>) = apply { this.data = data }
     fun timestamp(timeStamp: String) = apply { this.timestamp = timeStamp }
+    fun syncWindowLength(syncWindowLength: Long) = apply { this.syncWindowLength = syncWindowLength }
+    fun syncTolerance(syncTolerance: Long) = apply { this.syncTolerance = syncTolerance }
 
-    fun build() = GameRequest(type,playerId,lobbyId,gameType,success,message,duration,sessionId,sessionIds,data,timestamp)
+
+    fun build() = GameRequest(type,playerId,lobbyId,gameType,success,message,duration,sessionId,sessionIds,data,timestamp,syncWindowLength,syncTolerance)
 }

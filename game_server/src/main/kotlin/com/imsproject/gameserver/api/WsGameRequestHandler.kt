@@ -57,8 +57,8 @@ class WsGameRequestHandler(
             Type.PONG -> {}
             Type.EXIT -> {
                 clientController.getByWsSessionId(session.id)?.let {
-                    clientController.removeClientHandler(it.id)
-                    log.debug("Client disconnected: {}", it.id)
+                    clientController.onExit(it.id)
+                    log.debug("Client exited: {}", it.id)
                 }
             }
             Type.HEARTBEAT -> {

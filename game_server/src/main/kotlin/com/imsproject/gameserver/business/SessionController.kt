@@ -4,7 +4,6 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.SimpleIdGenerator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -16,7 +15,13 @@ class SessionController(
     private val lobbyIdToSessions = ConcurrentHashMap<String, ConcurrentLinkedDeque<Session>>()
     private val sessionIdGenerator = SimpleIdGenerator(5)
 
-    fun createSession(lobbyId: String, duration: Int, gameType: GameType): String {
+    fun createSession(
+        lobbyId: String,
+        gameType: GameType,
+        duration: Int = -1,
+        syncWindowLength: Long = -1,
+        syncTolerance: Long = -1
+    ): String {
         log.debug("createSession() with lobbyId: {}, duration: {}, gameType: {}",lobbyId,duration,gameType)
 
         // === check if the lobby exists === |
@@ -27,7 +32,7 @@ class SessionController(
         // ======================================== |
 
         val sessionId = sessionIdGenerator.generate()
-        val session = Session(sessionId, duration, gameType)
+        val session = Session(sessionId, duration, gameType, syncWindowLength, syncTolerance)
         val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
         lobbySessions.add(session)
         return session.sessionId
