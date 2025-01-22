@@ -26,8 +26,8 @@ CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
                           duration INT,
                           session_type VARCHAR(50),
                           session_order INT,
-                          tolerance INT
-                          window_length INT
+                          tolerance INT,
+                          window_length INT,
                           FOREIGN KEY (lobby_id) REFERENCES Lobbies(lobby_id) ON DELETE CASCADE
 );
 

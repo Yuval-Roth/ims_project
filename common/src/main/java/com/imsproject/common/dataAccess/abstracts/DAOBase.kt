@@ -184,4 +184,33 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         throw DaoException("Error in insertion to $tableName")
     }
 
+    fun buildQueryAndUpdate(columns: Array<String>,  idColumnName: String, id: Int, vararg values: Any?): Unit {
+        try {
+            // Build the query dynamically
+            val updates = mutableListOf<String>()
+            val params = mutableListOf<Any?>()
+
+            val fields = columns.zip(values).toMap()
+
+            fields.forEach { (column, value) ->
+                value?.let {
+                    updates.add("$column = ?")
+                    params.add(it)
+                }
+            }
+
+            if (updates.isEmpty()) {
+                throw IllegalArgumentException("No fields to update")
+            }
+
+            val query = "UPDATE $tableName SET ${updates.joinToString(", ")} WHERE $idColumnName = ?"
+            params.add(id)
+
+            // Execute the query
+            cursor.executeWrite(query, *params.toTypedArray())
+        } catch (e: SQLException) {
+            throw DaoException("Failed to update table $tableName", e)
+        }
+    }
+
 }
