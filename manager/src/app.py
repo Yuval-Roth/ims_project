@@ -83,8 +83,8 @@ def get_parts():
 def lobbies_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
-    # lobbies = get_lobbies()  # list of dict : {lobbyId, players}
-    lobbies = None
+    lobbies = get_lobbies()  # list of dict : {lobbyId, players}
+    # lobbies = None
     if not lobbies:
         lobbies = LOBBIES
     return render_template('lobbies.html', lobbies=lobbies)

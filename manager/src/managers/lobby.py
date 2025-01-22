@@ -16,12 +16,12 @@ class lobby_info_payload:
         self.gameType: str = payload.get("gameType")
         self.state: str = payload.get("state")
         self.players: list[str] = payload.get("players")
-
+        self.readyStatus: list[str] = payload.get("readyStatus")
 
 def get_lobbies():
     body = server_request(GAME_REQUEST_TYPE.get_lobbies.name).to_dict()
     try:
-        response = requests.post(URL + "/manager", json=body, timeout=0.1)
+        response = requests.post(URL + "/manager", json=body)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
