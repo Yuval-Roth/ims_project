@@ -4,6 +4,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.SimpleIdGenerator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -14,10 +15,6 @@ class SessionController(
 
     private val lobbyIdToSessions = ConcurrentHashMap<String, ConcurrentLinkedDeque<Session>>()
     private val sessionIdGenerator = SimpleIdGenerator(5)
-
-    operator fun get(lobbyId: String): Iterable<Session>? {
-        return lobbyIdToSessions[lobbyId]
-    }
 
     fun createSession(lobbyId: String, duration: Int, gameType: GameType): String {
         log.debug("createSession() with lobbyId: {}, duration: {}, gameType: {}",lobbyId,duration,gameType)
@@ -53,6 +50,9 @@ class SessionController(
 
         val success = lobbySessions.removeIf {it.sessionId == sessionId}
         if(success){
+            if(lobbySessions.isEmpty()){
+                lobbyIdToSessions.remove(lobbyId)
+            }
             log.debug("removeSession() successful")
         } else {
             log.debug("removeSession() failed: Session not found")
@@ -60,8 +60,13 @@ class SessionController(
         }
     }
 
-    fun getSessions(lobbyId: String): Iterable<Session> {
+    fun getSessions(lobbyId: String): Collection<Session> {
         log.debug("getSessions() with lobbyId: {}",lobbyId)
+
+        if(! lobbies.contains(lobbyId)){
+            log.debug("getSessions: Lobby not found")
+            throw IllegalArgumentException("Lobby not found")
+        }
 
         return lobbyIdToSessions[lobbyId] ?: emptyList()
     }

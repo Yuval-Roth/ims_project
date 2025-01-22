@@ -19,14 +19,16 @@ class ExperimentOrchestrator(
 
     fun startExperiment(lobbyId: String) {
 
-        val notFound = mutableListOf<String>()
-        val errorMsg = "The following were not found:"
-        /*(1)*/ val lobby = lobbies[lobbyId] ?: run{ notFound.add("Lobby") ; null }
-        /*(2)*/ val sessions = sessions[lobbyId] ?: run{ notFound.add("Sessions") ; null }
-        if(lobby == null || sessions == null){
-            val joinedString = notFound.joinToString()
-            log.error("startExperiment: {} {}",errorMsg, joinedString)
-            throw IllegalArgumentException("$errorMsg $joinedString")
+        // check that the lobby exists
+        val lobby = lobbies[lobbyId] ?: run{
+            log.debug("startExperiment: Lobby with id $lobbyId not found")
+            throw IllegalArgumentException("Lobby with id $lobbyId not found")
+        }
+
+        val sessions = sessions.getSessions(lobbyId)
+        if(sessions.isEmpty()){
+            log.debug("startExperiment: No sessions found for lobby $lobbyId")
+            throw IllegalArgumentException("No sessions found for lobby $lobbyId")
         }
 
         val job = scope.launch {
