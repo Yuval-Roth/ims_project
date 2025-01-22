@@ -167,7 +167,7 @@ def update_session_order():
 @app.route('/add_session', methods=['POST'])
 def add_session():
     return jsonify({"status": "success", "session": {"gameType": "chess", "duration": 60, "sessionId": "123"}})
-
+    ## TODO: remove the return
     lobby_id = request.form.get('lobby_id')
     game_type = request.form.get('gameType')
     duration = int(request.form.get('duration', 0))
@@ -197,6 +197,17 @@ def delete_session_route():
     success = delete_session(lobby_id, session_id)
     return jsonify({"status": "success" if success else "error"})
 
+
+###################### PARTCIPANTS ######################
+
+@app.route('/participants', methods=['GET'])
+def participants_menu():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    participants = get_participants()
+    if not participants:
+        participants = PARTICIPANTS
+    return render_template('participants.html', participants=participants)
 
 if __name__ == '__main__':
     # run on port 80

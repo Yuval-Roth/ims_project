@@ -127,85 +127,92 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const sessionTableBody = document.getElementById('sessions-tbody');
-        const addSessionBtn = document.getElementById('add-session-btn');
-        const modal = document.getElementById('add-session-modal');
-        const overlay = document.getElementById('modal-overlay');
-        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+    const sessionTableBody = document.getElementById('sessions-tbody');
+    const addSessionBtn = document.getElementById('add-session-btn');
+    const modal = document.getElementById('add-session-modal');
+    const overlay = document.getElementById('modal-overlay');
+    const cancelModalBtn = document.getElementById('cancel-modal-btn');
+    const addSessionForm = document.getElementById('add-session-form');
 
-        // Show modal
-        addSessionBtn.addEventListener('click', () => {
-            modal.style.display = 'block';
-            overlay.style.display = 'block';
-        });
+    // Show modal
+    addSessionBtn.addEventListener('click', () => {
+        resetForm(); // Reset to defaults when the modal is opened
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+    });
 
-        // Hide modal
-        cancelModalBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-            overlay.style.display = 'none';
-        });
+    // Hide modal and reset the form
+    function closeModal() {
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
+    }
 
-        // Handle form submission via AJAX
-        document.querySelector('#add-session-form').addEventListener('submit', function (e) {
-            e.preventDefault();
+    cancelModalBtn.addEventListener('click', closeModal);
 
-            const formData = new FormData(this);
+    // Reset form fields to default values
+    function resetForm() {
+        // Reset the entire form
+        addSessionForm.reset();
 
-            // Add default values for Sync Tolerance and Window if not explicitly set
-            if (!formData.has('syncTolerance')) {
-                formData.append('syncTolerance', 100); // Default value
-            }
-            if (!formData.has('window')) {
-                formData.append('window', 2000); // Default value
-            }
+        // Set explicit defaults
+        // make that gameType will be the first option in the list
+        document.getElementById('gameType').value = document.getElementById('gameType').options[0].value;
+        document.getElementById('duration').value = ""; // Blank by default
+        document.getElementById('syncTolerance').value = 100; // Default value
+        document.getElementById('window').value = 2000; // Default value
+    }
 
-            fetch('/add_session', {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const newSession = data.session;
+    // Handle form submission via AJAX
+    addSessionForm.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-                        // Append new session to the table
-                        const row = document.createElement('tr');
-                        row.dataset.sessionId = newSession.sessionId;
-                        row.innerHTML = `
-                            <td>${newSession.gameType}</td>
-                            <td>${newSession.duration}</td>
-                            <td>${newSession.sessionId}</td>
-                            <td>
-                                <button class="danger-button delete-session-btn" data-session-id="${newSession.sessionId}">Delete</button>
-                            </td>
-                        `;
-                        sessionTableBody.appendChild(row);
+        const formData = new FormData(this);
 
-                        // Hide modal
-                        modal.style.display = 'none';
-                        overlay.style.display = 'none';
-                    } else {
-                        alert('Failed to add session.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
+        fetch('/add_session', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const newSession = data.session;
+
+                    // Append new session to the table
+                    const row = document.createElement('tr');
+                    row.dataset.sessionId = newSession.sessionId;
+                    row.innerHTML = `
+                        <td>${newSession.gameType}</td>
+                        <td>${newSession.duration}</td>
+                        <td>${newSession.sessionId}</td>
+                        <td>
+                            <button class="danger-button delete-session-btn" data-session-id="${newSession.sessionId}">Delete</button>
+                        </td>
+                    `;
+                    sessionTableBody.appendChild(row);
+
+                    // Hide modal
+                    closeModal();
+                } else {
                     alert('Failed to add session.');
-                });
-        });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to add session.');
+            });
+    });
 
+    // Handle Delete Session
+    sessionTableBody.addEventListener('click', function (e) {
+        if (e.target.classList.contains('delete-session-btn')) {
+            const sessionId = e.target.dataset.sessionId;
+            const lobbyId = "{{ lobby_id }}";
 
-        // Handle Delete Session
-        sessionTableBody.addEventListener('click', function (e) {
-            if (e.target.classList.contains('delete-session-btn')) {
-                const sessionId = e.target.dataset.sessionId;
-                const lobbyId = "{{ lobby_id }}";
-
-                fetch('/delete_session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lobby_id: lobbyId, session_id: sessionId })
-                })
+            fetch('/delete_session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: lobbyId, session_id: sessionId })
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
@@ -215,29 +222,9 @@
                     }
                 })
                 .catch(error => console.error('Error:', error));
-            }
-        });
-
-        // Enable drag-and-drop reordering
-        new Sortable(sessionTableBody, {
-            animation: 150,
-            onEnd: function () {
-                const sessionOrder = Array.from(sessionTableBody.children).map(row => row.dataset.sessionId);
-                fetch('/update_session_order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status !== 'success') {
-                        alert('Failed to update session order.');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        });
+        }
     });
+});
 
 
     document.addEventListener('DOMContentLoaded', function () {
