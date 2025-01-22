@@ -7,7 +7,7 @@ RUNNING_LOCAL = False
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
 else:
-    URL = "http://ims-game-server:8080"
+    URL = "https://ims-project.cs.bgu.ac.il:8640/"
 
 
 class server_request:

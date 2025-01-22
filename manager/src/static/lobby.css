@@ -108,6 +108,13 @@ button {
     transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
+button:disabled {
+    pointer-events: none;
+    opacity: 0.5; /* Makes the button appear disabled */
+    cursor: not-allowed;
+}
+
+
 button:hover {
     transform: scale(1.05);
 }

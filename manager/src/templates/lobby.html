@@ -79,26 +79,40 @@
             <!-- Action Buttons -->
             <div class="action-buttons">
                 <button id="add-session-btn" class="primary-button">Add Session</button>
-                <button id="start-game-btn" class="success-button">Start Game</button>
-                <button id="stop-game-btn" class="warning-button">Stop Game</button>
+                <button id="toggle-game-btn" class="success-button" data-action="start" disabled>
+                    Start Game
+                </button>
+                
             </div>
         </div>
     </div>
 
+    <!-- Modal for Adding a Session -->
     <!-- Modal for Adding a Session -->
     <div id="add-session-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h2>Add a Session</h2>
             <form id="add-session-form">
                 <input type="hidden" name="lobby_id" value="{{ lobby_id }}">
+
                 <label for="gameType">Game Type:</label>
                 <select name="gameType" id="gameType" required>
                     {% for game in GAME_TYPE %}
                     <option value="{{ game.value }}">{{ game.value }}</option>
                     {% endfor %}
                 </select>
+
                 <label for="duration">Duration (minutes):</label>
                 <input type="number" name="duration" id="duration" min="1" required>
+
+                <!-- New Section: Sync Tolerance -->
+                <label for="syncTolerance">Sync Tolerance (ms):</label>
+                <input type="number" name="syncTolerance" id="syncTolerance" value="100" min="1" required>
+
+                <!-- New Section: Window -->
+                <label for="window">Window (ms):</label>
+                <input type="number" name="window" id="window" value="2000" min="1" required>
+
                 <div class="modal-actions">
                     <button type="submit" class="primary-button">Add</button>
                     <button type="button" id="cancel-modal-btn" class="cancel-button">Cancel</button>
@@ -106,6 +120,7 @@
             </form>
         </div>
     </div>
+
 
     <!-- Modal Overlay -->
     <div id="modal-overlay" class="modal-overlay" style="display: none;"></div>
@@ -135,6 +150,15 @@
             e.preventDefault();
 
             const formData = new FormData(this);
+
+            // Add default values for Sync Tolerance and Window if not explicitly set
+            if (!formData.has('syncTolerance')) {
+                formData.append('syncTolerance', 100); // Default value
+            }
+            if (!formData.has('window')) {
+                formData.append('window', 2000); // Default value
+            }
+
             fetch('/add_session', {
                 method: 'POST',
                 body: formData
@@ -169,6 +193,7 @@
                     alert('Failed to add session.');
                 });
         });
+
 
         // Handle Delete Session
         sessionTableBody.addEventListener('click', function (e) {
@@ -213,6 +238,91 @@
             }
         });
     });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleGameBtn = document.getElementById('toggle-game-btn');
+        const lobbyId = "{{ lobby_id }}";
+
+        function updateButtonState(state, readyStatus) {
+            if (state === 'waiting') {
+                toggleGameBtn.textContent = 'Start Game';
+                toggleGameBtn.dataset.action = 'start';
+                toggleGameBtn.classList.remove('warning-button');
+                toggleGameBtn.classList.add('success-button');
+                // Enable the button only if all participants are ready
+                toggleGameBtn.disabled = readyStatus.includes(false);
+                console.log(toggleGameBtn.disabled);
+            } else if (state === 'playing') {
+                toggleGameBtn.textContent = 'Stop Game';
+                toggleGameBtn.dataset.action = 'stop';
+                toggleGameBtn.classList.remove('success-button');
+                toggleGameBtn.classList.add('warning-button');
+                toggleGameBtn.disabled = false;
+            }
+        }
+
+        function updateParticipantStatuses(players, readyStatus) {
+            players.forEach((player, index) => {
+                const statusCell = document.getElementById(`status-${player}`);
+                if (statusCell) {
+                    statusCell.textContent = readyStatus[index] ? 'Ready' : 'Not Ready';
+                    statusCell.classList.toggle('ready', readyStatus[index]);
+                    statusCell.classList.toggle('not-ready', !readyStatus[index]);
+                }
+            });
+        }
+
+        function fetchLobbyState() {
+            fetch(`/get_lobby`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: lobbyId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const lobby = data.lobby;
+                    updateButtonState(lobby.state, lobby.readyStatus);
+                    updateParticipantStatuses(lobby.players, lobby.readyStatus);
+                } else {
+                    console.error('Error fetching lobby state:', data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        toggleGameBtn.addEventListener('click', () => {
+            const action = toggleGameBtn.dataset.action;
+
+            fetch(`/${action}_game`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: lobbyId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    fetchLobbyState(); // Refresh the lobby state after action
+                } else {
+                    alert(`Failed to ${action} the game.`);
+                }
+            })
+            .catch(error => {
+                console.error(`Error performing ${action}:`, error);
+                alert(`Failed to ${action} the game.`);
+            });
+        });
+
+        // Poll for the lobby state every 5 seconds
+        setInterval(fetchLobbyState, 5000);
+
+        // Initial state fetch on page load
+        fetchLobbyState();
+    });
+
+
+
     </script>
 </body>
 </html>

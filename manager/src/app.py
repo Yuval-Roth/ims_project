@@ -38,37 +38,6 @@ def main_menu():
 
     return render_template('main_menu.html')
 
-    # if request.method == 'POST':
-    #     selected_participants = request.form.getlist('selected_participants')
-    #     game_type = request.form.get('game_type')
-    #
-    #     if not selected_participants:
-    #         flash("Please select at least one participant.")
-    #         return redirect(url_for('main_menu'))
-    #
-    #     if not game_type:
-    #         flash("Please select a game type.")
-    #         return redirect(url_for('main_menu'))
-    #
-    #     game_type_enum = GAME_TYPE[game_type]
-    #     lobby_id = create_lobby(selected_participants, game_type_enum)
-    #
-    #     if not lobby_id:
-    #         flash("Failed to create lobby.")
-    #         return redirect(url_for('main_menu'))
-    #
-    #     return redirect(url_for('lobby', selected_participants=",".join(selected_participants), lobby_id=lobby_id))
-    # else:
-    #     # Get participants and handle None case
-    #     participants = get_participants()
-    #     if not participants:  # Handle None or empty list
-    #         participants = [1, 2, 3, 4, 5]
-    #         flash("No participants found.")
-    #
-    #     participants = [{"id": participant, "name": f"Player {participant}"} for participant in participants]
-    #
-    #     return render_template('main_menu.html', participants=participants)
-
 
 @app.route('/get_participants', methods=['GET'])
 def get_parts():
@@ -85,7 +54,9 @@ def lobbies_menu():
         return redirect(url_for('login'))
     lobbies = get_lobbies()  # list of dict : {lobbyId, players}
     # lobbies = None
-    if not lobbies:
+    if lobbies:
+        lobbies = lobbies.lobbies
+    else:
         lobbies = LOBBIES
     return render_template('lobbies.html', lobbies=lobbies)
 
@@ -126,11 +97,11 @@ def lobby():
         if action == 'start':
             Logger.log_info(f"Starting game in lobby {lobby_id}")
             suc = start_game(lobby_id)
-            action = 'stop' if suc else 'start'
-            return render_template('lobby.html',
-                                   selected_participants=selected_participants_list,
-                                   lobby_id=lobby_id,
-                                   action=action)
+            # action = 'stop' if suc else 'start'
+            # return render_template('lobby.html',
+            #                        selected_participants=selected_participants_list,
+            #                        lobby_id=lobby_id,
+            #                        action=action)
         elif action == 'stop':
             Logger.log_info(f"Stopping game in lobby {lobby_id}")
             suc = stop_game(lobby_id)
@@ -141,18 +112,42 @@ def lobby():
                         Logger.log_error(f"Failed to remove {participant} from lobby {lobby_id}")
             return redirect(url_for('main_menu'))
 
-        return redirect(url_for('lobby',
-                                selected_participants=selected_participants,
-                                lobby_id=lobby_id,
-                                action=action))
+        # return redirect(url_for('lobby',
+        #                         selected_participants=selected_participants,
+        #                         lobby_id=lobby_id,
+        #                         action=action))
 
     # Handle GET request
     lobby_id = request.args.get('lobby_id', '')
     selected_participants = request.args.get('selected_participants', '')
     selected_participants_list = selected_participants.split(",") if selected_participants else []
+    state = request.args.get('state', 'waiting')
+    if state == 'waiting':
+        action = 'start'
+    elif state == 'playing':
+        action = 'stop'
+    else:
+        action = 'start'
+
+    print(f"action: {action}")
 
     return render_template('lobby.html', selected_participants=selected_participants_list, lobby_id=lobby_id,
                            action='start', GAME_TYPE=GAME_TYPE)
+
+
+@app.route('/get_lobby', methods=['POST'])
+def get_lobby_route():
+    lobby_id = request.json.get('lobby_id')
+    if not lobby_id:
+        return jsonify({"status": "error", "message": "Invalid data"}), 400
+
+    lobby = get_lobby(lobby_id)
+    if lobby:
+        return jsonify({
+            "status": "success",
+            "lobby": lobby.to_dict()
+        })
+    return jsonify({"status": "error", "message": "Lobby not found"}), 404
 
 
 @app.route('/update_session_order', methods=['POST'])
@@ -176,14 +171,16 @@ def add_session():
     lobby_id = request.form.get('lobby_id')
     game_type = request.form.get('gameType')
     duration = int(request.form.get('duration', 0))
+    sync_tolerance = int(request.form.get('syncTolerance', 100))  # Default: 100
+    window = int(request.form.get('window', 2000))  # Default: 2000
 
-    if not lobby_id or not game_type or duration <= 0:
+    if not lobby_id or not game_type or duration <= 0 or sync_tolerance <= 0 or window <= 0:
         return jsonify({"status": "error", "message": "Invalid data"}), 400
 
-    session_id = create_session(lobby_id, game_type, duration)
+    session_id = create_session(lobby_id, game_type, duration, sync_tolerance, window)
     if session_id:
         return jsonify(
-            {"status": "success", "session": {"gameType": game_type, "duration": duration, "sessionId": session_id}})
+            {"status": "success", "session": {"gameType": game_type, "duration": duration, "syncTolerance": sync_tolerance, "window": window, "sessionId": session_id}})
     return jsonify({"status": "error"})
 
 

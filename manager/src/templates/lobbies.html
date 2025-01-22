@@ -25,7 +25,7 @@
                     </thead>
                     <tbody>
                         {% for lobby in lobbies %}
-                        <tr class="lobby-row" data-lobby-id="{{ lobby.lobbyId }}">
+                        <tr class="lobby-row" data-lobby-id="{{ lobby.lobbyId }}" data-state="{{ lobby.state }}">
                             <td>{{ lobby.lobbyId }}</td>
                             <td>{{ lobby.players | join(', ') }}</td>
                         </tr>
@@ -99,10 +99,13 @@ document.querySelectorAll('.lobby-row').forEach(row => {
             this.classList.add('selected');
         }
 
-        // Get the selected lobby ID and navigate to the lobby page
+        // Get the selected lobby ID and state from data attributes
         const lobbyId = this.dataset.lobbyId;
+        const state = this.dataset.state;
         const selectedParticipants = this.querySelector('td:nth-child(2)').textContent.trim(); // Extract players from the second column
-        window.location.href = `/lobby?lobby_id=${lobbyId}&selected_participants=${encodeURIComponent(selectedParticipants)}`;
+
+        // Navigate to the lobby page
+        window.location.href = `/lobby?lobby_id=${lobbyId}&selected_participants=${encodeURIComponent(selectedParticipants)}&state=${state}`;
     });
 });
 
