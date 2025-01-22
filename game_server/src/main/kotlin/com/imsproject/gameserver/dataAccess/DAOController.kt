@@ -1,17 +1,18 @@
-package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.dataAccess//package com.imsproject.gameserver.dataAccess
+package com.imsproject.gameserver.dataAccess
 
-import com.imsproject.common.utils.JsonUtils
-import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.fromJson
+
+import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
 import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
 import com.imsproject.gameserver.dataAccess.implementations.SessionsDAO
-import com.imsproject.gameserver.dataAccess.models.Lobby
-//import com.imsproject.gameserver.dataAccess.implementations.LobbiesDAO
-//import com.imsproject.gameserver.dataAccess.implementations.SessionsDAO
-//import com.imsproject.gameserver.dataAccess.implementations.SessionEventsDAO
+import com.imsproject.gameserver.dataAccess.implementations.SessionEventsDAO
+
 import com.imsproject.gameserver.dataAccess.models.Participant
+import com.imsproject.gameserver.dataAccess.models.Lobby
 import com.imsproject.gameserver.dataAccess.models.Session
+import com.imsproject.gameserver.dataAccess.models.SessionEvent
+
 import org.springframework.stereotype.Component
 import java.sql.SQLException
 
@@ -21,11 +22,11 @@ class DAOController {
         "localhost", 5432 ,"ims-db", "admin", "adminMTAC"
     )
 
-// seperate cursor to each
+// todo: seperate cursor to each
     val participantDAO: ParticipantsDAO = ParticipantsDAO(cursor)
     val lobbyDAO: LobbiesDAO = LobbiesDAO(cursor)
     val sessionDAO: SessionsDAO = SessionsDAO(cursor)
-//    val sessionEventDAO: SessionEventsDAO = SessionEventsDAO(cursor)
+    val sessionEventDAO: SessionEventsDAO = SessionEventsDAO(cursor)
 
 
     // todo: (later) add cotrollers for input check
@@ -45,8 +46,11 @@ class DAOController {
                 val session: Session = fromJson(body)
                 return sessionDAO.handleSessions(action, session)
             }
-
-            else -> throw (SQLException("horrible stuff happened"))
+            "sessionEvent" -> {
+                val sessionEvent: SessionEvent = fromJson(body)
+                return sessionEventDAO.handleSessionEvents(action, sessionEvent)
+            }
+            else -> throw (SQLException("Unknown section '$section'"))
         }
     }
 

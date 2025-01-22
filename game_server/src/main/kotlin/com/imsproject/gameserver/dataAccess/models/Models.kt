@@ -30,12 +30,12 @@ data class Session(
 
 
 data class SessionEvent(
-    val eventId: Int,
-    val sessionId: Int,
-    val type: String,
-    val subtype: String,
-    val timestamp: Long,
-    val actor: String,
+    val eventId: Int?,
+    val sessionId: Int?,
+    val type: String?,
+    val subtype: String?,
+    val timestamp: Long?,
+    val actor: String?,
     val data: String?
 )
 
