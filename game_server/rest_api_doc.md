@@ -410,6 +410,22 @@ This request type is used to change the order of sessions in a lobby.
 }
 ```
 
+<br/>
+
+### `start_experiment`
+**Required fields:**
+- `lobbyId`
+
+**Description:**
+This request type is used to start an experiment in a specific lobby.
+
+**Return value:**
+```json
+{
+  "success": true
+}
+```
+
 ---
 
 ### 3. **POST** `/data/{section}`

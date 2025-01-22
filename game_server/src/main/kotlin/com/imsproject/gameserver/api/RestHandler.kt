@@ -1,43 +1,47 @@
-package com.imsproject.gameserver.networking
+package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
-import com.imsproject.gameserver.GameController
-import com.imsproject.gameserver.auth.AuthController
-import com.imsproject.gameserver.auth.Credentials
 import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.dataAccess.models.Participant
 import com.imsproject.gameserver.toResponseEntity
 import jakarta.servlet.http.HttpServletRequest
+import com.imsproject.common.utils.fromJson
+import com.imsproject.gameserver.business.GameRequestFacade
+import com.imsproject.gameserver.business.auth.AuthController
+import com.imsproject.gameserver.business.auth.Credentials
+import com.imsproject.gameserver.toResponseEntity
+import org.slf4j.LoggerFactory
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.io.File
 import java.util.*
 
 @RestController
 class RestHandler(
-    private val gameController: GameController,
+    private val gameRequestFacade: GameRequestFacade,
     private val authController: AuthController,
     private val daoController: DAOController,
     private val resources : ResourceLoader
     ) : ErrorController {
 
     @PostMapping("/manager")
-    fun manager(@RequestBody body: String): ResponseEntity<String> {
-        val request: GameRequest?
-        try {
-            request = GameRequest.fromJson(body)
-        } catch (e: Exception) {
+    fun manager(@RequestBody body : String): ResponseEntity<String> {
+        val request: GameRequest
+        try{
+            request = fromJson(body)
+        } catch(e: Exception){
             return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
         }
-        return try {
-            gameController.handleGameRequest(request).toResponseEntity()
+
+        try {
+            return gameRequestFacade.handleGameRequest(request).toResponseEntity()
         } catch (e: Exception) {
-            Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+            log.error("Error handling game request", e)
+            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 
@@ -46,9 +50,9 @@ class RestHandler(
         @PathVariable action: String,
         @RequestBody body: String
     ): ResponseEntity<String> {
-        val credentials: Credentials = JsonUtils.deserialize(body)
-        try {
-            when (action) {
+        val credentials : Credentials = fromJson(body)
+        try{
+            when(action){
                 "add" -> authController.createUser(credentials)
                 "remove" -> authController.deleteUser(credentials.userId)
                 else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
@@ -121,5 +125,9 @@ class RestHandler(
     private fun readHtmlFile(path: String): String {
         return resources.getResource("classpath:$path").inputStream
             .bufferedReader().use { it.readText() }
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(RestHandler::class.java)
     }
 }

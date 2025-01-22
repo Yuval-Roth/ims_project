@@ -5,22 +5,23 @@ import com.google.gson.JsonParseException
 import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.networking.RestApiClient
 import com.imsproject.common.networking.UdpClient
+import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.common.networking.WebSocketClient
-import com.imsproject.watch.model.MainModel.CallbackNotSetException
+import com.imsproject.common.utils.Response
+import com.imsproject.common.utils.fromJson
+import com.imsproject.common.utils.toJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
-import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.URI
-import java.util.concurrent.TimeUnit
 
 // set these values to run the app locally
 private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
@@ -32,8 +33,9 @@ private const val TIMEOUT_MS = 2000L
 private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
 private val LOCAL_IP = if(RUNNING_ON_EMULATOR) "10.0.2.2" else COMPUTER_NETWORK_IP
 private val SERVER_IP = if (RUNNING_LOCAL_GAME_SERVER) LOCAL_IP else REMOTE_IP
-private val SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "ws" else "wss"
-private val SERVER_WS_PORT = if (RUNNING_LOCAL_GAME_SERVER) 8080 else 8640
+private val WS_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "ws" else "wss"
+private val REST_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "http" else "https"
+private val SERVER_HTTP_PORT = if (RUNNING_LOCAL_GAME_SERVER) 8080 else 8640
 private const val SERVER_UDP_PORT = 8641
 private const val TIME_SERVER_PORT = 8642
 // ================================|
@@ -42,13 +44,13 @@ class MainModel (private val scope : CoroutineScope) {
 
     class CallbackNotSetException : Exception("Listener not set",null,true,false)
 
+    private lateinit var ws: WebSocketClient
+    private lateinit var udp : UdpClient
+    private var clientsClosed = true
+
     init{
         instance = this
     }
-
-    private lateinit var ws: WebSocketClient
-    private lateinit var udp : UdpClient
-    private lateinit var timeServerUdp : UdpClient
 
     var playerId : String? = null
         private set
@@ -71,52 +73,77 @@ class MainModel (private val scope : CoroutineScope) {
     // ======================== Public Methods =============================== |
     // ======================================================================= |
 
+    fun connectToServer() : Boolean {
+        Log.d(TAG, "connectToServer: Connecting to server")
+
+        if (clientsClosed) {
+            val (ws, udp) = getNewClients()
+            this.ws = ws
+            this.udp = udp
+            clientsClosed = false
+        }
+
+        if(!ws.connectBlocking()){
+            Log.e(TAG, "connectToServer: WebSocket connection timeout")
+            return false // timeout
+        }
+
+        startHeartBeat()
+        return true
+    }
+
     /**
      * Establishes a connection to the game server via both WebSocket and UDP protocols.
      * @return the player ID if the connection is successful, or null if any step fails.
      */
-    fun connectToServer(id: String? = null) : String? {
-        Log.d(TAG, "connectToServer: Connecting to server ${if(id!= null) "with id $id" else ""}")
+    suspend fun enter(selectedId: String? = null) : String? {
+        Log.d(TAG, "enter: Connecting to server ${if(selectedId!= null) "with id $selectedId" else ""}")
+
+        if(clientsClosed) throw IllegalStateException("Clients are closed")
+        stopHeartBeat()
 
         // start setup
-        val (ws, udp, timeUdp) = getNewClients()
-        val enterType = if(id!=null) GameRequest.Type.ENTER_WITH_ID else GameRequest.Type.ENTER
-        val (playerId, udpEnterCode) = wsSetup(ws, enterType, id) ?: return null
-        if(! udpSetup(udp, udpEnterCode)) return null
+        val enterType = if(selectedId!=null) GameRequest.Type.ENTER_WITH_ID else GameRequest.Type.ENTER
+        val (playerId, udpEnterCode) = wsSetup(enterType, selectedId) ?: return null
+        if(! udpSetup(udpEnterCode)) return null
 
         // connection established
-        this.ws = ws
-        this.udp = udp
-        this.timeServerUdp = timeUdp
         this.playerId = playerId
         connected = true
-        initListeners()
+        startListeners()
+        startHeartBeat()
 
-        Log.d(TAG, "connectToServer: Connection established")
+        Log.d(TAG, "enter: Connection established")
         return playerId
     }
 
-    fun reconnect() : Boolean {
+    suspend fun reconnect() : Boolean {
         Log.d(TAG, "reconnect: Reconnecting to server")
         val playerId = this.playerId ?: run {
             Log.e(TAG, "reconnect: Missing player id")
             return false
         }
 
+        if(clientsClosed) throw IllegalStateException("Clients are closed")
+        stopHeartBeat()
+
         // start setup
-        val (ws, udp, timeUdp) = getNewClients()
-        val (_, udpEnterCode) = wsSetup(ws, GameRequest.Type.RECONNECT, playerId) ?: return false
-        if(! udpSetup(udp, udpEnterCode)) return false
+        val (_, udpEnterCode) = wsSetup(GameRequest.Type.RECONNECT, playerId) ?: return false
+        if(! udpSetup(udpEnterCode)) return false
 
         // connection established
-        this.ws = ws
-        this.udp = udp
-        this.timeServerUdp = timeUdp
         connected = true
-        initListeners()
+        startListeners()
+        startHeartBeat()
 
         Log.d(TAG, "reconnect: Connection established")
         return true
+    }
+
+    suspend fun exit() {
+        connected = false
+        sendTcp(GameRequest.builder(GameRequest.Type.EXIT).build().toJson())
+        stopListeners()
     }
 
     /**
@@ -197,109 +224,116 @@ class MainModel (private val scope : CoroutineScope) {
         sendUdp(request)
     }
 
-    /**
-     * Sends a request to the time server to get the current time in milliseconds.
-     *
-     * @return The current time in milliseconds as reported by the time server.
-     * @throws SocketTimeoutException If the request times out
-     * @throws JsonParseException If the response from the time server cannot be parsed.
-     * @throws IOException If there is an I/O error while sending or receiving the request.
-     */
-    fun getTimeServerCurrentTimeMillis(): Long {
+    fun calculateTimeServerDelta(): Long {
         val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
-        try{
-            val startTime = System.currentTimeMillis()
-            timeServerUdp.send(request)
-            val response = timeServerUdp.receive()
-            val timeDelta = System.currentTimeMillis() - startTime
-            val timeResponse = TimeRequest.fromJson(response)
-            return timeResponse.time!! - timeDelta / 2 // approximation
-        } catch(e: SocketTimeoutException){
-            Log.e(TAG, "Time request timeout", e)
-            throw e
-        } catch(e: JsonParseException){
-            Log.e(TAG, "Failed to parse time response", e)
-            throw e
-        } catch (e: IOException){
-            Log.e(TAG, "Failed to fetch time", e)
-            throw e
+        val timeServerUdp = UdpClient().apply{ init(); setTimeout(TIMEOUT_MS.toInt()) }
+        var count = 0
+        val data = mutableListOf<Long>()
+        while(count < 100){
+            try {
+                val currentLocalTime = System.currentTimeMillis()
+                timeServerUdp.send(request, SERVER_IP, TIME_SERVER_PORT)
+                val response = timeServerUdp.receive()
+                val timeDelta = System.currentTimeMillis() - currentLocalTime
+                val timeResponse = fromJson<TimeRequest>(response)
+                val currentServerTime = timeResponse.time!! - timeDelta / 2 // approximation
+                data.add(currentLocalTime-currentServerTime)
+                count++
+            } catch (e: SocketTimeoutException) {
+                Log.e(TAG, "Time request timeout", e)
+            } catch (e: JsonParseException) {
+                Log.e(TAG, "Failed to parse time response", e)
+            } catch (e: IOException) {
+                Log.e(TAG, "Failed to fetch time", e)
+            }
         }
+        timeServerUdp.close()
+        return data.average().toLong()
     }
 
     suspend fun closeAllResources(){
         try{
             connected = false
-            onTcpMessage(null)
-            onUdpMessage(null)
-            onTcpError(null)
-            udpMessageListener?.cancel()
-            tcpMessageListener?.cancel()
-            heartBeatListener?.cancel()
+            stopListeners()
+            stopHeartBeat()
             ws.closeBlocking()
-            ws.interrupt()
             udp.close()
-            timeServerUdp.close()
-            udpMessageListener?.join()
-            tcpMessageListener?.join()
-            heartBeatListener?.join()
+            clientsClosed = true
         } catch(e: Exception){
             Log.e(TAG, "Failed to close resources", e)
         }
     }
 
-    fun disconnect() {
-        runBlocking {
-            sendTcp(GameRequest.builder(GameRequest.Type.EXIT).build().toJson())
-            closeAllResources()
-        }
+    fun getLatencyTracker(): LatencyTracker {
+        return LatencyTracker(
+            scope,
+            GameAction.ping,
+            SERVER_IP,
+            SERVER_UDP_PORT
+        )
     }
-
 
     // ======================================================================= |
     // ======================== Private Methods ============================== |
     // ======================================================================= |
 
-    private fun getNewClients(): Triple<WebSocketClient, UdpClient, UdpClient> {
-        val ws = WebSocketClient(URI("$SCHEME://$SERVER_IP:$SERVER_WS_PORT/ws"))
+    private fun getNewClients(): Pair<WebSocketClient,UdpClient> {
+        val ws = WebSocketClient(URI("$WS_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/ws"))
+        ws.connectionLostTimeout = -1
         val udp = UdpClient()
         udp.remoteAddress = SERVER_IP
         udp.remotePort = SERVER_UDP_PORT
         udp.init()
-        val timeUdp = UdpClient()
-        timeUdp.remoteAddress = SERVER_IP
-        timeUdp.remotePort = TIME_SERVER_PORT
-        timeUdp.init()
-        timeUdp.setTimeout(TIMEOUT_MS.toInt())
-        return Triple(ws, udp, timeUdp)
+        return ws to udp
     }
 
     private fun wsSetup (
-        ws: WebSocketClient,
         connectType: GameRequest.Type,
         id: String?
     ): Pair<String,String>? {
 
-        if(!ws.connectBlocking(TIMEOUT_MS, TimeUnit.MILLISECONDS)){
-            Log.e(TAG, "wsSetup: WebSocket connection timeout")
-            return null // timeout
+        val clearedCount = ws.clearPendingMessages()
+        if(clearedCount > 0){
+            Log.d(TAG, "wsSetup: Cleared $clearedCount pending messages")
         }
 
         // Send enter request and wait for response
         val enterRequest = GameRequest.builder(connectType)
             .apply { id?.let { playerId(it) } }
             .build().toJson()
-        ws.send(enterRequest)
-        val response = ws.nextMessage(TIMEOUT_MS) ?: run {
-            Log.e(TAG, "wsSetup: WebSocket enter request timeout")
-            return null // timeout
-        }
-        val enterResponse = GameRequest.fromJson(response)
 
-        // validate response type
-        if(enterResponse.type != connectType){
-            Log.e(TAG, "wsSetup: Invalid WebSocket enter response type")
-            return null // invalid response
-        }
+        do {
+            try{
+                ws.send(enterRequest)
+            } catch(e: WebsocketNotConnectedException){
+                Log.e(TAG, "wsSetup: sending enter request failed",e)
+                if(! ws.reconnectBlocking()){
+                    Log.e(TAG, "wsSetup: reconnecting failed")
+                    return null // reconnect failed
+                }
+                Log.d(TAG, "wsSetup: reconnected successful")
+                continue
+            }
+            break
+        } while(true)
+
+
+        var enterResponse: GameRequest
+        do {
+            val response = ws.nextMessage(TIMEOUT_MS) ?: run {
+                Log.e(TAG, "wsSetup: WebSocket $connectType request timeout")
+                return null // timeout
+            }
+            try{
+                enterResponse = fromJson(response)
+            } catch(e: JsonParseException){
+                Log.e(TAG, "wsSetup: Failed to parse WebSocket response", e)
+                return null // invalid response
+            }
+            if(enterResponse.type != connectType){
+                Log.d(TAG, "wsSetup: Ignoring message of type ${enterResponse.type}")
+            }
+        } while(enterResponse.type != connectType)
 
         // validate player id
         val playerId = id ?: (enterResponse.playerId ?: run {
@@ -316,9 +350,13 @@ class MainModel (private val scope : CoroutineScope) {
     }
 
     private fun udpSetup(
-        udp: UdpClient,
         udpEnterCode: String
     ): Boolean {
+
+        val clearedCount = udp.clearPendingMessages()
+        if(clearedCount > 0){
+            Log.d(TAG, "udpSetup: Cleared $clearedCount pending messages")
+        }
 
         // send ENTER request with the code
         udp.send(
@@ -329,29 +367,30 @@ class MainModel (private val scope : CoroutineScope) {
 
         // === wait for confirmation === |
         udp.setTimeout(TIMEOUT_MS.toInt()) // set timeout
-        val confirmation: GameAction
-        try {
-            val message = udp.receive()
-            confirmation = GameAction.fromString(message)
-        }
-        // message parsing error
-        catch (e: IllegalArgumentException) {
-            Log.e(TAG, e.message, e)
-            return false
-        }
-        // timeout
-        catch (_: SocketTimeoutException) {
-            Log.e(TAG, "udpSetup: UDP confirmation timeout")
-            return false
-        }
 
-        // validate confirmation
-        if (confirmation.type != GameAction.Type.ENTER) {
-            Log.e(TAG, "udpSetup: Invalid UDP enter response type")
-            return false
-        }
-        // === end of confirmation === |
+        var enterResponse: GameAction
+        var message: String
+        do {
+            try{
+                message = udp.receive()
+            } catch (_: SocketTimeoutException) {
+                Log.e(TAG, "udpSetup: UDP enter timeout")
+                return false
+            }
+            try {
+                enterResponse = GameAction.fromString(message)
+            } catch (e: Exception) {
+                Log.e(TAG, e.message, e)
+                return false
+            }
+            if(enterResponse.type != GameAction.Type.ENTER){
+                Log.d(TAG, "udpSetup: Ignoring message of type ${enterResponse.type}")
+            }
+        } while(enterResponse.type != GameAction.Type.ENTER)
+
         udp.setTimeout(0) // remove timeout
+        // === end of confirmation === |
+
         return true
     }
 
@@ -366,22 +405,37 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
-    private fun initListeners() {
+    private fun startHeartBeat(){
+        Log.d(TAG, "Starting heartbeat listener")
 
-        Log.d(TAG, "initListeners: Initializing listeners")
-
-        if(connected){
-            Log.d(TAG, "initListeners: Canceling existing listeners")
-            udpMessageListener?.cancel()
-            tcpMessageListener?.cancel()
-            heartBeatListener?.cancel()
+        heartBeatListener = scope.launch(Dispatchers.IO){
+            while(isActive){
+                delay(5000)
+                try{
+                    ws.send(GameRequest.heartbeat)
+                    udp.send(GameAction.heartbeat)
+                } catch(e: WebsocketNotConnectedException){
+                    executeCallback { tcpOnExceptionCallback(e) }
+                    return@launch
+                }
+            }
         }
+    }
+
+    private suspend fun stopHeartBeat(){
+        Log.d(TAG, "Stopping heartbeat listener")
+        heartBeatListener?.cancel()
+        heartBeatListener?.join()
+        heartBeatListener = null
+    }
+
+    private fun startListeners() {
+        Log.d(TAG, "Starting listeners")
 
         // UDP
         udpMessageListener = scope.launch(Dispatchers.IO) {
-            while (true) {
+            while (isActive) {
                 try {
-                    if(! isActive) return@launch
                     val message = udp.receive()
                     val action = GameAction.fromString(message)
                     executeCallback { udpOnMessageCallback(action) }
@@ -393,20 +447,18 @@ class MainModel (private val scope : CoroutineScope) {
                     Log.e(TAG, "Failed to parse UDP message", e)
                     executeCallback { udpOnExceptionCallback(e) }
                     return@launch
-                } catch (e: SocketException){
-                    Log.e(TAG, "Failed to receive UDP message", e)
-                    executeCallback { udpOnExceptionCallback(e) }
+                }  catch(_: InterruptedException){
+                    Log.d(TAG, "udp listener interrupted")
                     return@launch
                 }
             }
         }
 
         tcpMessageListener = scope.launch(Dispatchers.IO){
-            while(true){
+            while(isActive){
                 try{
-                    if(! isActive) return@launch
                     val message = ws.nextMessageBlocking()
-                    val request = GameRequest.fromJson(message)
+                    val request = fromJson<GameRequest>(message)
                     executeCallback { tcpOnMessageCallback(request) }
                 } catch(e: JsonParseException){
                     Log.e(TAG, "Failed to parse TCP message", e)
@@ -419,24 +471,24 @@ class MainModel (private val scope : CoroutineScope) {
             }
         }
 
-        heartBeatListener = scope.launch(Dispatchers.IO){
-            while(true){
-                delay(5000)
-                try{
-                    ws.send(GameRequest.heartbeat)
-                    udp.send(GameAction.heartbeat)
-                } catch(e: WebsocketNotConnectedException){
-                    executeCallback { tcpOnExceptionCallback(e) }
-                    return@launch
-                }
-            }
-        }
-
         ws.onErrorListener = {
             scope.launch(Dispatchers.IO){
                 executeCallback { tcpOnErrorCallback(it ?: Exception("Unknown error"))}
             }
         }
+    }
+
+    private suspend fun stopListeners(){
+        Log.d(TAG, "Stopping listeners")
+        udpMessageListener?.cancel()
+        tcpMessageListener?.cancel()
+        ws.onErrorListener = {}
+        ws.interrupt()
+        udp.interrupt()
+        tcpMessageListener?.join()
+        udpMessageListener?.join()
+        tcpMessageListener = null
+        udpMessageListener = null
     }
 
     private suspend fun sendTcp(message: String){
@@ -455,6 +507,27 @@ class MainModel (private val scope : CoroutineScope) {
             Log.e(TAG, "Failed to send UDP message", e)
             executeCallback { udpOnExceptionCallback(e) }
         }
+    }
+
+    fun uploadSessionEvents(): Boolean {
+        Log.d(TAG, "Uploading session events")
+        val eventCollector = SessionEventCollectorImpl.getInstance()
+        val events = eventCollector.getAllEvents().stream()
+            .map { it.toCompressedJson() }
+            .reduce("") { acc, s -> "$acc\n$s" }
+        val returned = RestApiClient()
+            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+            .withBody(events)
+            .withPost()
+            .send()
+        val response = fromJson<Response>(returned)
+        if(response.success){
+            Log.d(TAG, "uploadSessionEvents: Success")
+            eventCollector.clearEvents()
+        } else {
+            Log.e(TAG, "uploadSessionEvents: Failed to upload events")
+        }
+        return response.success
     }
 
     companion object {

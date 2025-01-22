@@ -12,7 +12,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
+import kotlinx.coroutines.withContext
 
 private const val TAG = "MainViewModel"
 
@@ -20,10 +22,12 @@ class MainViewModel() : ViewModel() {
 
     enum class State {
         DISCONNECTED,
+        SELECTING_ID,
         CONNECTING,
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
         IN_GAME,
+        UPLOADING_EVENTS,
         ERROR
     }
 
@@ -34,6 +38,10 @@ class MainViewModel() : ViewModel() {
     // ================================================================================ |
 
     private var _state = MutableStateFlow(State.DISCONNECTED)
+        set(value) {
+            field = value
+            Log.d(TAG, "state changed to: $value")
+        }
     val state : StateFlow<State> = _state
 
     private var _playerId = MutableStateFlow("")
@@ -61,13 +69,26 @@ class MainViewModel() : ViewModel() {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    fun connect(selectedId: String? = null) {
+
+    fun connect() {
         viewModelScope.launch(Dispatchers.IO){
             _state.value = State.CONNECTING
             while(true){
-                val id = model.connectToServer(selectedId)
-                if (id != null) {
-                    _playerId.value = id
+                if(model.connectToServer()){
+                    break
+                }
+            }
+            _state.value = State.SELECTING_ID
+        }
+    }
+
+    fun enter(selectedId: String? = null){
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.value = State.CONNECTING
+            while (true) {
+                val playerId = model.enter(selectedId)
+                if (playerId != null) {
+                    _playerId.value = playerId
                     _state.value = State.CONNECTED_NOT_IN_LOBBY
                     setupListeners() // setup the listeners to start receiving messages
                     return@launch
@@ -76,22 +97,49 @@ class MainViewModel() : ViewModel() {
         }
     }
 
+    fun exit() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if(_state.value != State.CONNECTED_NOT_IN_LOBBY){
+                showError("Cannot exit at the current state")
+                return@launch
+            }
+            model.exit()
+            _playerId.value = ""
+            _timeServerStartTime.value = -1
+            _state.value = State.SELECTING_ID
+        }
+    }
+
     fun afterGame(result: Result) {
-        setupListeners() // take back control of the listeners
-        _ready.value = false
-        when(result.code){
-            Result.Code.OK ->{
-                _timeServerStartTime.value = -1
-                _state.value = State.CONNECTED_IN_LOBBY
+        viewModelScope.launch(Dispatchers.Default) {
+            _ready.value = false
+            _timeServerStartTime.value = -1
+            when (result.code) {
+                Result.Code.OK -> {
+/*
+                    TODO: uncomment this when the data endpoint is ready
+                    _state.value = State.UPLOADING_EVENTS
+                    withContext(Dispatchers.IO) {
+                    do {
+                        if(model.uploadSessionEvents()){
+                            break
+                        }
+                    } while(true)
+                    _state.value = State.CONNECTED_IN_LOBBY
+*/
+                }
+
+                else -> {
+                    // typically, when reaching here, the game ended due to a network error
+                    // or some other issue that hasn't been discovered yet.
+                    // so we want to display an error message to the user
+                    // and restart the application.
+                    val error =
+                        "${result.code.prettyName()}:\n${result.errorMessage ?: "no error message"}"
+                    fatalError(error)
+                }
             }
-            else -> {
-                // typically, when reaching here, the game ended due to a network error
-                // or some other issue that hasn't been discovered yet.
-                // so we want to display an error message to the user
-                // and restart the application.
-                val error = "${result.code.prettyName()}:\n${result.errorMessage ?: "no error message"}"
-                fatalError(error)
-            }
+            setupListeners() // take back control of the listeners
         }
     }
 
@@ -111,7 +159,11 @@ class MainViewModel() : ViewModel() {
     }
 
     fun showError(string: String) {
-        _error.value = string
+        _error.value = if(_error.value != null){
+            string + "\n- - - - - - -\n" + _error.value
+        } else {
+            string
+        }
         _state.value = State.ERROR
     }
 
@@ -122,8 +174,10 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    fun disconnect() {
-        model.disconnect()
+    fun onDestroy() {
+        runBlocking(Dispatchers.Main){
+            model.closeAllResources()
+        }
     }
 
     // ================================================================================ |
@@ -233,9 +287,9 @@ class MainViewModel() : ViewModel() {
         _gameType.value = null
         _timeServerStartTime.value = -1
         showError(message)
-        model = MainModel(viewModelScope)
         viewModelScope.launch(Dispatchers.IO) {
             oldModel.closeAllResources()
         }
+        model = MainModel(viewModelScope)
     }
 }

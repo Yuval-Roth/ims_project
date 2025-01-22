@@ -1,9 +1,14 @@
-package com.imsproject.gameserver.networking
+package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.utils.SimpleIdGenerator
+import com.imsproject.common.utils.fromJson
+import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.*
+import com.imsproject.gameserver.business.ClientController
+import com.imsproject.gameserver.business.ClientHandler
+import com.imsproject.gameserver.business.GameRequestFacade
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.lang.NonNull
@@ -16,14 +21,14 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Component
-class GameRequestHandler(
-    private val gameController: GameController,
-    private val gameActionHandler: GameActionHandler,
+class WsGameRequestHandler(
+    private val facade: GameRequestFacade,
+    private val gameActionHandler: UdpGameActionHandler,
     private val clientController: ClientController
 ) : TextWebSocketHandler() {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(GameRequestHandler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(WsGameRequestHandler::class.java)
     }
 
     private val idGenerator: SimpleIdGenerator = SimpleIdGenerator(3)
@@ -39,7 +44,7 @@ class GameRequestHandler(
         // Parse the message
         val gameMessage: GameRequest
         try {
-            gameMessage = GameRequest.fromJson(rawPayload)
+            gameMessage = fromJson(rawPayload)
         } catch (e: Exception) {
             log.error("Error parsing message: {}", rawPayload)
             return
@@ -53,13 +58,14 @@ class GameRequestHandler(
             Type.EXIT -> {
                 clientController.getByWsSessionId(session.id)?.let {
                     clientController.removeClientHandler(it.id)
+                    log.debug("Client disconnected: {}", it.id)
                 }
             }
             Type.HEARTBEAT -> {
                 clientController.getByWsSessionId(session.id)?.let {
                     it.lastHeartbeat = LocalDateTime.now()
-                    session.send(GameRequest.heartbeat)
                 }
+                session.send(GameRequest.heartbeat)
             }
 
             Type.ENTER_WITH_ID -> {
@@ -67,6 +73,8 @@ class GameRequestHandler(
                     log.error("No client id provided")
                     return
                 }
+
+                log.debug("New client: {}",id)
 
                 // Check if the id is already connected from elsewhere
                 // and if so, disconnect the old connection
@@ -89,7 +97,6 @@ class GameRequestHandler(
                     // client is new, create a new client handler
                     client = newClientHandler(session, id)
                     clientController.addClientHandler(client)
-                    log.debug("New client: {}", client.id)
                 }
 
                 // generate code to add the client to the udp socket handler
@@ -176,7 +183,7 @@ class GameRequestHandler(
                     return
                 }
                 try {
-                    gameController.handleGameRequest(client, gameMessage)
+                    facade.handleGameRequest(client, gameMessage)
                 } catch (e: Exception) {
                     log.error("Error handling message", e)
 

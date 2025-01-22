@@ -1,4 +1,4 @@
-package com.imsproject.gameserver.auth
+package com.imsproject.gameserver.business.auth
 
 import com.imsproject.common.utils.Response
 import io.jsonwebtoken.Jwts

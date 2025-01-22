@@ -1,8 +1,10 @@
-package com.imsproject.gameserver.networking
+package com.imsproject.gameserver.business
 
 import com.google.gson.JsonParseException
 import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.networking.UdpClient
+import com.imsproject.common.utils.fromJson
+import com.imsproject.common.utils.toJson
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -43,7 +45,7 @@ class TimeServerHandler {
             timeServerUdp.send(request)
             val response = timeServerUdp.receive()
             val timeDelta = System.currentTimeMillis() - startTime
-            val timeResponse = TimeRequest.fromJson(response)
+            val timeResponse = fromJson<TimeRequest>(response)
             val halfRoundTripTime = timeDelta / 2
             return timeResponse.time!! - halfRoundTripTime // approximation
         } catch(e: SocketTimeoutException){

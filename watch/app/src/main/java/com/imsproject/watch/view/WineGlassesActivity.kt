@@ -192,20 +192,18 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             // play sound when the user touches the screen
             LaunchedEffect(released){
                 if(playSound){
-                    withContext(Dispatchers.IO){
-                        if(released){
-                            val currentlyPlaying = if(sound.isPlaying(LOW_LOOP_TRACK)){
-                                LOW_LOOP_TRACK
-                            } else {
-                                LOW_BUILD_IN_TRACK
-                            }
-                            sound.stopFadeOut(currentlyPlaying,20)
-                            sound.play(LOW_BUILD_OUT_TRACK)
-                            playSound = false
+                    if(released){
+                        val currentlyPlaying = if(sound.isPlaying(LOW_LOOP_TRACK)){
+                            LOW_LOOP_TRACK
                         } else {
-                            sound.play(LOW_BUILD_IN_TRACK) {
-                                sound.playLooped(LOW_LOOP_TRACK)
-                            }
+                            LOW_BUILD_IN_TRACK
+                        }
+                        sound.stopFadeOut(currentlyPlaying,20)
+                        sound.play(LOW_BUILD_OUT_TRACK)
+                        playSound = false
+                    } else {
+                        sound.play(LOW_BUILD_IN_TRACK) {
+                            sound.playLooped(LOW_LOOP_TRACK)
                         }
                     }
                 }

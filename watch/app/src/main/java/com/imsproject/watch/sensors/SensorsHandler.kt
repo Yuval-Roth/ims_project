@@ -23,7 +23,7 @@ class SensorsHandler(
                 SessionEvent.bloodOxygen(
                     gameViewModel.playerId,
                     gameViewModel.getCurrentGameTime(),
-                    98
+                    "98"
                 )
             )
         }

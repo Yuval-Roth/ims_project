@@ -107,7 +107,7 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
                                 if (event.type == PointerEventType.Press) {
                                     event.changes[0].consume()
                                     viewModel.click()
-                                    viewModel.viewModelScope.launch(Dispatchers.IO) {
+                                    viewModel.viewModelScope.launch(Dispatchers.Default) {
                                         soundPool.play(clickSoundId, 1f, 1f, 0, 0, 1f)
                                     }
                                 }

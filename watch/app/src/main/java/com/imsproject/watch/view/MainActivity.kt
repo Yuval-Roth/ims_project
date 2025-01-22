@@ -1,7 +1,5 @@
 package com.imsproject.watch.view
 
-import android.app.GameManager
-import android.app.GameState
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -37,19 +35,15 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
@@ -73,7 +67,6 @@ import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.collections.mutableMapOf
 
@@ -84,15 +77,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
     private lateinit var flourMill: ActivityResultLauncher<Map<String,Any>>
-    private val idsList = mutableListOf<String>().apply {
-            for (i in 0..15) {
-                add(
-                    @OptIn(ExperimentalStdlibApi::class)
-                    i.toHexString(HexFormat.UpperCase)
-                        .let{it.substring(it.length-1)}
-                )
-            }
-        }
+    private val idsList = listOf("0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,8 +85,6 @@ class MainActivity : ComponentActivity() {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         registerActivities()
-        val gameManager = getSystemService(GameManager::class.java)
-        gameManager.setGameState(GameState(false,GameState.MODE_GAMEPLAY_UNINTERRUPTIBLE))
         setContent {
             Main()
         }
@@ -109,7 +92,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        viewModel.disconnect()
+        viewModel.onDestroy()
     }
 
     private fun registerActivities(){
@@ -124,11 +107,16 @@ class MainActivity : ComponentActivity() {
         val state = viewModel.state.collectAsState().value
 
         when(state) {
-            State.DISCONNECTED -> PickingIdScreen {
-                viewModel.connect(it)
+            State.DISCONNECTED ->{
+                BlankScreen()
+                viewModel.connect()
             }
 
-            State.CONNECTING -> ConnectingScreen()
+            State.SELECTING_ID -> PickingIdScreen {
+                viewModel.enter(it)
+            }
+
+            State.CONNECTING -> LoadingScreen("Connecting...")
 
             State.CONNECTED_NOT_IN_LOBBY -> {
                 val userId = viewModel.playerId.collectAsState().value
@@ -159,6 +147,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            State.UPLOADING_EVENTS -> LoadingScreen("Uploading events...")
+
             State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
                 ErrorScreen(error) {
@@ -183,7 +173,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun ConnectingScreen() {
+    private fun LoadingScreen(text: String) {
         MaterialTheme {
             Box(
                 modifier = Modifier
@@ -201,7 +191,7 @@ class MainActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     BasicText(
-                        text = "Connecting...",
+                        text = text,
                         style = textStyle
                     )
                 }
@@ -309,11 +299,24 @@ class MainActivity : ComponentActivity() {
                         text = "Your ID: $id",
                         style = textStyle,
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
                     BasicText(
                         text = "Waiting to be assigned\nto a lobby ...",
                         style = textStyle,
                     )
+                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.1f).dp))
+                    // return to picking id button
+                    Button(
+                        onClick = { viewModel.exit() },
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .fillMaxHeight(0.8f)
+                    ) {
+                        BasicText(
+                            text = "Change ID",
+                            style = textStyle
+                        )
+                    }
                 }
             }
         }

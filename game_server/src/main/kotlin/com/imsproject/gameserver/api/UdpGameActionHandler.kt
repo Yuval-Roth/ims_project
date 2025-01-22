@@ -1,9 +1,12 @@
-package com.imsproject.gameserver.networking
+package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameAction.Type
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.gameserver.*
+import com.imsproject.gameserver.business.ClientController
+import com.imsproject.gameserver.business.ClientHandler
+import com.imsproject.gameserver.business.GameController
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -14,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 
 @Component
-class GameActionHandler(
+class UdpGameActionHandler(
     private val gameController: GameController,
     private val clients: ClientController
 ) {
@@ -113,7 +116,7 @@ class GameActionHandler(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(GameActionHandler::class.java)
+        private val log = LoggerFactory.getLogger(UdpGameActionHandler::class.java)
     }
 
 }
