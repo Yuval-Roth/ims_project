@@ -19,7 +19,11 @@ class ClientHandler internal constructor(
     @Throws(IOException::class)
     fun sendTcp(message: String) {
         if(wsSession.isOpen){
-            wsSession.send(message)
+            try{
+                wsSession.send(message)
+            } catch (e: IOException){
+                log.error("Error sending message to client: {}",e.stackTraceToString())
+            }
         } else {
             log.debug("Attempted to send message to closed session: {}", message)
         }

@@ -35,7 +35,7 @@ class GameController(
     fun handleGameAction(clientHandler: ClientHandler, action: GameAction) {
         // ========= parameter validation ========= |
         val game = clientIdToGame[clientHandler.id] ?: run{
-            log.debug("handleGameAction: Game not found for client: {}",clientHandler.id)
+            log.debug("handleGameAction: Game not found for client: {} action: {}",clientHandler.id,action)
             throw IllegalArgumentException("Client not in game")
         }
         // ======================================== |

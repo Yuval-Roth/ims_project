@@ -38,10 +38,6 @@ class MainViewModel() : ViewModel() {
     // ================================================================================ |
 
     private var _state = MutableStateFlow(State.DISCONNECTED)
-        set(value) {
-            field = value
-            Log.d(TAG, "state changed to: $value")
-        }
     val state : StateFlow<State> = _state
 
     private var _playerId = MutableStateFlow("")
@@ -72,24 +68,24 @@ class MainViewModel() : ViewModel() {
 
     fun connect() {
         viewModelScope.launch(Dispatchers.IO){
-            _state.value = State.CONNECTING
+            setState(State.CONNECTING)
             while(true){
                 if(model.connectToServer()){
                     break
                 }
             }
-            _state.value = State.SELECTING_ID
+            setState(State.SELECTING_ID)
         }
     }
 
     fun enter(selectedId: String? = null){
         viewModelScope.launch(Dispatchers.IO) {
-            _state.value = State.CONNECTING
+            setState(State.CONNECTING)
             while (true) {
                 val playerId = model.enter(selectedId)
                 if (playerId != null) {
                     _playerId.value = playerId
-                    _state.value = State.CONNECTED_NOT_IN_LOBBY
+                    setState(State.CONNECTED_NOT_IN_LOBBY)
                     setupListeners() // setup the listeners to start receiving messages
                     return@launch
                 }
@@ -106,11 +102,12 @@ class MainViewModel() : ViewModel() {
             model.exit()
             _playerId.value = ""
             _timeServerStartTime.value = -1
-            _state.value = State.SELECTING_ID
+            setState(State.SELECTING_ID)
         }
     }
 
     fun afterGame(result: Result) {
+        Log.d(TAG, "afterGame: $result")
         viewModelScope.launch(Dispatchers.Default) {
             _ready.value = false
             _timeServerStartTime.value = -1
@@ -118,15 +115,15 @@ class MainViewModel() : ViewModel() {
                 Result.Code.OK -> {
 /*
                     TODO: uncomment this when the data endpoint is ready
-                    _state.value = State.UPLOADING_EVENTS
+                    setState(State.UPLOADING_EVENTS
                     withContext(Dispatchers.IO) {
                     do {
                         if(model.uploadSessionEvents()){
                             break
                         }
                     } while(true)
-                    _state.value = State.CONNECTED_IN_LOBBY
 */
+                    setState(State.CONNECTED_IN_LOBBY)
                 }
 
                 else -> {
@@ -148,13 +145,13 @@ class MainViewModel() : ViewModel() {
 
         if(_lobbyId.value.isNotEmpty()){
             // if there is a lobbyId, then we're connected and in a lobby
-            _state.value = State.CONNECTED_IN_LOBBY
+            setState(State.CONNECTED_IN_LOBBY)
         } else if(_playerId.value.isNotEmpty()){
             // if there is only a playerId, then we're connected but not in a lobby
-            _state.value = State.CONNECTED_NOT_IN_LOBBY
+            setState(State.CONNECTED_NOT_IN_LOBBY)
         } else {
             // if there is no playerId, then we're disconnected
-            _state.value = State.DISCONNECTED
+            setState(State.DISCONNECTED)
         }
     }
 
@@ -164,7 +161,7 @@ class MainViewModel() : ViewModel() {
         } else {
             string
         }
-        _state.value = State.ERROR
+        setState(State.ERROR)
     }
 
     fun toggleReady() {
@@ -206,11 +203,11 @@ class MainViewModel() : ViewModel() {
 
                 _gameType.value = gameType
                 _lobbyId.value = lobbyId
-                _state.value = State.CONNECTED_IN_LOBBY
+                setState(State.CONNECTED_IN_LOBBY)
             }
             GameRequest.Type.LEAVE_LOBBY -> {
                 _lobbyId.value = ""
-                _state.value = State.CONNECTED_NOT_IN_LOBBY
+                setState(State.CONNECTED_NOT_IN_LOBBY)
             }
             GameRequest.Type.START_GAME -> {
                 if(_state.value != State.CONNECTED_IN_LOBBY){
@@ -229,7 +226,7 @@ class MainViewModel() : ViewModel() {
                 }
                 _additionalData.value = request.data?.joinToString(";") ?: ""
 
-                _state.value = State.IN_GAME
+                setState(State.IN_GAME)
             }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")
@@ -253,6 +250,11 @@ class MainViewModel() : ViewModel() {
                 showError(errorMsg)
             }
         }
+    }
+
+    private fun setState(newState: State){
+        _state.value = newState
+        Log.d(TAG, "set new state: $newState")
     }
 
     private fun setupListeners() {

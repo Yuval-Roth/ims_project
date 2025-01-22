@@ -201,7 +201,7 @@ class WsGameRequestHandler(
 
     override fun afterConnectionClosed(session: WebSocketSession, @NonNull status: CloseStatus) {
         val client = clientController.getByWsSessionId(session.id) ?: return
-        log.debug("Client disconnected: {}", client.id)
+        log.debug("afterConnectionClosed: client {} websocket session disconnected", client.id)
     }
 
     private fun newClientHandler(wsSession: WebSocketSession, selectedId: String? = null) : ClientHandler {

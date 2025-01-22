@@ -58,10 +58,6 @@ abstract class GameViewModel(
     // ================================================================================ |
 
     private var _state = MutableStateFlow(State.LOADING)
-        set(value){
-            field = value
-            Log.d(TAG, "state changed to $value")
-        }
     val state : StateFlow<State> = _state
 
     private var _error = MutableStateFlow<String?>(null)
@@ -82,7 +78,7 @@ abstract class GameViewModel(
         vibrator = context.getSystemService(Vibrator::class.java)
 
         if(ACTIVITY_DEBUG_MODE){
-            _state.value = State.PLAYING
+            setState(State.PLAYING)
             return
         }
 
@@ -144,7 +140,7 @@ abstract class GameViewModel(
             // =================== game start =================== |
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
             Log.d(TAG, "onCreate: session started")
-            _state.value = State.PLAYING
+            setState(State.PLAYING)
         }
 
     }
@@ -155,7 +151,7 @@ abstract class GameViewModel(
         addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         _error.value = errorMessage
         _resultCode.value = code
-        _state.value = State.TERMINATED
+        setState(State.TERMINATED)
     }
 
     fun getCurrentGameTime(): Long {
@@ -165,14 +161,14 @@ abstract class GameViewModel(
     fun showError(msg: String) {
         Log.d(TAG, "showError: $msg")
         _error.value = msg
-        _state.value = State.ERROR
+        setState(State.ERROR)
     }
 
     fun clearError() {
         if(_state.value == State.ERROR){
             Log.d(TAG, "clearError: clearing error")
             _error.value = null
-            _state.value = State.PLAYING
+            setState(State.PLAYING)
         }
     }
 
@@ -228,7 +224,7 @@ abstract class GameViewModel(
         Log.d(TAG, "exitOk: game ended successfully")
         addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),"ok"))
         clearListeners() // clear the listeners to prevent any further messages from being processed.
-        _state.value = State.TERMINATED
+        setState(State.TERMINATED)
     }
 
     // ================================================================================ |
@@ -236,7 +232,7 @@ abstract class GameViewModel(
     // ================================================================================ |
 
     private fun reconnect(onFailure: () -> Unit) {
-        _state.value = State.TRYING_TO_RECONNECT
+        setState(State.TRYING_TO_RECONNECT)
         viewModelScope.launch(Dispatchers.IO) {
             val timeout = System.currentTimeMillis() + 10000
             var reconnected = false
@@ -252,7 +248,7 @@ abstract class GameViewModel(
             if(reconnected){
                 addEvent(SessionEvent.reconnected(playerId,getCurrentGameTime()))
                 setupListeners()
-                _state.value = State.PLAYING
+                setState(State.PLAYING)
             } else {
                 onFailure()
             }
@@ -291,6 +287,11 @@ abstract class GameViewModel(
                 exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
             }
         }
+    }
+    
+    private fun setState(newState: State){
+        _state.value = newState
+        Log.d(TAG, "set new state: $newState")
     }
 
     private fun clearListeners(){

@@ -65,8 +65,11 @@ class UdpGameActionHandler(
                     log.debug("Client not found for packet from ${address.toHostPortString()}")
                     return
                 }
-
-                gameController.handleGameAction(client, action)
+                try{
+                    gameController.handleGameAction(client, action)
+                } catch(e: Exception){
+                    log.error("Error handling game action", e)
+                }
             }
             Type.PING -> send(GameAction.pong, address)
             Type.PONG -> {}
