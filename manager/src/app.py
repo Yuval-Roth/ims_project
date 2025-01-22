@@ -209,6 +209,18 @@ def participants_menu():
         participants = PARTICIPANTS
     return render_template('participants.html', participants=participants)
 
+
+###################### OPERATORS ######################
+@app.route('/operators', methods=['GET'])
+def operators_menu():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('operators.html')
+
+@app.route('/save_operator', methods=['POST'])
+def save_operator():
+    return jsonify({"status": "success"})
+
 if __name__ == '__main__':
     # run on port 80
     app.run(host='0.0.0.0', port=80)

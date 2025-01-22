@@ -20,6 +20,9 @@ class GAME_REQUEST_TYPE(Enum):
     leave_lobby = 7
     start_game = 8
     end_game = 9
-    update_session_order = 10  # Added for changing the session order
-    create_session = 11       # Added for creating a new session
-    delete_session = 12       # Added for deleting a session
+    update_session_order = 10  
+    create_session = 11       
+    delete_session = 12       
+    add_participant = 13
+    remove_participant = 14
+    edit_participant = 15

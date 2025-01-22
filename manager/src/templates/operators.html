@@ -8,61 +8,130 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='operators.css') }}">
 </head>
 <body>
-    <!-- Home Button -->
     <a href="/main_menu" class="home-button">
         <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
     </a>
-
-    <!-- Operators Container -->
-    <div class="main-container">
-        <h1>Operators</h1>
-
-        <!-- Operators Table -->
-        <div class="table-container">
-            <table class="styled-table operators-table">
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="operators-tbody">
-                    {% for operator in operators %}
-                    <tr>
-                        <td>{{ operator.username }}</td>
-                        <td>
-                            <button class="danger-button remove-operator-btn">Remove</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="container">
+        <!-- Left: Table of Operators -->
+        <div class="lobby-table-container">
+            <h1>Operators</h1>
+            <div class="online-participants-table-container">
+                <table class="online-participants-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Password</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for operator in operators %}
+                        <tr class="operator-row" data-operator-id="{{ operator.id }}">
+                            <td>{{ operator.id }}</td>
+                            <td>{{ operator.username }}</td>
+                            <td>{{ operator.password }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Action Buttons -->
-        <button id="add-operator-btn" class="primary-button">Add Operator</button>
-    </div>
-
-    <!-- Modal for Adding an Operator -->
-    <div id="add-operator-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h2>Add Operator</h2>
-            <form id="add-operator-form">
-                <label for="username">Username:</label>
-                <input type="text" name="username" id="username" required>
-
-                <label for="password">Password:</label>
-                <input type="password" name="password" id="password" required>
-
-                <div class="modal-actions">
-                    <button type="submit" class="primary-button">Add</button>
-                    <button type="button" id="cancel-operator-modal-btn" class="cancel-button">Cancel</button>
-                </div>
-            </form>
+        <!-- Right: Action Buttons -->
+        <div class="actions-container">
+            <button id="add-operator-btn" class="action-button">Add Operator</button>
+            <button id="edit-operator-btn" class="action-button">Edit Operator</button>
+            <button id="remove-operator-btn" class="action-button">Remove Operator</button>
         </div>
     </div>
 
-    <!-- Modal Overlay -->
-    <div id="operator-modal-overlay" class="modal-overlay" style="display: none;"></div>
+<!-- Modal Overlay -->
+<div id="modal-overlay" class="modal-overlay"></div>
+
+<!-- Modal for Adding/Editing Operator -->
+<div id="operator-modal" class="modal">
+    <div class="modal-content">
+        <h2 id="modal-title">Add Operator</h2>
+        <form id="operator-form" action="/save_operator" method="post">
+            <input type="hidden" name="id" id="operator-id">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </form>
+        <div class="modal-buttons">
+            <button type="button" id="close-modal-btn" class="cancel-button">Cancel</button>
+            <button type="submit" form="operator-form" class="create-lobby-button">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let selectedRow = null;
+
+        // Highlight selected row
+        document.querySelectorAll('.operator-row').forEach(row => {
+            row.addEventListener('click', function () {
+                document.querySelectorAll('.operator-row').forEach(r => r.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedRow = this;
+            });
+        });
+
+        // Add operator
+        document.getElementById('add-operator-btn').addEventListener('click', function () {
+            openModal('Add Operator');
+        });
+
+        // Edit operator
+        document.getElementById('edit-operator-btn').addEventListener('click', function () {
+            if (!selectedRow) {
+                alert('Please select an operator to edit.');
+                return;
+            }
+
+            const operatorData = Array.from(selectedRow.children).map(cell => cell.textContent);
+
+            openModal('Edit Operator', {
+                id: operatorData[0],
+                username: operatorData[1],
+                password: operatorData[2]
+            });
+        });
+
+        // Remove operator
+        document.getElementById('remove-operator-btn').addEventListener('click', function () {
+            if (!selectedRow) {
+                alert('Please select an operator to remove.');
+                return;
+            }
+
+            const operatorId = selectedRow.dataset.operatorId;
+            if (confirm('Are you sure you want to remove this operator?')) {
+                window.location.href = `/remove_operator?id=${operatorId}`;
+            }
+        });
+
+        // Open modal
+        function openModal(title, data = {}) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('operator-id').value = data.id || '';
+            document.getElementById('username').value = data.username || '';
+            document.getElementById('password').value = data.password || '';
+
+            document.getElementById('operator-modal').style.display = 'block';
+            document.getElementById('modal-overlay').style.display = 'block';
+        }
+
+        // Close modal
+        document.getElementById('close-modal-btn').addEventListener('click', function () {
+            document.getElementById('operator-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        });
+    });
+</script>
+
 </body>
 </html>

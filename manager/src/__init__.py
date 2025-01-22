@@ -101,14 +101,14 @@ LOBBIES = [{'lobbyId': '1', 'players': ['player1', 'player2']},
 
 
 PARTICIPANTS = [
-            {"id": 1, "name": "player1"},
-            {"id": 2, "name": "player2"},
-            {"id": 3, "name": "player3"},
-            {"id": 4, "name": "player4"},
-            {"id": 5, "name": "player5"},
-            {"id": 6, "name": "player6"},
-            {"id": 7, "name": "player7"},
-            {"id": 8, "name": "player8"},
-            {"id": 9, "name": "player9"},
-            {"id": 10, "name": "player10"},
-        ]
+    {"id": 1, "first_name": "player1", "last_name": "player1", "age": 20, "gender": "Male", "email": "player1@test.com", "phone": "1234567890"},
+    {"id": 2, "first_name": "player2", "last_name": "player2", "age": 25, "gender": "Female", "email": "player2@test.com", "phone": "2345678901"},
+    {"id": 3, "first_name": "player3", "last_name": "player3", "age": 22, "gender": "Male", "email": "player3@test.com", "phone": "3456789012"},
+    {"id": 4, "first_name": "player4", "last_name": "player4", "age": 30, "gender": "Female", "email": "player4@test.com", "phone": "4567890123"},
+    {"id": 5, "first_name": "player5", "last_name": "player5", "age": 28, "gender": "Male", "email": "player5@test.com", "phone": "5678901234"},
+    {"id": 6, "first_name": "player6", "last_name": "player6", "age": 24, "gender": "Female", "email": "player6@test.com", "phone": "6789012345"},
+    {"id": 7, "first_name": "player7", "last_name": "player7", "age": 26, "gender": "Male", "email": "player7@test.com", "phone": "7890123456"},
+    {"id": 8, "first_name": "player8", "last_name": "player8", "age": 29, "gender": "Female", "email": "player8@test.com", "phone": "8901234567"},
+    {"id": 9, "first_name": "player9", "last_name": "player9", "age": 27, "gender": "Male", "email": "player9@test.com", "phone": "9012345678"},
+    {"id": 10, "first_name": "player10", "last_name": "player10", "age": 23, "gender": "Female", "email": "player10@test.com", "phone": "0123456789"}
+]

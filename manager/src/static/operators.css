@@ -138,11 +138,12 @@ body {
     padding: 20px;
     z-index: 1000;
     width: 50%;
-    height: 70%;
+    height: 40%; /* Adjust height as needed */
     max-width: 500px;
     overflow-y: auto; /* Enable scrolling if necessary */
-    /* display: flex; */
-    flex-direction: column;
+    display: flex;
+    flex-direction: column; /* Ensure content and buttons align in a column */
+    justify-content: space-between; /* Push buttons to the bottom */
 }
 
 /* Custom Scrollbar Styling for the Modal */
@@ -167,27 +168,27 @@ body {
 
 /* Adjust for cross-browser compatibility */
 .modal-content {
-    flex-grow: 1; /* Allow the content to grow */
+    flex-grow: 1; /* Allow content to take available space */
     scrollbar-width: thin; /* For Firefox: thin scrollbar */
     scrollbar-color: #888 #f1f1f1; /* Thumb and track colors */
     display: flex;
     flex-direction: column;
     gap: 20px; /* Add spacing between elements inside the modal */
     position: relative;
-    padding-bottom: 20px;
+    overflow-y: auto; /* Add scrolling for the content if needed */
 }
+
 
 /* Buttons Container Docked to Bottom */
 .modal-buttons {
     display: flex;
-    justify-content: space-between;
-    margin-top: auto; /* Push buttons to the bottom */
+    justify-content: space-between; /* Distribute buttons evenly */
     padding-top: 10px; /* Add space above the buttons */
     border-top: 1px solid #ddd; /* Optional: visual separation */
 }
 
 .create-lobby-button, .cancel-button {
-    width: 48%;
+    width: 48%; /* Adjust button width */
     padding: 10px;
     font-size: 16px;
     font-weight: bold;
