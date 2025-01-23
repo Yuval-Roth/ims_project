@@ -18,14 +18,14 @@ interface SQLExecutor {
      * @throws SQLException if an error occurs while committing the transaction
      */
     @Throws(SQLException::class)
-    fun commit(transactionId: String? = null)
+    fun commit(transactionId: String)
 
     /**
      * Rolls back the transaction
      * @throws SQLException if an error occurs while rolling back the transaction
      */
     @Throws(SQLException::class)
-    fun rollback(transactionId: String? = null)
+    fun rollback(transactionId: String)
 
     /**
      * Executes a read query by using [java.sql.PreparedStatement]

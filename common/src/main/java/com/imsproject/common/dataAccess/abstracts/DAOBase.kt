@@ -128,8 +128,9 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     }
 
     private inline fun <I,O> doForAll(objs: List<I>, action: (I) -> O) : List<O> {
+        val transactionId: String
         try {
-            cursor.beginTransaction()
+            transactionId = cursor.beginTransaction()
         } catch (e: SQLException) {
             throw DaoException("Failed to start transaction", e)
         }
@@ -140,7 +141,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         }
 
         try {
-            cursor.commit()
+            cursor.commit(transactionId)
         } catch (e: SQLException) {
             throw DaoException("Failed to commit transaction", e)
         }

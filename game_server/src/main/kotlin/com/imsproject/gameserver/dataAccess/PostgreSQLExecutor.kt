@@ -29,7 +29,7 @@ class PostgreSQLExecutor(
         put("password", password)
     }
 
-    private var transactionConnection = ConcurrentHashMap<String,Connection>()
+    private var transactionIdToConnection = ConcurrentHashMap<String,Connection>()
 
     // ==================================================================== |
     // ====================== PUBLIC METHODS ============================== |
@@ -43,9 +43,9 @@ class PostgreSQLExecutor(
     override fun beginTransaction() : String {
         val connection = DriverManager.getConnection(url, properties)
         connection.autoCommit = false
-        val id = UUID.randomUUID().toString()
-        transactionConnection[id] = connection
-        return id
+        val transactionId = UUID.randomUUID().toString()
+        transactionIdToConnection[transactionId] = connection
+        return transactionId
     }
 
     /**
@@ -54,11 +54,12 @@ class PostgreSQLExecutor(
      */
     @Throws(SQLException::class)
     override fun commit(transactionId: String) {
-        val transactionConnection = transactionConnection[transactionId]
-        check((transactionConnection != null && ! transactionConnection.isClosed)) {
+        val connection = transactionIdToConnection[transactionId]
+        check((connection != null && ! connection.isClosed)) {
             "commit() called when not in a transaction"
         }
-        transactionConnection.use { it.commit() }
+        connection.use { it.commit() }
+        transactionIdToConnection.remove(transactionId)
     }
 
     /**
@@ -67,11 +68,12 @@ class PostgreSQLExecutor(
      */
     @Throws(SQLException::class)
     override fun rollback(transactionId: String) {
-        val transactionConnection = transactionConnection[transactionId]
+        val transactionConnection = transactionIdToConnection[transactionId]
         check((transactionConnection != null && ! transactionConnection.isClosed)) {
             "rollback() called when not in a transaction"
         }
         transactionConnection.use { it.rollback() }
+        transactionIdToConnection.remove(transactionId)
     }
 
     /**
@@ -82,9 +84,9 @@ class PostgreSQLExecutor(
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    override fun executeRead(query: String, transactionId: String? = null, vararg params: Any?): OfflineResultSet {
-        requireConnection {
-            return executeRead(it, query, *params)
+    override fun executeRead(query: String, params: Array<out Any?>, transactionId: String?): OfflineResultSet {
+        requireConnection(transactionId) {
+            return executeRead(it, query, params,transactionId)
         }
     }
 
@@ -97,9 +99,9 @@ class PostgreSQLExecutor(
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    override fun executeWrite(query: String, vararg params: Any?): Int {
-        requireConnection {
-            return executeWrite(it, query, *params)
+    override fun executeWrite(query: String, params: Array<out Any?>, transactionId: String?): Int {
+        requireConnection(transactionId) {
+            return executeWrite(it, query, params,transactionId)
         }
     }
 
@@ -110,9 +112,9 @@ class PostgreSQLExecutor(
      * @return The number of rows affected by the query
      * @throws SQLException if an error occurs while executing the query
      */
-    override fun executeUpdateDelete(query: String, vararg params: Any?): Int {
-        requireConnection {
-            return executeWrite(it, query, *params)
+    override fun executeUpdateDelete(query: String, params: Array<out Any?>, transactionId: String?): Int {
+        requireConnection(transactionId) {
+            return executeWrite(it, query, params,transactionId)
         }
     }
 
@@ -122,9 +124,15 @@ class PostgreSQLExecutor(
      * @param params The parameters to be used in the query in order
      * @return An [Int] representing the id of the inserted row
      */
-    override fun executeInsert(query: String, vararg params: Any?): OfflineResultSet {
-        requireConnection {
-            return executeInsert(it, query, *params)
+    override fun executeInsert(query: String, params: Array<out Any?>, transactionId: String?): OfflineResultSet {
+        requireConnection(transactionId) {
+            return executeInsert(it, query, params,transactionId)
+        }
+    }
+
+    override fun executeBulkInsert(query: String, params: List<Array<out Any?>>, transactionId: String?): Int {
+        requireConnection(transactionId) {
+            return executeBulkInsert(it,query, params, transactionId)
         }
     }
 
@@ -132,24 +140,34 @@ class PostgreSQLExecutor(
     // ====================== PRIVATE METHODS ============================= |
     // ==================================================================== |
 
-    private fun executeRead(connection: Connection, query: String, vararg params: Any?): OfflineResultSet {
+    private fun executeRead(
+        connection: Connection,
+        query: String,
+        params: Array<out Any?>,
+        transactionId: String?
+    ): OfflineResultSet {
         try{
             val statement = connection.prepareStatement(query.trim())
             bindParams(statement, params)
             return OfflineResultSet(statement.executeQuery())
         } finally{
-            if(! inTransaction()){
+            if(! inTransaction(transactionId)){
                 connection.close()
             }
         }
     }
 
-    private fun executeWrite(connection: Connection, query: String, vararg params: Any?): Int {
+    private fun executeWrite(
+        connection: Connection,
+        query: String,
+        params: Array<out Any?>,
+        transactionId: String?
+    ): Int {
         try {
             val statement = connection.prepareStatement(query.trim())
             bindParams(statement, params)
             val rowsUpdated = statement.executeUpdate()
-            if(! inTransaction()){
+            if(! inTransaction(transactionId)){
                 connection.commit()
             }
             return rowsUpdated
@@ -159,18 +177,22 @@ class PostgreSQLExecutor(
             } catch(e2: Exception){
                 e.addSuppressed(e2)
             }
+            transactionId?.run{ transactionIdToConnection.remove(this) }
             connection.close()
             throw e
         } finally{
-            if(! inTransaction()){
+            if(! inTransaction(transactionId)){
                 connection.close()
             }
         }
     }
 
-
-
-    private fun executeInsert(connection: Connection, query: String, vararg params: Any?): OfflineResultSet {
+    private fun executeInsert(
+        connection: Connection,
+        query: String,
+        params: Array<out Any?>,
+        transactionId: String?
+    ): OfflineResultSet {
         try {
             val statement = connection.prepareStatement(query.trim(), Statement.RETURN_GENERATED_KEYS)
             bindParams(statement, params)
@@ -179,7 +201,7 @@ class PostgreSQLExecutor(
             if(keysResultSet.isEmpty){
                 throw SQLException("Inserting row failed, no ID obtained.")
             }
-            if(! inTransaction()){
+            if(! inTransaction(transactionId)){
                 connection.commit()
             }
             return keysResultSet
@@ -189,18 +211,30 @@ class PostgreSQLExecutor(
             } catch(e2: Exception){
                 e.addSuppressed(e2)
             }
+            transactionId?.run{ transactionIdToConnection.remove(this) }
             connection.close()
             throw e
         } finally{
-            if(! inTransaction()){
+            if(! inTransaction(transactionId)){
                 connection.close()
             }
         }
     }
 
+    private fun executeBulkInsert(
+        connection: Connection,
+        query: String,
+        paramsList: List<Array<out Any?>>,
+        transactionId: String?
+    ): Int {
+//        val statement = connection.prepareStatement(query.trim())
+//        statement.executeLarge
+        return 0
+    }
+
     @Throws(SQLException::class)
-    private fun inTransaction(): Boolean {
-        val connection = transactionConnection.get() ?: return false
+    private fun inTransaction(transactionId: String?): Boolean {
+        val connection = transactionIdToConnection[transactionId] ?: return false
         return ! connection.isClosed
     }
 
@@ -215,8 +249,8 @@ class PostgreSQLExecutor(
         }
     }
 
-    private inline fun <T> requireConnection(toExecute: (connection: Connection) -> T) : T {
-        val connection = if(inTransaction()) transactionConnection.get()!!
+    private inline fun <T> requireConnection(transactionId: String?, toExecute: (connection: Connection) -> T) : T {
+        val connection = if(inTransaction(transactionId)) transactionIdToConnection[transactionId]!!
         else DriverManager.getConnection(url, properties).apply{ autoCommit = false }
         return toExecute(connection)
     }
