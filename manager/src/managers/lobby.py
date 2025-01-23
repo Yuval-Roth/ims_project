@@ -75,22 +75,43 @@ def create_lobby(participants: list[str], gameType=GAME_TYPE.water_ripples):
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
-            lobby_id = ser_res.get_payload()[0]
+            if ser_res.get_success():
+                lobby_id = ser_res.get_payload()[0]
+                print(f"Created lobby {lobby_id} with participants {participants}")
 
-            for participant in participants:
-                if not join_lobby(lobby_id, participant):
-                    return f"Failed to join {participant} to lobby {lobby_id}"
+                for participant in participants:
+                    if not join_lobby(lobby_id, participant):
+                        return f"Failed to join {participant} to lobby {lobby_id}"
 
-            return lobby_id
+                return lobby_id
+            else:
+                Logger.log_error(f"Failed to create lobby: {ser_res.get_message()}")
+                return None
 
     except Exception as e:
         Logger.log_error(f"Failed to create lobby, {e}")
         return None
 
+def remove_lobby(lobby_id: str):
+    body = server_request(GAME_REQUEST_TYPE.remove_lobby.name, lobbyId=lobby_id).to_dict()
+    try:
+        res = requests.post(URL + "/manager", json=body)
+        if res.status_code in [200, 201]:
+            ser_res = server_response(res)
+            if ser_res.get_success():
+                return True
+            else:
+                Logger.log_error(f"Failed to remove lobby: {ser_res.get_message()}")
+                return False
+
+    except Exception as e:
+        Logger.log_error(f"Failed to remove lobby, {e}")
+        return False
 
 def join_lobby(lobby_id: str, player_id: str):
     body = server_request(GAME_REQUEST_TYPE.join_lobby.name, player_id, lobby_id).to_dict()
     try:
+        Logger.log_debug(f"TRYING TO JOIN LOBBY {lobby_id} WITH PLAYER {player_id}")
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)

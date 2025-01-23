@@ -28,6 +28,18 @@ class server_request:
         return {k: v for k, v in self.__dict__.items() if v != ""}
 
 
+class operators_request:
+    # {
+    #   "userId": "string",
+    #   "password": "string"
+    # }
+    def __init__(self, userId: str, password: str):
+        self.userId: str = userId
+        self.password: str = password
+
+    def to_dict(self):
+        return {k: v for k, v in self.__dict__.items() if v != ""}
+
 class server_response:
     # {
     #     "message": "string?",

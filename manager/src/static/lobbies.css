@@ -128,9 +128,10 @@ body {
     padding: 20px;
     z-index: 1000;
     width: 50%;
-    height: 50%;
+    height: 70%;
     max-width: 500px;
-    overflow: hidden;
+    /*max-height: 500px;*/
+    overflow: auto;
 }
 
 .modal-content {

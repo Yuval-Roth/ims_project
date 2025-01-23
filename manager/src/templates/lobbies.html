@@ -103,6 +103,7 @@ document.querySelectorAll('.lobby-row').forEach(row => {
         const lobbyId = this.dataset.lobbyId;
         const state = this.dataset.state;
         const selectedParticipants = this.querySelector('td:nth-child(2)').textContent.trim(); // Extract players from the second column
+        console.log(selectedParticipants);
 
         // Navigate to the lobby page
         window.location.href = `/lobby?lobby_id=${lobbyId}&selected_participants=${encodeURIComponent(selectedParticipants)}&state=${state}`;
@@ -117,7 +118,16 @@ document.querySelectorAll('.lobby-row').forEach(row => {
                 return;
             }
             if (confirm('Are you sure you want to delete lobby ' + selectedRow + '?')) {
-                window.location.href = `/delete_lobby?lobby_id=${selectedRow}`;
+                fetch(`/delete_lobby?lobby_id=${selectedRow}`, { method: 'GET' })
+                    .then(response => {
+                        if (response.ok) {
+                            // remove the row from the table
+                            document.querySelector(`.lobby-row[data-lobby-id="${selectedRow}"]`).remove();
+                        } else {
+                            alert('Failed to delete lobby.');
+                        }
+                    })
+                    .catch(error => console.error('Error deleting lobby:', error));
             }
         });
 

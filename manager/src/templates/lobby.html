@@ -36,7 +36,7 @@
                             {% for participant in selected_participants %}
                             <tr>
                                 <td>{{ participant }}</td>
-                                <td id="status-{{ participant }}">Not Ready</td>
+                                <td id="status-{{participant}}">Not Ready</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -269,15 +269,14 @@
         }
 
         function updateParticipantStatuses(players, readyStatus) {
-            players.forEach((player, index) => {
-                const statusCell = document.getElementById(`status-${player}`);
-                if (statusCell) {
-                    statusCell.textContent = readyStatus[index] ? 'Ready' : 'Not Ready';
-                    statusCell.classList.toggle('ready', readyStatus[index]);
-                    statusCell.classList.toggle('not-ready', !readyStatus[index]);
-                }
+            // update the status of each player
+            players.forEach(player => {
+                const statusElement = document.getElementById(`status-${player}`);
+                const isReady = readyStatus[players.indexOf(player)];
+                statusElement.textContent = isReady ? 'Ready' : 'Not Ready';
             });
         }
+
 
         function fetchLobbyState() {
             fetch(`/get_lobby`, {

@@ -11,18 +11,24 @@ class GAME_TYPE(Enum):
 
 
 class GAME_REQUEST_TYPE(Enum):
-    get_online_player_ids = 1
-    get_lobbies = 2
-    get_lobby = 3
-    create_lobby = 4
-    set_lobby_type = 5
-    join_lobby = 6
-    leave_lobby = 7
-    start_game = 8
-    end_game = 9
-    update_session_order = 10  
-    create_session = 11       
-    delete_session = 12       
-    add_participant = 13
-    remove_participant = 14
-    edit_participant = 15
+    get_online_player_ids = "get_online_player_ids"
+    get_lobbies = "get_lobbies"
+    get_lobby = "get_lobby"
+    create_lobby = "create_lobby"
+    remove_lobby = "remove_lobby"
+    set_lobby_type = "set_lobby_type"
+    join_lobby = "join_lobby"
+    leave_lobby = "leave_lobby"
+    start_game = "start_game"
+    end_game = "end_game"
+    update_session_order = "update_session_order"
+    create_session = "create_session"
+    delete_session = "delete_session"
+    add_participant = "add_participant"
+    remove_participant = "remove_participant"
+    edit_participant = "edit_participant"
+
+    ## Operators
+    add_operator = "add_operator"
+    remove_operator = "remove_operator"
+    edit_operator = "edit_operator"

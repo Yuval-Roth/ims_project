@@ -5,13 +5,13 @@ from . import *
 from .managers.participants import *
 from .managers.lobby import *
 from .managers.game import *
+from .managers.operators import *
 from .managers.logger import Logger
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 Logger()
-
 
 @app.route('/')
 def home():
@@ -83,7 +83,7 @@ def create_lobby_action():
 @app.route('/delete_lobby', methods=['GET'])
 def delete_lobby_action():
     lobby_id = request.args.get('lobby_id')
-    if lobby_id and leave_lobby(lobby_id, None):  # Implement logic to remove lobby
+    if lobby_id and remove_lobby(lobby_id):
         flash("Lobby removed successfully!")
     else:
         flash("Failed to remove lobby.")
@@ -128,6 +128,8 @@ def lobby():
     lobby_id = request.args.get('lobby_id', '')
     selected_participants = request.args.get('selected_participants', '')
     selected_participants_list = selected_participants.split(",") if selected_participants else []
+    # remove whitespace from each string in the list
+    selected_participants_list = [x.strip() for x in selected_participants_list]
     state = request.args.get('state', 'waiting')
     if state == 'waiting':
         action = 'start'
@@ -136,7 +138,7 @@ def lobby():
     else:
         action = 'start'
 
-    print(f"action: {action}")
+    print(selected_participants_list, lobby_id, action, state)
 
     return render_template('lobby.html', selected_participants=selected_participants_list, lobby_id=lobby_id,
                            action='start', GAME_TYPE=GAME_TYPE)
@@ -212,7 +214,8 @@ def participants_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
     participants = get_participants()
-    if not participants:
+    print(participants)
+    if not participants or len(participants) > 0 and participants[0] is not dict:
         participants = PARTICIPANTS
     return render_template('participants.html', participants=participants)
 
@@ -226,7 +229,12 @@ def operators_menu():
 
 @app.route('/add_operator', methods=['POST'])
 def add_operator():
-    return jsonify({"success":True, "id": 123})
+    # use add_operator function from operators.py
+    user_id = request.form.get('username')
+    password = request.form.get('password')
+
+    res = add_operator(user_id, password)
+    return jsonify(res)
 
 @app.route('/remove_operator', methods=['DELETE'])
 def remove_operator():
