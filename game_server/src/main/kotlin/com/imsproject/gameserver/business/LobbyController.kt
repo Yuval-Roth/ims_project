@@ -8,6 +8,7 @@ import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.lobbies.Lobby
 import com.imsproject.gameserver.business.lobbies.LobbyInfo
+import com.imsproject.gameserver.business.lobbies.LobbyState
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
@@ -195,51 +196,40 @@ class LobbyController(
         return lobbies.values.map { it.getInfo() }
     }
 
-    fun setLobbyType(lobbyId: String, gameType: GameType) {
-        log.debug("setLobbyType() with lobbyId: {}, gameType: {}",lobbyId,gameType)
+    fun configureLobby(lobbyId: String, sessionDetails: Session){
+        log.debug("configureLobby() with lobbyId: {}, sessionDetails: {}",lobbyId,sessionDetails)
 
         // Check if the lobby exists
         val lobby = lobbies[lobbyId] ?: run {
-            log.debug("setLobbyType: Lobby not found")
+            log.debug("configureLobby: Lobby not found")
             throw IllegalArgumentException("Lobby not found")
         }
 
-        if(lobby.gameType == gameType){
-            log.debug("setLobbyType: Game type is already set to {}",gameType)
-            return
+        if(lobby.state != LobbyState.WAITING){
+            log.debug("configureLobby: Lobby is not in waiting state")
+            throw IllegalStateException("Lobby is not in waiting state")
         }
 
-        lobby.gameType = gameType
+        lobby.gameType = sessionDetails.gameType
+        lobby.gameDuration = sessionDetails.duration
+        lobby.syncWindowLength = sessionDetails.syncWindowLength
+        lobby.syncTolerance = sessionDetails.syncTolerance
+
         // Notify the clients
         lobby.getPlayers()
             .map {clients.getByClientId(it)}
             .forEach {
                 it?.sendTcp(
-                    GameRequest.builder(Type.SET_LOBBY_TYPE)
-                        .gameType(gameType)
+                    GameRequest.builder(Type.CONFIGURE_LOBBY)
+                        .gameType(sessionDetails.gameType)
+                        .duration(sessionDetails.duration)
+                        .syncWindowLength(sessionDetails.syncWindowLength)
+                        .syncTolerance(sessionDetails.syncTolerance)
                         .build().toJson()
                 )
             }
 
-        log.debug("setLobbyType() successful")
-    }
-
-    fun setGameDuration(lobbyId: String, duration: Int) {
-        log.debug("setGameDuration() with lobbyId: {}, duration: {}",lobbyId, duration)
-
-        // Check if the lobby exists
-        val lobby = lobbies[lobbyId] ?: run {
-            log.debug("setGameDuration: Lobby not found")
-            throw IllegalArgumentException("Lobby not found")
-        }
-
-        if(duration <= 0) {
-            log.debug("setGameDuration: Duration must be greater than 0")
-            throw IllegalArgumentException("Duration must be greater than 0")
-        }
-
-        lobby.gameDuration = duration
-        log.debug("setGameDuration() successful")
+        log.debug("configureLobby() successful")
     }
 
     companion object {

@@ -18,11 +18,12 @@ class SessionController(
     fun createSession(
         lobbyId: String,
         gameType: GameType,
-        duration: Int = -1,
-        syncWindowLength: Long = -1,
-        syncTolerance: Long = -1
+        duration: Int,
+        syncWindowLength: Long,
+        syncTolerance: Long
     ): String {
-        log.debug("createSession() with lobbyId: {}, duration: {}, gameType: {}",lobbyId,duration,gameType)
+        log.debug("createSession() with lobbyId: {}, gameType: {}, duration: {}, syncWindowLength: {}, syncTolerance: {}",
+            lobbyId,gameType,duration,syncWindowLength,syncTolerance)
 
         // === check if the lobby exists === |
         if(! lobbies.contains(lobbyId)){
@@ -31,8 +32,18 @@ class SessionController(
         }
         // ======================================== |
 
+        val invalidArgs = mutableListOf<String>()
+        val errorMsg = "The following params are invalid: "
+        if(duration <= 0) invalidArgs.add("duration")
+        if(syncWindowLength <= 0) invalidArgs.add("syncWindowLength")
+        if(syncTolerance <= 0) invalidArgs.add("syncTolerance")
+        if(invalidArgs.isNotEmpty()){
+            log.debug("createSession: Invalid arguments: {}",invalidArgs.joinToString())
+            throw IllegalArgumentException("$errorMsg ${invalidArgs.joinToString()}")
+        }
+
         val sessionId = sessionIdGenerator.generate()
-        val session = Session(sessionId, duration, gameType, syncWindowLength, syncTolerance)
+        val session = Session(sessionId, gameType, duration, syncWindowLength, syncTolerance)
         val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
         lobbySessions.add(session)
         return session.sessionId

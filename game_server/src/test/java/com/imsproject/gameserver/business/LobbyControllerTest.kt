@@ -3,6 +3,7 @@ package com.imsproject.gameserver.business
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.toJson
+import com.imsproject.gameserver.business.lobbies.LobbyState
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -25,6 +26,10 @@ class LobbyControllerTest {
         private val GAME_TYPE_1 = GameType.WATER_RIPPLES
         private val GAME_TYPE_2 = GameType.WINE_GLASSES
         private val LEAVE_LOBBY_MESSAGE = GameRequest.builder(GameRequest.Type.LEAVE_LOBBY).build().toJson()
+        private const val SESSION_ID = "00001"
+        private const val DURATION = 60
+        private const val SYNC_WINDOW_LENGTH = 1000L
+        private const val SYNC_TOLERANCE = 100L
     }
 
     @Mock
@@ -35,6 +40,8 @@ class LobbyControllerTest {
     lateinit var mockClientHandler2: ClientHandler
     @Mock
     lateinit var mockClientHandler3: ClientHandler
+    @Mock
+    lateinit var mockSession: Session
 
     // test subject
     private lateinit var lobbyController: LobbyController
@@ -74,6 +81,13 @@ class LobbyControllerTest {
         whenever(mockClientHandler1.id).thenReturn(CLIENT1_ID)
         whenever(mockClientHandler2.id).thenReturn(CLIENT2_ID)
         whenever(mockClientHandler3.id).thenReturn(CLIENT3_ID)
+
+        // set up mock session
+        whenever(mockSession.sessionId).thenReturn(SESSION_ID)
+        whenever(mockSession.gameType).thenReturn(GAME_TYPE_1)
+        whenever(mockSession.duration).thenReturn(DURATION)
+        whenever(mockSession.syncWindowLength).thenReturn(SYNC_WINDOW_LENGTH)
+        whenever(mockSession.syncTolerance).thenReturn(SYNC_TOLERANCE)
     }
 
     // ================================================================================= |
@@ -494,107 +508,52 @@ class LobbyControllerTest {
     }
 
     // ================================================================================= |
-    // ================================= setLobbyType() ================================ |
+    // ================================= configureLobby() ============================== |
     // ================================================================================= |
 
     @Test
-    fun `setLobbyType() - GIVEN valid lobby and game type WHEN setLobbyType is called THEN lobby type should be updated and clients notified`() {
+    fun `configureLobby() - GIVEN valid lobby ID and game type WHEN configureLobby is called THEN lobby should be updated`() {
         // given an existing lobby
         val gameType = GAME_TYPE_1
         val lobbyId = lobbyController.createLobby(gameType)
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
+        whenever(mockSession.gameType).thenReturn(GAME_TYPE_2)
 
-        // when setLobbyType is called
-        lobbyController.setLobbyType(lobbyId,GAME_TYPE_2)
+        // when configureLobby is called
+        lobbyController.configureLobby(lobbyId,mockSession)
 
-        // then lobby type should be updated and clients notified
+        // then the lobby should be updated
         val lobby = assertNotNull(lobbyController[lobbyId])
         assertEquals(GAME_TYPE_2,lobby.gameType)
-        val setLobbyTypeMessage = GameRequest.builder(GameRequest.Type.SET_LOBBY_TYPE)
-            .gameType(GAME_TYPE_2)
-            .build().toJson()
-        verify(mockClientHandler1,times(1)).sendTcp(setLobbyTypeMessage)
-        verify(mockClientHandler2,times(1)).sendTcp(setLobbyTypeMessage)
+        kotlin.test.assertEquals(DURATION,lobby.gameDuration)
+        assertEquals(SYNC_WINDOW_LENGTH,lobby.syncWindowLength)
+        assertEquals(SYNC_TOLERANCE,lobby.syncTolerance)
     }
 
     @Test
-    fun `setLobbyType() - GIVEN invalid lobby ID WHEN setLobbyType is called THEN an exception should be thrown`() {
+    fun `configureLobby() - GIVEN non-existing lobby WHEN configureLobby is called THEN an exception should be thrown`() {
         // given a non-existing lobby
         val lobbyId = "non-existing-lobby"
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
 
-            // when setLobbyType is called
-            lobbyController.setLobbyType(lobbyId,GAME_TYPE_1)
+            // when configureLobby is called
+            lobbyController.configureLobby(lobbyId,mockSession)
         }
     }
 
     @Test
-    fun `setLobbyType() - GIVEN same game type WHEN setLobbyType is called THEN nothing should happen`() {
-        // given an existing lobby
-        val gameType = GAME_TYPE_1
-        val lobbyId = lobbyController.createLobby(gameType)
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
-
-        // when setLobbyType is called with the same game type
-        lobbyController.setLobbyType(lobbyId,GAME_TYPE_1)
-
-        // then nothing should happen
+    fun `configureLobby() - GIVEN lobby is playing WHEN configureLobby THEN throw exception`(){
+        // given a lobby is playing
+        val lobbyId = lobbyController.createLobby(GAME_TYPE_1)
         val lobby = assertNotNull(lobbyController[lobbyId])
-        assertEquals(GAME_TYPE_1,lobby.gameType)
-        val message = GameRequest.builder(GameRequest.Type.SET_LOBBY_TYPE)
-            .gameType(GAME_TYPE_1)
-            .build().toJson()
-        verify(mockClientHandler1,never()).sendTcp(message)
-        verify(mockClientHandler2,never()).sendTcp(message)
-    }
-
-    // ================================================================================= |
-    // ================================= setGameDuration() ============================= |
-    // ================================================================================= |
-
-    @Test
-    fun `setGameDuration() - GIVEN valid lobby and duration WHEN setGameDuration is called THEN game duration should be updated`() {
-        // given an existing lobby
-        val gameType = GAME_TYPE_1
-        val lobbyId = lobbyController.createLobby(gameType)
-
-        // when setGameDuration is called
-        lobbyController.setGameDuration(lobbyId,60)
-
-        // then game duration should be updated and clients notified
-        val lobby = assertNotNull(lobbyController[lobbyId])
-        assertEquals(60,lobby.gameDuration)
-    }
-
-    @Test
-    fun `setGameDuration() - GIVEN invalid lobby ID WHEN setGameDuration is called THEN an exception should be thrown`() {
-        // given a non-existing lobby
-        val lobbyId = "non-existing-lobby"
+        lobby.state = LobbyState.PLAYING
 
         // then an exception should be thrown
-        assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalStateException> {
 
-            // when setGameDuration is called
-            lobbyController.setGameDuration(lobbyId,60)
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = [0,-1,-10])
-    fun `setGameDuration() - GIVEN invalid duration WHEN setGameDuration is called THEN an exception should be thrown`(duration: Int) {
-        // given an existing lobby
-        val gameType = GAME_TYPE_1
-        val lobbyId = lobbyController.createLobby(gameType)
-
-        // then an exception should be thrown
-        assertThrows<IllegalArgumentException> {
-
-            // when setGameDuration is called with zero
-            lobbyController.setGameDuration(lobbyId,duration)
+            // when configureLobby is called
+            lobbyController.configureLobby(lobbyId, mockSession)
         }
     }
 }

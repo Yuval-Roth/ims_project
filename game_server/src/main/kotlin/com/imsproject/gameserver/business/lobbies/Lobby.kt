@@ -5,9 +5,9 @@ import com.imsproject.common.gameserver.GameType
 class Lobby(
     val id: String,
     var gameType: GameType,
-    var gameDuration: Int = -1, // seconds. -1 means the game has no time limit
-    var syncTolerance: Long = -1, // millis. -1 means the game has no sync tolerance
-    var syncWindowLength: Long = -1 // millis. -1 means the game has no window length
+    var gameDuration: Int = -1,
+    var syncTolerance: Long = -1,
+    var syncWindowLength: Long = -1
 ) {
 
     var player1Id : String? = null
@@ -105,6 +105,15 @@ class Lobby(
                 else -> throw IllegalStateException("Player $it is not in the lobby, but was found in the player list")
             }
         }
-        return LobbyInfo(id, gameType, state,gameDuration, players, playersReadyStatus)
+        return LobbyInfo(
+            id,
+            state,
+            gameType,
+            gameDuration,
+            syncWindowLength,
+            syncTolerance,
+            players,
+            playersReadyStatus
+        )
     }
 }

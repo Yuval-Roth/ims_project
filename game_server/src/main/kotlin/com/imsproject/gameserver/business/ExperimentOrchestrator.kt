@@ -1,6 +1,5 @@
 package com.imsproject.gameserver.business
 
-import com.imsproject.common.utils.SimpleIdGenerator
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -35,8 +34,7 @@ class ExperimentOrchestrator(
             val iterator = sessions.iterator()
             while(iterator.hasNext()) {
                 val session = iterator.next()
-                lobbies.setLobbyType(lobbyId, session.gameType)
-                lobbies.setGameDuration(lobbyId, session.duration)
+                lobbies.configureLobby(lobbyId, session)
                 while(! lobby.isReady()){
                     delay(1000)
                 }
