@@ -47,18 +47,17 @@ public class HeartRateListener extends BaseListener {
 
     public void readValuesFromDataPoint(DataPoint dataPoint) {
         final HeartRateData hrData = new HeartRateData();
-        //"TODO 6 (1)"
         hrData.status = dataPoint.getValue(ValueKey.HeartRateSet.HEART_RATE_STATUS);
-        //"TODO 6 (2)"
         hrData.hr = dataPoint.getValue(ValueKey.HeartRateSet.HEART_RATE);
-        //"TODO 6 (3)"
         List<Integer> hrIbiList = dataPoint.getValue(ValueKey.HeartRateSet.IBI_LIST);
-        //"TODO 6 (4)"
         final List<Integer> hrIbiStatus = dataPoint.getValue(ValueKey.HeartRateSet.IBI_STATUS_LIST);
-        //"TODO 6 (5)"
         hrData.ibi = hrIbiList.get(hrIbiList.size()-1);
-        //"TODO 6 (6)"
-        hrData.qIbi = hrIbiStatus.get(hrIbiList.size()-1);
+        if (hrIbiList.size() > 0) {
+            hrData.qIbi = hrIbiStatus.get(hrIbiList.size() - 1);
+        }
+        else {
+            hrData.qIbi = -1;
+        }
         TrackerDataNotifier.getInstance().notifyHeartRateTrackerObservers(hrData);
         Log.d(APP_TAG, dataPoint.toString());
     }

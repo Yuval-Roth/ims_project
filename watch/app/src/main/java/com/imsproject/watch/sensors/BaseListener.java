@@ -41,7 +41,6 @@ public class BaseListener {
         Log.d(APP_TAG, "trackerEventListener: " + trackerEventListener.toString());
         if (!isHandlerRunning) {
             handler.post(() -> {
-                //"TODO 3"
                 healthTracker.setEventListener(trackerEventListener);
                 setHandlerRunning(true);
             });
@@ -53,7 +52,6 @@ public class BaseListener {
         Log.d(APP_TAG, "healthTracker: " + healthTracker.toString());
         Log.d(APP_TAG, "trackerEventListener: " + trackerEventListener.toString());
         if (isHandlerRunning) {
-            //"TODO 4"
             healthTracker.unsetEventListener();
             setHandlerRunning(false);
 

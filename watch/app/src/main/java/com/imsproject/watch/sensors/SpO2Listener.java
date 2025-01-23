@@ -45,27 +45,14 @@ public class SpO2Listener extends BaseListener {
         setTrackerEventListener(trackerEventListener);
     }
 
-    /*******************************************************************************************
-     * [Practice 5] Read values from DataPoint object
-     *  - Get blood oxygen level status
-     *  - Get blood oxygen level value
-     -------------------------------------------------------------------------------------------
-     *  - (Hint) Replace TODO 5 with parts of code
-     *      (1) remove SpO2Status.CALCULATING and
-     *          set status from 'dataPoint' object using dataPoint.getValue(ValueKey.SpO2Set.STATUS)
-     *      (2) set spo2Value from 'dataPoint' object using dataPoint.getValue(ValueKey.SpO2Set.SPO2)
-     *          if status is 'SpO2Status.MEASUREMENT_COMPLETED'
-     ******************************************************************************************/
-
     public void updateSpo2(DataPoint dataPoint) {
 
-        //int status = SpO2Status.CALCULATING; //"TODO 5 (1)"
+        //int status = SpO2Status.CALCULATING;
         int status = dataPoint.getValue(ValueKey.SpO2Set.STATUS);
         int spo2Value = 0;
         if(status == SpO2Status.MEASUREMENT_COMPLETED) {
             spo2Value = dataPoint.getValue(ValueKey.SpO2Set.SPO2);
         }
-        //"TODO 5 (2)"
 
         TrackerDataNotifier.getInstance().notifySpO2TrackerObservers(status, spo2Value);
         Log.d(APP_TAG, dataPoint.toString());

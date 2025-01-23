@@ -1,9 +1,13 @@
 package com.imsproject.watch.viewmodel
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Vibrator
 import android.util.Log
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
@@ -12,6 +16,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.R
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
@@ -75,6 +80,9 @@ abstract class GameViewModel(
     private var timeServerDelta = 0L
     private var myStartTime = 0L
 
+    private var havePermission = false
+
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -110,8 +118,9 @@ abstract class GameViewModel(
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
 
-            // sensors setup
-            sensorsHandler = SensorsHandler(context, this@GameViewModel)
+            if(havePermission) {
+                sensorsHandler = SensorsHandler(context, this@GameViewModel)
+            }
             locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
 
             // latency tracker setup
@@ -146,14 +155,18 @@ abstract class GameViewModel(
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
             Log.d(TAG, "onCreate: session started")
             locationSensorHandler.start()
-            sensorsHandler.start()
+            if(havePermission) {
+                sensorsHandler.start()
+            }
             _state.value = State.PLAYING
         }
 
     }
 
     fun onDestroy() {
-        sensorsHandler.stop()
+        if (havePermission) {
+            sensorsHandler.stop()
+        }
         locationSensorHandler.stop()
     }
 
@@ -265,6 +278,18 @@ abstract class GameViewModel(
                 onFailure()
             }
         }
+    }
+
+    fun setupSensors(activity: Activity) {
+        // sensors setup
+        val context = activity.applicationContext
+        if (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) == PackageManager.PERMISSION_DENIED){
+            activity.requestPermissions(arrayOf(Manifest.permission.BODY_SENSORS), 0)
+        }
+        else {
+            println("permission is already exist")
+        }
+        havePermission = (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) != PackageManager.PERMISSION_DENIED)
     }
 
     private fun setupListeners() {

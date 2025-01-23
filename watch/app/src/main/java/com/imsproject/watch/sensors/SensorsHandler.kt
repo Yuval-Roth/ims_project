@@ -139,6 +139,7 @@ class SensorsHandler(
         try {
             connectionManager = ConnectionManager(connectionObserver)
             connectionManager!!.connect(context)
+            println("SensorError: Connection succeed")
         } catch (t: Throwable) {
             println("SensorError: Could not connect the ConnectionManager: " + t.message)
         }
@@ -164,12 +165,15 @@ class SensorsHandler(
     }
 
     fun start() {
-        if (!isMeasurementRunning.get()) {
+        if (!isMeasurementRunning.get() && connected) {
             // Start the measurement process
             previousStatus = SpO2Status.INITIAL_STATUS
             spO2Listener?.startTracker()  // Start measuring SpO2
             heartRateListener?.startTracker()  // Optionally, you can start heart rate tracking too
             isMeasurementRunning.set(true)
+        }
+        else {
+            println("")
         }
     }
 }
