@@ -27,7 +27,7 @@ abstract class AggregateDAOBase<T, EXAMPLE : Example> protected constructor(
 
         val resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(query,*values)
+            resultSet = cursor.executeRead(query,values)
         } catch (e: SQLException) {
             throw DaoException("Failed to select all from table $tableName", e)
         }
@@ -46,7 +46,7 @@ abstract class AggregateDAOBase<T, EXAMPLE : Example> protected constructor(
 
         val resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(query, *values)
+            resultSet = cursor.executeRead(query, values)
         } catch (e: SQLException) {
             throw DaoException("Failed to check if exists in table $tableName", e)
         }

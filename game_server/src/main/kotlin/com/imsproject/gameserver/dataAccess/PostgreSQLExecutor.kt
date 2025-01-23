@@ -4,6 +4,7 @@ import com.imsproject.common.dataAccess.OfflineResultSet
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import java.sql.*
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 private const val URL_PREFIX = "jdbc:postgresql://"
 
@@ -28,7 +29,7 @@ class PostgreSQLExecutor(
         put("password", password)
     }
 
-    private var transactionConnection = ThreadLocal<Connection?>()
+    private var transactionConnection = ConcurrentHashMap<String,Connection>()
 
     // ==================================================================== |
     // ====================== PUBLIC METHODS ============================== |
@@ -39,10 +40,12 @@ class PostgreSQLExecutor(
      * @throws SQLException if an error occurs while starting the transaction
      */
     @Throws(SQLException::class)
-    override fun beginTransaction() {
+    override fun beginTransaction() : String {
         val connection = DriverManager.getConnection(url, properties)
         connection.autoCommit = false
-        transactionConnection.set(connection)
+        val id = UUID.randomUUID().toString()
+        transactionConnection[id] = connection
+        return id
     }
 
     /**
@@ -50,8 +53,8 @@ class PostgreSQLExecutor(
      * @throws SQLException if an error occurs while committing the transaction
      */
     @Throws(SQLException::class)
-    override fun commit() {
-        val transactionConnection = transactionConnection.get()
+    override fun commit(transactionId: String) {
+        val transactionConnection = transactionConnection[transactionId]
         check((transactionConnection != null && ! transactionConnection.isClosed)) {
             "commit() called when not in a transaction"
         }
@@ -63,8 +66,8 @@ class PostgreSQLExecutor(
      * @throws SQLException if an error occurs while rolling back the transaction
      */
     @Throws(SQLException::class)
-    override fun rollback() {
-        val transactionConnection = transactionConnection.get()
+    override fun rollback(transactionId: String) {
+        val transactionConnection = transactionConnection[transactionId]
         check((transactionConnection != null && ! transactionConnection.isClosed)) {
             "rollback() called when not in a transaction"
         }
@@ -79,7 +82,7 @@ class PostgreSQLExecutor(
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    override fun executeRead(query: String, vararg params: Any?): OfflineResultSet {
+    override fun executeRead(query: String, transactionId: String? = null, vararg params: Any?): OfflineResultSet {
         requireConnection {
             return executeRead(it, query, *params)
         }

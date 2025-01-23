@@ -8,23 +8,24 @@ interface SQLExecutor {
     /**
      * Begins a transaction
      * @throws SQLException if an error occurs while starting the transaction
+     * @return transaction id
      */
     @Throws(SQLException::class)
-    fun beginTransaction()
+    fun beginTransaction() : String
 
     /**
      * Commits the transaction
      * @throws SQLException if an error occurs while committing the transaction
      */
     @Throws(SQLException::class)
-    fun commit()
+    fun commit(transactionId: String? = null)
 
     /**
      * Rolls back the transaction
      * @throws SQLException if an error occurs while rolling back the transaction
      */
     @Throws(SQLException::class)
-    fun rollback()
+    fun rollback(transactionId: String? = null)
 
     /**
      * Executes a read query by using [java.sql.PreparedStatement]
@@ -34,7 +35,7 @@ interface SQLExecutor {
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    fun executeRead(query: String, vararg params: Any?): OfflineResultSet
+    fun executeRead(query: String, params: Array<out Any?> = emptyArray(), transactionId: String? = null): OfflineResultSet
 
     /**
      * Executes a generic write query by using [java.sql.PreparedStatement].
@@ -45,7 +46,7 @@ interface SQLExecutor {
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    fun executeWrite(query: String, vararg params: Any?): Int
+    fun executeWrite(query: String, params: Array<out Any?> = emptyArray(), transactionId: String? = null): Int
 
     /**
      * Executes an insert query by using [java.sql.PreparedStatement]
@@ -54,7 +55,7 @@ interface SQLExecutor {
      * @return A [OfflineResultSet] containing the generated keys
      */
     @Throws(SQLException::class)
-    fun executeInsert(query: String, vararg params: Any?): OfflineResultSet
+    fun executeInsert(query: String, params: Array<out Any?> = emptyArray(), transactionId: String? = null): OfflineResultSet
 
     /**
      * Executes an update or delete query by using [java.sql.PreparedStatement]
@@ -64,5 +65,8 @@ interface SQLExecutor {
      * @throws SQLException if an error occurs while executing the query
      */
     @Throws(SQLException::class)
-    fun executeUpdateDelete(query: String, vararg params: Any?): Int
+    fun executeUpdateDelete(query: String, params: Array<out Any?> = emptyArray(), transactionId: String? = null): Int
+
+    @Throws(SQLException::class)
+    fun executeBulkInsert(query: String, params: List<Array<out Any?>> = emptyList(), transactionId: String? = null): Int
 }

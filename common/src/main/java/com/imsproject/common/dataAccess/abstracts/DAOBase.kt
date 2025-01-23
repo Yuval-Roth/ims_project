@@ -57,7 +57,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         val values = key.values()
         val resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(selectQuery, *values)
+            resultSet = cursor.executeRead(selectQuery, values)
         } catch (e: SQLException) {
             throw DaoException("Failed to select from table $tableName", e)
         }
@@ -89,7 +89,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     override fun delete(key: PK) {
         val values = key.values()
         try {
-            cursor.executeWrite(deleteQuery, *values)
+            cursor.executeWrite(deleteQuery, values)
         } catch (e: SQLException) {
             throw DaoException("Failed to delete from table $tableName", e)
         }
@@ -100,7 +100,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         val values = key.values()
         val resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(selectQuery, *values)
+            resultSet = cursor.executeRead(selectQuery, values)
         } catch (e: SQLException) {
             throw DaoException("Failed to check if exists in table $tableName", e)
         }
@@ -163,7 +163,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         val questionmarks = List(nonKeyColumnNames.size) { "?" }.joinToString(", "); //don't ask please
         val insertQuery = "INSERT INTO $tableName (${nonKeyColumnNames.joinToString()}) VALUES (${questionmarks}) RETURNING $idColumnName"
         try {
-            val keysResultSet = cursor.executeInsert(insertQuery,*values)
+            val keysResultSet = cursor.executeInsert(insertQuery,values)
             if(keysResultSet.next()) {
                 val id = keysResultSet.getTyped<Int>(idColumnName)
                 if(id != null){
@@ -199,7 +199,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
             params.add(id)
 
             // Execute the query
-            cursor.executeWrite(query, *params.toTypedArray())
+            cursor.executeWrite(query, params.toTypedArray())
         } catch (e: SQLException) {
             throw DaoException("Failed to update table $tableName", e)
         }
