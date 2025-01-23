@@ -329,13 +329,14 @@ def participants_menu():
 @app.route('/add_participant', methods=['POST'])
 def add_part():
     try:
+        print(request.json)
         participant = {
-            "firstName": request.json.get('firstName'),
-            "lastName": request.json.get('lastName'),
-            "age": request.json.get('age'),
-            "gender": request.json.get('gender'),
-            "email": request.json.get('email'),
-            "phone": request.json.get('phone')
+            "firstName": request.json[0],
+            "lastName": request.json[1],
+            "age": request.json[2],
+            "gender": request.json[3],
+            "phone": request.json[4],
+            "email": request.json[5]
         }
         print(participant)
         return add_participant(participant)

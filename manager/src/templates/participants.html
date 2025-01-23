@@ -197,16 +197,24 @@
             const url = id ? '/edit_participant' : '/add_participant';
             const method = id ? 'PUT' : 'POST';
 
+            // Prepare the payload for adding or editing
+            const payload = id
+                ? { id, firstName, lastName, age, gender, phone, email }
+                : [firstName, lastName, age.toString(), gender, phone, email];
+
             fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({firstName, lastName, age, gender, phone, email })
+                body: JSON.stringify(payload)
             })
                 .then(response => response.json())
-
                 .then(data => {
+                    {#[
+                    {#    "002"
+                    {#]#}
                     console.log(data);
-                    if (data.success) {
+                    if (Array.isArray(data)) {
+                        const newParticipantId = data[0]; // Extract the first element from the array
                         if (id) {
                             // Update existing row
                             const cells = selectedRow.children;
@@ -220,9 +228,9 @@
                             // Add new row
                             const newRow = document.createElement('tr');
                             newRow.className = 'participant-row';
-                            newRow.dataset.participantId = data[0];
+                            newRow.dataset.participantId = newParticipantId;
                             newRow.innerHTML = `
-                                <td>${data[0]}</td>
+                                <td>${newParticipantId}</td>
                                 <td>${firstName}</td>
                                 <td>${lastName}</td>
                                 <td>${age}</td>
@@ -249,6 +257,8 @@
         });
     });
 </script>
+
+
 
 
 </body>
