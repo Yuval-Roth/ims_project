@@ -28,7 +28,7 @@ class PostgreSQLExecutor(
         put("password", password)
     }
 
-    private var transactionConnection: Connection? = null
+    private var transactionConnection = ThreadLocal<Connection?>()
 
     // ==================================================================== |
     // ====================== PUBLIC METHODS ============================== |
@@ -42,7 +42,7 @@ class PostgreSQLExecutor(
     override fun beginTransaction() {
         val connection = DriverManager.getConnection(url, properties)
         connection.autoCommit = false
-        transactionConnection = connection
+        transactionConnection.set(connection)
     }
 
     /**
@@ -51,7 +51,7 @@ class PostgreSQLExecutor(
      */
     @Throws(SQLException::class)
     override fun commit() {
-        val transactionConnection = transactionConnection
+        val transactionConnection = transactionConnection.get()
         check((transactionConnection != null && ! transactionConnection.isClosed)) {
             "commit() called when not in a transaction"
         }
@@ -64,7 +64,7 @@ class PostgreSQLExecutor(
      */
     @Throws(SQLException::class)
     override fun rollback() {
-        val transactionConnection = transactionConnection
+        val transactionConnection = transactionConnection.get()
         check((transactionConnection != null && ! transactionConnection.isClosed)) {
             "rollback() called when not in a transaction"
         }
@@ -197,7 +197,7 @@ class PostgreSQLExecutor(
 
     @Throws(SQLException::class)
     private fun inTransaction(): Boolean {
-        val connection = transactionConnection ?: return false
+        val connection = transactionConnection.get() ?: return false
         return ! connection.isClosed
     }
 
@@ -213,7 +213,7 @@ class PostgreSQLExecutor(
     }
 
     private inline fun <T> requireConnection(toExecute: (connection: Connection) -> T) : T {
-        val connection = if(inTransaction()) transactionConnection!!
+        val connection = if(inTransaction()) transactionConnection.get()!!
         else DriverManager.getConnection(url, properties).apply{ autoCommit = false }
         return toExecute(connection)
     }

@@ -118,8 +118,8 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     }
 
     @Throws(DaoException::class)
-    override fun insertAll(objs: List<T>) {
-        doForAll(objs) { obj -> insert(obj) }
+    override fun insertAll(objs: List<T>) : List<Int> {
+        return doForAll(objs) { obj -> insert(obj) }
     }
 
     @Throws(DaoException::class)
@@ -135,17 +135,8 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         }
 
         val output = mutableListOf<O>()
-        try {
-            for (obj in objs) {
-                output.add(action(obj))
-            }
-        } catch (e: DaoException) {
-            try {
-                cursor.rollback()
-            } catch (e2: SQLException) {
-                e.addSuppressed(e2)
-            }
-            throw e
+        for (obj in objs) {
+            output.add(action(obj))
         }
 
         try {

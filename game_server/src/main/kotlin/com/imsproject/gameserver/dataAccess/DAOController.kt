@@ -19,7 +19,6 @@ class DAOController {
         "localhost", 5432 ,"ims-db", "admin", "adminMTAC"
     )
 
-// todo: seperate cursor to each
     val participantDAO: ParticipantsDAO = ParticipantsDAO(cursor)
     val experimentDAO: ExperimentsDAO = ExperimentsDAO(cursor)
     val sessionDAO: SessionsDAO = SessionsDAO(cursor)
@@ -27,7 +26,6 @@ class DAOController {
 
 
     // todo: (later) add cotrollers for input check
-    // todo: (now) change add lobby to be with session list.
     @Throws(SQLException::class)
     fun handle(section: String, action: String ,body : String): String {
         when (section) {
@@ -57,21 +55,28 @@ class DAOController {
     @Throws(SQLException::class)
     fun handleExperimentSession(action: String ,body : String): String {
         when (action) {
-            "insert" -> { //todo: absolute chaos, works for now. rewrite for transactions. consult the team
-                val esdata: ExpWithSessionsData = fromJson(body)
-                val expdto: ExperimentDTO = ExperimentDTO(expId = null, pid1 = esdata.pid1, pid2 = esdata.pid2)
-                val response: Response = fromJson(experimentDAO.handleExperiments(action, expdto))
-                val expId: Int = response.payload!![0].toInt()
+            "insert" -> {
+                try { // todo: wrap that all in executeor to be in a thread instead of coroutine
+                    cursor.beginTransaction()
+                    val esdata: ExpWithSessionsData = fromJson(body)
+                    val expdto = ExperimentDTO(expId = null, pid1 = esdata.pid1, pid2 = esdata.pid2)
+                    val response: Response = fromJson(experimentDAO.handleExperiments(action, expdto))
+                    val expId: Int = response.payload!![0].toInt()
 
-                val sessionIds: MutableMap<String, Int> = mutableMapOf("expId" to expId)
-                for(s in esdata.sessions) {
-                    val sdto: SessionDTO = SessionDTO.create(expId, s)
-                    val response2: Response = fromJson(sessionDAO.handleSessions(action, sdto))
-                    val sessId: Int = response2.payload!![0].toInt()
-                    sessionIds[sdto.sessionOrder.toString()] = sessId
+                    val sessionIds: MutableMap<String, Int> = mutableMapOf("expId" to expId)
+                    for (s in esdata.sessions) {
+                        val sdto: SessionDTO = SessionDTO.create(expId, s)
+                        val response2: Response = fromJson(sessionDAO.handleSessions(action, sdto))
+                        val sessId: Int = response2.payload!![0].toInt()
+                        sessionIds[sdto.sessionOrder.toString()] = sessId
+                    }
+
+                    cursor.commit()
+                    return Response.getOk(sessionIds)
+                } catch (e: Exception) {
+                    //rollback automatic
+                    throw SQLException("""Insert Experiment and Sessions doesn't work""")
                 }
-
-                return Response.getOk(sessionIds)
             }
             else -> throw (SQLException("Unknown section '$action'"))
         }

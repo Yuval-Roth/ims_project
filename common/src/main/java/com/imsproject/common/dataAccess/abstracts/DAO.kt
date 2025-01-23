@@ -19,7 +19,7 @@ interface DAO<T, PK : PrimaryKey> {
     fun insert(obj: T) : Int
 
     @Throws(DaoException::class)
-    fun insertAll(objs: List<T>)
+    fun insertAll(objs: List<T>): List<Int>
 
     @Throws(DaoException::class)
     fun update(obj: T)
