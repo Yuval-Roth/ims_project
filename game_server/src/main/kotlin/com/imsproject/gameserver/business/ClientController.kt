@@ -68,8 +68,8 @@ class ClientController {
 
     fun onExit(clientId: String){
         val handler = clientIdToHandler[clientId] ?: return
-        removeClientHandler(clientId)
         _onClientDisconnect.forEach { it(handler) }
+        removeClientHandler(clientId)
     }
 
     private fun pruneDeadClients() {
@@ -79,11 +79,11 @@ class ClientController {
             val handler = entry.value
             val isAlive = handler.lastHeartbeat.isMoreThanSecondsAgo(HEARTBEAT_TIMEOUT_THRESHOLD)
             if(!isAlive){
+                _onClientDisconnect.forEach { it(handler) }
                 iter.remove()
                 wsSessionIdToHandler.remove(entry.value.wsSession.id)
                 hostPortToHandler.remove(handler.udpAddress.toHostPortString())
                 handler.close()
-                _onClientDisconnect.forEach { it(handler) }
             }
         }
     }
