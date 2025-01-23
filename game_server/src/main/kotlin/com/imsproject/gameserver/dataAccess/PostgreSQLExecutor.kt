@@ -227,9 +227,31 @@ class PostgreSQLExecutor(
         paramsList: List<Array<out Any?>>,
         transactionId: String?
     ): Int {
-//        val statement = connection.prepareStatement(query.trim())
-//        statement.executeLarge
-        return 0
+        try {
+            val statement = connection.prepareStatement(query.trim())
+            for (params in paramsList) {
+                bindParams(statement, params)
+                statement.addBatch()
+            }
+            val rowsAffected = statement.executeBatch().sum()
+            if (!inTransaction(transactionId)) {
+                connection.commit()
+            }
+            return rowsAffected
+        } catch (e: SQLException) {
+            try {
+                connection.rollback()
+            } catch (e2: Exception) {
+                e.addSuppressed(e2)
+            }
+            transactionId?.run { transactionIdToConnection.remove(this) }
+            connection.close()
+            throw e
+        } finally {
+            if (!inTransaction(transactionId)) {
+                connection.close()
+            }
+        }
     }
 
     @Throws(SQLException::class)
