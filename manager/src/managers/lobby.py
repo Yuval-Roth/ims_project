@@ -155,8 +155,9 @@ def change_session_order(lobby_id: str, session_order: list[str]):
     """
     Updates the order of sessions in a lobby.
     """
-    body = server_request(GAME_REQUEST_TYPE.update_session_order.name, lobbyId=lobby_id).to_dict()
-    body["sessionOrder"] = session_order
+    body = server_request(GAME_REQUEST_TYPE.change_sessions_order.name, lobbyId=lobby_id).to_dict()
+    body["sessionIds"] = session_order
+    print(f"Updating session order with body: {body}")
     try:
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
@@ -180,9 +181,14 @@ def get_sessions(lobby_id: str):
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
-                # Parse the JSON string into a dictionary before using it
-                payload_dict = json.loads(ser_res.get_payload()[0])
-                return payload_dict.get("sessions", [])
+                payload = ser_res.get_payload()  # Directly access the payload
+                print(payload)
+                # Ensure the payload is a list of session objects
+                if isinstance(payload, list):
+                    return payload  # Return the list of session objects directly
+
+                Logger.log_error(f"Unexpected payload format: {payload}")
+                return None
 
             Logger.log_error(f"Failed to get sessions: {ser_res.get_message()}")
             return None
@@ -190,15 +196,16 @@ def get_sessions(lobby_id: str):
         Logger.log_error(f"Failed to get sessions, {e}")
         return None
 
-def create_session(lobby_id: str, game_type: str, duration: int):#, sync_tolerance: int, window: int):
+def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance: int, window: int):
     """
     Creates a new session in the specified lobby.
     """
     body = server_request(GAME_REQUEST_TYPE.create_session.name, lobbyId=lobby_id, gameType=game_type).to_dict()
     body["duration"] = duration
+    print(f"Creating session with body: {body}")
     print(body)
-    # body["syncTolerance"] = sync_tolerance
-    # body["window"] = window
+    body["syncTolerance"] = sync_tolerance
+    body["syncWindowLength"] = window
     try:
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
@@ -218,7 +225,7 @@ def delete_session(lobby_id: str, session_id: str):
     """
     Deletes a session from a lobby.
     """
-    body = server_request(GAME_REQUEST_TYPE.delete_session.name, lobbyId=lobby_id).to_dict()
+    body = server_request(GAME_REQUEST_TYPE.remove_session.name, lobbyId=lobby_id).to_dict()
     body["sessionId"] = session_id
     try:
         res = requests.post(URL + "/manager", json=body)

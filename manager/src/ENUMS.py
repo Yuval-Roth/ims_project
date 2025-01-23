@@ -1,12 +1,25 @@
 from enum import Enum
 
+# def get_game_type_name_from_value(value):
+#     """
+#     Maps the enum name or human-readable enum value to its human-readable name.
+#     """
+#     for game in GAME_TYPE:
+#         if game.name == value:  # Match enum name (e.g., 'water_ripples')
+#             return game.value  # Return human-readable value (e.g., 'Water Ripples')
+#         if game.value == value:  # Match human-readable value (e.g., 'Water Ripples')
+#             return game.value  # Return human-readable value
+#     raise KeyError(f"Invalid game type: {value}")
+
 def get_game_type_name_from_value(value):
     """
-    Maps the human-readable enum value to its name.
+    Maps the enum name or human-readable enum value to its human-readable name.
     """
     for game in GAME_TYPE:
-        if game.value == value:
-            return game.name
+        if game.name == value:  # Match enum name (e.g., 'water_ripples')
+            return game.name  # Return human-readable value (e.g., 'Water Ripples')
+        if game.value == value:  # Match human-readable value (e.g., 'Water Ripples')
+            return game.name  # Return human-readable value
     raise KeyError(f"Invalid game type: {value}")
 
 class GAME_TYPE(Enum):
@@ -28,11 +41,12 @@ class GAME_REQUEST_TYPE(Enum):
     join_lobby = "join_lobby"
     leave_lobby = "leave_lobby"
     start_game = "start_game"
+    start_experiment = "start_experiment"
     end_game = "end_game"
-    update_session_order = "update_session_order"
+    change_sessions_order = "change_sessions_order"
     get_sessions = "get_sessions"
     create_session = "create_session"
-    delete_session = "delete_session"
+    remove_session = "remove_session"
     add_participant = "add_participant"
     remove_participant = "remove_participant"
     edit_participant = "edit_participant"

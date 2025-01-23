@@ -21,18 +21,38 @@ def get_participants():
     except Exception as e:
         Logger.log_error(f"Failed to get participants, {e}")
         return None
-    
 
-def add_participant(participant):
-    body = server_request(GAME_REQUEST_TYPE.add_participant.name, participant).to_dict()
+
+def get_participants_for_view():
     try:
-        response = requests.post(URL+"/manager", json=body, timeout=0.1)
+        response = requests.get(URL+"/participants/get")
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
                 return ser_res.get_payload()
 
+            Logger.log_error(f"Failed to get participants: {ser_res.get_message()}")
+            return None
+
+    except Exception as e:
+        Logger.log_error(f"Failed to get participants, {e}")
+        return None
+
+def add_participant(participant):
+    # body = server_request(GAME_REQUEST_TYPE.add_participant.name, participant).to_dict()
+    try:
+        # print(body)
+        response = requests.post(URL+"/participants/add", json=participant)
+        if response.status_code in [200, 201]:
+            print(response.json())
+            ser_res = server_response(response)
+            if ser_res.get_success():
+                return ser_res.get_payload()
+
             Logger.log_error(f"Failed to add participant: {ser_res.get_message()}")
+            return None
+        else:
+            Logger.log_error(f"Failed to add participant: {response.json()}")
             return None
 
     except Exception as e:
@@ -42,7 +62,7 @@ def add_participant(participant):
 def remove_participant(participant_id):
     body = server_request(GAME_REQUEST_TYPE.remove_participant.name, {"id": participant_id}).to_dict()
     try:
-        response = requests.post(URL+"/manager", json=body, timeout=0.1)
+        response = requests.post(URL+"/manager", json=body)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
@@ -59,7 +79,7 @@ def remove_participant(participant_id):
 def edit_participant(participant):
     body = server_request(GAME_REQUEST_TYPE.edit_participant.name, participant).to_dict()
     try:
-        response = requests.post(URL+"/manager", json=body, timeout=0.1)
+        response = requests.post(URL+"/manager", json=body)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
