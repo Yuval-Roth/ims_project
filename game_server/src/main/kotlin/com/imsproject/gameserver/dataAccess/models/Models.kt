@@ -42,7 +42,6 @@ data class SessionEventDTO(
     val data: String?
 )
 
-//todo: expose this to yuval , and then build my dtos from that
 data class ExpWithSessionsData(
     val pid1: Int,
     val pid2: Int,

@@ -44,10 +44,12 @@ class DAOController {
             "sessionEvent" -> {
                 val sessionEventDTO: SessionEventDTO = fromJson(body)
                 return sessionEventDAO.handleSessionEvents(action, sessionEventDTO)
+                //todo: add bulk session addition
             }
             "experimentSession" -> {
                 return handleExperimentSession(action, body)
             }
+
             else -> throw (SQLException("Unknown section '$section'"))
         }
     }
@@ -56,7 +58,7 @@ class DAOController {
     fun handleExperimentSession(action: String ,body : String): String {
         when (action) {
             "insert" -> {
-                try { // todo: wrap that all in executeor to be in a thread instead of coroutine
+                try {
                     val tid = cursor.beginTransaction()
                     val esdata: ExpWithSessionsData = fromJson(body)
                     val expdto = ExperimentDTO(expId = null, pid1 = esdata.pid1, pid2 = esdata.pid2)
