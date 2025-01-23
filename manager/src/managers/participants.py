@@ -60,13 +60,13 @@ def add_participant(participant):
         return None
     
 def remove_participant(participant_id):
-    body = server_request(GAME_REQUEST_TYPE.remove_participant.name, {"id": participant_id}).to_dict()
     try:
-        response = requests.post(URL+"/manager", json=body)
+        response = requests.post(URL+"/participants/remove", json={"pid": participant_id})
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
-                return ser_res.get_payload()
+                Logger.log_info(f"Removed participant {participant_id}, {ser_res.get_payload()}")
+                return True
 
             Logger.log_error(f"Failed to remove participant: {ser_res.get_message()}")
             return None

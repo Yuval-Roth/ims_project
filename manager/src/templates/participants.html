@@ -31,8 +31,8 @@
                     </thead>
                     <tbody>
                         {% for participant in participants %}
-                        <tr class="participant-row" data-participant-id="{{ participant.id }}">
-                            <td>{{ participant.id }}</td>
+                        <tr class="participant-row" data-participant-id="{{ participant.pid }}">
+                            <td>{{ participant.pid }}</td>
                             <td>{{ participant.firstName }}</td>
                             <td>{{ participant.lastName }}</td>
                             <td>{{ participant.age }}</td>
@@ -49,7 +49,6 @@
         <!-- Right: Action Buttons -->
         <div class="actions-container">
             <button id="add-participant-btn" class="action-button">Add Participant</button>
-            <button id="edit-participant-btn" class="action-button">Edit Participant</button>
             <button id="remove-participant-btn" class="action-button">Remove Participant</button>
         </div>
     </div>

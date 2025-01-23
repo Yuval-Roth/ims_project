@@ -45,13 +45,13 @@ def main_menu():
 def get_parts():
     participants = get_participants()  # Replace with your function to fetch participants
     # participants = None
-    if not participants:
-        participants = PARTICIPANTS
-    elif len(participants) > 0 and not isinstance(participants[0], dict):
+    # if not participants:
+    #     participants = PARTICIPANTS
+    if len(participants) > 0 and not isinstance(participants[0], dict):
         # Add some dummy data
         participants = [{"id": i,  # Convert i to int
-                         "first_name": f"Participant {i}",
-                         "last_name": f"Lastname {i}",
+                         "firstName": f"Participant {i}",
+                         "lastName": f"Lastname {i}",
                          "age": 20,  # Convert i to int before adding
                          "gender": "Male",
                          "email": f"{i}@gmail.com",
@@ -317,11 +317,8 @@ def participants_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
     participants = get_participants_for_view()
-    print(f"Participants: {participants}")
-    if not participants:
-        participants = PARTICIPANTS
-    else:
-        # Participants: ['{"age":22,"gender":"Male","phone":"0545312033","email":"gala0@post.bgu.ac.il"}']
+
+    if participants:
         participants = [json.loads(part) for part in participants]
 
     return render_template('participants.html', participants=participants)
@@ -345,6 +342,15 @@ def add_part():
         return jsonify({"status": "error", "message": "Internal server error"}), 500
 
 
+@app.route('/remove_participant', methods=['DELETE'])
+def remove_part():
+    try:
+        if remove_participant(request.json.get('id')):
+            return jsonify({"success":True})
+        return jsonify({"status": "error", "message": "Failed to remove participant"}), 500
+    except Exception as e:
+        Logger.log_error(f"Error removing participant: {e}")
+        return jsonify({"status": "error", "message": "Internal server error"}), 500
 
 
 
