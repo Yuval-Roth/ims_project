@@ -1,0 +1,93 @@
+insertion
+
+
+curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"pid\":1,\"firstName\":\"try\",\"lastName\":\"numone\",\"age\":25,\"gender\":\"Male\",\"phone\":\"123456789\",\"email\":\"john.doe@example.com\"}"
+
+
+curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"pid\":1,\"firstName\":\"hello\",\"lastName\":\"kitty\",\"age\":21,\"gender\":\"Female\",\"phone\":\"111111111\",\"email\":\"helloKittyXYZ@example.com\"}"
+
+curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"pid\":1,\"firstName\":\"Tom\",\"lastName\":\"Odell\",\"age\":34,\"gender\":\"Male\",\"phone\":\"111111111\",\"email\":\"tom@peter.odell\"}"
+
+::: without sending pid :::
+
+curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"firstName\":\"hello\",\"lastName\":\"kitty\",\"age\":21,\"gender\":\"Female\",\"phone\":\"111111111\",\"email\":\"helloKittyXYZ@example.com\"}"
+
+curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"firstName\":\"Mark\",\"lastName\":\"Rover\",\"age\":39,\"gender\":\"Male\",\"phone\":\"111111111\",\"email\":\"marks@utube.com\"}"
+
+curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"firstName\":\"Madison\",\"lastName\":\"Bear\",\"age\":39,\"gender\":\"Male\",\"phone\":\"111111111\",\"email\":\"who@is.she\"}"
+
+
+deletion
+
+
+curl -X POST "http://localhost:8080/data/participant/delete" -H "Content-Type: application/json" -d "{\"pid\":3}"
+
+
+update
+
+curl -X POST "http://localhost:8080/data/participant/update" -H "Content-Type: application/json" -d "{ \"pid\":3, \"firstName\":\"Nanya\",\"lastName\":\"Biznes\"}"
+
+
+get
+
+
+curl -X POST "http://localhost:8080/data/participant/select" -H "Content-Type: application/json" -d "{ \"pid\":2}"
+curl -X POST "http://localhost:8080/data/participant/select" -H "Content-Type: application/json" -d "{}"
+
+
+
+
+EXPERIMENT
+curl -X POST "http://localhost:8080/data/experiment/insert" -H "Content-Type: application/json" -d "{\"pid1\":1, \"pid2\":2}"
+
+curl -X POST "http://localhost:8080/data/experiment/delete" -H "Content-Type: application/json" -d "{\"expId\":1}"
+
+curl -X POST "http://localhost:8080/data/experiment/update" -H "Content-Type: application/json" -d "{\"expId\":1, \"pid1\":3}"
+
+curl -X POST "http://localhost:8080/data/experiment/select" -H "Content-Type: application/json" -d "{}"
+
+curl -X POST "http://localhost:8080/data/experiment/select" -H "Content-Type: application/json" -d "{\"expId\":1}"
+
+
+
+SESSION
+
+curl -X POST "http://localhost:8080/data/session/insert" -H "Content-Type: application/json" -d "{\"expId\":2,\"duration\":60,\"sessionType\":\"Training\",\"sessionOrder\":1,\"tolerance\":5,\"windowLength\":10}"
+
+curl -X POST "http://localhost:8080/data/session/insert" -H "Content-Type: application/json" -d "{\"expId\":2,\"duration\":4,\"sessionType\":\"Training\",\"sessionOrder\":7,\"tolerance\":12,\"windowLength\":32}"
+
+curl -X POST "http://localhost:8080/data/session/insert" -H "Content-Type: application/json" -d "{\"expId\":2,\"duration\":60,\"sessionType\":\"Training\",\"sessionOrder\":1,\"tolerance\":5,\"windowLength\":10}"
+
+
+curl -X POST "http://localhost:8080/data/session/update" -H "Content-Type: application/json" -d "{\"sessionId\":2,\"windowLength\":50}" 
+
+curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{\"sessionId\":2}" 
+
+curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{}" 
+
+curl -X POST "http://localhost:8080/data/session/delete" -H "Content-Type: application/json" -d "{\"sessionId\":3}" 
+
+
+SESSION EVENT
+
+
+curl -X POST "http://localhost:8080/data/sessionEvent/insert" -H "Content-Type: application/json" -d "{\"sessionId\":2,\"type\":\"START\",\"subtype\":\"SUB_START\",\"timestamp\":1672531200000,\"actor\":\"user123\",\"data\":\"exampleData\"}"
+
+curl -X POST "http://localhost:8080/data/sessionEvent/insert" -H "Content-Type: application/json" -d "{\"sessionId\":2,\"type\":\"START\",\"subtype\":\"SUB_START\",\"timestamp\":1672531200000,\"actor\":\"user456\",\"data\":\"anothedata\"}"
+
+curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{\"eventId\":1}"
+
+
+curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{}"
+
+
+curl -X POST "http://localhost:8080/data/sessionEvent/update" -H "Content-Type: application/json" -d "{\"eventId\":1,\"data\":\"CHANGEDdata\"}"
+
+
+curl -X POST "http://localhost:8080/data/sessionEvent/delete" -H "Content-Type: application/json" -d "{\"eventId\":1}" 
+
+
+EXP WITH SESSION
+
+curl -X POST "http://localhost:8080/data/experimentSession/insert" -H "Content-Type: application/json" -d "{\"pid1\":1,\"pid2\":2,\"sessions\":[{\"duration\":30,\"sessionType\":\"type1\",\"sessionOrder\":1,\"tolerance\":10,\"windowLength\":5},{\"duration\":45,\"sessionType\":\"Use PostgreSQLExecutor.\",\"sessionOrder\":2,\"tolerance\":12,\"windowLength\":6}]}"
+
