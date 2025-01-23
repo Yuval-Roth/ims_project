@@ -7,7 +7,7 @@ RUNNING_LOCAL = False
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
 else:
-    URL = "http://ims-game-server:8080"
+    URL = "https://ims-project.cs.bgu.ac.il:8640/"
 
 
 class server_request:
@@ -17,6 +17,7 @@ class server_request:
     #   "lobbyId": "string?",
     #   "gameType": "string?",
     # }
+    # can add more fields if needed, automaticly
     def __init__(self, type: str, playerId: str = "", lobbyId: str = "", gameType: str = ""):
         self.type: str = type
         self.playerId: str = playerId
@@ -26,6 +27,18 @@ class server_request:
     def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if v != ""}
 
+
+class operators_request:
+    # {
+    #   "userId": "string",
+    #   "password": "string"
+    # }
+    def __init__(self, userId: str, password: str):
+        self.userId: str = userId
+        self.password: str = password
+
+    def to_dict(self):
+        return {k: v for k, v in self.__dict__.items() if v != ""}
 
 class server_response:
     # {

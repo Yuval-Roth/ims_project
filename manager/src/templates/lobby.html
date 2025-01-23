@@ -3,31 +3,427 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby</title>
+    <title>Lobby {{ lobby_id }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body>
+    <!-- Home Button -->
     <a href="/main_menu" class="home-button">
         <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
     </a>
-    <div class="lobby-container">
-        <h1>Lobby {{ lobby_id }}</h1>
-        <p>Selected Participants:</p>
-        <ul>
-            {% for participant in selected_participants %}
-            <li>{{ participant }}</li>
-            {% endfor %}
-        </ul>
 
-        <!-- Form with hidden inputs for backend processing -->
-        <form method="post">
-            <input type="hidden" name="selected_participants" value="{{ ','.join(selected_participants) }}">
-            <input type="hidden" name="lobby_id" value="{{ lobby_id }}">
-            <input type="hidden" name="action" value="{{ action }}">
-            <!-- Button that toggles between Start and Stop -->
-            <button type="submit" value="start" class="toggle-session-button"> {{ action }}</button>
-        </form>
+    <!-- Lobby Container -->
+    <div class="main-container">
+        <div class="lobby-header">
+            <h1>Lobby {{ lobby_id }}</h1>
+        </div>
+
+        <div class="lobby-content">
+            <!-- Participants Section -->
+            <section class="participants-section">
+                <h2>Participants</h2>
+                <div class="table-container">
+                    <table class="styled-table participants-table">
+                        <thead>
+                            <tr>
+                                <th>Player Name</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for participant in selected_participants %}
+                            <tr>
+                                <td>{{ participant }}</td>
+                                <td id="status-{{participant}}">Not Ready</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sessions Section -->
+            <section class="sessions-section">
+                <h2>Sessions</h2>
+                <div class="table-container">
+                    <div class="scrollable-table-container">
+
+                        <table class="styled-table sessions-table">
+                            <thead>
+                                <tr>
+                                    <th>Game Type</th>
+                                    <th>Duration</th>
+                                    <th>Session ID</th>
+                                    <th>Sync Tolerance</th>
+                                    <th>Window</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessions-tbody">
+                                {% for session in sessions %}
+                                <tr data-session-id="{{ session.sessionId }}">
+                                    <td>{{ session.gameType }}</td>
+                                    <td>{{ session.duration }}</td>
+                                    <td>{{ session.sessionId }}</td>
+                                    <td>{{ session.syncTolerance }}</td>
+                                    <td>{{ session.window }}</td>
+                                    <td>
+                                        <button class="danger-button delete-session-btn" data-session-id="{{ session.sessionId }}">Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button id="add-session-btn" class="primary-button">Add Session</button>
+                <button id="toggle-game-btn" class="success-button" data-action="start" disabled>
+                    Start Game
+                </button>
+                
+            </div>
+        </div>
     </div>
+
+    <!-- Modal for Adding a Session -->
+    <!-- Modal for Adding a Session -->
+    <div id="add-session-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Add a Session</h2>
+            <form id="add-session-form">
+                <input type="hidden" name="lobby_id" value="{{ lobby_id }}">
+
+                <label for="gameType">Game Type:</label>
+                <select name="gameType" id="gameType" required>
+                    {% for game in GAME_TYPE %}
+                    <option value="{{ game.value }}">{{ game.value }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="duration">Duration (minutes):</label>
+                <input type="number" name="duration" id="duration" min="1" required>
+
+                <!-- New Section: Sync Tolerance -->
+                <label for="syncTolerance">Sync Tolerance (ms):</label>
+                <input type="number" name="syncTolerance" id="syncTolerance" value="100" min="1" required>
+
+                <!-- New Section: Window -->
+                <label for="window">Window (ms):</label>
+                <input type="number" name="window" id="window" value="2000" min="1" required>
+
+                <div class="modal-actions">
+                    <button type="submit" class="primary-button">Add</button>
+                    <button type="button" id="cancel-modal-btn" class="cancel-button">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay" style="display: none;"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const sessionTableBody = document.getElementById('sessions-tbody');
+    const addSessionBtn = document.getElementById('add-session-btn');
+    const modal = document.getElementById('add-session-modal');
+    const overlay = document.getElementById('modal-overlay');
+    const cancelModalBtn = document.getElementById('cancel-modal-btn');
+    const addSessionForm = document.getElementById('add-session-form');
+
+    // Show modal
+    addSessionBtn.addEventListener('click', showModal);
+
+    // Hide modal and reset the form
+    cancelModalBtn.addEventListener('click', closeModal);
+
+    // Handle form submission for adding a session
+    addSessionForm.addEventListener('submit', handleAddSession);
+
+    // Fetch and populate sessions on page load
+    fetchSessions();
+
+    // Handle delete session
+    sessionTableBody.addEventListener('click', handleDeleteSession);
+
+    // Make session rows sortable
+    new Sortable(sessionTableBody, {
+        animation: 150,
+        onEnd: updateSessionOrder
+    });
+
+    // Show modal and reset form
+    function showModal() {
+        resetForm();
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+    }
+
+    // Close modal
+    function closeModal() {
+        modal.style.display = 'none';
+        overlay.style.display = 'none';
+    }
+
+    // Reset form fields to default values
+    function resetForm() {
+        addSessionForm.reset();
+        document.getElementById('gameType').value = document.getElementById('gameType').options[0].value;
+        document.getElementById('duration').value = '';
+        document.getElementById('syncTolerance').value = 100;
+        document.getElementById('window').value = 2000;
+    }
+
+    // Handle adding a session
+    function handleAddSession(event) {
+        event.preventDefault();
+
+        const formData = new FormData(addSessionForm);
+        const payload = {
+            lobby_id: formData.get('lobby_id'),
+            gameType: formData.get('gameType'),
+            duration: parseInt(formData.get('duration'), 10),
+            syncTolerance: parseInt(formData.get('syncTolerance'), 10),
+            window: parseInt(formData.get('window'), 10)
+        };
+
+        fetch('/add_session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    appendSessionRow(data.session);
+                    closeModal();
+                } else {
+                    alert('Failed to add session.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to add session.');
+            });
+    }
+
+    // Fetch sessions from backend
+    function fetchSessions() {
+    fetch('/get_sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lobby_id: "{{ lobby_id }}" })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && Array.isArray(data.sessions) && data.sessions.length > 0) {
+                // Parse the first element if it's a JSON string
+                let sessions = [];
+                try {
+                    sessions = JSON.parse(data.sessions[0]); // Parse the JSON string
+                } catch (error) {
+                    console.error('Error parsing session payload:', error);
+                    alert('Failed to parse session data.');
+                    return;
+                }
+
+                // Clear existing sessions
+                sessionTableBody.innerHTML = '';
+
+                // Populate sessions table
+                sessions.forEach(session => {
+                    if (session && session.sessionId && session.gameType && session.duration) {
+                        appendSessionRow(session);
+                    } else {
+                        console.warn('Invalid session data:', session);
+                    }
+                });
+            } else if (data.status === 'success' && Array.isArray(data.sessions) && data.sessions.length === 0) {
+                // Handle empty session list gracefully
+                sessionTableBody.innerHTML = '<tr><td colspan="4">No sessions available.</td></tr>';
+            } else {
+                alert('Failed to fetch sessions.');
+            }
+        })
+        .catch(error => console.error('Error fetching sessions:', error));
+}
+
+
+    // Append a session row to the table
+    function appendSessionRow(session) {
+    if (!session || !session.sessionId || !session.gameType || !session.duration) {
+        console.warn('Invalid session data:', session);
+        return;
+    }
+
+    // Fetch the human-readable game type from the server
+    fetch('/game_type_from_name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameType: session.gameType }) // Send the gameType name
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const humanReadableGameType = data.gameType; // Get the real name from the server
+
+                // Create and append the row
+                const row = document.createElement('tr');
+                row.dataset.sessionId = session.sessionId;
+                row.innerHTML = `
+                    <td>${humanReadableGameType}</td>
+                    <td>${session.duration}</td>
+                    <td>${session.sessionId}</td>
+                    <td>${session.syncTolerance}</td>
+                    <td>${session.syncWindowLength}</td>
+                    <td>
+                        <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
+                    </td>
+                `;
+                sessionTableBody.appendChild(row);
+            } else {
+                console.error('Failed to fetch human-readable game type:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching game type:', error);
+        });
+}
+
+    // Handle delete session
+    function handleDeleteSession(event) {
+        if (event.target.classList.contains('delete-session-btn')) {
+            const sessionId = event.target.dataset.sessionId;
+            const lobbyId = "{{ lobby_id }}";
+
+            fetch('/delete_session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: lobbyId, session_id: sessionId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        event.target.closest('tr').remove();
+                    } else {
+                        alert('Failed to delete session.');
+                    }
+                })
+                .catch(error => console.error('Error deleting session:', error));
+        }
+    }
+
+    // Update session order
+    function updateSessionOrder() {
+        const sessionOrder = Array.from(sessionTableBody.children).map(row => row.dataset.sessionId);
+
+        fetch('/update_session_order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    alert('Failed to update session order.');
+                }
+            })
+            .catch(error => console.error('Error updating session order:', error));
+    }
+});
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleGameBtn = document.getElementById('toggle-game-btn');
+        const lobbyId = "{{ lobby_id }}";
+
+        function updateButtonState(state, readyStatus, session) {
+            const readyCount = readyStatus.filter(status => status).length;
+            const hasSessions = sessions.length > 0;
+
+            if (state === 'waiting') {
+                toggleGameBtn.textContent = 'Start Game';
+                toggleGameBtn.dataset.action = 'start';
+                toggleGameBtn.classList.remove('warning-button');
+                toggleGameBtn.classList.add('success-button');
+                // Enable the button only if all participants are ready
+                toggleGameBtn.disabled = !(readyCount >= 2 && hasSessions);
+            } else if (state === 'playing') {
+                toggleGameBtn.textContent = 'Stop Game';
+                toggleGameBtn.dataset.action = 'stop';
+                toggleGameBtn.classList.remove('success-button');
+                toggleGameBtn.classList.add('warning-button');
+                toggleGameBtn.disabled = false;
+            }
+        }
+
+        function updateParticipantStatuses(players, readyStatus) {
+            // update the status of each player
+            players.forEach(player => {
+                const statusElement = document.getElementById(`status-${player}`);
+                const isReady = readyStatus[players.indexOf(player)];
+                statusElement.textContent = isReady ? 'Ready' : 'Not Ready';
+            });
+        }
+
+
+        function fetchLobbyState() {
+            fetch(`/get_lobby`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: lobbyId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const lobby = data.lobby;
+                    updateButtonState(lobby.state, lobby.readyStatus, lobby.sessions);
+                    updateParticipantStatuses(lobby.players, lobby.readyStatus);
+                } else {
+                    console.error('Error fetching lobby state:', data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        toggleGameBtn.addEventListener('click', () => {
+            const action = toggleGameBtn.dataset.action;
+
+            fetch(`/${action}_game`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: lobbyId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    fetchLobbyState(); // Refresh the lobby state after action
+                } else {
+                    alert(`Failed to ${action} the game.`);
+                }
+            })
+            .catch(error => {
+                console.error(`Error performing ${action}:`, error);
+                alert(`Failed to ${action} the game.`);
+            });
+        });
+
+        // Poll for the lobby state every 5 seconds
+        setInterval(fetchLobbyState, 1000);
+
+        // Initial state fetch on page load
+        fetchLobbyState();
+    });
+
+
+
+    </script>
 </body>
 </html>

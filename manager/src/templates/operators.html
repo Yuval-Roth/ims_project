@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operators</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='operators.css') }}">
+</head>
+<body>
+    <a href="/main_menu" class="home-button">
+        <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
+    </a>
+    <div class="container">
+        <!-- Left: Table of Operators -->
+        <div class="lobby-table-container">
+            <h1>Operators</h1>
+            <div class="online-participants-table-container">
+                <table class="online-participants-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operators-table-body">
+                        {% for operator in operators %}
+                        <tr class="operator-row" data-username="{{ operator.username }}">
+                            <td>{{ operator.username }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right: Action Buttons -->
+        <div class="actions-container">
+            <button id="add-operator-btn" class="action-button">Add Operator</button>
+{#            <button id="edit-operator-btn" class="action-button">Edit Operator</button>#}
+            <button id="remove-operator-btn" class="action-button">Remove Operator</button>
+        </div>
+    </div>
+
+<!-- Modal Overlay -->
+<div id="modal-overlay" class="modal-overlay"></div>
+
+<!-- Modal for Adding/Editing Operator -->
+<div id="operator-modal" class="modal">
+    <div class="modal-content">
+        <h2 id="modal-title">Add Operator</h2>
+        <form id="operator-form">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </form>
+        <div class="modal-buttons">
+            <button type="button" id="close-modal-btn" class="cancel-button">Cancel</button>
+            <button type="button" id="save-operator-btn" class="create-lobby-button">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let selectedRow = null;
+
+    // Fetch all operators on page load
+    fetch('/get_operators')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const operators = data.payload;
+                const operatorsTableBody = document.getElementById('operators-table-body');
+                operatorsTableBody.innerHTML = ''; // Clear existing rows
+
+                operators.forEach(operator => {
+                    const row = document.createElement('tr');
+                    row.className = 'operator-row';
+                    row.dataset.username = operator;
+                    row.innerHTML = `<td>${operator}</td>`;
+                    operatorsTableBody.appendChild(row);
+
+                    // Attach click event to the row
+                    row.addEventListener('click', function () {
+                        if (selectedRow) selectedRow.classList.remove('selected');
+                        row.classList.add('selected');
+                        selectedRow = row;
+                    });
+                });
+            } else {
+                alert('Failed to fetch operators: ' + data.message);
+            }
+        })
+        .catch(err => console.error('Error fetching operators:', err));
+
+    // Add operator
+    document.getElementById('add-operator-btn').addEventListener('click', function () {
+        openModal('Add Operator');
+    });
+
+    // Remove operator
+    document.getElementById('remove-operator-btn').addEventListener('click', function () {
+        if (!selectedRow) {
+            alert('Please select an operator to remove.');
+            return;
+        }
+
+        const username = selectedRow.dataset.username;
+        if (confirm(`Are you sure you want to remove the operator "${username}"?`)) {
+            fetch('/remove_operator', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        selectedRow.remove(); // Remove row from the table
+                        selectedRow = null;
+                        alert('Operator removed successfully.');
+                    } else {
+                        alert('Failed to remove operator.');
+                    }
+                })
+                .catch(err => console.error('Error:', err));
+        }
+    });
+
+    // Open modal
+    function openModal(title, data = {}) {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('username').value = data.username || '';
+        document.getElementById('password').value = ''; // Clear password field
+
+        document.getElementById('operator-modal').style.display = 'block';
+        document.getElementById('modal-overlay').style.display = 'block';
+    }
+
+    // Close modal
+    document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+
+    function closeModal() {
+        document.getElementById('operator-modal').style.display = 'none';
+        document.getElementById('modal-overlay').style.display = 'none';
+    }
+
+    // Save operator (Add or Edit)
+    document.getElementById('save-operator-btn').addEventListener('click', function () {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (!username || !password) {
+            alert('Both username and password are required.');
+            return;
+        }
+
+        const method = selectedRow ? 'PUT' : 'POST';
+        const url = selectedRow ? '/edit_operator' : '/add_operator';
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (!selectedRow) {
+                        // Add new row
+                        const newRow = document.createElement('tr');
+                        newRow.className = 'operator-row';
+                        newRow.dataset.username = username;
+                        newRow.innerHTML = `<td>${username}</td>`;
+                        document.getElementById('operators-table-body').appendChild(newRow);
+
+                        // Attach click event to new row
+                        newRow.addEventListener('click', function () {
+                            if (selectedRow) selectedRow.classList.remove('selected');
+                            newRow.classList.add('selected');
+                            selectedRow = newRow;
+                        });
+                    }
+
+                    closeModal();
+                    alert('Operator saved successfully.');
+                } else {
+                    alert('Failed to save operator.');
+                }
+            })
+            .catch(err => console.error('Error:', err));
+    });
+});
+
+</script>
+</body>
+</html>

@@ -1,63 +1,219 @@
-/* Lobby Styles */
-
+/* General Layout */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
     margin: 0;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
 }
 
-.lobby-container {
+/* Main Container */
+.main-container {
+    width: 90%;
+    max-width: 1200px;
     background-color: #ffffff;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    width: 300px;
+    box-sizing: border-box;
+    margin: 20px auto;
+}
+
+/* Header */
+.lobby-header h1 {
     text-align: center;
-}
-
-.lobby-container h1 {
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: 28px;
     color: #333;
+    margin-bottom: 20px;
+    text-transform: uppercase;
 }
 
-.lobby-container p {
-    font-size: 16px;
+/* Section Styling */
+.lobby-content section {
+    margin-bottom: 30px;
+}
+
+.lobby-content h2 {
+    font-size: 22px;
     color: #555;
+    margin-bottom: 10px;
+    border-left: 4px solid #007bff;
+    padding-left: 10px;
+}
+
+/* Table Container */
+.table-container {
+    overflow-x: auto;
+    background-color: #f4f4f4;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Fixed Size for Scrollable Session Table */
+.scrollable-table-container {
+    max-height: 300px; /* Set fixed height for scrollable table */
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #ffffff;
     margin-bottom: 20px;
 }
 
-.toggle-session-button button {
-    padding: 10px 20px;
+/* Styled Tables */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 16px;
-    color: #fff;
-    background-color: #4CAF50;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+    text-align: left;
 }
 
-.toggle-session-button {
-    padding: 10px 20px;
+.styled-table th,
+.styled-table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+}
+
+.styled-table th {
+    background-color: #007bff;
+    color: #ffffff;
+    text-transform: uppercase;
+}
+
+.styled-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.styled-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Buttons */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+button {
+    padding: 10px 15px;
     font-size: 16px;
-    color: #fff;
-    background-color: #4CAF50;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
-.toggle-session-button:hover {
-    background-color: #45a049;
+button:disabled {
+    pointer-events: none;
+    opacity: 0.5; /* Makes the button appear disabled */
+    cursor: not-allowed;
 }
 
-.toggle-session-button:active {
-    background-color: #3e8e41;
+
+button:hover {
+    transform: scale(1.05);
 }
+
+.primary-button {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+.primary-button:hover {
+    background-color: #0056b3;
+}
+
+.danger-button {
+    background-color: #dc3545;
+    color: #ffffff;
+}
+
+.danger-button:hover {
+    background-color: #c82333;
+}
+
+.success-button {
+    background-color: #28a745;
+    color: #ffffff;
+}
+
+.success-button:hover {
+    background-color: #218838;
+}
+
+.warning-button {
+    background-color: #ffc107;
+    color: #ffffff;
+}
+
+.warning-button:hover {
+    background-color: #e0a800;
+}
+
+.cancel-button {
+    background-color: #6c757d;
+    color: #ffffff;
+}
+
+.cancel-button:hover {
+    background-color: #5a6268;
+}
+
+/* Modal Styling */
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    width: 90%;
+    max-width: 400px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.modal-content h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #333;
+    text-align: center;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+.modal-content select,
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+}
+
