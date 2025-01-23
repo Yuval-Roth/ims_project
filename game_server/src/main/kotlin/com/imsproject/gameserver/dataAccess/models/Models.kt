@@ -48,6 +48,7 @@ data class ExpWithSessionsData(
     val sessions: List<SessionData>
 )
 
+
 data class SessionData(
     val duration: Int,
     val sessionType: String,
