@@ -8,8 +8,10 @@ def start_game(lobby_id):
 
     try:
         res = requests.post(URL+"/manager", json=body)
+        Logger.log_info(f"Starting game: {res}")
         if res.status_code == 200:
             ser_res = server_response(res)
+            Logger.log_info(f"Starting game: {ser_res}")
             if ser_res.get_success():
                 return True
             else:

@@ -19,15 +19,13 @@
                 <table class="online-participants-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Username</th>
                             <th>Password</th>
                         </tr>
                     </thead>
                     <tbody id="operators-table-body">
                         {% for operator in operators %}
-                        <tr class="operator-row" data-operator-id="{{ operator.id }}">
-                            <td>{{ operator.id }}</td>
+                        <tr class="operator-row" data-username="{{ operator.username }}">
                             <td>{{ operator.username }}</td>
                             <td>{{ operator.password }}</td>
                         </tr>
@@ -53,7 +51,6 @@
     <div class="modal-content">
         <h2 id="modal-title">Add Operator</h2>
         <form id="operator-form">
-            <input type="hidden" name="id" id="operator-id">
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
 
@@ -75,12 +72,9 @@
         const operatorRows = document.querySelectorAll('.operator-row');
         operatorRows.forEach(row => {
             row.addEventListener('click', function () {
-                // Remove selection from previously selected row
                 if (selectedRow) {
                     selectedRow.classList.remove('selected');
                 }
-
-                // Select the clicked row
                 this.classList.add('selected');
                 selectedRow = this;
             });
@@ -98,13 +92,10 @@
                 return;
             }
 
-            const operatorData = Array.from(selectedRow.children).map(cell => cell.textContent);
+            const username = selectedRow.children[0].textContent;
+            const password = selectedRow.children[1].textContent;
 
-            openModal('Edit Operator', {
-                id: operatorData[0],
-                username: operatorData[1],
-                password: operatorData[2]
-            });
+            openModal('Edit Operator', { username, password });
         });
 
         // Remove operator
@@ -114,9 +105,13 @@
                 return;
             }
 
-            const operatorId = selectedRow.dataset.operatorId;
-            if (confirm('Are you sure you want to remove this operator?')) {
-                fetch(`/remove_operator?id=${operatorId}`, { method: 'DELETE' })
+            const username = selectedRow.children[0].textContent;
+            if (confirm(`Are you sure you want to remove the operator "${username}"?`)) {
+                fetch('/remove_operator', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                })
                     .then(response => {
                         if (response.ok) {
                             selectedRow.remove(); // Remove row from the table
@@ -133,7 +128,6 @@
         // Open modal
         function openModal(title, data = {}) {
             document.getElementById('modal-title').textContent = title;
-            document.getElementById('operator-id').value = data.id || '';
             document.getElementById('username').value = data.username || '';
             document.getElementById('password').value = data.password || '';
 
@@ -142,39 +136,44 @@
         }
 
         // Close modal
-        document.getElementById('close-modal-btn').addEventListener('click', function () {
-            closeModal();
-        });
+        document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+
+        function closeModal() {
+            document.getElementById('operator-modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
 
         // Save operator (Add or Edit)
         document.getElementById('save-operator-btn').addEventListener('click', function () {
-            {#const id = document.getElementById('operator-id').value;#}
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            const method = id ? 'PUT' : 'POST';
-            const url = id ? `/edit_operator` : `/add_operator`;
+            if (!username || !password) {
+                alert('Both username and password are required.');
+                return;
+            }
+
+            const method = selectedRow ? 'PUT' : 'POST';
+            const url = selectedRow ? '/edit_operator' : '/add_operator';
 
             fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, username, password })
+                body: JSON.stringify({ username, password })
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        if (id) {
+                        if (selectedRow) {
                             // Update existing row
-                            const cells = selectedRow.children;
-                            cells[1].textContent = username;
-                            cells[2].textContent = password;
+                            selectedRow.children[0].textContent = username;
+                            selectedRow.children[1].textContent = password;
                         } else {
                             // Add new row
                             const newRow = document.createElement('tr');
                             newRow.className = 'operator-row';
-                            newRow.dataset.operatorId = data.id;
+                            newRow.dataset.username = username;
                             newRow.innerHTML = `
-                                <td>${data.id}</td>
                                 <td>${username}</td>
                                 <td>${password}</td>
                             `;
@@ -196,15 +195,7 @@
                 })
                 .catch(err => console.error('Error:', err));
         });
-
-        // Close modal function
-        function closeModal() {
-            document.getElementById('operator-modal').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
     });
 </script>
-
-
 </body>
 </html>

@@ -55,7 +55,7 @@ def get_lobby(lobby_id: str) -> lobby_info_payload:
         response = requests.post(URL + "/manager", json=body)
 
         if response.status_code in [200, 201]:
-            print(response.json())  # Debugging print
+            # print(response.json())  # Debugging print
             ser_res = server_response(response)
             if ser_res.get_success():
                 # Parse the JSON string into a dictionary before using it
@@ -121,6 +121,7 @@ def join_lobby(lobby_id: str, player_id: str):
                 Logger.log_error(f"Error joining lobby: {ser_res}")
 
     except Exception as e:
+        Logger.log_error(f"Error joining lobby: {e}")
         return False
 
 
@@ -171,14 +172,33 @@ def change_session_order(lobby_id: str, session_order: list[str]):
         return False
 
 
-def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance: int, window: int):
+def get_sessions(lobby_id: str):
+    body = server_request(GAME_REQUEST_TYPE.get_sessions.name, lobbyId=lobby_id).to_dict()
+    try:
+        response = requests.post(URL + "/manager", json=body)
+
+        if response.status_code in [200, 201]:
+            ser_res = server_response(response)
+            if ser_res.get_success():
+                # Parse the JSON string into a dictionary before using it
+                payload_dict = json.loads(ser_res.get_payload()[0])
+                return payload_dict.get("sessions", [])
+
+            Logger.log_error(f"Failed to get sessions: {ser_res.get_message()}")
+            return None
+    except Exception as e:
+        Logger.log_error(f"Failed to get sessions, {e}")
+        return None
+
+def create_session(lobby_id: str, game_type: str, duration: int):#, sync_tolerance: int, window: int):
     """
     Creates a new session in the specified lobby.
     """
     body = server_request(GAME_REQUEST_TYPE.create_session.name, lobbyId=lobby_id, gameType=game_type).to_dict()
     body["duration"] = duration
-    body["syncTolerance"] = sync_tolerance
-    body["window"] = window
+    print(body)
+    # body["syncTolerance"] = sync_tolerance
+    # body["window"] = window
     try:
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:

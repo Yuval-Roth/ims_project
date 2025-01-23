@@ -1,5 +1,13 @@
 from enum import Enum
 
+def get_game_type_name_from_value(value):
+    """
+    Maps the human-readable enum value to its name.
+    """
+    for game in GAME_TYPE:
+        if game.value == value:
+            return game.name
+    raise KeyError(f"Invalid game type: {value}")
 
 class GAME_TYPE(Enum):
     water_ripples = 'Water Ripples'
@@ -22,6 +30,7 @@ class GAME_REQUEST_TYPE(Enum):
     start_game = "start_game"
     end_game = "end_game"
     update_session_order = "update_session_order"
+    get_sessions = "get_sessions"
     create_session = "create_session"
     delete_session = "delete_session"
     add_participant = "add_participant"

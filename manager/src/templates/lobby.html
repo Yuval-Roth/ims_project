@@ -164,43 +164,99 @@
 
     // Handle form submission via AJAX
     addSessionForm.addEventListener('submit', function (e) {
-        e.preventDefault();
+    e.preventDefault();
 
-        const formData = new FormData(this);
+    const formData = new FormData(this);
 
-        fetch('/add_session', {
+    // Convert FormData to a plain object
+    const payload = {
+        lobby_id: formData.get('lobby_id'),
+        gameType: formData.get('gameType'),
+        duration: parseInt(formData.get('duration'), 10),
+        syncTolerance: parseInt(formData.get('syncTolerance'), 10),
+        window: parseInt(formData.get('window'), 10)
+    };
+
+    fetch('/add_session', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json' // Set Content-Type to JSON
+        },
+        body: JSON.stringify(payload) // Stringify the payload for JSON format
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json(); // Parse the JSON response
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                const newSession = data.session;
+
+                // Append new session to the table
+                const row = document.createElement('tr');
+                row.dataset.sessionId = newSession.sessionId;
+                row.innerHTML = `
+                    <td>${newSession.gameType}</td>
+                    <td>${newSession.duration}</td>
+                    <td>${newSession.sessionId}</td>
+                    <td>
+                        <button class="danger-button delete-session-btn" data-session-id="${newSession.sessionId}">Delete</button>
+                    </td>
+                `;
+                sessionTableBody.appendChild(row);
+
+                // Hide modal
+                closeModal();
+            } else {
+                alert('Failed to add session.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to add session.');
+        });
+});
+
+    // Fetch Sessions from Backend
+    function fetchSessions() {
+        fetch('/get_sessions', {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ lobby_id: "{{ lobby_id }}" })
         })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const newSession = data.session;
-
-                    // Append new session to the table
-                    const row = document.createElement('tr');
-                    row.dataset.sessionId = newSession.sessionId;
-                    row.innerHTML = `
-                        <td>${newSession.gameType}</td>
-                        <td>${newSession.duration}</td>
-                        <td>${newSession.sessionId}</td>
-                        <td>
-                            <button class="danger-button delete-session-btn" data-session-id="${newSession.sessionId}">Delete</button>
-                        </td>
-                    `;
-                    sessionTableBody.appendChild(row);
-
-                    // Hide modal
-                    closeModal();
+                    // Clear existing sessions
+                    sessionTableBody.innerHTML = '';
+                    // Populate sessions table
+                    data.sessions.forEach(session => {
+                        const row = document.createElement('tr');
+                        row.dataset.sessionId = session.sessionId;
+                        row.innerHTML = `
+                            <td>${session.gameType}</td>
+                            <td>${session.duration}</td>
+                            <td>${session.sessionId}</td>
+                            <td>
+                                <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
+                            </td>
+                        `;
+                        sessionTableBody.appendChild(row);
+                    });
                 } else {
-                    alert('Failed to add session.');
+                    alert('Failed to fetch sessions.');
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to add session.');
-            });
-    });
+            .catch(error => console.error('Error:', error));
+    }
+
+    // Initial Fetch of Sessions
+    fetchSessions();
+
 
     // Handle Delete Session
     sessionTableBody.addEventListener('click', function (e) {
@@ -320,7 +376,7 @@
         });
 
         // Poll for the lobby state every 5 seconds
-        setInterval(fetchLobbyState, 5000);
+        setInterval(fetchLobbyState, 1000);
 
         // Initial state fetch on page load
         fetchLobbyState();
