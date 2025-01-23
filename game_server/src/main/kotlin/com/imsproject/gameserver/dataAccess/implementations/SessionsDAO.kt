@@ -28,28 +28,28 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<SessionDTO, SessionPK>(cursor, 
         )
     }
 
-    fun handleSessions(action: String, sessionDTO: SessionDTO): String {
+    fun handleSessions(action: String, sessionDTO: SessionDTO, transactionId: String? = null): String {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(sessionDTO))
+                return Response.getOk(insert(sessionDTO, transactionId))
             }
             "delete" -> {
                 if(sessionDTO.sessionId == null)
                     throw Exception("A session id was not provided for deletion")
-                delete(SessionPK(sessionDTO.sessionId))
+                delete(SessionPK(sessionDTO.sessionId), transactionId)
                 return Response.getOk()
             }
             "update" -> {
                 if(sessionDTO.sessionId == null)
                     throw Exception("A session id was not provided for update")
-                update(sessionDTO)
+                update(sessionDTO, transactionId)
                 return Response.getOk()
             }
             "select" -> {
                 if(sessionDTO.sessionId == null)
-                    return Response.getOk(selectAll())
+                    return Response.getOk(selectAll(transactionId))
                 else
-                    return Response.getOk(select(SessionPK(sessionDTO.sessionId)))
+                    return Response.getOk(select(SessionPK(sessionDTO.sessionId), transactionId))
             }
             else -> throw Exception("Invalid action for sessions")
         }
@@ -57,18 +57,18 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<SessionDTO, SessionPK>(cursor, 
 
 
     @Throws(DaoException::class)
-    override fun insert(obj: SessionDTO): Int {
+    override fun insert(obj: SessionDTO, transactionId: String?): Int {
         val values = arrayOf(obj.expId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val idColName = SessionPK.primaryColumnsList.joinToString()
-        return buildQueryAndInsert(idColName, *values)
+        return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: SessionDTO): Unit {
+    override fun update(obj: SessionDTO, transactionId: String?) {
         val values = arrayOf(obj.expId,obj.duration,obj.sessionType,obj.sessionOrder,obj.tolerance,obj.windowLength)
         val id = obj.sessionId ?: throw IllegalArgumentException("session ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
-        buildQueryAndUpdate(idColName, id, *values)
+        buildQueryAndUpdate(idColName, id, values, transactionId)
     }
 }
 

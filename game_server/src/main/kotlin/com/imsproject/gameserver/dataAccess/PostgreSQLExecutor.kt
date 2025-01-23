@@ -256,7 +256,7 @@ class PostgreSQLExecutor(
 
     @Throws(SQLException::class)
     private fun inTransaction(transactionId: String?): Boolean {
-        val connection = transactionIdToConnection[transactionId] ?: return false
+        val connection = transactionId?.let{transactionIdToConnection[it]} ?: return false
         return ! connection.isClosed
     }
 

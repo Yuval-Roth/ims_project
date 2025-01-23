@@ -57,21 +57,21 @@ class DAOController {
         when (action) {
             "insert" -> {
                 try { // todo: wrap that all in executeor to be in a thread instead of coroutine
-                    cursor.beginTransaction()
+                    val tid = cursor.beginTransaction()
                     val esdata: ExpWithSessionsData = fromJson(body)
                     val expdto = ExperimentDTO(expId = null, pid1 = esdata.pid1, pid2 = esdata.pid2)
-                    val response: Response = fromJson(experimentDAO.handleExperiments(action, expdto))
+                    val response: Response = fromJson(experimentDAO.handleExperiments(action, expdto, tid))
                     val expId: Int = response.payload!![0].toInt()
 
                     val sessionIds: MutableMap<String, Int> = mutableMapOf("expId" to expId)
                     for (s in esdata.sessions) {
                         val sdto: SessionDTO = SessionDTO.create(expId, s)
-                        val response2: Response = fromJson(sessionDAO.handleSessions(action, sdto))
+                        val response2: Response = fromJson(sessionDAO.handleSessions(action, sdto, tid))
                         val sessId: Int = response2.payload!![0].toInt()
                         sessionIds[sdto.sessionOrder.toString()] = sessId
                     }
 
-                    cursor.commit()
+                    cursor.commit(tid)
                     return Response.getOk(sessionIds)
                 } catch (e: Exception) {
                     //rollback automatic

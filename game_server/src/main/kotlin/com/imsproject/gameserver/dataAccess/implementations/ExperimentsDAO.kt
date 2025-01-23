@@ -20,29 +20,29 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
 
     }
 
-    fun handleExperiments(action: String, exp: ExperimentDTO): String
+    fun handleExperiments(action: String, exp: ExperimentDTO, transactionId: String? = null): String
     {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(exp))
+                return Response.getOk(insert(exp, transactionId))
             }
             "delete" -> {
                 if(exp.expId == null)
                     throw Exception("A lobby id was not provided for deletion")
-                delete(ExperimentPK(exp.expId))
+                delete(ExperimentPK(exp.expId), transactionId)
                 return Response.getOk()
             }
             "update" -> {
                 if(exp.expId == null)
                     throw Exception("A lobby id was not provided for update")
-                update(exp)
+                update(exp, transactionId)
                 return Response.getOk()
             }
             "select" -> {
                 if(exp.expId == null)
-                    return Response.getOk(selectAll())
+                    return Response.getOk(selectAll(transactionId))
                 else
-                    return Response.getOk(select(ExperimentPK(exp.expId)))
+                    return Response.getOk(select(ExperimentPK(exp.expId), transactionId))
             }
             else -> throw Exception("Invalid action for participants")
         }
@@ -55,18 +55,18 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
 
 
     @Throws(DaoException::class)
-    override fun insert(obj: ExperimentDTO): Int {
+    override fun insert(obj: ExperimentDTO, transactionId: String?): Int {
         val values = arrayOf(obj.pid1,obj.pid2)
         val idColName = primaryKeyColumnNames.joinToString()
-        return buildQueryAndInsert(idColName, *values)
+        return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: ExperimentDTO): Unit {
+    override fun update(obj: ExperimentDTO, transactionId: String?) {
         val values = arrayOf(obj.pid1,obj.pid2)
         val id = obj.expId ?: throw IllegalArgumentException("Lobby ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
-        buildQueryAndUpdate(idColName, id, *values)
+        buildQueryAndUpdate(idColName, id, values, transactionId)
     }
 }
 

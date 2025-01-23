@@ -27,46 +27,46 @@ class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEv
         )
     }
 
-    fun handleSessionEvents(action: String, sessionEventDTO: SessionEventDTO): String {
+    fun handleSessionEvents(action: String, sessionEventDTO: SessionEventDTO, transactionId: String? = null): String {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(sessionEventDTO))
+                return Response.getOk(insert(sessionEventDTO, transactionId))
             }
             "delete" -> {
                 if(sessionEventDTO.eventId == null)
                     throw Exception("A session event id was not provided for deletion")
-                delete(SessionEventPK(sessionEventDTO.eventId))
+                delete(SessionEventPK(sessionEventDTO.eventId), transactionId)
                 return Response.getOk()
             }
             "update" -> {
                 if(sessionEventDTO.eventId == null)
                     throw Exception("A session event id was not provided for update")
-                update(sessionEventDTO)
+                update(sessionEventDTO, transactionId)
                 return Response.getOk()
             }
             "select" -> {
                 if(sessionEventDTO.eventId == null)
-                    return Response.getOk(selectAll())
+                    return Response.getOk(selectAll(transactionId))
                 else
-                    return Response.getOk(select(SessionEventPK(sessionEventDTO.eventId)))
+                    return Response.getOk(select(SessionEventPK(sessionEventDTO.eventId), transactionId))
             }
             else -> throw Exception("Invalid action for session events")
         }
     }
 
     @Throws(DaoException::class)
-    override fun insert(obj: SessionEventDTO): Int {
+    override fun insert(obj: SessionEventDTO, transactionId: String?): Int {
         val values = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
         val idColName = SessionEventPK.primaryColumnsList.joinToString()
-        return buildQueryAndInsert(idColName, *values)
+        return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: SessionEventDTO): Unit {
+    override fun update(obj: SessionEventDTO, transactionId: String?) {
         val values = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
         val id = obj.eventId ?: throw IllegalArgumentException("Session Event ID  must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
-        buildQueryAndUpdate(idColName, id, *values)
+        buildQueryAndUpdate(idColName, id, values, transactionId)
     }
 }
 

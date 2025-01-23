@@ -27,46 +27,46 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<ParticipantDTO, Participant
         )
     }
 
-    fun handleParticipants(action: String, participantDTO: ParticipantDTO): String {
+    fun handleParticipants(action: String, participantDTO: ParticipantDTO, transactionId: String? = null): String {
         when(action){
             "insert" -> {
-                return Response.getOk(insert(participantDTO))
+                return Response.getOk(insert(participantDTO, transactionId))
             }
             "delete" -> {
                 if(participantDTO.pid == null)
                     throw Exception("A participant id was not provided for deletion")
-                delete(ParticipantPK(participantDTO.pid))
+                delete(ParticipantPK(participantDTO.pid), transactionId)
                 return Response.getOk()
             }
             "update" -> {
                 if(participantDTO.pid == null)
                     throw Exception("A participant id was not provided for update")
-                update(participantDTO)
+                update(participantDTO, transactionId)
                 return Response.getOk()
             }
             "select" -> {
                 if(participantDTO.pid == null)
-                    return Response.getOk(selectAll())
+                    return Response.getOk(selectAll(transactionId))
                 else
-                    return Response.getOk(select(ParticipantPK(participantDTO.pid)))
+                    return Response.getOk(select(ParticipantPK(participantDTO.pid), transactionId))
             }
             else -> throw Exception("Invalid action for participants")
         }
     }
 
     @Throws(DaoException::class)
-    override fun insert(obj: ParticipantDTO): Int {
+    override fun insert(obj: ParticipantDTO, transactionId: String?): Int {
             val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
             val idColName = ParticipantPK.primaryColumnsList.joinToString()
-            return buildQueryAndInsert(idColName, *values)
+            return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: ParticipantDTO): Unit {
+    override fun update(obj: ParticipantDTO, transactionId: String?) {
         val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
         val id = obj.pid ?: throw IllegalArgumentException("Participant ID (pid) must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
-        buildQueryAndUpdate(idColName, id, *values)
+        buildQueryAndUpdate(idColName, id, values, transactionId)
     }
 }
 
