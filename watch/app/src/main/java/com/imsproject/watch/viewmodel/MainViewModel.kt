@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
-import kotlinx.coroutines.withContext
 
 private const val TAG = "MainViewModel"
 
@@ -51,6 +50,16 @@ class MainViewModel() : ViewModel() {
 
     private var _gameType = MutableStateFlow<GameType?>(null)
     val gameType : StateFlow<GameType?> = _gameType
+
+    //TODO: display this in the lobby screen
+    private var _gameDuration = MutableStateFlow<Int?>(null)
+    val gameDuration : StateFlow<Int?> = _gameDuration
+
+    private var _syncWindowLength = MutableStateFlow<Long?>(null)
+    val syncTimeThreshold : StateFlow<Long?> = _syncWindowLength
+
+    private var _syncThresholdTimeout = MutableStateFlow<Long?>(null)
+    val syncThresholdTimeout : StateFlow<Long?> = _syncThresholdTimeout
 
     private var _ready = MutableStateFlow(false)
     val ready : StateFlow<Boolean> = _ready
@@ -208,6 +217,33 @@ class MainViewModel() : ViewModel() {
             GameRequest.Type.LEAVE_LOBBY -> {
                 _lobbyId.value = ""
                 setState(State.CONNECTED_NOT_IN_LOBBY)
+            }
+            GameRequest.Type.CONFIGURE_LOBBY -> {
+                val gameType = request.gameType ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing gameType")
+                    showError("Failed to configure lobby")
+                    return
+                }
+                val gameDuration = request.duration ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing duration")
+                    showError("Failed to configure lobby")
+                    return
+                }
+                val syncWindowLength = request.syncWindowLength ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing syncWindowLength")
+                    showError("Failed to configure lobby")
+                    return
+                }
+                val syncTolerance = request.syncTolerance ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing syncTolerance")
+                    showError("Failed to configure lobby")
+                    return
+                }
+
+                _gameType.value = gameType
+                _gameDuration.value = gameDuration
+                _syncWindowLength.value = syncWindowLength
+                _syncThresholdTimeout.value = syncTolerance
             }
             GameRequest.Type.START_GAME -> {
                 if(_state.value != State.CONNECTED_IN_LOBBY){
