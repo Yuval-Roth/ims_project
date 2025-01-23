@@ -3,7 +3,10 @@ package com.imsproject.watch.sensors
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
+import android.widget.Toast
 import com.imsproject.common.gameserver.SessionEvent
+import com.imsproject.watch.R
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.samsung.android.service.health.tracking.HealthTrackerException
 import java.util.concurrent.atomic.AtomicBoolean
@@ -11,15 +14,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 class SensorsHandler(
     val context: Context,
     val gameViewModel: GameViewModel
-) : ConnectionObserver {
+) {
 
     private val isMeasurementRunning = AtomicBoolean(false)
-    private var connectionManager: ConnectionManager
+    private var connectionManager: ConnectionManager? = null
     private var heartRateListener: HeartRateListener? = null
     private var spO2Listener: SpO2Listener? = null
     private var previousStatus = SpO2Status.INITIAL_STATUS
     private var heartRateDataLast = HeartRateData()
     private val handler = Handler(Looper.getMainLooper())
+    private var connected = false
+
 
     private val trackerDataObserver = object : TrackerDataObserver {
         override fun onHeartRateTrackerDataChanged(hrData: HeartRateData) {
@@ -100,30 +105,62 @@ class SensorsHandler(
 
         override fun onError(errorResourceId: Int) {
             handler.post {
+                println("SensorError: tracker data returns error")
                 // Handle errors if needed
             }
         }
     }
 
+    private val connectionObserver: ConnectionObserver = object : ConnectionObserver {
+        override fun onConnectionResult(stringResourceId: Int) {
+            if (stringResourceId != R.string.ConnectedToHs) {
+                return
+            }
+
+            connected = true
+            TrackerDataNotifier.getInstance().addObserver(trackerDataObserver)
+
+            spO2Listener = SpO2Listener()
+            heartRateListener = HeartRateListener()
+
+            connectionManager!!.initSpO2(spO2Listener)
+            connectionManager!!.initHeartRate(heartRateListener)
+
+            heartRateListener!!.startTracker()
+        }
+
+        override fun onError(e: HealthTrackerException) {
+            println("SensorError: Could not connect to Health Tracking Service: " + e.message)
+        }
+    }
+
     init {
         // Create instances of connectionManager and measurementProgress in the constructor
-        connectionManager = ConnectionManager(this).apply {
-            connect(context)
+        try {
+            connectionManager = ConnectionManager(connectionObserver)
+            connectionManager!!.connect(context)
+        } catch (t: Throwable) {
+            println("SensorError: Could not connect the ConnectionManager: " + t.message)
         }
+
+
 
         heartRateListener = HeartRateListener()
         spO2Listener = SpO2Listener()
 
         TrackerDataNotifier.getInstance().addObserver(trackerDataObserver)
-        connectionManager.initHeartRate(heartRateListener!!)
-        connectionManager.initSpO2(spO2Listener!!)
+        connectionManager!!.initHeartRate(heartRateListener!!)
+        connectionManager!!.initSpO2(spO2Listener!!)
     }
 
     fun stop() {
-        heartRateListener?.stopTracker()
-        spO2Listener?.stopTracker()
+
+        if (heartRateListener != null) heartRateListener!!.stopTracker()
+        if (spO2Listener != null) spO2Listener!!.stopTracker()
         TrackerDataNotifier.getInstance().removeObserver(trackerDataObserver)
-        connectionManager.disconnect()
+        if (connectionManager != null) {
+            connectionManager!!.disconnect()
+        }
     }
 
     fun start() {
@@ -134,13 +171,5 @@ class SensorsHandler(
             heartRateListener?.startTracker()  // Optionally, you can start heart rate tracking too
             isMeasurementRunning.set(true)
         }
-    }
-
-    override fun onConnectionResult(stringResourceId: Int) {
-        // Handle connection result
-    }
-
-    override fun onError(e: HealthTrackerException?) {
-        // Handle errors
     }
 }
