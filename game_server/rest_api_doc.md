@@ -389,14 +389,179 @@ This request type is used to change the order of sessions in a lobby.
 
 ---
 
-### 3. POST `/data`
-**Description**  
-Currently a placeholder endpoint, not implemented.
+### 3. **POST** `/data/{section}`
 
-**Response**  
-"Not Implemented" - Always returned since this endpoint is not yet functional.
+#### Description
+This endpoint is used to add a new entity to the database.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant: 
+    ```json
+    {
+      "firstName": "string",
+      "lastName": "string",
+      "age": "integer",
+      "gender": "string",
+      "phone": "string",
+      "email": "string"
+    }
+    ```
+    - lobby:
+    ```json
+    {
+      "pid1": "integer",
+      "pid2": "integer"
+    }
+    ```
+
+#### **Response**
+
+- **Success**:
+  ```json
+  {
+    "success": true,
+    "payload": ["id"]
+  }
+  ```
+
+- **Failure**:
+  ```json
+  {
+    "message": "Failed to insert to table Participants",
+    "success": false,
+    "payload": ["error details"]
+  }
+  ```
 
 ---
+
+### 3. **DELETE** `/data/{section}`
+
+#### Description
+This endpoint is used to delete an existing entity from the database.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant:
+    ```json
+    {
+      "pid": "id"
+    }
+    ```
+    - lobby:
+    ```json
+    {
+      "lobbyId": "integer"
+    }
+    ```
+
+### 3. **PUT** `/data/{section}`
+
+#### Description
+This endpoint is used to update an existing entity from the database.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant:
+  pid must be provided. every other field is optional.
+    ```json
+    {
+      "pid": "id"
+    }
+    ```
+    - lobby:
+    ```json
+    {
+      "placeholder": "bluh bluh"
+    }
+    ```
+
+
+### 3. **GET** `/data/{section}`
+
+#### Description
+This endpoint is used to get an existing entity from the database, or all of the data in a table.
+
+#### Request
+- **Path Variables**:
+  - `section` (required): The action to perform.
+    - **Possible values**:
+      - `participant`
+      - `lobby`
+      - `session`
+      - `sessionEvent`
+
+
+- **Body**:
+  - participant:
+      - In order to get a specific participant, provide pid.
+      - To get all of the table, provide no additional fields
+        ```json
+        {
+          "pid": "id"
+        }
+        ```
+        - lobby:
+        ```json
+        {
+          "placeholder": "bluh bluh"
+        }
+        ```
+#### **Response**
+
+- **Success**:
+  ```json
+  {
+    "success": true,
+    "payload": ["json data of asked entity"]
+  }
+  ```
+  or
+```json
+  {
+    "success": true,
+    "payload": ["json data of entity1 in table",
+                "json data of entity2 in table",
+                "json data of entity3 in table"]
+  }
+  ```
+
+- **Failure**:
+  ```json
+  {
+    "message": "Failed to select table Participants",
+    "success": false,
+    "payload": ["error details"]
+  }
+  ```
 
 ### 4. POST `/operators/{action}`
 

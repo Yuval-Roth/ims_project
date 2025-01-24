@@ -2,13 +2,14 @@ package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.Response
+import com.imsproject.gameserver.dataAccess.DAOController
+import com.imsproject.gameserver.toResponseEntity
 import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.Participant
 import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
-import com.imsproject.gameserver.toResponseEntity
 import org.slf4j.LoggerFactory
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
@@ -22,6 +23,7 @@ class RestHandler(
     private val gameRequestFacade: GameRequestFacade,
     private val authController: AuthController,
     private val participantController: ParticipantController,
+    private val daoController: DAOController,
     private val resources : ResourceLoader
     ) : ErrorController {
 
@@ -101,18 +103,27 @@ class RestHandler(
                 }
                 else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
             }
-        } catch(e: IllegalArgumentException){
+        } catch (e: IllegalArgumentException) {
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
-        } catch(e: Exception){
+        } catch (e: Exception) {
             return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
         return Response.getOk().toResponseEntity()
     }
 
+    @PostMapping("/data/{section}/{action}")
+    fun data(
+            @PathVariable section: String,
+            @PathVariable action: String,
+            @RequestBody body: String,
+        ): ResponseEntity<String> {
 
-    @PostMapping("/data")
-    fun data(@RequestBody body : String): ResponseEntity<String> {
-        return "Not implemented".toResponseEntity()
+        try {
+            return (daoController.handle(section, action, body)).toResponseEntity()
+        } catch(e: Exception)
+        {
+            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
     }
 
     @GetMapping("/login")
