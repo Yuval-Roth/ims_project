@@ -213,6 +213,7 @@ class MainViewModel() : ViewModel() {
 
                 _gameType.value = gameType
                 _lobbyId.value = lobbyId
+                _ready.value = false
                 setState(State.CONNECTED_IN_LOBBY)
             }
             GameRequest.Type.LEAVE_LOBBY -> {

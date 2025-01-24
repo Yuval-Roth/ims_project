@@ -47,6 +47,7 @@ class SessionController(
         val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
         lobbySessions.add(session)
         lobby.hasSessions = true
+        log.debug("createSession() successful")
         return session.sessionId
     }
 

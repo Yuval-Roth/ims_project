@@ -387,6 +387,7 @@
                     updateButtonState(lobby.state, lobby.readyStatus, lobby.hasSessions);
                     updateParticipantStatuses(lobby.players, lobby.readyStatus);
                 } else {
+                    window.location.href = '/lobbies';
                     console.error('Error fetching lobby state:', data.message);
                 }
             })
