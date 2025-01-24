@@ -39,7 +39,7 @@ class ExperimentOrchestrator(
                     delay(1000)
                 }
                 games.startGame(lobbyId)
-                delay(session.duration.toLong())
+                delay(session.duration.toLong()*1000)
                 games.endGame(lobbyId)
             }
         }
