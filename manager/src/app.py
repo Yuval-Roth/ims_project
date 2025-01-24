@@ -210,7 +210,7 @@ def get_lobby_route():
     return jsonify({"status": "error", "message": "Lobby not found"}), 404
 
 
-@app.route('/update_session_order', methods=['POST'])
+@app.route('/bupdate_session_order', methods=['POST'])
 def update_session_order():
 
     data = request.json

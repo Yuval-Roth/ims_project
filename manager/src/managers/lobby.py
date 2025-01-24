@@ -16,18 +16,26 @@ class lobbies_list_payload:
 class lobby_info_payload:
     def __init__(self, payload: dict):
         self.lobbyId: str = payload.get("lobbyId")
-        self.gameType: str = payload.get("gameType")
         self.state: str = payload.get("state","waiting")
+        self.gameType: str = payload.get("gameType")
+        self.gameDuration: int = payload.get("gameDuration")
+        self.syncWindowLength: int = payload.get("syncWindowLength")
+        self.syncTolerance: int = payload.get("syncTolerance")
         self.players: list[str] = payload.get("players", [])
         self.readyStatus: list[bool] = payload.get("readyStatus", [])
+        self.hasSessions: bool = payload.get("hasSessions", False)
 
     def to_dict(self):
         return {
             "lobbyId": self.lobbyId,
-            "gameType": self.gameType,
             "state": self.state,
+            "gameType": self.gameType,
+            "gameDuration": self.gameDuration,
+            "syncWindowLength": self.syncWindowLength,
+            "syncTolerance": self.syncTolerance,
             "players": self.players,
-            "readyStatus": self.readyStatus
+            "readyStatus": self.readyStatus,
+            "hasSessions": self.hasSessions,
         }
 
 

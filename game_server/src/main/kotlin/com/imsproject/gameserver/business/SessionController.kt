@@ -26,7 +26,7 @@ class SessionController(
             lobbyId,gameType,duration,syncWindowLength,syncTolerance)
 
         // === check if the lobby exists === |
-        if(! lobbies.contains(lobbyId)){
+        val lobby = lobbies[lobbyId] ?: run {
             log.debug("createSession: Lobby not found")
             throw IllegalArgumentException("Lobby not found")
         }
@@ -46,6 +46,7 @@ class SessionController(
         val session = Session(sessionId, gameType, duration, syncWindowLength, syncTolerance)
         val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
         lobbySessions.add(session)
+        lobby.hasSessions = true
         return session.sessionId
     }
 
@@ -53,7 +54,7 @@ class SessionController(
         log.debug("removeSession() with lobbyId: {}, sessionId: {}",lobbyId,sessionId)
 
         // === check if the lobby exists === |
-        if(! lobbies.contains(lobbyId)){
+        val lobby = lobbies[lobbyId] ?: run {
             log.debug("removeSession: Lobby not found")
             throw IllegalArgumentException("Lobby not found")
         }
@@ -68,6 +69,7 @@ class SessionController(
         if(success){
             if(lobbySessions.isEmpty()){
                 lobbyIdToSessions.remove(lobbyId)
+                lobby.hasSessions = false
             }
             log.debug("removeSession() successful")
         } else {

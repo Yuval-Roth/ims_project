@@ -26,9 +26,6 @@ class GAME_TYPE(Enum):
     water_ripples = 'Water Ripples'
     wine_glasses = 'Wine Glasses'
     # flour_mill = 'Flour Mill'
-    chess = 'Chess'
-    tic_tac_toe = 'Tic Tac Toe'
-    racing = 'Racing'
 
 
 class GAME_REQUEST_TYPE(Enum):
@@ -40,9 +37,8 @@ class GAME_REQUEST_TYPE(Enum):
     set_lobby_type = "set_lobby_type"
     join_lobby = "join_lobby"
     leave_lobby = "leave_lobby"
-    start_game = "start_game"
     start_experiment = "start_experiment"
-    end_game = "end_game"
+    end_experiment = "end_experiment"
     change_sessions_order = "change_sessions_order"
     get_sessions = "get_sessions"
     create_session = "create_session"

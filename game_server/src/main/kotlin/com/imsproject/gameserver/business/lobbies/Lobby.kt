@@ -19,6 +19,7 @@ class Lobby(
     private var player2Ready = false
 
     var state = LobbyState.WAITING
+    var hasSessions = false
 
     /**
      * returns true if the player was added successfully, false if the lobby is full
@@ -113,7 +114,8 @@ class Lobby(
             syncWindowLength,
             syncTolerance,
             players,
-            playersReadyStatus
+            playersReadyStatus,
+            hasSessions
         )
     }
 }

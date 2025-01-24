@@ -26,7 +26,7 @@ def start_game(lobby_id):
 
 
 def stop_game(lobby_id):
-    body = server_request(GAME_REQUEST_TYPE.end_game.name, lobbyId=lobby_id).to_dict()
+    body = server_request(GAME_REQUEST_TYPE.end_experiment.name, lobbyId=lobby_id).to_dict()
 
     try:
         res = requests.post(URL+"/manager", json=body)

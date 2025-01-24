@@ -57,7 +57,7 @@
                                     <th>Duration</th>
                                     <th>Session ID</th>
                                     <th>Sync Tolerance</th>
-                                    <th>Window</th>
+                                    <th>Sync Window</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -191,7 +191,7 @@
             gameType: formData.get('gameType'),
             duration: parseInt(formData.get('duration'), 10),
             syncTolerance: parseInt(formData.get('syncTolerance'), 10),
-            window: parseInt(formData.get('window'), 10)
+            syncWindowLength: parseInt(formData.get('window'), 10)
         };
 
         fetch('/add_session', {
@@ -259,6 +259,7 @@
 
     // Append a session row to the table
     function appendSessionRow(session) {
+
     if (!session || !session.sessionId || !session.gameType || !session.duration) {
         console.warn('Invalid session data:', session);
         return;
@@ -344,9 +345,8 @@
         const toggleGameBtn = document.getElementById('toggle-game-btn');
         const lobbyId = "{{ lobby_id }}";
 
-        function updateButtonState(state, readyStatus, session) {
+        function updateButtonState(state, readyStatus, hasSessions) {
             const readyCount = readyStatus.filter(status => status).length;
-            const hasSessions = sessions.length > 0;
 
             if (state === 'waiting') {
                 toggleGameBtn.textContent = 'Start Game';
@@ -384,7 +384,7 @@
             .then(data => {
                 if (data.status === 'success') {
                     const lobby = data.lobby;
-                    updateButtonState(lobby.state, lobby.readyStatus, lobby.sessions);
+                    updateButtonState(lobby.state, lobby.readyStatus, lobby.hasSessions);
                     updateParticipantStatuses(lobby.players, lobby.readyStatus);
                 } else {
                     console.error('Error fetching lobby state:', data.message);
