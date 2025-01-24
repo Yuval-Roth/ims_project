@@ -535,6 +535,27 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
+    fun uploadSessionEvents(): Boolean {
+        Log.d(TAG, "Uploading session events")
+        val eventCollector = SessionEventCollectorImpl.getInstance()
+        val events = eventCollector.getAllEvents().stream()
+            .map { it.toCompressedJson() }
+            .reduce("") { acc, s -> "$acc\n$s" }
+        val returned = RestApiClient()
+            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+            .withBody(events)
+            .withPost()
+            .send()
+        val response = fromJson<Response>(returned)
+        if(response.success){
+            Log.d(TAG, "uploadSessionEvents: Success")
+            eventCollector.clearEvents()
+        } else {
+            Log.e(TAG, "uploadSessionEvents: Failed to upload events")
+        }
+        return response.success
+    }
+
     companion object {
         private const val TAG = "MainModel"
         lateinit var instance : MainModel

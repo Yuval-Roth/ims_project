@@ -84,6 +84,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent,applicationContext)
+        init(viewModel)
         try{
             sound = WavPlayer(applicationContext)
             sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
@@ -98,6 +99,11 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
         setContent {
             Main()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.onDestroy()
     }
 
     @Composable

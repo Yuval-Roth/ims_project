@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
+import kotlinx.coroutines.withContext
 
 private const val TAG = "MainViewModel"
 
@@ -124,7 +125,7 @@ class MainViewModel() : ViewModel() {
                 Result.Code.OK -> {
 /*
                     TODO: uncomment this when the data endpoint is ready
-                    setState(State.UPLOADING_EVENTS
+                    setState(State.UPLOADING_EVENTS)
                     withContext(Dispatchers.IO) {
                     do {
                         if(model.uploadSessionEvents()){

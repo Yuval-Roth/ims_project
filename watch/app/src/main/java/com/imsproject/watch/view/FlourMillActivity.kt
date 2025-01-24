@@ -84,9 +84,15 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent,applicationContext)
+        init(viewModel)
         setContent {
             Main()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.onDestroy()
     }
 
     @Composable

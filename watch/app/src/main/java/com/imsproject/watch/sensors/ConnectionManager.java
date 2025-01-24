@@ -65,16 +65,12 @@ public class ConnectionManager {
     public void initSpO2(SpO2Listener spO2Listener) {
         HealthTracker healthTracker = healthTrackingService.getHealthTracker(HealthTrackerType.SPO2_ON_DEMAND);
         spO2Listener.setHealthTracker(healthTracker);
-        //"TODO 1 (1)"
-        //"TODO 1 (2)"
         setHandlerForBaseListener(spO2Listener);
     }
 
     public void initHeartRate(HeartRateListener heartRateListener) {
         HealthTracker healthTracker = healthTrackingService.getHealthTracker(HealthTrackerType.HEART_RATE_CONTINUOUS);
         heartRateListener.setHealthTracker(healthTracker);
-        //"TODO 2 (1)"
-        //"TODO 2 (2)"
         setHandlerForBaseListener(heartRateListener);
     }
 

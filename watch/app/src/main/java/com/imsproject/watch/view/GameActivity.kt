@@ -2,7 +2,6 @@ package com.imsproject.watch.view
 
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +45,10 @@ import com.imsproject.watch.viewmodel.GameViewModel
 abstract class GameActivity(gameType: GameType) : ComponentActivity() {
 
     private val TAG = "$_TAG-${gameType.prettyName()}"
+
+    protected fun init(viewModel: GameViewModel){
+        viewModel.setupSensors(this)
+    }
 
     @Composable
     protected fun Main(viewModel: GameViewModel){
