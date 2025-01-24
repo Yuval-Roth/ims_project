@@ -161,7 +161,10 @@ final class GameRequestFacade(
     }
 
     private fun handleEndExperiment(request: GameRequest): String {
-        return Response.getOk()
+        return requireParams(request, "lobbyId") {
+            val lobbyId = request.lobbyId!!
+            experiments.stopExperiment(lobbyId)
+        }
     }
 
     /**

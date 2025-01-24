@@ -33,7 +33,7 @@ class ExperimentOrchestrator(
         val job = scope.launch {
             lobby.experimentRunning = true
             val iterator = experimentSessions.iterator()
-            while(iterator.hasNext()) {
+            while(iterator.hasNext() && isActive) {
                 val session = iterator.next()
                 lobbies.configureLobby(lobbyId, session)
                 while(! lobby.isReady()){
@@ -48,8 +48,24 @@ class ExperimentOrchestrator(
         ongoingExperiments[lobbyId] = job
     }
 
-    fun stopExperiment(lobbyId: String){
+    fun stopExperiment(lobbyId: String) {
+        val lobby = lobbies[lobbyId] ?: run{
+            log.debug("stopExperiment: Lobby with id $lobbyId not found")
+            throw IllegalArgumentException("Lobby with id $lobbyId not found")
+        }
 
+        val job = ongoingExperiments[lobbyId] ?: run{
+            log.debug("stopExperiment: No experiment found for lobby $lobbyId")
+            throw IllegalArgumentException("No experiment found for lobby $lobbyId")
+        }
+
+        job.cancel()
+        runBlocking {
+            job.join()
+        }
+        ongoingExperiments.remove(lobbyId)
+        lobby.experimentRunning = false
+        games.endGame(lobbyId)
     }
 
     companion object {
