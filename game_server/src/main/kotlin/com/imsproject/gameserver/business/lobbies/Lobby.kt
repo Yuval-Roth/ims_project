@@ -20,6 +20,7 @@ class Lobby(
 
     var state = LobbyState.WAITING
     var hasSessions = false
+    var experimentRunning = false
 
     /**
      * returns true if the player was added successfully, false if the lobby is full
@@ -115,7 +116,8 @@ class Lobby(
             syncTolerance,
             players,
             playersReadyStatus,
-            hasSessions
+            hasSessions,
+            experimentRunning
         )
     }
 }

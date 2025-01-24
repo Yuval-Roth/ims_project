@@ -11,6 +11,7 @@ data class LobbyInfo(
     val syncTolerance: Long,
     val players: List<String>,
     val readyStatus: List<Boolean>,
-    val hasSessions: Boolean
+    val hasSessions: Boolean,
+    val experimentRunning: Boolean
 )
 

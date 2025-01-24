@@ -29,8 +29,6 @@ data class GameRequest internal constructor(
         @SerializedName("get_lobbies")              GET_ALL_LOBBIES,
         @SerializedName("get_lobby")                GET_LOBBY,
         @SerializedName("create_lobby")             CREATE_LOBBY,
-//        @SerializedName("set_lobby_type")           SET_LOBBY_TYPE,
-//        @SerializedName("set_game_duration")        SET_GAME_DURATION,
         @SerializedName("configure_lobby")          CONFIGURE_LOBBY,
         @SerializedName("join_lobby")               JOIN_LOBBY,
         @SerializedName("leave_lobby")              LEAVE_LOBBY,
@@ -48,6 +46,7 @@ data class GameRequest internal constructor(
         @SerializedName("get_sessions")             GET_SESSIONS,
         @SerializedName("change_sessions_order")    CHANGE_SESSIONS_ORDER,
         @SerializedName("start_experiment")         START_EXPERIMENT,
+        @SerializedName("end_experiment")           END_EXPERIMENT,
     }
 
     companion object {

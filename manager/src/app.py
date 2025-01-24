@@ -186,11 +186,11 @@ def stop_game_route():
         # Attempt to stop the game
         success = stop_game(lobby_id)
         if success:
-            Logger.log_info(f"Game stopped successfully for lobby {lobby_id}")
-            return jsonify({"status": "success", "message": "Game stopped successfully"}), 200
+            Logger.log_info(f"Experiment stopped successfully for lobby {lobby_id}")
+            return jsonify({"status": "success", "message": "Experiment stopped successfully"}), 200
         else:
-            Logger.log_error(f"Failed to stop game for lobby {lobby_id}")
-            return jsonify({"status": "error", "message": "Failed to stop game"}), 500
+            Logger.log_error(f"Failed to stop experiment for lobby {lobby_id}")
+            return jsonify({"status": "error", "message": "Failed to stop experiment"}), 500
 
     except Exception as e:
         Logger.log_error(f"Unexpected error in /stop_game: {e}")

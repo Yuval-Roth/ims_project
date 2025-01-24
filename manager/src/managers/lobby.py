@@ -24,6 +24,7 @@ class lobby_info_payload:
         self.players: list[str] = payload.get("players", [])
         self.readyStatus: list[bool] = payload.get("readyStatus", [])
         self.hasSessions: bool = payload.get("hasSessions", False)
+        self.experimentRunning: bool = payload.get("experimentRunning", False)
 
     def to_dict(self):
         return {
@@ -36,6 +37,7 @@ class lobby_info_payload:
             "players": self.players,
             "readyStatus": self.readyStatus,
             "hasSessions": self.hasSessions,
+            "experimentRunning": self.experimentRunning,
         }
 
 

@@ -33,13 +33,12 @@ final class GameRequestFacade(
                 Type.REMOVE_LOBBY -> handleRemoveLobby(request)
                 Type.JOIN_LOBBY -> handleJoinLobby(request)
                 Type.LEAVE_LOBBY -> handleLeaveLobby(request)
-                Type.START_GAME -> handleStartGame(request)
-                Type.END_GAME -> handleEndGame(request)
                 Type.CREATE_SESSION -> handleCreateSession(request)
                 Type.REMOVE_SESSION -> handleRemoveSession(request)
                 Type.GET_SESSIONS -> handleGetSessions(request)
                 Type.CHANGE_SESSIONS_ORDER -> handleChangeSessionsOrder(request)
                 Type.START_EXPERIMENT -> handleStartExperiment(request)
+                Type.END_EXPERIMENT -> handleEndExperiment(request)
 
                 else -> Response.getError("Invalid message type")
             }
@@ -159,6 +158,10 @@ final class GameRequestFacade(
             val lobbyId = request.lobbyId!!
             experiments.startExperiment(lobbyId)
         }
+    }
+
+    private fun handleEndExperiment(request: GameRequest): String {
+        return Response.getOk()
     }
 
     /**

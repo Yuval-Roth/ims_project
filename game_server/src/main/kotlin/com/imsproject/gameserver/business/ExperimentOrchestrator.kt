@@ -10,7 +10,6 @@ class ExperimentOrchestrator(
     private val lobbies: LobbyController,
     private val sessions: SessionController,
     private val games: GameController,
-    sessionController: SessionController
 ) {
 
     private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -32,6 +31,7 @@ class ExperimentOrchestrator(
         }
 
         val job = scope.launch {
+            lobby.experimentRunning = true
             val iterator = experimentSessions.iterator()
             while(iterator.hasNext()) {
                 val session = iterator.next()

@@ -84,7 +84,7 @@
             <div class="action-buttons">
                 <button id="add-session-btn" class="primary-button">Add Session</button>
                 <button id="toggle-game-btn" class="success-button" data-action="start" disabled>
-                    Start Game
+                    Start Experiment
                 </button>
                 
             </div>
@@ -345,18 +345,18 @@
         const toggleGameBtn = document.getElementById('toggle-game-btn');
         const lobbyId = "{{ lobby_id }}";
 
-        function updateButtonState(state, readyStatus, hasSessions) {
+        function updateButtonState(experimentRunning, readyStatus, hasSessions) {
             const readyCount = readyStatus.filter(status => status).length;
 
-            if (state === 'waiting') {
-                toggleGameBtn.textContent = 'Start Game';
+            if (experimentRunning === false) {
+                toggleGameBtn.textContent = 'Start Experiment';
                 toggleGameBtn.dataset.action = 'start';
                 toggleGameBtn.classList.remove('warning-button');
                 toggleGameBtn.classList.add('success-button');
                 // Enable the button only if all participants are ready
                 toggleGameBtn.disabled = !(readyCount >= 2 && hasSessions);
-            } else if (state === 'playing') {
-                toggleGameBtn.textContent = 'Stop Game';
+            } else {
+                toggleGameBtn.textContent = 'Stop Experiment';
                 toggleGameBtn.dataset.action = 'stop';
                 toggleGameBtn.classList.remove('success-button');
                 toggleGameBtn.classList.add('warning-button');
@@ -384,7 +384,7 @@
             .then(data => {
                 if (data.status === 'success') {
                     const lobby = data.lobby;
-                    updateButtonState(lobby.state, lobby.readyStatus, lobby.hasSessions);
+                    updateButtonState(lobby.experimentRunning, lobby.readyStatus, lobby.hasSessions);
                     updateParticipantStatuses(lobby.players, lobby.readyStatus);
                 } else {
                     window.location.href = '/lobbies';
@@ -407,12 +407,12 @@
                 if (data.status === 'success') {
                     fetchLobbyState(); // Refresh the lobby state after action
                 } else {
-                    alert(`Failed to ${action} the game.`);
+                    alert(`Failed to ${action} the experiment.`);
                 }
             })
             .catch(error => {
                 console.error(`Error performing ${action}:`, error);
-                alert(`Failed to ${action} the game.`);
+                alert(`Failed to ${action} the experiment.`);
             });
         });
 
