@@ -1,0 +1,1 @@
+java -jar target/time_server-1.0-SNAPSHOT.jar

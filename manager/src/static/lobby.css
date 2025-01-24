@@ -31,9 +31,20 @@ body {
     text-transform: uppercase;
 }
 
+.lobby-content {
+    height: 80vh;  /* Full viewport height */
+    overflow-y: auto;
+    padding-right: 10px; /* Prevent content from being hidden by scrollbar */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 /* Section Styling */
 .lobby-content section {
     margin-bottom: 30px;
+    width: 80%;
 }
 
 .lobby-content h2 {
