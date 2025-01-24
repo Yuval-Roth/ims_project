@@ -24,9 +24,9 @@ import java.net.SocketTimeoutException
 import java.net.URI
 
 // set these values to run the app locally
-private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
+private const val RUNNING_LOCAL_GAME_SERVER : Boolean = true
 private const val RUNNING_ON_EMULATOR : Boolean = false
-private const val COMPUTER_NETWORK_IP = "192.168.0.104"
+private const val COMPUTER_NETWORK_IP = "192.168.1.184"
 
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
@@ -83,7 +83,7 @@ class MainModel (private val scope : CoroutineScope) {
             clientsClosed = false
         }
 
-        if(!ws.connectBlocking()){
+        if(!ws.connectBlocking(10, java.util.concurrent.TimeUnit.SECONDS)){
             Log.e(TAG, "connectToServer: WebSocket connection timeout")
             return false // timeout
         }
@@ -249,6 +249,32 @@ class MainModel (private val scope : CoroutineScope) {
         }
         timeServerUdp.close()
         return data.average().toLong()
+    }
+
+    fun uploadSessionEvents(sessionId: String): Boolean {
+        Log.d(TAG, "Uploading session events")
+        val eventCollector = SessionEventCollectorImpl.getInstance()
+        val events = eventCollector.getAllEvents().stream()
+            .map { it.toCompressedJson() }
+
+        val body = object {
+            val sessionId = sessionId
+            val events = events
+        }
+
+        val returned = RestApiClient()
+            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+            .withBody(body.toJson())
+            .withPost()
+            .send()
+        val response = fromJson<Response>(returned)
+        if(response.success){
+            Log.d(TAG, "uploadSessionEvents: Success")
+            eventCollector.clearEvents()
+        } else {
+            Log.e(TAG, "uploadSessionEvents: Failed to upload events")
+        }
+        return response.success
     }
 
     suspend fun closeAllResources(){
@@ -507,27 +533,6 @@ class MainModel (private val scope : CoroutineScope) {
             Log.e(TAG, "Failed to send UDP message", e)
             executeCallback { udpOnExceptionCallback(e) }
         }
-    }
-
-    fun uploadSessionEvents(): Boolean {
-        Log.d(TAG, "Uploading session events")
-        val eventCollector = SessionEventCollectorImpl.getInstance()
-        val events = eventCollector.getAllEvents().stream()
-            .map { it.toCompressedJson() }
-            .reduce("") { acc, s -> "$acc\n$s" }
-        val returned = RestApiClient()
-            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
-            .withBody(events)
-            .withPost()
-            .send()
-        val response = fromJson<Response>(returned)
-        if(response.success){
-            Log.d(TAG, "uploadSessionEvents: Success")
-            eventCollector.clearEvents()
-        } else {
-            Log.e(TAG, "uploadSessionEvents: Failed to upload events")
-        }
-        return response.success
     }
 
     companion object {

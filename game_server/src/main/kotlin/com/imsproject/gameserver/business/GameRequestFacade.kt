@@ -5,9 +5,7 @@ import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.utils.Response
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import kotlin.reflect.full.findParameterByName
 import kotlin.reflect.full.memberProperties
-import kotlin.reflect.jvm.reflect
 
 @Component
 final class GameRequestFacade(
@@ -33,8 +31,6 @@ final class GameRequestFacade(
                 Type.GET_LOBBY -> handleGetLobby(request)
                 Type.CREATE_LOBBY -> handleCreateLobby(request)
                 Type.REMOVE_LOBBY -> handleRemoveLobby(request)
-                Type.SET_LOBBY_TYPE -> handleSetLobbyType(request)
-                Type.SET_GAME_DURATION -> handleSetGameDuration(request)
                 Type.JOIN_LOBBY -> handleJoinLobby(request)
                 Type.LEAVE_LOBBY -> handleLeaveLobby(request)
                 Type.START_GAME -> handleStartGame(request)
@@ -94,22 +90,6 @@ final class GameRequestFacade(
         }
     }
 
-    private fun handleSetLobbyType(request: GameRequest) : String {
-        return requireParams(request, "lobbyId", "gameType") {
-            val lobbyId = request.lobbyId!!
-            val gameType = request.gameType!!
-            lobbies.setLobbyType(lobbyId, gameType)
-        }
-    }
-
-    private fun handleSetGameDuration(request: GameRequest) : String {
-        return requireParams(request, "lobbyId", "duration") {
-            val lobbyId = request.lobbyId!!
-            val duration = request.duration!!
-            lobbies.setGameDuration(lobbyId, duration)
-        }
-    }
-
     private fun handleJoinLobby(request: GameRequest) : String {
         return requireParams(request, "lobbyId", "playerId") {
             val lobbyId = request.lobbyId!!
@@ -141,11 +121,13 @@ final class GameRequestFacade(
     }
 
     private fun handleCreateSession(request: GameRequest) : String {
-        return requireParams(request, "lobbyId", "duration", "gameType") {
+        return requireParams(request, "lobbyId", "duration", "gameType", "syncWindowLength", "syncTolerance") {
             val lobbyId = request.lobbyId!!
             val duration = request.duration!!
             val gameType = request.gameType!!
-            sessions.createSession(lobbyId, duration, gameType)
+            val syncWindowLength = request.syncWindowLength!!
+            val syncTolerance = request.syncTolerance!!
+            sessions.createSession(lobbyId, gameType, duration, syncWindowLength, syncTolerance)
         }
     }
 

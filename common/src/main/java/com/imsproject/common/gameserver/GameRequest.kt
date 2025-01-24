@@ -14,7 +14,9 @@ data class GameRequest internal constructor(
     val sessionId: String?,
     val sessionIds: List<String>?,
     val data : List<String>?,
-    val timestamp: String?
+    val timestamp: String?,
+    val syncWindowLength: Long?,
+    val syncTolerance: Long?,
 ){
     enum class Type {
         @SerializedName("ping")                     PING,
@@ -27,8 +29,9 @@ data class GameRequest internal constructor(
         @SerializedName("get_lobbies")              GET_ALL_LOBBIES,
         @SerializedName("get_lobby")                GET_LOBBY,
         @SerializedName("create_lobby")             CREATE_LOBBY,
-        @SerializedName("set_lobby_type")           SET_LOBBY_TYPE,
-        @SerializedName("set_game_duration")        SET_GAME_DURATION,
+//        @SerializedName("set_lobby_type")           SET_LOBBY_TYPE,
+//        @SerializedName("set_game_duration")        SET_GAME_DURATION,
+        @SerializedName("configure_lobby")          CONFIGURE_LOBBY,
         @SerializedName("join_lobby")               JOIN_LOBBY,
         @SerializedName("leave_lobby")              LEAVE_LOBBY,
         @SerializedName("remove_lobby")             REMOVE_LOBBY,

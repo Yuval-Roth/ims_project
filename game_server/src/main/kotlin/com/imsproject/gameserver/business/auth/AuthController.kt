@@ -92,7 +92,7 @@ class AuthController(private val credentials: CredentialsController) {
 
         log.debug("Adding user credentials for user {}", cleanUserId)
         val hashedPassword = encoder.encode(user.password)
-        val userCredentials = Credentials(cleanUserId, hashedPassword)
+        val userCredentials = Credentials(cleanUserId, hashedPassword,null,null)
         credentials[cleanUserId] = userCredentials
     }
 
@@ -106,6 +106,10 @@ class AuthController(private val credentials: CredentialsController) {
 
     fun userExists(username: String): Boolean {
         return username in credentials
+    }
+
+    fun getAllUsers() : List<String> {
+        return credentials.getAll()
     }
 
     fun textToBCrypt(text: String): String {

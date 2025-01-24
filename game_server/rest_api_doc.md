@@ -85,12 +85,10 @@ Specifies the type of operation.
 - `get_lobby`
 - `create_lobby`
 - `remove_lobby`
-- `set_lobby_type`
-- `set_game_duration`
 - `join_lobby`
 - `leave_lobby`
-- `start_game`
-- `end_game`
+- `start_experiment`
+- `end_experiment`
 - `create_session`
 - `remove_session`
 - `get_sessions`
@@ -153,15 +151,21 @@ Retrieves the list of available lobbies. No additional fields are required for t
   "payload": [
     {
       "lobbyId": "lobby1",
-      "gameType": "gameTypeA",
       "state": "waiting",
+      "gameType": "gameTypeA",
+      "duration": 60,
+      "syncWindowLength": 5000,
+      "syncThreshold": 50,
       "players": ["player1", "player2"],
       "readyStatus": ["false", "true"]
     },
     {
       "lobbyId": "lobby2",
-      "gameType": "gameTypeB",
       "state": "playing",
+      "gameType": "gameTypeB",
+      "duration": 60,
+      "syncWindowLength": 4000,
+      "syncThreshold": 100,
       "players": ["player3"],
       "readyStatus": ["true"]
     }
@@ -185,8 +189,11 @@ This request type is used to get the details of a specific lobby. The `lobbyId` 
   "payload": [
     {
       "lobbyId": "lobby1",
-      "gameType": "gameTypeA",
       "state": "waiting",
+      "gameType": "gameTypeA",
+      "duration": 60,
+      "syncWindowLength": 5000,
+      "syncThreshold": 50,
       "players": ["player1", "player2"],
       "readyStatus": ["false", "true"]
     }
@@ -219,40 +226,6 @@ This request type is used to create a new lobby. The `gameType` field must be pr
 
 **Description:**
 This request type is used to remove a specific lobby. The `lobbyId` must be provided to identify the lobby to be removed.
-
-**Return value:**
-```json
-{
-  "success": true
-}
-```
-
-<br/>
-
-### `set_lobby_type`
-**Required fields:**
-- `lobbyId`
-- `gameType`
-
-**Description:**  
-This request type is used to change the game type for a specific lobby. Both the `lobbyId` (to identify the lobby) and the `gameType` (to specify the new type of game) are required.
-
-**Return value:**
-```json
-{
-  "success": true
-}
-```
-
-<br/>
-
-### `set_game_duration`
-**Required fields:**
-- `lobbyId`
-- `duration`
-
-**Description:**
-This request type is used to set the duration of the game in a specific lobby. Both the `lobbyId` (to identify the lobby) and the `duration` (to set the duration of the game) are required.
 
 **Return value:**
 ```json
@@ -297,12 +270,12 @@ This request type is used when a player leaves a lobby. Both `lobbyId` (to ident
 
 <br/>
 
-### `start_game`
+### `start_experiment`
 **Required fields:**
 - `lobbyId`
 
 **Description:**  
-This request type starts the game in a specific lobby. The `lobbyId` must be provided to identify the lobby where the game should start.
+This request type starts the experiment in a specific lobby. The `lobbyId` must be provided to identify the lobby where the game should start.
 
 **Return value:**
 ```json
@@ -313,12 +286,12 @@ This request type starts the game in a specific lobby. The `lobbyId` must be pro
 
 <br/>
 
-### `end_game`
+### `end_experiment`
 **Required fields:**
 - `lobbyId`
 
 **Description:**  
-This request type ends the game in a specific lobby. The `lobbyId` must be provided to identify the lobby where the game should end.
+This request type ends the experiment in a specific lobby. The `lobbyId` must be provided to identify the lobby where the game should end.
 
 **Return value:**
 ```json
@@ -334,11 +307,11 @@ This request type ends the game in a specific lobby. The `lobbyId` must be provi
 - `lobbyId`
 - `gameType`
 - `duration`
+- `syncWindowLength`
+- `syncThreshold`
 
 **Description:**
 This request type is used to create a new session.
-The `lobbyId` (to identify the lobby), `gameType` (to specify the type of game),
-and `duration` (to set the duration of the game) are required.
 
 **Return value:**
 ```json
@@ -382,12 +355,16 @@ This request type is used to get the list of sessions in a specific lobby.
     {
       "sessionId": "session1",
       "gameType": "gameTypeA",
-      "duration": 60
+      "duration": 60,
+      "syncWindowLength": 5000,
+      "syncThreshold": 50
     },
     {
       "sessionId": "session2",
       "gameType": "gameTypeB",
-      "duration": 120
+      "duration": 120,
+      "syncWindowLength": 4000,
+      "syncThreshold": 100
     }
   ]
 }
@@ -402,22 +379,6 @@ This request type is used to get the list of sessions in a specific lobby.
 
 **Description:**
 This request type is used to change the order of sessions in a lobby.
-
-**Return value:**
-```json
-{
-  "success": true
-}
-```
-
-<br/>
-
-### `start_experiment`
-**Required fields:**
-- `lobbyId`
-
-**Description:**
-This request type is used to start an experiment in a specific lobby.
 
 **Return value:**
 ```json

@@ -2,44 +2,32 @@ package com.imsproject.gameserver.business.auth
 
 import org.springframework.stereotype.Component
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 private const val USERS_PATH = "/app/data/users/"
 
 @Component
 class CredentialsController {
 
+    val credentials = ConcurrentHashMap<String,Credentials>()
+
     operator fun get(userId: String): Credentials? {
-        return if(userId in this){
-            val file = File(userId.toFilePath())
-            Credentials(userId, file.readLines()[0])
-        } else {
-            null
-        }
+        return credentials[userId]
     }
 
     operator fun contains(userId: String): Boolean {
-        val file = File(userId.toFilePath())
-        return file.exists()
+        return credentials.containsKey(userId)
     }
 
     operator fun set(userId: String, credentials: Credentials) {
-        val file = File(userId.toFilePath())
-        if(userId in this) {
-            file.delete()
-        }
-        file.mkdirs()
-        file.createNewFile()
-        file.writeText(credentials.password)
+        this.credentials[userId] = credentials
+    }
+
+    fun getAll(): List<String>{
+        return credentials.keys().toList()
     }
 
     fun remove(userId: String) : Boolean {
-        if(userId in this){
-            val file = File(userId.toFilePath())
-            file.delete()
-            return true
-        }
-        return false
+        return credentials.remove(userId) != null
     }
-
-    private fun String.toFilePath() = "$USERS_PATH$this"
 }

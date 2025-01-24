@@ -4,10 +4,15 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
+import com.imsproject.gameserver.business.Session
 import org.slf4j.LoggerFactory
 
 
-class FlourMillGame (player1 : ClientHandler, player2 : ClientHandler) : Game(player1, player2) {
+class FlourMillGame(
+    lobbyId: String,
+    player1: ClientHandler,
+    player2: ClientHandler
+) : Game(lobbyId, player1, player2) {
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {

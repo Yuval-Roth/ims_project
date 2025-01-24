@@ -1,10 +1,11 @@
 package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
-import com.imsproject.common.utils.JsonUtils
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
+import com.imsproject.gameserver.business.Participant
+import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.toResponseEntity
@@ -20,6 +21,7 @@ import java.util.*
 class RestHandler(
     private val gameRequestFacade: GameRequestFacade,
     private val authController: AuthController,
+    private val participantController: ParticipantController,
     private val resources : ResourceLoader
     ) : ErrorController {
 
@@ -40,16 +42,63 @@ class RestHandler(
         }
     }
 
-    @PostMapping("/operators/{action}")
+    @RequestMapping("/operators/{action}", method = [RequestMethod.POST, RequestMethod.GET])
     fun operators(
         @PathVariable action: String,
-        @RequestBody body : String
+        @RequestBody body : String?
     ): ResponseEntity<String> {
-        val credentials : Credentials = fromJson(body)
+        val credentials : Credentials = if(body != null){
+            try{
+                fromJson(body)
+            } catch(e: Exception){
+                return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
+            }
+        } else {
+            Credentials("","",null,null)
+        }
         try{
             when(action){
                 "add" -> authController.createUser(credentials)
                 "remove" -> authController.deleteUser(credentials.userId)
+                "get" -> {
+                    val users = authController.getAllUsers()
+                    return Response.getOk(users).toResponseEntity()
+                }
+                else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
+            }
+        } catch(e: IllegalArgumentException){
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        } catch(e: Exception){
+            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+        return Response.getOk().toResponseEntity()
+    }
+
+    @RequestMapping("/participants/{action}", method = [RequestMethod.POST, RequestMethod.GET])
+    fun participants(
+        @PathVariable action: String,
+        @RequestBody body : String?
+    ): ResponseEntity<String> {
+        val participant : Participant = if(body != null){
+            try{
+                fromJson(body)
+            } catch(e: Exception){
+                return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
+            }
+        } else {
+            Participant(null,null,null,null,null,null,null)
+        }
+        try{
+            when(action){
+                "add" -> {
+                    val id = participantController.addParticipant(participant)
+                    return Response.getOk(id).toResponseEntity()
+                }
+                "remove" -> participantController.remove(participant.pid!!)
+                "get" -> {
+                    val participants = participantController.getAll()
+                    return Response.getOk(participants).toResponseEntity()
+                }
                 else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
             }
         } catch(e: IllegalArgumentException){

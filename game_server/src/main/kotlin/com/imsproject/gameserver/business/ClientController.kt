@@ -2,6 +2,7 @@ package com.imsproject.gameserver.business
 
 import com.imsproject.gameserver.isMoreThanSecondsAgo
 import com.imsproject.gameserver.toHostPortString
+import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
@@ -12,10 +13,14 @@ class ClientController {
 
     companion object{
         const val HEARTBEAT_TIMEOUT_THRESHOLD = 60L
+        private val log = LoggerFactory.getLogger(ClientController::class.java)
     }
 
-
-    var onClientDisconnect: ((ClientHandler) -> Unit)? = null
+    var onClientDisconnect: ((ClientHandler) -> Unit) = {}
+        set(value) {
+            _onClientDisconnect.add(value)
+        }
+    private val _onClientDisconnect = mutableListOf<((ClientHandler) -> Unit)>()
 
     private val clientIdToHandler = ConcurrentHashMap<String, ClientHandler>()
     private val wsSessionIdToHandler = ConcurrentHashMap<String, ClientHandler>()
@@ -34,7 +39,7 @@ class ClientController {
     }
 
     fun addClientHandler(clientHandler: ClientHandler) {
-        wsSessionIdToHandler[clientHandler.wsSessionId] = clientHandler
+        wsSessionIdToHandler[clientHandler.wsSession.id] = clientHandler
         clientIdToHandler[clientHandler.id] = clientHandler
     }
 
@@ -49,7 +54,7 @@ class ClientController {
 
     fun removeClientHandler(clientId: String) {
         val handler = clientIdToHandler.remove(clientId) ?: return
-        wsSessionIdToHandler.remove(handler.wsSessionId)
+        wsSessionIdToHandler.remove(handler.wsSession.id)
         hostPortToHandler.remove(handler.udpAddress.toHostPortString())
     }
 
@@ -61,6 +66,12 @@ class ClientController {
         return clientIdToHandler.keys.toList()
     }
 
+    fun onExit(clientId: String){
+        val handler = clientIdToHandler[clientId] ?: return
+        _onClientDisconnect.forEach { it(handler) }
+        removeClientHandler(clientId)
+    }
+
     private fun pruneDeadClients() {
         val iter = clientIdToHandler.iterator()
         while(iter.hasNext()){
@@ -68,11 +79,11 @@ class ClientController {
             val handler = entry.value
             val isAlive = handler.lastHeartbeat.isMoreThanSecondsAgo(HEARTBEAT_TIMEOUT_THRESHOLD)
             if(!isAlive){
+                _onClientDisconnect.forEach { it(handler) }
                 iter.remove()
-                wsSessionIdToHandler.remove(entry.value.wsSessionId)
+                wsSessionIdToHandler.remove(entry.value.wsSession.id)
                 hostPortToHandler.remove(handler.udpAddress.toHostPortString())
                 handler.close()
-                onClientDisconnect?.invoke(handler)
             }
         }
     }
@@ -80,7 +91,11 @@ class ClientController {
     private fun run(){
         while(true){
             Thread.sleep(10000) // check every 10 seconds
-            pruneDeadClients()
+            try{
+                pruneDeadClients()
+            } catch (e: Exception){
+                log.debug(e.message,e)
+            }
         }
     }
 

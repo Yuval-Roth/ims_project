@@ -1,6 +1,5 @@
 package com.imsproject.gameserver.business
 
-import com.imsproject.common.utils.SimpleIdGenerator
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -19,22 +18,23 @@ class ExperimentOrchestrator(
 
     fun startExperiment(lobbyId: String) {
 
-        val notFound = mutableListOf<String>()
-        val errorMsg = "The following were not found:"
-        /*(1)*/ val lobby = lobbies[lobbyId] ?: run{ notFound.add("Lobby") ; null }
-        /*(2)*/ val sessions = sessions[lobbyId] ?: run{ notFound.add("Sessions") ; null }
-        if(lobby == null || sessions == null){
-            val joinedString = notFound.joinToString()
-            log.error("startExperiment: {} {}",errorMsg, joinedString)
-            throw IllegalArgumentException("$errorMsg $joinedString")
+        // check that the lobby exists
+        val lobby = lobbies[lobbyId] ?: run{
+            log.debug("startExperiment: Lobby with id $lobbyId not found")
+            throw IllegalArgumentException("Lobby with id $lobbyId not found")
+        }
+
+        val sessions = sessions.getSessions(lobbyId)
+        if(sessions.isEmpty()){
+            log.debug("startExperiment: No sessions found for lobby $lobbyId")
+            throw IllegalArgumentException("No sessions found for lobby $lobbyId")
         }
 
         val job = scope.launch {
             val iterator = sessions.iterator()
             while(iterator.hasNext()) {
                 val session = iterator.next()
-                lobbies.setLobbyType(lobbyId, session.gameType)
-                lobbies.setGameDuration(lobbyId, session.duration)
+                lobbies.configureLobby(lobbyId, session)
                 while(! lobby.isReady()){
                     delay(1000)
                 }

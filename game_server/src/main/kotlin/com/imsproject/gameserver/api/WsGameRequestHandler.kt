@@ -57,8 +57,8 @@ class WsGameRequestHandler(
             Type.PONG -> {}
             Type.EXIT -> {
                 clientController.getByWsSessionId(session.id)?.let {
-                    clientController.removeClientHandler(it.id)
-                    log.debug("Client disconnected: {}", it.id)
+                    clientController.onExit(it.id)
+                    log.debug("Client exited: {}", it.id)
                 }
             }
             Type.HEARTBEAT -> {
@@ -201,7 +201,7 @@ class WsGameRequestHandler(
 
     override fun afterConnectionClosed(session: WebSocketSession, @NonNull status: CloseStatus) {
         val client = clientController.getByWsSessionId(session.id) ?: return
-        log.debug("Client disconnected: {}", client.id)
+        log.debug("afterConnectionClosed: client {} websocket session disconnected", client.id)
     }
 
     private fun newClientHandler(wsSession: WebSocketSession, selectedId: String? = null) : ClientHandler {

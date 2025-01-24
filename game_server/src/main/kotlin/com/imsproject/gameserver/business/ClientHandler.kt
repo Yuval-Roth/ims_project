@@ -13,15 +13,17 @@ class ClientHandler internal constructor(
     private val sendUdp: (String,SocketAddress) -> Unit
 ) {
 
-    val wsSessionId: String
-        get() = wsSession.id
     var lastHeartbeat: LocalDateTime = LocalDateTime.now()
     lateinit var udpAddress: SocketAddress
 
     @Throws(IOException::class)
     fun sendTcp(message: String) {
         if(wsSession.isOpen){
-            wsSession.send(message)
+            try{
+                wsSession.send(message)
+            } catch (e: IOException){
+                log.error("Error sending message to client: {}",e.stackTraceToString())
+            }
         } else {
             log.debug("Attempted to send message to closed session: {}", message)
         }
