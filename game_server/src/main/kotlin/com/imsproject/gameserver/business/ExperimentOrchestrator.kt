@@ -9,7 +9,8 @@ import java.util.concurrent.Executors
 class ExperimentOrchestrator(
     private val lobbies: LobbyController,
     private val sessions: SessionController,
-    private val games: GameController
+    private val games: GameController,
+    sessionController: SessionController
 ) {
 
     private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -24,14 +25,14 @@ class ExperimentOrchestrator(
             throw IllegalArgumentException("Lobby with id $lobbyId not found")
         }
 
-        val sessions = sessions.getSessions(lobbyId)
-        if(sessions.isEmpty()){
+        val experimentSessions = sessions.getSessions(lobbyId)
+        if(experimentSessions.isEmpty()){
             log.debug("startExperiment: No sessions found for lobby $lobbyId")
             throw IllegalArgumentException("No sessions found for lobby $lobbyId")
         }
 
         val job = scope.launch {
-            val iterator = sessions.iterator()
+            val iterator = experimentSessions.iterator()
             while(iterator.hasNext()) {
                 val session = iterator.next()
                 lobbies.configureLobby(lobbyId, session)
@@ -41,6 +42,7 @@ class ExperimentOrchestrator(
                 games.startGame(lobbyId)
                 delay(session.duration.toLong()*1000)
                 games.endGame(lobbyId)
+                sessions.removeSession(lobbyId, session.sessionId)
             }
         }
         ongoingExperiments[lobbyId] = job
