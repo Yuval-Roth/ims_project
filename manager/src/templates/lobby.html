@@ -68,7 +68,7 @@
                                     <td>{{ session.duration }}</td>
                                     <td>{{ session.sessionId }}</td>
                                     <td>{{ session.syncTolerance }}</td>
-                                    <td>{{ session.window }}</td>
+                                    <td>{{ session.syncWindowLength }}</td>
                                     <td>
                                         <button class="danger-button delete-session-btn" data-session-id="{{ session.sessionId }}">Delete</button>
                                     </td>
@@ -114,7 +114,7 @@
                 <input type="number" name="syncTolerance" id="syncTolerance" value="100" min="1" required>
 
                 <!-- New Section: Window -->
-                <label for="window">Window (ms):</label>
+                <label for="window">Sync Window (ms):</label>
                 <input type="number" name="window" id="window" value="2000" min="1" required>
 
                 <div class="modal-actions">
