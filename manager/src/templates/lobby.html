@@ -202,6 +202,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
+                    console.log('Session added:', data.session);
                     appendSessionRow(data.session);
                     closeModal();
                 } else {
@@ -273,7 +274,6 @@
         .then(data => {
             if (data.status === 'success') {
                 const humanReadableGameType = data.gameType; // Get the real name from the server
-
                 // Create and append the row
                 const row = document.createElement('tr');
                 row.dataset.sessionId = session.sessionId;

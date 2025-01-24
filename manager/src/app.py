@@ -274,7 +274,7 @@ def add_session():
                     "duration": duration,
                     "sessionId": session_id,
                     "syncTolerance": sync_tolerance,
-                    "window": window,
+                    "syncWindowLength": window,
                 }
             })
         Logger.log_error(f"Failed to create session for lobby {lobby_id}")
@@ -317,25 +317,26 @@ def participants_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
     participants = get_participants_for_view()
+    # print(participants)
 
     if participants:
         participants = [json.loads(part) for part in participants]
+    else:
+        participants = []
 
     return render_template('participants.html', participants=participants)
 
 @app.route('/add_participant', methods=['POST'])
 def add_part():
     try:
-        print(request.json)
         participant = {
-            "firstName": request.json[0],
-            "lastName": request.json[1],
-            "age": request.json[2],
-            "gender": request.json[3],
-            "phone": request.json[4],
-            "email": request.json[5]
+            "firstName": request.json['firstName'],
+            "lastName": request.json['lastName'],
+            "age": request.json['age'],
+            "gender": request.json['gender'],
+            "phone": request.json['phone'],
+            "email": request.json['email']
         }
-        print(participant)
         return add_participant(participant)
     except Exception as e:
         Logger.log_error(f"Error adding participant: {e}")

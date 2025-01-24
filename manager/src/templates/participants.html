@@ -53,212 +53,185 @@
         </div>
     </div>
 
-<!-- Modal Overlay -->
-<div id="modal-overlay" class="modal-overlay"></div>
+    <!-- Modal Overlay -->
+    <div id="modal-overlay" class="modal-overlay"></div>
 
-<!-- Modal for Adding/Editing Participant -->
-<div id="participant-modal" class="modal">
-    <div class="modal-content">
-        <h2 id="modal-title">Add Participant</h2>
-        <form id="participant-form" action="/save_participant" method="post">
-            <input type="hidden" name="id" id="participant-id">
-            <label for="first-name">First Name:</label>
-            <input type="text" id="first-name" name="firstName" required>
+    <!-- Modal for Adding Participant -->
+    <div id="participant-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Add Participant</h2>
+            <form id="participant-form">
+                <!-- Removed the hidden ID input since editing is no longer supported -->
+                <label for="first-name">First Name:</label>
+                <input type="text" id="first-name" name="firstName" required>
 
-            <label for="last-name">Last Name:</label>
-            <input type="text" id="last-name" name="lastName" required>
+                <label for="last-name">Last Name:</label>
+                <input type="text" id="last-name" name="lastName" required>
 
-            <label for="age">Age:</label>
-            <input type="number" id="age" name="age" required>
+                <label for="age">Age:</label>
+                <input type="number" id="age" name="age" required>
 
-            <label for="gender">Gender:</label>
-            <select id="gender" name="gender" required>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-            </select>
+                <label for="gender">Gender:</label>
+                <select id="gender" name="gender" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
 
-            <label for="phone">Phone Number:</label>
-            <input type="tel" id="phone" name="phone" required>
+                <label for="phone">Phone Number:</label>
+                <input type="tel" id="phone" name="phone" required>
 
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
-        </form>
-        <div class="modal-buttons">
-            <button type="button" id="close-modal-btn" class="cancel-button">Cancel</button>
-            <button type="submit" form="participant-form" class="create-lobby-button">Save</button>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </form>
+            <div class="modal-buttons">
+                <button type="button" id="close-modal-btn" class="cancel-button">Cancel</button>
+                <button type="submit" form="participant-form" class="create-lobby-button">Save</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        let selectedRow = null;
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let selectedRow = null;
 
-        // Highlight selected row
-        document.querySelectorAll('.participant-row').forEach(row => {
-            row.addEventListener('click', function () {
-                document.querySelectorAll('.participant-row').forEach(r => r.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedRow = this;
+            // Highlight selected row
+            document.querySelectorAll('.participant-row').forEach(row => {
+                row.addEventListener('click', function () {
+                    document.querySelectorAll('.participant-row').forEach(r => r.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedRow = this;
+                });
             });
-        });
 
-        // Add participant
-        document.getElementById('add-participant-btn').addEventListener('click', function () {
-            openModal('Add Participant');
-        });
+            // Add participant
+            document.getElementById('add-participant-btn').addEventListener('click', function () {
+                openModal('Add Participant');
+            });
 
-        // Edit participant
-        document.getElementById('edit-participant-btn').addEventListener('click', function () {
-            if (!selectedRow) {
-                alert('Please select a participant to edit.');
-                return;
+            // Remove participant
+            document.getElementById('remove-participant-btn').addEventListener('click', function () {
+                if (!selectedRow) {
+                    alert('Please select a participant to remove.');
+                    return;
+                }
+
+                const participantId = selectedRow.dataset.participantId;
+                if (confirm('Are you sure you want to remove this participant?')) {
+                    fetch(`/remove_participant`, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: participantId })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Participant removed successfully.');
+                                selectedRow.remove(); // Remove the row from the table
+                                selectedRow = null;
+                            } else {
+                                alert('Failed to remove participant.');
+                            }
+                        })
+                        .catch(err => console.error('Error:', err));
+                }
+            });
+
+            // Open modal
+            function openModal(title) {
+                document.getElementById('modal-title').textContent = title;
+                // Clear previous form data
+                document.getElementById('participant-form').reset();
+
+                document.getElementById('participant-modal').style.display = 'block';
+                document.getElementById('modal-overlay').style.display = 'block';
             }
 
-            const participantData = Array.from(selectedRow.children).map(cell => cell.textContent);
-
-            openModal('Edit Participant', {
-                id: participantData[0],
-                firstName: participantData[1],
-                lastName: participantData[2],
-                age: participantData[3],
-                gender: participantData[4],
-                phone: participantData[5],
-                email: participantData[6]
+            // Close modal
+            document.getElementById('close-modal-btn').addEventListener('click', function () {
+                closeModal();
             });
-        });
 
-        // Remove participant
-        document.getElementById('remove-participant-btn').addEventListener('click', function () {
-            if (!selectedRow) {
-                alert('Please select a participant to remove.');
-                return;
+            function closeModal() {
+                document.getElementById('participant-modal').style.display = 'none';
+                document.getElementById('modal-overlay').style.display = 'none';
             }
 
-            const participantId = selectedRow.dataset.participantId;
-            if (confirm('Are you sure you want to remove this participant?')) {
-                fetch(`/remove_participant`, {
-                    method: 'DELETE',
+            // Save participant (Add only)
+            document.getElementById('participant-form').addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const firstName = document.getElementById('first-name').value.trim();
+                const lastName = document.getElementById('last-name').value.trim();
+                const age = parseInt(document.getElementById('age').value, 10);
+                const gender = document.getElementById('gender').value;
+                const phone = document.getElementById('phone').value.trim();
+                const email = document.getElementById('email').value.trim();
+
+                // Basic validation (optional, enhances UX)
+                if (!firstName || !lastName || isNaN(age) || !gender || !phone || !email) {
+                    alert('Please fill in all fields correctly.');
+                    return;
+                }
+
+                const payload = { firstName, lastName, age, gender, phone, email };
+
+                fetch('/add_participant', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: participantId })
+                    body: JSON.stringify(payload)
                 })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
-                            alert('Participant removed successfully.');
-                            selectedRow.remove(); // Remove the row from the table
-                            selectedRow = null;
-                        } else {
-                            alert('Failed to remove participant.');
-                        }
-                    })
-                    .catch(err => console.error('Error:', err));
-            }
-        });
+                        console.log(data);
+                        if (Array.isArray(data) && data.length === 1) {
+                            const newParticipantId = data[0];
 
-        // Open modal
-        function openModal(title, data = {}) {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('participant-id').value = data.id || '';
-            document.getElementById('first-name').value = data.firstName || '';
-            document.getElementById('last-name').value = data.lastName || '';
-            document.getElementById('age').value = data.age || '';
-            document.getElementById('gender').value = data.gender || 'Male';
-            document.getElementById('phone').value = data.phone || '';
-            document.getElementById('email').value = data.email || '';
-
-            document.getElementById('participant-modal').style.display = 'block';
-            document.getElementById('modal-overlay').style.display = 'block';
-        }
-
-        // Close modal
-        document.getElementById('close-modal-btn').addEventListener('click', function () {
-            closeModal();
-        });
-
-        function closeModal() {
-            document.getElementById('participant-modal').style.display = 'none';
-            document.getElementById('modal-overlay').style.display = 'none';
-        }
-
-        // Save participant (Add or Edit)
-        document.getElementById('participant-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            const id = document.getElementById('participant-id').value;
-            const firstName = document.getElementById('first-name').value;
-            const lastName = document.getElementById('last-name').value;
-            const age = document.getElementById('age').value;
-            const gender = document.getElementById('gender').value;
-            const phone = document.getElementById('phone').value;
-            const email = document.getElementById('email').value;
-
-            const url = id ? '/edit_participant' : '/add_participant';
-            const method = id ? 'PUT' : 'POST';
-
-            // Prepare the payload for adding or editing
-            const payload = id
-                ? { id, firstName, lastName, age, gender, phone, email }
-                : [firstName, lastName, age.toString(), gender, phone, email];
-
-            fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    {#[
-                    {#    "002"
-                    {#]#}
-                    console.log(data);
-                    if (Array.isArray(data)) {
-                        const newParticipantId = data[0]; // Extract the first element from the array
-                        if (id) {
-                            // Update existing row
-                            const cells = selectedRow.children;
-                            cells[1].textContent = firstName;
-                            cells[2].textContent = lastName;
-                            cells[3].textContent = age;
-                            cells[4].textContent = gender;
-                            cells[5].textContent = phone;
-                            cells[6].textContent = email;
-                        } else {
-                            // Add new row
+                            // Add new row to the table
                             const newRow = document.createElement('tr');
                             newRow.className = 'participant-row';
                             newRow.dataset.participantId = newParticipantId;
                             newRow.innerHTML = `
                                 <td>${newParticipantId}</td>
-                                <td>${firstName}</td>
-                                <td>${lastName}</td>
+                                <td>${escapeHtml(firstName)}</td>
+                                <td>${escapeHtml(lastName)}</td>
                                 <td>${age}</td>
-                                <td>${gender}</td>
-                                <td>${phone}</td>
-                                <td>${email}</td>
+                                <td>${escapeHtml(gender)}</td>
+                                <td>${escapeHtml(phone)}</td>
+                                <td>${escapeHtml(email)}</td>
                             `;
                             document.querySelector('.online-participants-table tbody').appendChild(newRow);
 
-                            // Attach click event to the new row
+                            // Attach click event to the new row for selection
                             newRow.addEventListener('click', function () {
                                 document.querySelectorAll('.participant-row').forEach(r => r.classList.remove('selected'));
                                 newRow.classList.add('selected');
                                 selectedRow = newRow;
                             });
+
+                            closeModal();
+                            alert('Participant added successfully.');
+                        } else {
+                            alert('Failed to add participant: ' + (data.message || 'Unknown error.'));
                         }
-                        closeModal();
-                        alert('Participant saved successfully.');
-                    } else {
-                        alert('Failed to save participant.');
-                    }
-                })
-                .catch(err => console.error('Error:', err));
+                    })
+                    .catch(err => {
+                        console.error('Error:', err);
+                        alert('An error occurred while adding the participant.');
+                    });
+            });
+
+            // Utility function to escape HTML to prevent XSS
+            function escapeHtml(text) {
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
         });
-    });
-</script>
-
-
-
-
+    </script>
 </body>
 </html>

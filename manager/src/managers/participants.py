@@ -39,12 +39,9 @@ def get_participants_for_view():
         return None
 
 def add_participant(participant):
-    # body = server_request(GAME_REQUEST_TYPE.add_participant.name, participant).to_dict()
     try:
-        # print(body)
         response = requests.post(URL+"/participants/add", json=participant)
         if response.status_code in [200, 201]:
-            print(response.json())
             ser_res = server_response(response)
             if ser_res.get_success():
                 return ser_res.get_payload()
