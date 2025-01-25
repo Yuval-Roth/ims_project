@@ -52,9 +52,9 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        init(viewModel)
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent,applicationContext)
-        init(viewModel)
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         clickSoundId = soundPool.load(applicationContext, R.raw.ripple_click_sound, 1)
         setContent {

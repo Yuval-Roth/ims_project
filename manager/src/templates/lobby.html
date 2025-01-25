@@ -115,7 +115,7 @@
 
                 <!-- New Section: Window -->
                 <label for="window">Sync Window Length (ms):</label>
-                <input type="number" name="window" id="window" min="1" required>
+                <input type="number" name="window" id="window" required>
 
                 <div class="modal-actions">
                     <button type="submit" class="primary-button">Add</button>
@@ -185,12 +185,25 @@
         event.preventDefault();
 
         const formData = new FormData(addSessionForm);
+        const gameType = formData.get('gameType');
+        let syncTolerance
+        let syncWindowLength
+        switch(gameType) {
+            case 'Water Ripples':
+                syncTolerance = parseInt(formData.get('syncTolerance'), 10);
+                syncWindowLength = -1;
+                break;
+            case 'Wine Glasses':
+                syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
+                syncWindowLength = parseInt(formData.get('window'), 10);
+                break;
+        }
         const payload = {
             lobby_id: formData.get('lobby_id'),
-            gameType: formData.get('gameType'),
+            gameType: gameType,
             duration: parseInt(formData.get('duration'), 10),
-            syncTolerance: parseInt(formData.get('syncTolerance'), 10),
-            syncWindowLength: parseInt(formData.get('window'), 10)
+            syncTolerance: syncTolerance,
+            syncWindowLength: syncWindowLength
         };
 
         fetch('/add_session', {
