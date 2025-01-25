@@ -1,8 +1,6 @@
 package com.imsproject.gameserver.dataAccess
 
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
-import com.imsproject.common.utils.Response
-import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.dataAccess.implementations.*
 
 import com.imsproject.gameserver.dataAccess.models.*
@@ -46,25 +44,25 @@ class DAOController {
     }
 
     @Throws(SQLException::class)
-    fun handleDelete(section: SectionEnum, dto: Any) {
+    fun handleDelete(section: SectionEnum, pk: Any) {
         when (section) {
             SectionEnum.PARTICIPANT -> {
-                val participantDTO = dto as ParticipantDTO
+                val participantDTO = pk as ParticipantDTO
                 if (participantDTO.pid == null) throw Exception("A participant id was not provided for deletion")
                 participantDAO.delete(ParticipantPK(participantDTO.pid))
             }
             SectionEnum.EXPERIMENT -> {
-                val exp = dto as ExperimentDTO
+                val exp = pk as ExperimentDTO
                 if (exp.expId == null) throw Exception("An experiment id was not provided for deletion")
                 experimentDAO.delete(ExperimentPK(exp.expId))
             }
             SectionEnum.SESSION -> {
-                val sessionDTO = dto as SessionDTO
+                val sessionDTO = pk as SessionDTO
                 if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for deletion")
                 sessionDAO.delete(SessionPK(sessionDTO.sessionId))
             }
             SectionEnum.SESSIONEVENT -> {
-                val sessionEventDTO = dto as SessionEventDTO
+                val sessionEventDTO = pk as SessionEventDTO
                 if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for deletion")
                 sessionEventDAO.delete(SessionEventPK(sessionEventDTO.eventId))
             }
@@ -98,25 +96,25 @@ class DAOController {
     }
 
     @Throws(SQLException::class)
-    fun handleSelect(section: SectionEnum, dto: Any): Any {
+    fun handleSelect(section: SectionEnum, pk: Any): Any {
         return when (section) {
             SectionEnum.PARTICIPANT -> {
-                val participantDTO = dto as ParticipantDTO
+                val participantDTO = pk as ParticipantDTO
                 if (participantDTO.pid == null) throw Exception("A participant id was not provided for selection")
                 participantDAO.select(ParticipantPK(participantDTO.pid))
             }
             SectionEnum.EXPERIMENT -> {
-                val exp = dto as ExperimentDTO
+                val exp = pk as ExperimentDTO
                 if (exp.expId == null) throw Exception("An experiment id was not provided for selection")
                 experimentDAO.select(ExperimentPK(exp.expId))
             }
             SectionEnum.SESSION -> {
-                val sessionDTO = dto as SessionDTO
+                val sessionDTO = pk as SessionDTO
                 if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for selection")
                 sessionDAO.select(SessionPK(sessionDTO.sessionId))
             }
             SectionEnum.SESSIONEVENT -> {
-                val sessionEventDTO = dto as SessionEventDTO
+                val sessionEventDTO = pk as SessionEventDTO
                 if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for selection")
                 sessionEventDAO.select(SessionEventPK(sessionEventDTO.eventId))
             }

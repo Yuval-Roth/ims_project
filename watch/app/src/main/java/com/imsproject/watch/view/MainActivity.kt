@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
     private lateinit var flourMill: ActivityResultLauncher<Map<String,Any>>
-    private val idsList = listOf("0","1","2","3","4","5","6","7","8","9","A","B","C","D","E","F")
+    private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -28,6 +28,7 @@ CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
                           session_order INT,
                           tolerance INT,
                           window_length INT,
+                          state VARCHAR(50),
                           FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
 );
 

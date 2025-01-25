@@ -7,5 +7,7 @@ data class Session(
     val gameType: GameType,
     val duration: Int,
     val syncWindowLength: Long,
-    val syncTolerance: Long
+    val syncTolerance: Long,
+    var dbId: Int? = null,
+    var state: SessionState = SessionState.NOT_STARTED
 )

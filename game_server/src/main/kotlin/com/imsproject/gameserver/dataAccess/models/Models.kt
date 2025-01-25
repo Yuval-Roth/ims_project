@@ -1,7 +1,5 @@
 package com.imsproject.gameserver.dataAccess.models
 
-// change names to _DTO
-
 data class ParticipantDTO(
     val pid: Int?,
     val firstName: String?,
@@ -12,20 +10,21 @@ data class ParticipantDTO(
     val email: String?
 )
 
-data class ExperimentDTO( // CHANGE TO EXPERIMENT
+data class ExperimentDTO(
     val expId: Int?,
     val pid1: Int?,
     val pid2: Int?
 )
 
 data class SessionDTO(
-    val sessionId: Int?,
-    val expId: Int?,
-    val duration: Int?,
-    val sessionType: String?,
-    val sessionOrder: Int?,
-    val tolerance: Int?,
-    val windowLength: Int?
+    val sessionId: Int? = null,
+    val expId: Int? = null,
+    val duration: Int? = null,
+    val sessionType: String? = null,
+    val sessionOrder: Int? = null,
+    val tolerance: Int? = null,
+    val windowLength: Int? = null,
+    val state: String? = null
 ) {
     companion object {
         fun create(expId: Int, sessionData: SessionData) =
