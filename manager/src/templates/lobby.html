@@ -107,15 +107,15 @@
                 </select>
 
                 <label for="duration">Duration (seconds):</label>
-                <input type="number" name="duration" id="duration" min="1" required>
+                <input type="number" name="duration" id="duration" required>
 
                 <!-- New Section: Sync Tolerance -->
-                <label for="syncTolerance">Sync Tolerance (ms | (1/100)*hz):</label>
-                <input type="number" name="syncTolerance" id="syncTolerance" value="100" min="1" required>
+                <label id="syncToleranceDescription" for="syncTolerance"></label>
+                <input type="number" name="syncTolerance" id="syncTolerance" required>
 
                 <!-- New Section: Window -->
                 <label for="window">Sync Window Length (ms):</label>
-                <input type="number" name="window" id="window" value="2000" min="1" required>
+                <input type="number" name="window" id="window" min="1" required>
 
                 <div class="modal-actions">
                     <button type="submit" class="primary-button">Add</button>
@@ -177,8 +177,7 @@
         addSessionForm.reset();
         document.getElementById('gameType').value = document.getElementById('gameType').options[0].value;
         document.getElementById('duration').value = '';
-        document.getElementById('syncTolerance').value = 100;
-        document.getElementById('window').value = 2000;
+        updateCreateSessionParams()
     }
 
     // Handle adding a session
@@ -423,7 +422,49 @@
         fetchLobbyState();
     });
 
+    // update default params for each game type when creating session
+    document.addEventListener('DOMContentLoaded', updateCreateSessionParams);
+    function updateCreateSessionParams () {
+        const gameTypeSelect = document.getElementById('gameType');
+        const syncToleranceInput = document.getElementById('syncTolerance');
+        const syncToleranceDescription = document.getElementById('syncToleranceDescription');
+        const syncWindowLength = document.getElementById('window');
 
+        // Define default values for each game type
+        const defaultParams = {
+            'Water Ripples': {
+                syncTolerance: 50,
+                syncToleranceUnit: 'ms',
+                syncToleranceStep: 1,
+                syncToleranceMin: 1,
+                syncWindowLength: -1,
+                windowLengthEnabled: false
+            },
+            'Wine Glasses': {
+                syncTolerance: 0.10,
+                syncToleranceUnit: 'hz',
+                syncToleranceStep: 0.01,
+                syncToleranceMin: 0.01,
+                syncWindowLength: 5000,
+                windowLengthEnabled: true
+            },
+        };
+
+        function updateDefaultValues() {
+            const selectedGame = gameTypeSelect.value;
+            if (defaultParams[selectedGame]) {
+                syncToleranceInput.value = defaultParams[selectedGame].syncTolerance;
+                syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
+                syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
+                syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
+                syncWindowLength.value = defaultParams[selectedGame].syncWindowLength;
+                syncWindowLength.disabled = !defaultParams[selectedGame].windowLengthEnabled;
+            }
+        }
+
+        gameTypeSelect.addEventListener('change', updateDefaultValues);
+        setTimeout(updateDefaultValues, 0);
+    }
 
     </script>
 </body>
