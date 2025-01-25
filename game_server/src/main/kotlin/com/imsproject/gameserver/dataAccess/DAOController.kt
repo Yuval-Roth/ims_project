@@ -17,7 +17,7 @@ enum class SectionEnum {
 @Component
 class DAOController {
     private val cursor: SQLExecutor = PostgreSQLExecutor(
-        "localhost", 5432 ,"ims-db", "admin", "adminMTAC"
+        "localhost", 5432, "ims-db", "admin", "adminMTAC"
     )
 
     val participantDAO: ParticipantsDAO = ParticipantsDAO(cursor)
@@ -26,183 +26,112 @@ class DAOController {
     val sessionEventDAO: SessionEventsDAO = SessionEventsDAO(cursor)
 
     @Throws(SQLException::class)
-    fun handleInsert(section: SectionEnum ,dto : Any): Int {
+    fun handleInsert(section: SectionEnum, dto: Any): Int {
+        return when (section) {
+            SectionEnum.PARTICIPANT -> participantDAO.insert(dto as ParticipantDTO)
+            SectionEnum.EXPERIMENT -> experimentDAO.insert(dto as ExperimentDTO)
+            SectionEnum.SESSION -> sessionDAO.insert(dto as SessionDTO)
+            SectionEnum.SESSIONEVENT -> sessionEventDAO.insert(dto as SessionEventDTO)
+        }
+    }
+
+    @Throws(SQLException::class)
+    fun handleExists(section: SectionEnum, pk: Any): Boolean {
+        return when (section) {
+            SectionEnum.PARTICIPANT -> participantDAO.exists(pk as ParticipantPK)
+            SectionEnum.EXPERIMENT -> experimentDAO.exists(pk as ExperimentPK)
+            SectionEnum.SESSION -> sessionDAO.exists(pk as SessionPK)
+            SectionEnum.SESSIONEVENT -> sessionEventDAO.exists(pk as SessionEventPK)
+        }
+    }
+
+    @Throws(SQLException::class)
+    fun handleDelete(section: SectionEnum, dto: Any) {
         when (section) {
             SectionEnum.PARTICIPANT -> {
-                return participantDAO.insert(dto as ParticipantDTO)
-            }
-            SectionEnum.EXPERIMENT -> {
-                return experimentDAO.insert(dto as ExperimentDTO)
-            }
-            SectionEnum.SESSION -> {
-                return sessionDAO.insert(dto as SessionDTO)
-            }
-            SectionEnum.SESSIONEVENT -> {
-                return sessionEventDAO.insert(dto as SessionEventDTO)
-                //todo: add bulk session addition
-            }
-            else -> throw (SQLException("Unknown section '$section'"))
-        }
-    }
-
-    @Throws(SQLException::class)
-    fun handleExists(section: String ,pk : Any): Boolean {
-        when (section) {
-            "participant" -> {
-                return participantDAO.exists(pk as ParticipantPK)
-            }
-            "experiment" -> {
-                return experimentDAO.exists(pk as ExperimentPK)
-            }
-            "session" -> {
-                return sessionDAO.exists(pk as SessionPK)
-            }
-            "sessionEvent" -> {
-                return sessionEventDAO.exists(pk as SessionEventPK)
-            }
-            else -> throw (SQLException("Unknown section '$section'"))
-        }
-    }
-
-    @Throws(SQLException::class)
-    fun handleDelete(section: String ,dto : Any): Unit {
-        when (section) {
-            "participant" -> {
-                val participantDTO: ParticipantDTO = dto as ParticipantDTO
-                if(participantDTO.pid == null)
-                    throw Exception("A participant id was not provided for deletion")
+                val participantDTO = dto as ParticipantDTO
+                if (participantDTO.pid == null) throw Exception("A participant id was not provided for deletion")
                 participantDAO.delete(ParticipantPK(participantDTO.pid))
             }
-            "experiment" -> {
-                val exp: ExperimentDTO = dto as ExperimentDTO
-                if(exp.expId == null)
-                    throw Exception("An experiment id was not provided for deletion")
+            SectionEnum.EXPERIMENT -> {
+                val exp = dto as ExperimentDTO
+                if (exp.expId == null) throw Exception("An experiment id was not provided for deletion")
                 experimentDAO.delete(ExperimentPK(exp.expId))
             }
-            "session" -> {
-                val sessionDTO: SessionDTO = dto as SessionDTO
-                if(sessionDTO.sessionId == null)
-                    throw Exception("A session id was not provided for deletion")
+            SectionEnum.SESSION -> {
+                val sessionDTO = dto as SessionDTO
+                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for deletion")
                 sessionDAO.delete(SessionPK(sessionDTO.sessionId))
             }
-            "sessionEvent" -> {
-                val sessionEventDTO: SessionEventDTO = dto as SessionEventDTO
-                if(sessionEventDTO.eventId == null)
-                    throw Exception("A session event id was not provided for deletion")
+            SectionEnum.SESSIONEVENT -> {
+                val sessionEventDTO = dto as SessionEventDTO
+                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for deletion")
                 sessionEventDAO.delete(SessionEventPK(sessionEventDTO.eventId))
             }
-            else -> throw (SQLException("Unknown section '$section'"))
         }
     }
 
     @Throws(SQLException::class)
-    fun handleUpdate(section: String ,dto : Any): Unit {
+    fun handleUpdate(section: SectionEnum, dto: Any) {
         when (section) {
-            "participant" -> {
-                val participantDTO: ParticipantDTO = dto as ParticipantDTO
-                if(participantDTO.pid == null)
-                    throw Exception("A participant id was not provided for update")
+            SectionEnum.PARTICIPANT -> {
+                val participantDTO = dto as ParticipantDTO
+                if (participantDTO.pid == null) throw Exception("A participant id was not provided for update")
                 participantDAO.update(participantDTO)
-
             }
-            "experiment" -> {
-                val exp: ExperimentDTO = dto as ExperimentDTO
-                if(exp.expId == null)
-                    throw Exception("An experiment id was not provided for update")
+            SectionEnum.EXPERIMENT -> {
+                val exp = dto as ExperimentDTO
+                if (exp.expId == null) throw Exception("An experiment id was not provided for update")
                 experimentDAO.update(exp)
             }
-            "session" -> {
-                val sessionDTO: SessionDTO = dto as SessionDTO
-                if(sessionDTO.sessionId == null)
-                    throw Exception("A session id was not provided for update")
+            SectionEnum.SESSION -> {
+                val sessionDTO = dto as SessionDTO
+                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for update")
                 sessionDAO.update(sessionDTO)
             }
-            "sessionEvent" -> {
-                val sessionEventDTO: SessionEventDTO = dto as SessionEventDTO
-                if(sessionEventDTO.eventId == null)
-                    throw Exception("A session event id was not provided for update")
+            SectionEnum.SESSIONEVENT -> {
+                val sessionEventDTO = dto as SessionEventDTO
+                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for update")
                 sessionEventDAO.update(sessionEventDTO)
             }
-            else -> throw (SQLException("Unknown section '$section'"))
         }
     }
 
     @Throws(SQLException::class)
-    fun handleSelect(section: String ,dto : Any): Any {
-        when (section) {
-            "participant" -> {
-                val participantDTO: ParticipantDTO = dto as ParticipantDTO
-                if (participantDTO.pid == null)
-                    throw Exception("A participant id was not provided for selection")
-                return participantDAO.select(ParticipantPK(participantDTO.pid))
+    fun handleSelect(section: SectionEnum, dto: Any): Any {
+        return when (section) {
+            SectionEnum.PARTICIPANT -> {
+                val participantDTO = dto as ParticipantDTO
+                if (participantDTO.pid == null) throw Exception("A participant id was not provided for selection")
+                participantDAO.select(ParticipantPK(participantDTO.pid))
             }
-
-            "experiment" -> {
-                val exp: ExperimentDTO = dto as ExperimentDTO
-                if (exp.expId == null)
-                    throw Exception("An experiment id was not provided for selection")
-                return experimentDAO.select(ExperimentPK(exp.expId))
+            SectionEnum.EXPERIMENT -> {
+                val exp = dto as ExperimentDTO
+                if (exp.expId == null) throw Exception("An experiment id was not provided for selection")
+                experimentDAO.select(ExperimentPK(exp.expId))
             }
-
-            "session" -> {
-                val sessionDTO: SessionDTO = dto as SessionDTO
-                if (sessionDTO.sessionId == null)
-                    throw Exception("A session id was not provided for selection")
-                return sessionDAO.select(SessionPK(sessionDTO.sessionId))
+            SectionEnum.SESSION -> {
+                val sessionDTO = dto as SessionDTO
+                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for selection")
+                sessionDAO.select(SessionPK(sessionDTO.sessionId))
             }
-
-            "sessionEvent" -> {
-                val sessionEventDTO: SessionEventDTO = dto as SessionEventDTO
-                if (sessionEventDTO.eventId == null)
-                    throw Exception("A session event id was not provided for selection")
-                return sessionEventDAO.select(SessionEventPK(sessionEventDTO.eventId))
+            SectionEnum.SESSIONEVENT -> {
+                val sessionEventDTO = dto as SessionEventDTO
+                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for selection")
+                sessionEventDAO.select(SessionEventPK(sessionEventDTO.eventId))
             }
-            else -> throw (SQLException("Unknown section '$section'"))
         }
     }
 
     @Throws(SQLException::class)
-    fun handleSelectAll(section: String): List<Any> {
-        when (section) {
-            "participant" -> {
-                return participantDAO.selectAll()
-            }
-            "experiment" -> {
-                return experimentDAO.selectAll()
-            }
-            "session" -> {
-                return sessionDAO.selectAll()
-            }
-            "sessionEvent" -> {
-                return sessionEventDAO.selectAll()
-            }
-            else -> throw (SQLException("Unknown section '$section'"))
+    fun handleSelectAll(section: SectionEnum): List<Any> {
+        return when (section) {
+            SectionEnum.PARTICIPANT -> participantDAO.selectAll()
+            SectionEnum.EXPERIMENT -> experimentDAO.selectAll()
+            SectionEnum.SESSION -> sessionDAO.selectAll()
+            SectionEnum.SESSIONEVENT -> sessionEventDAO.selectAll()
         }
     }
 
-
-    @Throws(SQLException::class)
-    fun insertExperimentSession(body : String): MutableMap<String, Int> {
-        try {
-            val tid = cursor.beginTransaction()
-            val esdata: ExpWithSessionsData = fromJson(body)
-            val expdto = ExperimentDTO(expId = null, pid1 = esdata.pid1, pid2 = esdata.pid2)
-            val expId: Int = experimentDAO.insert(expdto, tid) //performing experiments insertion
-
-            val sessionIds: MutableMap<String, Int> = mutableMapOf("expId" to expId)
-            for (s in esdata.sessions) {
-                val sdto: SessionDTO = SessionDTO.create(expId, s)
-                val sessId: Int = sessionDAO.insert(sdto, tid)
-                sessionIds[sdto.sessionOrder.toString()] = sessId
-            }
-
-            cursor.commit(tid)
-            return sessionIds
-        } catch (e: Exception) {
-            //rollback automatic
-            throw SQLException("""Insert Experiment and Sessions doesn't work""")
-        }
-    }
-
-        //create logger like in gamecotroller (something companion)
+    //create logger like in gamecotroller (something companion)
 }
