@@ -56,14 +56,14 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<ParticipantDTO, Participant
 
     @Throws(DaoException::class)
     override fun insert(obj: ParticipantDTO, transactionId: String?): Int {
-            val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
+            val values : Array<Any?> = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
             val idColName = ParticipantPK.primaryColumnsList.joinToString()
             return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: ParticipantDTO, transactionId: String?) {
-        val values = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
+        val values : Array<Any?> = arrayOf(obj.firstName,obj.lastName,obj.age,obj.gender,obj.phone,obj.email)
         val id = obj.pid ?: throw IllegalArgumentException("Participant ID (pid) must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
         buildQueryAndUpdate(idColName, id, values, transactionId)

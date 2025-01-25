@@ -56,14 +56,14 @@ class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEv
 
     @Throws(DaoException::class)
     override fun insert(obj: SessionEventDTO, transactionId: String?): Int {
-        val values = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
+        val values : Array<Any?> = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
         val idColName = SessionEventPK.primaryColumnsList.joinToString()
         return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: SessionEventDTO, transactionId: String?) {
-        val values = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
+        val values: Array<Any?>   = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)
         val id = obj.eventId ?: throw IllegalArgumentException("Session Event ID  must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
         buildQueryAndUpdate(idColName, id, values, transactionId)
