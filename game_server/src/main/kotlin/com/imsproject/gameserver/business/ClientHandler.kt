@@ -15,6 +15,7 @@ class ClientHandler internal constructor(
 
     var lastHeartbeat: LocalDateTime = LocalDateTime.now()
     lateinit var udpAddress: SocketAddress
+    var isConnected: Boolean = false
 
     @Throws(IOException::class)
     fun sendTcp(message: String) {

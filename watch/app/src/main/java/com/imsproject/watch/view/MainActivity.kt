@@ -32,6 +32,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -116,6 +117,13 @@ class MainActivity : ComponentActivity() {
                 viewModel.enter(it)
             }
 
+            State.ALREADY_CONNECTED -> {
+                AlreadyConnectedScreen (
+                    onConfirm = { viewModel.enter(viewModel.temporaryPlayerId,true) },
+                    onReject = { viewModel.setState(State.SELECTING_ID) }
+                )
+            }
+
             State.CONNECTING -> LoadingScreen("Connecting...")
 
             State.CONNECTED_NOT_IN_LOBBY -> {
@@ -156,6 +164,58 @@ class MainActivity : ComponentActivity() {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
                 ErrorScreen(error) {
                     viewModel.clearError()
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun AlreadyConnectedScreen(onConfirm: () -> Unit, onReject: () -> Unit) {
+        MaterialTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DARK_BACKGROUND_COLOR),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(COLUMN_PADDING)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ){
+                    BasicText(
+                        text = "The ID you entered is already connected from another location.\n\nDo you want to force the connection?",
+                        style = textStyle,
+                    )
+                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
+                    Row(
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Button(
+                            modifier = Modifier
+                                .size((SCREEN_WIDTH*0.11f).dp),
+                            onClick = { onReject() },
+                            shape = CircleShape,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "reject"
+                            )
+                        }
+                        Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.06f).dp))
+                        Button(
+                            modifier = Modifier
+                                .size((SCREEN_WIDTH*0.11f).dp),
+                            onClick = { onConfirm() },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "confirm"
+                            )
+                        }
+                    }
                 }
             }
         }

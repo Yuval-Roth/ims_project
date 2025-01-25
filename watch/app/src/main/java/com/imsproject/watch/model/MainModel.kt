@@ -43,6 +43,7 @@ private const val TIME_SERVER_PORT = 8642
 class MainModel (private val scope : CoroutineScope) {
 
     class CallbackNotSetException : Exception("Listener not set",null,true,false)
+    class AlreadyConnectedException : Exception("Already connected",null,true,false)
 
     private lateinit var ws: WebSocketClient
     private lateinit var udp : UdpClient
@@ -101,20 +102,28 @@ class MainModel (private val scope : CoroutineScope) {
     /**
      * Establishes a connection to the game server via both WebSocket and UDP protocols.
      * @return the player ID if the connection is successful, or null if any step fails.
+     * @throws AlreadyConnectedException if the client is already connected.
      */
-    suspend fun enter(selectedId: String? = null) : String? {
-        Log.d(TAG, "enter: Connecting to server ${if(selectedId!= null) "with id $selectedId" else ""}")
+    @Throws(AlreadyConnectedException::class)
+    suspend fun enter(selectedId: String, force: Boolean = false) : String? {
+        Log.d(TAG, "enter: Connecting to server with id $selectedId")
 
         if(clientsClosed) throw IllegalStateException("Clients are closed")
         stopHeartBeat()
 
         // start setup
-        val enterType = if(selectedId!=null) GameRequest.Type.ENTER_WITH_ID else GameRequest.Type.ENTER
-        val (playerId, udpEnterCode) = wsSetup(enterType, selectedId) ?: return null
+        val enterType = if(force) GameRequest.Type.FORCE_ENTER else GameRequest.Type.ENTER
+        val udpEnterCode: String
+        try{
+            udpEnterCode = (wsSetup(enterType, selectedId) ?: return null)
+        } catch(e: AlreadyConnectedException){
+            startHeartBeat()
+            throw e
+        }
         if(! udpSetup(udpEnterCode)) return null
 
         // connection established
-        this.playerId = playerId
+        this.playerId = selectedId
         connected = true
         startListeners()
         startHeartBeat()
@@ -134,7 +143,7 @@ class MainModel (private val scope : CoroutineScope) {
         stopHeartBeat()
 
         // start setup
-        val (_, udpEnterCode) = wsSetup(GameRequest.Type.RECONNECT, playerId) ?: return false
+        val udpEnterCode = wsSetup(GameRequest.Type.RECONNECT, playerId) ?: return false
         if(! udpSetup(udpEnterCode)) return false
 
         // connection established
@@ -319,10 +328,11 @@ class MainModel (private val scope : CoroutineScope) {
         return ws to udp
     }
 
+    @Throws(AlreadyConnectedException::class)
     private fun wsSetup (
         connectType: GameRequest.Type,
-        id: String?
-    ): Pair<String,String>? {
+        id: String
+    ): String? {
 
         val clearedCount = ws.clearPendingMessages()
         if(clearedCount > 0){
@@ -331,7 +341,7 @@ class MainModel (private val scope : CoroutineScope) {
 
         // Send enter request and wait for response
         val enterRequest = GameRequest.builder(connectType)
-            .apply { id?.let { playerId(it) } }
+            .playerId(id)
             .build().toJson()
 
         do {
@@ -362,23 +372,28 @@ class MainModel (private val scope : CoroutineScope) {
                 Log.e(TAG, "wsSetup: Failed to parse WebSocket response", e)
                 return null // invalid response
             }
+
+            if(enterResponse.type == GameRequest.Type.ALREADY_CONNECTED){
+                Log.d(TAG, "wsSetup: Already connected")
+                throw AlreadyConnectedException()
+            }
+
+            if(enterResponse.type == GameRequest.Type.ERROR){
+                Log.e(TAG, "wsSetup: Error response: ${enterResponse.data}")
+                return null // error response
+            }
+
             if(enterResponse.type != connectType){
                 Log.d(TAG, "wsSetup: Ignoring message of type ${enterResponse.type}")
             }
         } while(enterResponse.type != connectType)
-
-        // validate player id
-        val playerId = id ?: (enterResponse.playerId ?: run {
-            Log.e(TAG, "wsSetup: Missing player id in response")
-            return null // invalid player id
-        })
 
         val udpEnterCode = enterResponse.data?.get(0) ?: run {
             Log.e(TAG, "wsSetup: Missing UDP enter code")
             return null // invalid response
         }
 
-       return playerId to udpEnterCode
+       return udpEnterCode
     }
 
     private fun udpSetup(

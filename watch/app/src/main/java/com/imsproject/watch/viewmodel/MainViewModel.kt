@@ -27,7 +27,8 @@ class MainViewModel() : ViewModel() {
         CONNECTED_IN_LOBBY,
         IN_GAME,
         UPLOADING_EVENTS,
-        ERROR
+        ERROR,
+        ALREADY_CONNECTED
     }
 
     private var model = MainModel(viewModelScope)
@@ -51,7 +52,6 @@ class MainViewModel() : ViewModel() {
     private var _gameType = MutableStateFlow<GameType?>(null)
     val gameType : StateFlow<GameType?> = _gameType
 
-    //TODO: display this in the lobby screen
     private var _gameDuration = MutableStateFlow<Int?>(null)
     val gameDuration : StateFlow<Int?> = _gameDuration
 
@@ -70,6 +70,8 @@ class MainViewModel() : ViewModel() {
     private var _additionalData = MutableStateFlow("")
     val additionalData : StateFlow<String> = _additionalData
 
+    var temporaryPlayerId = ""
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -87,11 +89,18 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    fun enter(selectedId: String? = null){
+    fun enter(selectedId: String, force : Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             setState(State.CONNECTING)
             while (true) {
-                val playerId = model.enter(selectedId)
+                val playerId: String?
+                try{
+                    playerId = model.enter(selectedId,force)
+                } catch (_: MainModel.AlreadyConnectedException){
+                    setState(State.ALREADY_CONNECTED)
+                    temporaryPlayerId = selectedId
+                    return@launch
+                }
                 if (playerId != null) {
                     _playerId.value = playerId
                     setState(State.CONNECTED_NOT_IN_LOBBY)
@@ -188,6 +197,11 @@ class MainViewModel() : ViewModel() {
         }
     }
 
+    fun setState(newState: State){
+        _state.value = newState
+        Log.d(TAG, "set new state: $newState")
+    }
+
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
@@ -282,11 +296,6 @@ class MainViewModel() : ViewModel() {
                 showError(errorMsg)
             }
         }
-    }
-
-    private fun setState(newState: State){
-        _state.value = newState
-        Log.d(TAG, "set new state: $newState")
     }
 
     private fun setupListeners() {

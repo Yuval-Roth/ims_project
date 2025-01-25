@@ -70,53 +70,8 @@ class WsGameRequestHandler(
                 session.send(GameRequest.heartbeat)
             }
 
-            Type.ENTER_WITH_ID -> {
-                val id = gameMessage.playerId ?: run {
-                    log.error("No client id provided")
-                    return
-                }
-
-                log.debug("New client: {}",id)
-
-                // Check if the id is already connected from elsewhere
-                // and if so, disconnect the old connection
-                var clientHandler = clientController.getByClientId(id)
-                if (clientHandler != null) {
-                    log.debug("Client with id {} already connected, disconnecting old connection", id)
-                    val msg = GameRequest.builder(Type.EXIT)
-                        .message("Client with id $id connected from another location")
-                        .build().toJson()
-                    try{
-                        clientHandler.sendTcp(msg) // send a message to the old client
-                    } catch (_: Exception) { }
-
-                    // map the client to the new wsSession
-                    clientController.removeClientHandler(clientHandler.id) // clear old mappings
-                    clientHandler.wsSession = session
-                    clientController.addClientHandler(clientHandler)
-
-                } else {
-                    // client is new, create a new client handler
-                    clientHandler = newClientHandler(session, id)
-                    clientController.addClientHandler(clientHandler)
-                }
-
-                // generate code to add the client to the udp socket handler
-                // the client will use this code to identify itself
-                val udpCode = UUID.randomUUID().toString()
-                gameActionHandler.addClient(clientHandler, udpCode)
-
-                // send the udp code to the client
-                GameRequest.builder(Type.ENTER_WITH_ID)
-                    .data(listOf(udpCode))
-                    .build()
-                    .toJson()
-                    .also { session.send(it) }
-
-                if(lobbyController.isClientInALobby(id)){
-                    lobbyController.onClientConnect(clientHandler)
-                }
-            }
+            Type.ENTER -> handleEnter(gameMessage, session,false)
+            Type.FORCE_ENTER -> handleEnter(gameMessage, session,true)
 
             Type.RECONNECT -> {
                 val id = gameMessage.playerId ?: run {
@@ -177,8 +132,73 @@ class WsGameRequestHandler(
         }
     }
 
+    private fun handleEnter(
+        gameMessage: GameRequest,
+        session: WebSocketSession,
+        force: Boolean
+    ) {
+        val id = gameMessage.playerId ?: run {
+            log.error("No client id provided")
+            return
+        }
+
+        log.debug("New client: {}", id)
+
+        // Check if the id is already connected from elsewhere
+        // and if so, disconnect the old connection
+        var clientHandler = clientController.getByClientId(id)
+        if (clientHandler != null) {
+            if(clientHandler.isConnected){
+                log.debug("Client with id {} already connected", id)
+                if(force){
+                    log.debug("Forcing client with id {} to connect from a different location", id)
+                    val msg = GameRequest.builder(Type.EXIT)
+                        .message("Client with id $id connected from another location")
+                        .build().toJson()
+                    try {
+                        clientHandler.sendTcp(msg) // send a message to the old client
+                    } catch (_: Exception) {
+                    }
+                } else {
+                    log.debug("Informing client with id {} of the conflict", id)
+                    session.send(GameRequest.builder(Type.ALREADY_CONNECTED)
+                        .build().toJson())
+                    return
+                }
+            }
+
+            // map the client to the new wsSession
+            clientController.removeClientHandler(clientHandler.id) // clear old mappings
+            clientHandler.wsSession = session
+            clientController.addClientHandler(clientHandler)
+        } else {
+            // client is new, create a new client handler
+            clientHandler = newClientHandler(session, id)
+            clientController.addClientHandler(clientHandler)
+        }
+
+        clientHandler.isConnected = true
+
+        // generate code to add the client to the udp socket handler
+        // the client will use this code to identify itself
+        val udpCode = UUID.randomUUID().toString()
+        gameActionHandler.addClient(clientHandler, udpCode)
+
+        // send the udp code to the client
+        GameRequest.builder(if(force) Type.FORCE_ENTER else Type.ENTER)
+            .data(listOf(udpCode))
+            .build()
+            .toJson()
+            .also { session.send(it) }
+
+        if (lobbyController.isClientInALobby(id)) {
+            lobbyController.onClientConnect(clientHandler)
+        }
+    }
+
     override fun afterConnectionClosed(session: WebSocketSession, @NonNull status: CloseStatus) {
         val client = clientController.getByWsSessionId(session.id) ?: return
+        client.isConnected = false
         log.debug("afterConnectionClosed: client {} websocket session disconnected", client.id)
     }
 
