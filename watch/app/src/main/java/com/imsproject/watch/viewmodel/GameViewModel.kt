@@ -151,18 +151,14 @@ abstract class GameViewModel(
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
             Log.d(TAG, "onCreate: session started")
 //            locationSensorHandler.start()
-//            if(havePermission) {
-//                sensorsHandler.start()
-//            }
+//            sensorsHandler.start()
             setState(State.PLAYING)
         }
 
     }
 
     fun onDestroy() {
-//        if (havePermission) {
-//            sensorsHandler.stop()
-//        }
+//        sensorsHandler.stop()
 //        locationSensorHandler.stop()
     }
 
@@ -191,6 +187,18 @@ abstract class GameViewModel(
             _error.value = null
             setState(State.PLAYING)
         }
+    }
+
+    fun setupSensors(activity: Activity) {
+//        // sensors setup
+//        val context = activity.applicationContext
+//        if (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) == PackageManager.PERMISSION_DENIED){
+//            activity.requestPermissions(arrayOf(Manifest.permission.BODY_SENSORS), 0)
+//        }
+//        else {
+//            println("permission is already exist")
+//        }
+//        havePermission = (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) != PackageManager.PERMISSION_DENIED)
     }
 
     // ================================================================================ |
@@ -274,18 +282,6 @@ abstract class GameViewModel(
                 onFailure()
             }
         }
-    }
-
-    fun setupSensors(activity: Activity) {
-//        // sensors setup
-//        val context = activity.applicationContext
-//        if (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) == PackageManager.PERMISSION_DENIED){
-//            activity.requestPermissions(arrayOf(Manifest.permission.BODY_SENSORS), 0)
-//        }
-//        else {
-//            println("permission is already exist")
-//        }
-//        havePermission = (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) != PackageManager.PERMISSION_DENIED)
     }
 
     private fun setupListeners() {

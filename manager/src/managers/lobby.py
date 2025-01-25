@@ -212,10 +212,9 @@ def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance:
     """
     body = server_request(GAME_REQUEST_TYPE.create_session.name, lobbyId=lobby_id, gameType=game_type).to_dict()
     body["duration"] = duration
-    print(f"Creating session with body: {body}")
-    print(body)
     body["syncTolerance"] = sync_tolerance
     body["syncWindowLength"] = window
+    print(f"Creating session with body: {body}")
     try:
         res = requests.post(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
