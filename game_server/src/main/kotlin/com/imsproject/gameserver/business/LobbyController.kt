@@ -58,13 +58,46 @@ class LobbyController(
         log.debug("onClientDisconnect() successful")
     }
 
-    fun createLobby(gameType: GameType) : String {
-        log.debug("createLobby() with gameType: {}", gameType)
+    fun onClientConnect(clientHandler: ClientHandler){
+        log.debug("onClientConnect() with clientId: {}",clientHandler.id)
+        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: run{
+            log.debug("onClientConnect: Player not in lobby")
+            return
+        }
+        val lobby = lobbies[lobbyId] ?: run {
+            // should not happen
+            log.error("onClientConnect: Lobby found for client but not in lobbies map client: {}",clientHandler.id)
+            clientIdToLobbyId.remove(clientHandler.id)
+            return
+        }
+        log.debug("onClientConnect: Player was in lobby: {}, sending join lobby message",lobbyId)
+        clientHandler.sendTcp(
+            GameRequest.builder(Type.JOIN_LOBBY)
+                .lobbyId(lobbyId)
+                .build().toJson()
+        )
+        if(lobby.hasSessions){
+            log.debug("onClientConnect: Sending configure lobby message")
+            clientHandler.sendTcp(
+                GameRequest.builder(Type.CONFIGURE_LOBBY)
+                    .gameType(lobby.gameType)
+                    .duration(lobby.gameDuration)
+                    .syncWindowLength(lobby.syncWindowLength)
+                    .syncTolerance(lobby.syncTolerance)
+                    .build().toJson()
+            )
+        }
+
+        log.debug("onClientConnect() successful")
+    }
+
+    fun createLobby() : String {
+        log.debug("createLobby()")
 
         val lobbyId = lobbyIdGenerator.generate()
-        val lobby = Lobby(lobbyId,gameType)
+        val lobby = Lobby(lobbyId)
         lobbies[lobbyId] = lobby
-        log.debug("createLobby() successful")
+        log.debug("createLobby() successful with lobbyId: {}",lobbyId)
         return lobbyId
     }
 
@@ -98,8 +131,10 @@ class LobbyController(
         }
         val lobby = lobbies[lobbyId] ?: run {
             // should not happen
-            log.error("toggleReady: lobbyId found for client by Lobby not found. client: {}",clientHandler.id)
-            throw IllegalArgumentException("Lobby not found")
+            log.error("toggleReady: lobbyId found for client but Lobby not found. client: {}",clientHandler.id)
+            clientIdToLobbyId.remove(clientHandler.id)
+            clientHandler.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
+            return
         }
         // ======================================== |
 
@@ -181,8 +216,17 @@ class LobbyController(
             clientHandler.sendTcp(
                 GameRequest.builder(Type.JOIN_LOBBY)
                     .lobbyId(lobbyId)
-                    .gameType(lobby.gameType)
                     .build().toJson())
+            if(lobby.hasSessions){
+                clientHandler.sendTcp(
+                    GameRequest.builder(Type.CONFIGURE_LOBBY)
+                        .gameType(lobby.gameType)
+                        .duration(lobby.gameDuration)
+                        .syncWindowLength(lobby.syncWindowLength)
+                        .syncTolerance(lobby.syncTolerance)
+                        .build().toJson()
+                )
+            }
             log.debug("joinLobby() successful")
         } else {
             log.debug("joinLobby() failed: Lobby is full")
@@ -230,6 +274,10 @@ class LobbyController(
             }
 
         log.debug("configureLobby() successful")
+    }
+
+    fun isClientInALobby(clientId: String): Boolean {
+        return clientIdToLobbyId.containsKey(clientId)
     }
 
     companion object {

@@ -15,12 +15,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
-class WavPlayer(private val context: Context) {
+class WavPlayer(private val context: Context, private val scope: CoroutineScope) {
 
     private val tracks = Array<AudioTrack?>(32) { null }
     private val wavs = Array<WavFile?>(32) { null }
     private val jobs = Array<Job?>(32) { null }
-    val scope = CoroutineScope(Dispatchers.Default)
 
     /**
      * Load a wav file into a track
@@ -57,7 +56,7 @@ class WavPlayer(private val context: Context) {
         val track = tracks[trackNumber] ?: throw IllegalArgumentException("Track not loaded")
         track.play()
         jobs[trackNumber]?.cancel() // cancel previous job if it exists
-        jobs[trackNumber] = scope.launch {
+        jobs[trackNumber] = scope.launch(Dispatchers.Default) {
             delay((duration * 1000.0).toLong())
             onFinished()
             track.stop() // stop the track so it can be played again
@@ -78,7 +77,7 @@ class WavPlayer(private val context: Context) {
             .build()
         val volumeShaper = track.createVolumeShaper(fadeOutConfig)
         jobs[trackNumber]?.cancel()
-        scope.launch {
+        scope.launch(Dispatchers.Default) {
             volumeShaper.apply(VolumeShaper.Operation.PLAY)
             delay(fadeDuration)
             track.stop()
@@ -98,6 +97,7 @@ class WavPlayer(private val context: Context) {
 
     fun release(@IntRange(0,31) trackNumber: Int) {
         tracks[trackNumber]?.release() ?: throw IllegalArgumentException("Track not loaded")
+        jobs[trackNumber]?.cancel()
         tracks[trackNumber] = null
         wavs[trackNumber] = null
     }

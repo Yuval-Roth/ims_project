@@ -35,7 +35,9 @@ class SessionController(
         val invalidArgs = mutableListOf<String>()
         val errorMsg = "The following params are invalid: "
         if(duration <= 0) invalidArgs.add("duration")
-        if(syncWindowLength <= 0) invalidArgs.add("syncWindowLength")
+        if(lobby.gameType != GameType.WATER_RIPPLES && lobby.gameType != GameType.FLOUR_MILL){
+            if(syncWindowLength <= 0) invalidArgs.add("syncWindowLength")
+        }
         if(syncTolerance <= 0) invalidArgs.add("syncTolerance")
         if(invalidArgs.isNotEmpty()){
             log.debug("createSession: Invalid arguments: {}",invalidArgs.joinToString())
@@ -46,6 +48,9 @@ class SessionController(
         val session = Session(sessionId, gameType, duration, syncWindowLength, syncTolerance)
         val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
         lobbySessions.add(session)
+        if(lobbySessions.size == 1){
+            lobbies.configureLobby(lobbyId, session)
+        }
         lobby.hasSessions = true
         log.debug("createSession() successful")
         return session.sessionId
@@ -122,6 +127,8 @@ class SessionController(
         }
         lobbySessions.clear()
         lobbySessions.addAll(newOrder)
+        lobbies.configureLobby(lobbyId, lobbySessions.first())
+        log.debug("changeSessionsOrder() successful")
     }
 
     companion object {

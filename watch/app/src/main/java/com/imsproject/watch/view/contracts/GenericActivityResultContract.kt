@@ -17,8 +17,12 @@ abstract class GenericActivityResultContract : ActivityResultContract<Map<String
         val intent = createIntent(context)
         val serverStartTime = input["timeServerStartTime"] as Long
         val additionalData = input["additionalData"] as String
+        val syncTolerance = input["syncTolerance"] as Long
+        val syncWindowLength = input["syncWindowLength"] as Long
         intent.putExtra("$PACKAGE_PREFIX.timeServerStartTime", serverStartTime)
         intent.putExtra("$PACKAGE_PREFIX.additionalData", additionalData)
+        intent.putExtra("$PACKAGE_PREFIX.syncTolerance", syncTolerance)
+        intent.putExtra("$PACKAGE_PREFIX.syncWindowLength", syncWindowLength)
         return intent
     }
 

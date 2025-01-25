@@ -34,6 +34,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
+import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.common.gameserver.GameType
@@ -86,7 +87,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
         viewModel.onCreate(intent,applicationContext)
         init(viewModel)
         try{
-            sound = WavPlayer(applicationContext)
+            sound = WavPlayer(applicationContext, viewModel.viewModelScope)
             sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
             sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
             sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
@@ -104,6 +105,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
     override fun onDestroy() {
         super.onDestroy()
         viewModel.onDestroy()
+        sound.releaseAll()
     }
 
     @Composable

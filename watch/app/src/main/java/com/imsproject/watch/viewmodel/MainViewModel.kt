@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.java_websocket.exceptions.WebsocketNotConnectedException
-import kotlinx.coroutines.withContext
 
 private const val TAG = "MainViewModel"
 
@@ -57,10 +56,10 @@ class MainViewModel() : ViewModel() {
     val gameDuration : StateFlow<Int?> = _gameDuration
 
     private var _syncWindowLength = MutableStateFlow<Long?>(null)
-    val syncTimeThreshold : StateFlow<Long?> = _syncWindowLength
+    val syncWindowLength : StateFlow<Long?> = _syncWindowLength
 
-    private var _syncThresholdTimeout = MutableStateFlow<Long?>(null)
-    val syncThresholdTimeout : StateFlow<Long?> = _syncThresholdTimeout
+    private var _syncTolerance = MutableStateFlow<Long?>(null)
+    val syncTolerance : StateFlow<Long?> = _syncTolerance
 
     private var _ready = MutableStateFlow(false)
     val ready : StateFlow<Boolean> = _ready
@@ -121,6 +120,8 @@ class MainViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.Default) {
             _ready.value = false
             _timeServerStartTime.value = -1
+            _gameType.value = null
+            _gameDuration.value = null
             when (result.code) {
                 Result.Code.OK -> {
 /*
@@ -205,13 +206,6 @@ class MainViewModel() : ViewModel() {
                     showError("Failed to join lobby")
                     return
                 }
-                val gameType = request.gameType ?: run {
-                    Log.e(TAG, "handleGameRequest: JOIN_LOBBY request missing gameType")
-                    showError("Failed to join lobby")
-                    return
-                }
-
-                _gameType.value = gameType
                 _lobbyId.value = lobbyId
                 _ready.value = false
                 setState(State.CONNECTED_IN_LOBBY)
@@ -245,7 +239,7 @@ class MainViewModel() : ViewModel() {
                 _gameType.value = gameType
                 _gameDuration.value = gameDuration
                 _syncWindowLength.value = syncWindowLength
-                _syncThresholdTimeout.value = syncTolerance
+                _syncTolerance.value = syncTolerance
             }
             GameRequest.Type.START_GAME -> {
                 if(_state.value != State.CONNECTED_IN_LOBBY){

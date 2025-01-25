@@ -1,15 +1,17 @@
 package com.imsproject.watch.utils
 
-private const val HISTORY_SECONDS = 5
+import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
+
 private const val SAMPLES_PER_SECOND = 1000 / 60 // 60 fps
-private const val SAMPLES_HISTORY_COUNT : Int = SAMPLES_PER_SECOND * HISTORY_SECONDS
 
 class FrequencyTracker {
 
-    val frequency : Float
-        get() = sum / sampleCount.coerceIn(1,SAMPLES_HISTORY_COUNT)
+    private val samplesHistoryCount : Int = (SAMPLES_PER_SECOND * FREQUENCY_HISTORY_MILLISECONDS).toInt()
 
-    private val samples = Array<Float>(SAMPLES_HISTORY_COUNT) {0f}
+    val frequency : Float
+        get() = sum / sampleCount.coerceIn(1,samplesHistoryCount)
+
+    private val samples = Array(samplesHistoryCount) {0f}
     private var sum : Float = 0f
     private var lastSampleTime : Long = 0
     private var lastSampleAngle : Float = 0f
@@ -27,7 +29,7 @@ class FrequencyTracker {
         sum += frequency
         lastSampleTime = currentTime
         lastSampleAngle = angle
-        index = (index + 1) % SAMPLES_HISTORY_COUNT
+        index = (index + 1) % samplesHistoryCount
         sampleCount++
         sum -= samples[index]
     }

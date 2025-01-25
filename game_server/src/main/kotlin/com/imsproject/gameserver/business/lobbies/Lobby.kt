@@ -4,7 +4,7 @@ import com.imsproject.common.gameserver.GameType
 
 class Lobby(
     val id: String,
-    var gameType: GameType,
+    var gameType: GameType = GameType.UNDEFINED,
     var gameDuration: Int = -1,
     var syncTolerance: Long = -1,
     var syncWindowLength: Long = -1

@@ -9,6 +9,7 @@ import com.imsproject.gameserver.*
 import com.imsproject.gameserver.business.ClientController
 import com.imsproject.gameserver.business.ClientHandler
 import com.imsproject.gameserver.business.GameRequestFacade
+import com.imsproject.gameserver.business.LobbyController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.lang.NonNull
@@ -24,7 +25,8 @@ import java.util.*
 class WsGameRequestHandler(
     private val facade: GameRequestFacade,
     private val gameActionHandler: UdpGameActionHandler,
-    private val clientController: ClientController
+    private val clientController: ClientController,
+    private val lobbyController: LobbyController
 ) : TextWebSocketHandler() {
 
     companion object {
@@ -78,31 +80,31 @@ class WsGameRequestHandler(
 
                 // Check if the id is already connected from elsewhere
                 // and if so, disconnect the old connection
-                var client = clientController.getByClientId(id)
-                if (client != null) {
+                var clientHandler = clientController.getByClientId(id)
+                if (clientHandler != null) {
                     log.debug("Client with id {} already connected, disconnecting old connection", id)
                     val msg = GameRequest.builder(Type.EXIT)
                         .message("Client with id $id connected from another location")
                         .build().toJson()
                     try{
-                        client.sendTcp(msg) // send a message to the old client
+                        clientHandler.sendTcp(msg) // send a message to the old client
                     } catch (_: Exception) { }
 
                     // map the client to the new wsSession
-                    clientController.removeClientHandler(client.id) // clear old mappings
-                    client.wsSession = session
-                    clientController.addClientHandler(client)
+                    clientController.removeClientHandler(clientHandler.id) // clear old mappings
+                    clientHandler.wsSession = session
+                    clientController.addClientHandler(clientHandler)
 
                 } else {
                     // client is new, create a new client handler
-                    client = newClientHandler(session, id)
-                    clientController.addClientHandler(client)
+                    clientHandler = newClientHandler(session, id)
+                    clientController.addClientHandler(clientHandler)
                 }
 
                 // generate code to add the client to the udp socket handler
                 // the client will use this code to identify itself
                 val udpCode = UUID.randomUUID().toString()
-                gameActionHandler.addClient(client, udpCode)
+                gameActionHandler.addClient(clientHandler, udpCode)
 
                 // send the udp code to the client
                 GameRequest.builder(Type.ENTER_WITH_ID)
@@ -110,34 +112,10 @@ class WsGameRequestHandler(
                     .build()
                     .toJson()
                     .also { session.send(it) }
-            }
 
-            Type.ENTER -> {
-
-                // Check if the client already exists
-                if (clientController.containsByWsSessionId(session.id)) {
-                    log.error("Client already exists for session: {}", session.id)
-                    return
+                if(lobbyController.isClientInALobby(id)){
+                    lobbyController.onClientConnect(clientHandler)
                 }
-
-                // create a new client handler for the session
-                val client = newClientHandler(session)
-                clientController.addClientHandler(client)
-
-                log.debug("New client: {}",client.id)
-
-                // generate code to add the client to the udp socket handler
-                // the client will use this code to identify itself
-                val udpCode = UUID.randomUUID().toString()
-                gameActionHandler.addClient(client, udpCode)
-
-                // send the client id and the udp code to the client
-                GameRequest.builder(Type.ENTER)
-                    .playerId(client.id)
-                    .data(listOf(udpCode))
-                    .build()
-                    .toJson()
-                    .also { session.send(it) }
             }
 
             Type.RECONNECT -> {

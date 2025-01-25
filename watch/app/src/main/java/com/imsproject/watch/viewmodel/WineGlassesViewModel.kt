@@ -15,11 +15,14 @@ import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
 import com.imsproject.watch.INNER_TOUCH_POINT
 import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
+import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.watch.utils.addToAngle
@@ -27,6 +30,8 @@ import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.calculateAngleDiff
 import com.imsproject.watch.utils.isBetweenInclusive
 import com.imsproject.watch.utils.isClockwise
+import com.imsproject.watch.view.contracts.Result
+import com.imsproject.watch.viewmodel.WaterRipplesViewModel.Companion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -52,8 +57,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     val myArc = Arc()
     val opponentArc = Arc()
-    private val myFrequencyTracker = FrequencyTracker()
-    private val opponentFrequencyTracker = FrequencyTracker()
+    private lateinit var myFrequencyTracker : FrequencyTracker
+    private lateinit var opponentFrequencyTracker : FrequencyTracker
 
     private var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
@@ -101,6 +106,27 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             return
         }
 
+        // set up sync params
+        val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
+        if (syncTolerance <= 0L) {
+            exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
+            return
+        }
+        val syncWindowLength = intent.getLongExtra("$PACKAGE_PREFIX.syncWindowLength", -1)
+        if (syncWindowLength <= 0L) {
+            exitWithError("Missing sync window length", Result.Code.BAD_REQUEST)
+            return
+        }
+        WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = syncTolerance.toFloat() * 0.01f
+        FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
+        Log.d(TAG, "syncTolerance: $syncTolerance")
+        Log.d(TAG, "syncWindowLength: $syncWindowLength")
+
+        // set up frequency trackers
+        myFrequencyTracker = FrequencyTracker()
+        opponentFrequencyTracker = FrequencyTracker()
+
+        // start the frequency tracking loop
         viewModelScope.launch(Dispatchers.Default){
             while(true){
                 delay(100) // run this loop roughly 10 times per second

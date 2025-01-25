@@ -126,9 +126,10 @@ class MainActivity : ComponentActivity() {
             State.CONNECTED_IN_LOBBY -> {
                 val userId = viewModel.playerId.collectAsState().value
                 val lobbyId = viewModel.lobbyId.collectAsState().value
-                val gameType = viewModel.gameType.collectAsState().value?.prettyName() ?: "Unknown game"
+                val gameType = viewModel.gameType.collectAsState().value?.prettyName() ?: ""
+                val gameDuration = (viewModel.gameDuration.collectAsState().value ?: "").toString()
                 val ready = viewModel.ready.collectAsState().value
-                ConnectedInLobbyScreen(userId, lobbyId,gameType, ready){
+                ConnectedInLobbyScreen(userId, lobbyId,gameType,gameDuration, ready){
                     viewModel.toggleReady()
                 }
             }
@@ -137,7 +138,9 @@ class MainActivity : ComponentActivity() {
                 BlankScreen()
                 val input = mutableMapOf<String,Any>(
                     "timeServerStartTime" to viewModel.gameStartTime.collectAsState().value,
-                    "additionalData" to viewModel.additionalData.collectAsState().value
+                    "additionalData" to viewModel.additionalData.collectAsState().value,
+                    "syncTolerance" to (viewModel.syncTolerance.collectAsState().value ?: -1L),
+                    "syncWindowLength" to (viewModel.syncWindowLength .collectAsState().value ?: -1L)
                 )
                 when(viewModel.gameType.collectAsState().value) {
                     GameType.WATER_RIPPLES -> waterRipples.launch(input)
@@ -327,6 +330,7 @@ class MainActivity : ComponentActivity() {
         userId: String,
         lobbyId: String,
         gameType: String,
+        gameDuration: String,
         ready: Boolean,
         onReady: () -> Unit
     ) {
@@ -365,7 +369,12 @@ class MainActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     BasicText(
-                        text = gameType,
+                        text = gameType.ifBlank { "" },
+                        style = textStyle,
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    BasicText(
+                        text = if(gameDuration.isNotBlank()) "$gameDuration seconds" else "",
                         style = textStyle,
                     )
                     Spacer(modifier = Modifier.height(9.dp))

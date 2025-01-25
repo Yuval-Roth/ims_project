@@ -44,6 +44,7 @@ class ExperimentOrchestrator(
                 games.endGame(lobbyId)
                 sessions.removeSession(lobbyId, session.sessionId)
             }
+            lobby.experimentRunning = false
         }
         ongoingExperiments[lobbyId] = job
     }
@@ -66,6 +67,9 @@ class ExperimentOrchestrator(
         ongoingExperiments.remove(lobbyId)
         lobby.experimentRunning = false
         games.endGame(lobbyId)
+        if(lobby.hasSessions){
+            lobbies.configureLobby(lobbyId, sessions.getSessions(lobbyId).first())
+        }
     }
 
     companion object {

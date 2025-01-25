@@ -76,9 +76,8 @@ final class GameRequestFacade(
     }
 
     private fun handleCreateLobby(request: GameRequest) : String {
-        return requireParams(request, "gameType") {
-            val gameType = request.gameType!!
-            lobbies.createLobby(gameType)
+        return requireParams(request) {
+            lobbies.createLobby()
         }
     }
 
@@ -102,20 +101,6 @@ final class GameRequestFacade(
             val lobbyId = request.lobbyId!!
             val clientId = request.playerId!!
             lobbies.leaveLobby(lobbyId, clientId)
-        }
-    }
-
-    private fun handleStartGame(request: GameRequest) : String {
-        return requireParams(request, "lobbyId") {
-            val lobbyId = request.lobbyId!!
-            games.startGame(lobbyId)
-        }
-    }
-
-    private fun handleEndGame(request: GameRequest) : String {
-        return requireParams(request, "lobbyId") {
-            val lobbyId = request.lobbyId!!
-            games.endGame(lobbyId)
         }
     }
 

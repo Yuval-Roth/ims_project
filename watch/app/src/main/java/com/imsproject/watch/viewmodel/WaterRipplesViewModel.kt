@@ -17,6 +17,7 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRAY_COLOR
+import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.VIVID_ORANGE_COLOR
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
@@ -31,6 +32,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
+import com.imsproject.watch.view.contracts.Result
 
 
 class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
@@ -92,7 +94,16 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                     showRipple("player1", System.currentTimeMillis())
                 }
             }
+            return
         }
+
+        val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
+        if (syncTolerance <= 0L) {
+            exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
+            return
+        }
+        WATER_RIPPLES_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
+        Log.d(TAG, "syncTolerance: $syncTolerance")
     }
 
     // ================================================================================ |
