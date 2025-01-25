@@ -32,7 +32,7 @@ class DAOController {
             SectionEnum.EXPERIMENT -> experimentDAO.insert(dto as ExperimentDTO)
             SectionEnum.SESSION -> sessionDAO.insert(dto as SessionDTO)
             SectionEnum.SESSIONEVENT -> sessionEventDAO.insert(dto as SessionEventDTO)
-        }
+        } //todo: add bulk insert for session events
     }
 
     @Throws(SQLException::class)
