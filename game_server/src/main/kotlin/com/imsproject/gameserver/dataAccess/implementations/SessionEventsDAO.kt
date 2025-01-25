@@ -27,33 +27,6 @@ class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEv
         )
     }
 
-    fun handleSessionEvents(action: String, sessionEventDTO: SessionEventDTO, transactionId: String? = null): String {
-        when(action){
-            "insert" -> {
-                return Response.getOk(insert(sessionEventDTO, transactionId))
-            }
-            "delete" -> {
-                if(sessionEventDTO.eventId == null)
-                    throw Exception("A session event id was not provided for deletion")
-                delete(SessionEventPK(sessionEventDTO.eventId), transactionId)
-                return Response.getOk()
-            }
-            "update" -> {
-                if(sessionEventDTO.eventId == null)
-                    throw Exception("A session event id was not provided for update")
-                update(sessionEventDTO, transactionId)
-                return Response.getOk()
-            }
-            "select" -> {
-                if(sessionEventDTO.eventId == null)
-                    return Response.getOk(selectAll(transactionId))
-                else
-                    return Response.getOk(select(SessionEventPK(sessionEventDTO.eventId), transactionId))
-            }
-            else -> throw Exception("Invalid action for session events")
-        }
-    }
-
     @Throws(DaoException::class)
     override fun insert(obj: SessionEventDTO, transactionId: String?): Int {
         val values : Array<Any?> = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)

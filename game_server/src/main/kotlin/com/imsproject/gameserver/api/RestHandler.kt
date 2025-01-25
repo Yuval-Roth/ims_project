@@ -10,12 +10,17 @@ import com.imsproject.gameserver.business.Participant
 import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
+import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
+import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
+import com.imsproject.gameserver.dataAccess.models.SessionDTO
+import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
 import org.slf4j.LoggerFactory
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.sql.SQLException
 import java.util.*
 
 @RestController
@@ -119,7 +124,7 @@ class RestHandler(
         ): ResponseEntity<String> {
 
         try {
-            return (daoController.handle(section, action, body)).toResponseEntity()
+            return Response.getOk().toResponseEntity()
         } catch(e: Exception)
         {
             return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)

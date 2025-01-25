@@ -20,35 +20,6 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
 
     }
 
-    fun handleExperiments(action: String, exp: ExperimentDTO, transactionId: String? = null): String
-    {
-        when(action){
-            "insert" -> {
-                return Response.getOk(insert(exp, transactionId))
-            }
-            "delete" -> {
-                if(exp.expId == null)
-                    throw Exception("A lobby id was not provided for deletion")
-                delete(ExperimentPK(exp.expId), transactionId)
-                return Response.getOk()
-            }
-            "update" -> {
-                if(exp.expId == null)
-                    throw Exception("A lobby id was not provided for update")
-                update(exp, transactionId)
-                return Response.getOk()
-            }
-            "select" -> {
-                if(exp.expId == null)
-                    return Response.getOk(selectAll(transactionId))
-                else
-                    return Response.getOk(select(ExperimentPK(exp.expId), transactionId))
-            }
-            else -> throw Exception("Invalid action for participants")
-        }
-
-    }
-
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
     }

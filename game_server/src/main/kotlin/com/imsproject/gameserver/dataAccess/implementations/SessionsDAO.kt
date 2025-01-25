@@ -28,33 +28,6 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<SessionDTO, SessionPK>(cursor, 
         )
     }
 
-    fun handleSessions(action: String, sessionDTO: SessionDTO, transactionId: String? = null): String {
-        when(action){
-            "insert" -> {
-                return Response.getOk(insert(sessionDTO, transactionId))
-            }
-            "delete" -> {
-                if(sessionDTO.sessionId == null)
-                    throw Exception("A session id was not provided for deletion")
-                delete(SessionPK(sessionDTO.sessionId), transactionId)
-                return Response.getOk()
-            }
-            "update" -> {
-                if(sessionDTO.sessionId == null)
-                    throw Exception("A session id was not provided for update")
-                update(sessionDTO, transactionId)
-                return Response.getOk()
-            }
-            "select" -> {
-                if(sessionDTO.sessionId == null)
-                    return Response.getOk(selectAll(transactionId))
-                else
-                    return Response.getOk(select(SessionPK(sessionDTO.sessionId), transactionId))
-            }
-            else -> throw Exception("Invalid action for sessions")
-        }
-    }
-
 
     @Throws(DaoException::class)
     override fun insert(obj: SessionDTO, transactionId: String?): Int {
