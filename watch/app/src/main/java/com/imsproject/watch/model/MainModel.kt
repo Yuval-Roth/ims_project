@@ -76,6 +76,12 @@ class MainModel (private val scope : CoroutineScope) {
     fun connectToServer() : Boolean {
         Log.d(TAG, "connectToServer: Connecting to server")
 
+        if(this::ws.isInitialized){
+            if(! ws.isOpen || ws.isClosing || ws.isClosed){
+                clientsClosed = true
+            }
+        }
+
         if (clientsClosed) {
             val (ws, udp) = getNewClients()
             this.ws = ws
