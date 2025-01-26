@@ -18,7 +18,7 @@ class ExperimentOrchestrator(
     private val daoController: DAOController
 ) {
 
-    private val dispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
     private val scope = CoroutineScope(dispatcher)
     private val ongoingExperiments = mutableMapOf<String, Job>() // lobbyId to experiment
 
@@ -75,7 +75,7 @@ class ExperimentOrchestrator(
                 while(! lobby.isReady()){
                     delay(1000)
                 }
-                games.startGame(lobbyId)
+                games.startGame(lobbyId,sessionId)
                 session.state = SessionState.IN_PROGRESS
                 delay(session.duration.toLong()*1000)
                 games.endGame(lobbyId)

@@ -18,6 +18,8 @@ import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
 import com.imsproject.watch.model.MainModel
+import com.imsproject.watch.model.SERVER_IP
+import com.imsproject.watch.model.SERVER_UDP_PORT
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
 import com.imsproject.watch.sensors.LocationSensorsHandler
@@ -94,6 +96,8 @@ abstract class GameViewModel(
 
         // set up everything required for the session
         viewModelScope.launch(Dispatchers.Default) {
+            clearEvents() // clear any events from previous sessions
+
             // clock setup
             val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
             withContext(Dispatchers.IO){
@@ -119,7 +123,12 @@ abstract class GameViewModel(
 //            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
 
             // latency tracker setup
-            latencyTracker = model.getLatencyTracker()
+            latencyTracker = LatencyTracker(
+                viewModelScope,
+                GameAction.ping,
+                SERVER_IP,
+                SERVER_UDP_PORT
+            )
             latencyTracker.onReceive = {
                 addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it.toString()))
             }
@@ -154,7 +163,6 @@ abstract class GameViewModel(
 //            sensorsHandler.start()
             setState(State.PLAYING)
         }
-
     }
 
     fun onDestroy() {

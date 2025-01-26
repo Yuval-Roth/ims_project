@@ -9,22 +9,21 @@ import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.Participant
 import com.imsproject.gameserver.business.ParticipantController
-import com.imsproject.gameserver.business.Session
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.dataAccess.SectionEnum
-import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
-import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
-import com.imsproject.gameserver.dataAccess.models.SessionDTO
 import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.sql.SQLException
 import java.util.*
+import java.util.concurrent.Executors
 
 @RestController
 class RestHandler(
@@ -34,6 +33,9 @@ class RestHandler(
     private val daoController: DAOController,
     private val resources : ResourceLoader
     ) : ErrorController {
+
+    private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
+    private val scope = CoroutineScope(dispatcher)
 
     @PostMapping("/manager")
     fun manager(@RequestBody body : String): ResponseEntity<String> {
@@ -119,41 +121,38 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
-    data class Events(
-        val sessionId: Int?,
-        val events: List<String>?
-    )
-
+    private data class Events(val sessionId: Int, val events: List<String>)
     @PostMapping("/data/{section}/{action}")
     fun data(
             @PathVariable section: String,
             @PathVariable action: String,
             @RequestBody body: String,
         ): ResponseEntity<String> {
-
-        val events = fromJson<Events>(body)
-        Thread{
-            val deCompressedEvents = events.events?.map { SessionEvent.fromCompressedJson(it) }
-            val dbEvents = deCompressedEvents?.map { SessionEventDTO(
-                null,
-                1,
-                it.type.name,
-                it.subType.name,
-                it.timestamp,
-                it.actor,
-                it.data
-            ) }
-                ?.toList()!!
-            for(event in dbEvents){
-                daoController.handleInsert(SectionEnum.SESSIONEVENT, event)
-            }
-        }.start()
+        val events: Events
         try {
-            return Response.getOk().toResponseEntity()
+            events = fromJson<Events>(body)
         } catch(e: Exception)
         {
-            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
+        scope.launch {
+            val eventDTOs = events.events.stream()
+                .map { SessionEvent.fromCompressedJson(it) }
+                .map { SessionEventDTO(
+                    null,
+                    events.sessionId,
+                    it.type.name,
+                    it.subType.name,
+                    it.timestamp,
+                    it.actor,
+                    it.data
+                ) }.toList()
+            val startTime = System.nanoTime()
+            daoController.handleBulkInsert(SectionEnum.SESSIONEVENT, eventDTOs)
+            val endTime = System.nanoTime()
+            log.debug("Inserted ${eventDTOs.size} events in ${(endTime - startTime) / 1_000_000}ms for session ${events.sessionId}")
+        }
+        return Response.getOk().toResponseEntity()
     }
 
     @GetMapping("/login")

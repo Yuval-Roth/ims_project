@@ -71,6 +71,7 @@ class MainViewModel() : ViewModel() {
     private var _additionalData = MutableStateFlow("")
     val additionalData : StateFlow<String> = _additionalData
 
+    private var sessionId = -1
     var temporaryPlayerId = ""
 
     // ================================================================================ |
@@ -134,14 +135,14 @@ class MainViewModel() : ViewModel() {
             _gameDuration.value = null
             when (result.code) {
                 Result.Code.OK -> {
-//                    TODO: uncomment this when the data endpoint is ready
                     setState(State.UPLOADING_EVENTS)
                     withContext(Dispatchers.IO) {
                         do {
-                            if (model.uploadSessionEvents()) {
+                            if (model.uploadSessionEvents(sessionId)) {
                                 break
                             }
                         } while (true)
+                        sessionId = -1
                     }
                     setState(State.CONNECTED_IN_LOBBY)
                 }
@@ -265,11 +266,18 @@ class MainViewModel() : ViewModel() {
                     Log.e(TAG, "handleGameRequest: START_GAME request received while not in lobby")
                     return
                 }
+
                 // ===================================|
                 // clear the listeners to prevent any further messages from being processed.
                 // let the game activity handle the messages from here on out.
                 /*(!)*/ clearListeners()
                 // ===================================|
+
+                sessionId = request.sessionId?.toInt() ?: run{
+                    Log.e(TAG, "handleGameRequest: START_GAME request missing sessionId")
+                    fatalError("Failed to start game: missing session id")
+                    return
+                }
                 _timeServerStartTime.value = request.timestamp?.toLong() ?: run{
                     Log.e(TAG, "handleGameRequest: START_GAME request missing start time")
                     fatalError("Failed to start game: missing start time")

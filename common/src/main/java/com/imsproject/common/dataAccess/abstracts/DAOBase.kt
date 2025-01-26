@@ -177,6 +177,20 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         throw DaoException("Error in insertion to $tableName")
     }
 
+    /**
+     * @return the affected row count
+     */
+    fun buildQueryAndBulkInsert(idColumnName: String, values: List<Array<out Any?>>, transactionId: String?): Int {
+        val questionmarks = List(nonKeyColumnNames.size) { "?" }.joinToString(", "); //don't ask please
+        val insertQuery = "INSERT INTO $tableName (${nonKeyColumnNames.joinToString()}) VALUES (${questionmarks}) RETURNING $idColumnName"
+        try {
+            return cursor.executeBulkInsert(insertQuery,values, transactionId)
+        } catch (e: SQLException) {
+            throw DaoException("Failed to insert to table $tableName", e)
+        }
+        throw DaoException("Error in insertion to $tableName")
+    }
+
     fun buildQueryAndUpdate(idColumnName: String, id: Int, values: Array<out Any?>, transactionId: String?): Unit {
         try {
             // Build the query dynamically

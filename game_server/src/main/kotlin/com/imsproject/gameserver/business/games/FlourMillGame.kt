@@ -4,7 +4,6 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
-import com.imsproject.gameserver.business.Session
 import org.slf4j.LoggerFactory
 
 
@@ -25,9 +24,10 @@ class FlourMillGame(
         }
     }
 
-    override fun startGame(timestamp: Long) {
+    override fun startGame(timestamp: Long, sessionId: Int) {
         startTime = timestamp
         val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
+            .sessionId(sessionId.toString())
             .timestamp(timestamp.toString())
         player1.sendTcp(toSend.data(listOf("left")).build().toJson())
         player2.sendTcp(toSend.data(listOf("right")).build().toJson())

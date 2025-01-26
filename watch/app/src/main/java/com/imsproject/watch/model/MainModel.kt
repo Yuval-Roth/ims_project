@@ -33,11 +33,11 @@ private const val COMPUTER_NETWORK_IP = "192.168.0.104"
 private const val TIMEOUT_MS = 2000L
 private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
 private val LOCAL_IP = if(RUNNING_ON_EMULATOR) "10.0.2.2" else COMPUTER_NETWORK_IP
-private val SERVER_IP = if (RUNNING_LOCAL_GAME_SERVER) LOCAL_IP else REMOTE_IP
+val SERVER_IP = if (RUNNING_LOCAL_GAME_SERVER) LOCAL_IP else REMOTE_IP
 private val WS_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "ws" else "wss"
 private val REST_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "http" else "https"
 private val SERVER_HTTP_PORT = if (RUNNING_LOCAL_GAME_SERVER) 8080 else 8640
-private const val SERVER_UDP_PORT = 8641
+const val SERVER_UDP_PORT = 8641
 private const val TIME_SERVER_PORT = 8642
 // ================================|
 
@@ -267,7 +267,7 @@ class MainModel (private val scope : CoroutineScope) {
         return data.average().toLong()
     }
 
-    fun uploadSessionEvents(sessionId: String): Boolean {
+    fun uploadSessionEvents(sessionId: Int): Boolean {
         Log.d(TAG, "Uploading session events")
         val eventCollector = SessionEventCollectorImpl.getInstance()
         val events = eventCollector.getAllEvents().stream()
@@ -305,15 +305,6 @@ class MainModel (private val scope : CoroutineScope) {
         } catch(e: Exception){
             Log.e(TAG, "Failed to close resources", e)
         }
-    }
-
-    fun getLatencyTracker(): LatencyTracker {
-        return LatencyTracker(
-            scope,
-            GameAction.ping,
-            SERVER_IP,
-            SERVER_UDP_PORT
-        )
     }
 
     // ======================================================================= |

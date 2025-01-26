@@ -4,7 +4,6 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
-import com.imsproject.gameserver.business.Session
 
 abstract class Game (
     val lobbyId: String,
@@ -15,10 +14,11 @@ abstract class Game (
     abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
     var startTime: Long = -1
 
-    open fun startGame(timestamp: Long) {
+    open fun startGame(timestamp: Long, sessionId: Int) {
         startTime = timestamp
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
             .timestamp(timestamp.toString())
+            .sessionId(sessionId.toString())
             .build().toJson()
         player1.sendTcp(startMessage)
         player2.sendTcp(startMessage)

@@ -256,7 +256,7 @@ class GameControllerTest {
         whenever(mockLobby.isReady()).thenReturn(true)
 
         // when startGame is called
-        gameController.startGame(LOBBY_ID)
+        gameController.startGame(LOBBY_ID,0)
 
         // then the game is started
         verify(mockLobby, times(1)).state = LobbyState.PLAYING
@@ -274,7 +274,7 @@ class GameControllerTest {
         assertThrows<IllegalStateException> {
 
             // when startGame is called
-            gameController.startGame(LOBBY_ID)
+            gameController.startGame(LOBBY_ID,0)
         }
 
         verify(mockLobby, never()).state = LobbyState.PLAYING
@@ -296,7 +296,7 @@ class GameControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when startGame is called
-            gameController.startGame(LOBBY_ID)
+            gameController.startGame(LOBBY_ID,0)
         }
 
         verify(mockLobby, never()).state = LobbyState.PLAYING

@@ -67,6 +67,13 @@ interface SQLExecutor {
     @Throws(SQLException::class)
     fun executeUpdateDelete(query: String, params: Array<out Any?> = emptyArray(), transactionId: String? = null): Int
 
+    /**
+     * Executes a bulk insert query by using [java.sql.PreparedStatement]
+     * @param query A sql prepared query. Use '?' for parameters
+     * @param params The parameters to be used in the query in order
+     * @return The number of rows affected by the query
+     * @throws SQLException if an error occurs while executing the query
+     */
     @Throws(SQLException::class)
     fun executeBulkInsert(query: String, params: List<Array<out Any?>> = emptyList(), transactionId: String? = null): Int
 }

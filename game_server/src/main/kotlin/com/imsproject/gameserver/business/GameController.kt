@@ -106,7 +106,7 @@ class GameController(
         log.debug("endGame() successful")
     }
 
-    fun startGame(lobbyId: String) {
+    fun startGame(lobbyId: String, sessionId: Int) {
         log.debug("startGame() with lobbyId: {}", lobbyId)
 
         // Check if the lobby exists
@@ -161,7 +161,7 @@ class GameController(
         clientIdToGame[player2Id] = game
 
         // game.startGame() notifies the clients
-        game.startGame(timeServer.timeServerCurrentTimeMillis())
+        game.startGame(timeServer.timeServerCurrentTimeMillis(), sessionId)
 
         log.debug("startGame() successful")
     }

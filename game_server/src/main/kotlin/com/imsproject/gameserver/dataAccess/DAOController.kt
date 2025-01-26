@@ -30,7 +30,27 @@ class DAOController {
             SectionEnum.EXPERIMENT -> experimentDAO.insert(dto as ExperimentDTO)
             SectionEnum.SESSION -> sessionDAO.insert(dto as SessionDTO)
             SectionEnum.SESSIONEVENT -> sessionEventDAO.insert(dto as SessionEventDTO)
-        } //todo: add bulk insert for session events
+        }
+    }
+
+    @Throws(SQLException::class)
+    fun handleInsertAll(section: SectionEnum, dtos: List<Any>): List<Int> {
+        return when (section) {
+            SectionEnum.PARTICIPANT -> participantDAO.insertAll(dtos as List<ParticipantDTO>)
+            SectionEnum.EXPERIMENT -> experimentDAO.insertAll(dtos as List<ExperimentDTO>)
+            SectionEnum.SESSION -> sessionDAO.insertAll(dtos as List<SessionDTO>)
+            SectionEnum.SESSIONEVENT -> sessionEventDAO.insertAll(dtos as List<SessionEventDTO>)
+        }
+    }
+
+    @Throws(SQLException::class)
+    fun handleBulkInsert(section: SectionEnum, dtos: List<Any>): Int {
+        return when (section) {
+            SectionEnum.PARTICIPANT -> throw UnsupportedOperationException("Bulk insert not supported for participants")
+            SectionEnum.EXPERIMENT -> throw UnsupportedOperationException("Bulk insert not supported for experiments")
+            SectionEnum.SESSION -> throw UnsupportedOperationException("Bulk insert not supported for sessions")
+            SectionEnum.SESSIONEVENT -> sessionEventDAO.bulkInsert(dtos as List<SessionEventDTO>)
+        }
     }
 
     @Throws(SQLException::class)

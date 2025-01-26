@@ -34,6 +34,12 @@ class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEv
         return buildQueryAndInsert(idColName, values, transactionId)
     }
 
+    fun bulkInsert(objs: List<SessionEventDTO>, transactionId: String? = null): Int {
+        val values : List<Array<Any?>> = objs.map { arrayOf(it.sessionId,it.type,it.subtype,it.timestamp,it.actor,it.data) }
+        val idColName = SessionEventPK.primaryColumnsList.joinToString()
+        return buildQueryAndBulkInsert(idColName, values, transactionId)
+    }
+
     @Throws(DaoException::class)
     override fun update(obj: SessionEventDTO, transactionId: String?) {
         val values: Array<Any?>   = arrayOf(obj.sessionId,obj.type,obj.subtype,obj.timestamp,obj.actor,obj.data)

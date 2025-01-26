@@ -9,8 +9,9 @@ class SessionEventCollectorImpl private constructor() : SessionEventCollector {
 
     override fun addEvent(event: SessionEvent) {
         events.add(event)
-//        if(event.type == SessionEvent.Type.SENSOR_DATA)
-//            println(event)
+        if(event.subType == SessionEvent.SubType.LATENCY) {
+            println(event)
+        }
     }
 
     override fun getAllEvents(): Collection<SessionEvent> {
