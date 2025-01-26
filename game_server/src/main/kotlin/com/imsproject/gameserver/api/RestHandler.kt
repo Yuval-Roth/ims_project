@@ -122,12 +122,8 @@ class RestHandler(
     }
 
     private data class Events(val sessionId: Int, val events: List<String>)
-    @PostMapping("/data/{section}/{action}")
-    fun data(
-            @PathVariable section: String,
-            @PathVariable action: String,
-            @RequestBody body: String,
-        ): ResponseEntity<String> {
+    @PostMapping("/data")
+    fun data(@RequestBody body: String): ResponseEntity<String> {
 
         val eventDTOs: List<SessionEventDTO>?
         val events: Events
