@@ -23,6 +23,7 @@ class ExperimentOrchestrator(
     private val ongoingExperiments = mutableMapOf<String, Job>() // lobbyId to experiment
 
     fun startExperiment(lobbyId: String) {
+        log.debug("startExperiment() with lobbyId: {}",lobbyId)
 
         // check that the lobby exists
         val lobby = lobbies[lobbyId] ?: run{
@@ -85,9 +86,12 @@ class ExperimentOrchestrator(
             lobby.experimentRunning = false
         }
         ongoingExperiments[lobbyId] = job
+        log.debug("startExperiment() successful")
     }
 
     fun stopExperiment(lobbyId: String) {
+        log.debug("stopExperiment() with lobbyId: {}",lobbyId)
+
         val lobby = lobbies[lobbyId] ?: run{
             log.debug("stopExperiment: Lobby with id $lobbyId not found")
             throw IllegalArgumentException("Lobby with id $lobbyId not found")
@@ -119,6 +123,7 @@ class ExperimentOrchestrator(
                 sessions.removeSession(lobbyId, session.sessionId)
             }
         }
+        log.debug("stopExperiment() successful")
     }
 
     companion object {

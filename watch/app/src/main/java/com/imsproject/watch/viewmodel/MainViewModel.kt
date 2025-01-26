@@ -220,8 +220,13 @@ class MainViewModel() : ViewModel() {
                     showError("Failed to join lobby")
                     return
                 }
-                _lobbyId.value = lobbyId
+
+                // reset data just in case
+                _gameType.value = null
+                _gameDuration.value = null
                 _ready.value = false
+
+                _lobbyId.value = lobbyId
                 setState(State.CONNECTED_IN_LOBBY)
             }
             GameRequest.Type.LEAVE_LOBBY -> {

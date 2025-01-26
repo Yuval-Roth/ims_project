@@ -123,8 +123,18 @@ class SensorsHandler(
             spO2Listener = SpO2Listener()
             heartRateListener = HeartRateListener()
 
-            connectionManager!!.initSpO2(spO2Listener)
-            connectionManager!!.initHeartRate(heartRateListener)
+            var tries = 0
+            do{
+                try{
+                    connectionManager!!.initSpO2(spO2Listener)
+                    connectionManager!!.initHeartRate(heartRateListener)
+                } catch (e: Exception){
+                    Log.e(TAG, "Could not initialize the listeners",e)
+                    tries++
+                    continue
+                }
+                break
+            } while (tries < 10)
 
             heartRateListener!!.startTracker()
         }
@@ -150,8 +160,18 @@ class SensorsHandler(
         spO2Listener = SpO2Listener()
 
         TrackerDataNotifier.getInstance().addObserver(trackerDataObserver)
-        connectionManager!!.initHeartRate(heartRateListener!!)
-        connectionManager!!.initSpO2(spO2Listener!!)
+        var tries = 0
+        do{
+            try{
+                connectionManager!!.initHeartRate(heartRateListener!!)
+                connectionManager!!.initSpO2(spO2Listener!!)
+            } catch (e: Exception){
+                Log.e(TAG, "Could not initialize the listeners",e)
+                tries++
+                continue
+            }
+            break
+        } while (tries < 10)
     }
 
     fun stop() {
@@ -175,5 +195,9 @@ class SensorsHandler(
         else {
             println("")
         }
+    }
+
+    companion object {
+        private const val TAG = "SensorsHandler"
     }
 }

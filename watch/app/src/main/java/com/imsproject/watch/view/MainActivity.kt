@@ -1,5 +1,8 @@
 package com.imsproject.watch.view
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -45,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
@@ -57,6 +61,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GREEN_COLOR
+import com.imsproject.watch.R
 import com.imsproject.watch.RED_COLOR
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_WIDTH
@@ -86,6 +91,7 @@ class MainActivity : ComponentActivity() {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         registerActivities()
+        setupSensorsPermission()
         setContent {
             Main()
         }
@@ -100,6 +106,13 @@ class MainActivity : ComponentActivity() {
         waterRipples = registerForActivityResult(WaterRipplesResultContract()) { viewModel.afterGame(it) }
         wineGlasses = registerForActivityResult(WineGlassesResultContract()) { viewModel.afterGame(it) }
         flourMill = registerForActivityResult(FlourMillResultContract()) { viewModel.afterGame(it) }
+    }
+
+    private fun setupSensorsPermission() {
+        // TODO: SENSORS
+        if (ActivityCompat.checkSelfPermission(applicationContext, applicationContext.getString(R.string.BodySensors)) == PackageManager.PERMISSION_DENIED){
+            requestPermissions(arrayOf(Manifest.permission.BODY_SENSORS), 0)
+        }
     }
 
     @Composable
