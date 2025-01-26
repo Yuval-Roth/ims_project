@@ -278,9 +278,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun PickingIdScreen(onClick : (String) -> Unit) {
         val scope = rememberCoroutineScope()
-        val leftNum = rememberPickerState(16, 0)
-        val middleNum = rememberPickerState(16, 0)
-        val rightNum = rememberPickerState(16, 0)
+        val leftNum = rememberPickerState(10, 0)
+        val middleNum = rememberPickerState(10, 0)
+        val rightNum = rememberPickerState(10, 0)
 
         Box(
             modifier = Modifier

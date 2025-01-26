@@ -24,8 +24,8 @@ import java.net.SocketTimeoutException
 import java.net.URI
 
 // set these values to run the app locally
-private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
-private const val RUNNING_ON_EMULATOR : Boolean = false
+private const val RUNNING_LOCAL_GAME_SERVER : Boolean = true
+private const val RUNNING_ON_EMULATOR : Boolean = true
 private const val COMPUTER_NETWORK_IP = "192.168.0.104"
 
 // ========== Constants ===========|
