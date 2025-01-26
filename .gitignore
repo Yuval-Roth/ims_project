@@ -94,3 +94,6 @@ database/data/
 **/__pycache__/
 *.jks
 **/release/*
+*.env
+docker_data/manager
+docker_data/game_server

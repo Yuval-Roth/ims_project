@@ -19,6 +19,7 @@ services:
         - /home/admin/volumes/game_server:/app/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    env_file: /home/admin/env_files/db_credentials.env
 
   ims-manager:
     image: yuvalroth123/imsproject_manager:latest
@@ -34,15 +35,12 @@ services:
     image: postgres:latest
     container_name: ims-db
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: adminMTAC
       POSTGRES_DB: ims-db
     ports:
       - "5432:5432"
     networks:
       - ims-network
     volumes:
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql #local
-      - ./database/data:/var/lib/postgresql/data #local
-#      - /home/admin/volumes/db_server/data:/var/lib/postgresql/data #remote
-#      - /home/admin/volumes/db_server/init.sql:/docker-entrypoint-initdb.d/init.sql #remote
+      - /home/admin/volumes/db/data:/var/lib/postgresql/data
+      - /home/admin/volumes/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    env_file: /home/admin/env_files/db_credentials.env
