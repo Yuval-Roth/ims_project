@@ -9,7 +9,10 @@
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="IMS Project"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:theme="@android:style/Theme.DeviceDefault"
+        android:usesCleartextTraffic="true">
+
+
 
         <uses-library
             android:name="com.google.android.wearable"

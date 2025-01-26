@@ -1,6 +1,7 @@
 package com.imsproject.gameserver.api
 
 import com.imsproject.common.gameserver.GameRequest
+import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.toResponseEntity
@@ -8,8 +9,10 @@ import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.Participant
 import com.imsproject.gameserver.business.ParticipantController
+import com.imsproject.gameserver.business.Session
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
+import com.imsproject.gameserver.dataAccess.SectionEnum
 import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 import com.imsproject.gameserver.dataAccess.models.SessionDTO
@@ -116,6 +119,11 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
+    data class Events(
+        val sessionId: Int?,
+        val events: List<String>?
+    )
+
     @PostMapping("/data/{section}/{action}")
     fun data(
             @PathVariable section: String,
@@ -123,6 +131,23 @@ class RestHandler(
             @RequestBody body: String,
         ): ResponseEntity<String> {
 
+        val events = fromJson<Events>(body)
+        Thread{
+            val deCompressedEvents = events.events?.map { SessionEvent.fromCompressedJson(it) }
+            val dbEvents = deCompressedEvents?.map { SessionEventDTO(
+                null,
+                1,
+                it.type.name,
+                it.subType.name,
+                it.timestamp,
+                it.actor,
+                it.data
+            ) }
+                ?.toList()!!
+            for(event in dbEvents){
+                daoController.handleInsert(SectionEnum.SESSIONEVENT, event)
+            }
+        }.start()
         try {
             return Response.getOk().toResponseEntity()
         } catch(e: Exception)
