@@ -34,9 +34,9 @@ services:
     volumes:
       - /home/admin/volumes/manager:/app/data
 
-  db-server:
+  ims-db:
     image: postgres:latest
-    container_name: ims-db-server
+    container_name: ims-db
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: adminMTAC
