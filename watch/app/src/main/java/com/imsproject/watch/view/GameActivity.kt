@@ -47,7 +47,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
     private val TAG = "$_TAG-${gameType.prettyName()}"
 
     protected fun init(viewModel: GameViewModel){
-        viewModel.setupSensors(this)
+        viewModel.setupSensorsPermission(this)
     }
 
     @Composable

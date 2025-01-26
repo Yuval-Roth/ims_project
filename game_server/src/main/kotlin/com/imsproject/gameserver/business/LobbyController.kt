@@ -112,11 +112,10 @@ class LobbyController(
 
         lobbies.remove(lobbyId)
         // Notify the clients
-        lobby.getPlayers()
-            .map {clients.getByClientId(it)}
-            .forEach {
-                it?.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
-            }
+        val players = lobby.getPlayers()
+        players.forEach { clientIdToLobbyId.remove(it) }
+        players.map {clients.getByClientId(it)}
+            .forEach { it?.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson()) }
 
         log.debug("removeLobby() successful")
     }
@@ -203,8 +202,15 @@ class LobbyController(
 
         // check if the player is already in a lobby
         if(clientIdToLobbyId.containsKey(clientId)){
-            log.debug("joinLobby: Player is already in a lobby")
-            throw IllegalArgumentException("Player is already in a lobby")
+            val currentLobbyId = clientIdToLobbyId[clientId]
+            if(currentLobbyId != null){
+                log.debug("joinLobby: Player is already in a lobby")
+                throw IllegalArgumentException("Player is already in a lobby")
+            } else {
+                // should not happen
+                log.error("joinLobby: Player $clientId is in a lobby but lobbyId not found, resetting player lobby mapping")
+                clientIdToLobbyId.remove(clientId)
+            }
         }
 
         // Try to add the player to the lobby

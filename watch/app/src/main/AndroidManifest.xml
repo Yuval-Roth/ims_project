@@ -23,6 +23,10 @@
             android:name="com.google.android.wearable.standalone"
             android:value="true" />
 
+        <meta-data
+            android:name="com.samsung.android.sdk.health.LOGGING_LEVEL"
+            android:value="DEBUG" />
+
         <activity
             android:name=".view.MainActivity"
             android:exported="true"

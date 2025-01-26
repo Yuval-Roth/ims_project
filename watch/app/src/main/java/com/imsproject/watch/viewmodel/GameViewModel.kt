@@ -114,10 +114,11 @@ abstract class GameViewModel(
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
 
+            // TODO: SENSORS
 //            if(havePermission) {
-//                sensorsHandler = SensorsHandler(context, this@GameViewModel)
+                sensorsHandler = SensorsHandler(context, this@GameViewModel)
 //            }
-//            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
+            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
 
             // latency tracker setup
             latencyTracker = model.getLatencyTracker()
@@ -150,16 +151,18 @@ abstract class GameViewModel(
             // =================== game start =================== |
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
             Log.d(TAG, "onCreate: session started")
-//            locationSensorHandler.start()
-//            sensorsHandler.start()
+            // TODO: SENSORS
+            locationSensorHandler.start()
+            sensorsHandler.start()
             setState(State.PLAYING)
         }
 
     }
 
     fun onDestroy() {
-//        sensorsHandler.stop()
-//        locationSensorHandler.stop()
+        // TODO: SENSORS
+        if(::sensorsHandler.isInitialized) sensorsHandler.stop()
+        if(::locationSensorHandler.isInitialized) locationSensorHandler.stop()
     }
 
     fun exitWithError(errorMessage: String, code: Result.Code) {
@@ -189,7 +192,8 @@ abstract class GameViewModel(
         }
     }
 
-    fun setupSensors(activity: Activity) {
+    fun setupSensorsPermission(activity: Activity) {
+        // TODO: SENSORS
 //        // sensors setup
 //        val context = activity.applicationContext
 //        if (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) == PackageManager.PERMISSION_DENIED){

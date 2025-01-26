@@ -36,7 +36,7 @@ class LocationSensorsHandler(
                         SessionEvent.gyroscope(
                             gameViewModel.playerId,
                             gameViewModel.getCurrentGameTime(),
-                            "x: $x, y: $y, z: $z"
+                            "$x,$y,$z"
                         )
                     )
                 }
@@ -56,7 +56,7 @@ class LocationSensorsHandler(
                         SessionEvent.accelerometer(
                             gameViewModel.playerId,
                             gameViewModel.getCurrentGameTime(),
-                            "x: $x, y: $y, z: $z"
+                            "$x,$y,$z"
                         )
                     )
                 }

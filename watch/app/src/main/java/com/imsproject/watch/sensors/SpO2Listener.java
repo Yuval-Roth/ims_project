@@ -27,7 +27,7 @@ public class SpO2Listener extends BaseListener {
 
             @Override
             public void onFlushCompleted() {
-                Log.i(APP_TAG, " onFlushCompleted called");
+//                Log.i(APP_TAG, " onFlushCompleted called");
             }
 
             @Override
@@ -55,7 +55,7 @@ public class SpO2Listener extends BaseListener {
         }
 
         TrackerDataNotifier.getInstance().notifySpO2TrackerObservers(status, spo2Value);
-        Log.d(APP_TAG, dataPoint.toString());
+//        Log.d(APP_TAG, dataPoint.toString());
     }
 
 }

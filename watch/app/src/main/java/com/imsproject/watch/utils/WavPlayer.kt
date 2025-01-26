@@ -58,8 +58,8 @@ class WavPlayer(private val context: Context, private val scope: CoroutineScope)
         jobs[trackNumber]?.cancel() // cancel previous job if it exists
         jobs[trackNumber] = scope.launch(Dispatchers.Default) {
             delay((duration * 1000.0).toLong())
-            onFinished()
             track.stop() // stop the track so it can be played again
+            onFinished()
         }
     }
 
