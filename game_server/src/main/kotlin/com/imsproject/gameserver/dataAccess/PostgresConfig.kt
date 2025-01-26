@@ -1,5 +1,6 @@
 package com.imsproject.gameserver.dataAccess
 
+import com.zaxxer.hikari.HikariDataSource
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.jdbc.DataSourceBuilder
 import org.springframework.context.annotation.Bean
@@ -44,6 +45,7 @@ class PostgresConfig {
             .username(username)
             .password(password)
             .driverClassName(driverClassName)
+            .type(HikariDataSource::class.java)
             .build()
     }
 }

@@ -1,0 +1,1 @@
+docker compose -f "compose local.yml" up ims-db -d
