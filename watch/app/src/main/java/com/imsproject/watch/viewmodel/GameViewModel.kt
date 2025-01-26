@@ -115,10 +115,8 @@ abstract class GameViewModel(
             }
 
             // TODO: SENSORS
-//            if(havePermission) {
-                sensorsHandler = SensorsHandler(context, this@GameViewModel)
-//            }
-            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
+//            sensorsHandler = SensorsHandler(context, this@GameViewModel)
+//            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
 
             // latency tracker setup
             latencyTracker = model.getLatencyTracker()
@@ -152,8 +150,8 @@ abstract class GameViewModel(
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
             Log.d(TAG, "onCreate: session started")
             // TODO: SENSORS
-            locationSensorHandler.start()
-            sensorsHandler.start()
+//            locationSensorHandler.start()
+//            sensorsHandler.start()
             setState(State.PLAYING)
         }
 
@@ -190,19 +188,6 @@ abstract class GameViewModel(
             _error.value = null
             setState(State.PLAYING)
         }
-    }
-
-    fun setupSensorsPermission(activity: Activity) {
-        // TODO: SENSORS
-//        // sensors setup
-//        val context = activity.applicationContext
-//        if (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) == PackageManager.PERMISSION_DENIED){
-//            activity.requestPermissions(arrayOf(Manifest.permission.BODY_SENSORS), 0)
-//        }
-//        else {
-//            println("permission is already exist")
-//        }
-//        havePermission = (ActivityCompat.checkSelfPermission(context, context.getString(R.string.BodySensors)) != PackageManager.PERMISSION_DENIED)
     }
 
     // ================================================================================ |
