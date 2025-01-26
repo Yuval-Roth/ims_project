@@ -24,13 +24,8 @@ class PostgresConfig {
     @Value("\${database.driver-class-name}")
     private var driverClassName: String = ""
 
-    // ================================ |
-    // TODO: REPLACE WITH ENVIRONMENT VARIABLES
-    @Value("\${database.username}")
-    private var username: String = ""
-    @Value("\${database.password}")
-    private var password: String = ""
-    // ================================ |
+    private val username: String = System.getenv("POSTGRES_USER")
+    private val password: String = System.getenv("POSTGRES_PASSWORD")
 
     @Bean
     fun dataSource(): DataSource {

@@ -6,8 +6,6 @@ import java.sql.*
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-private const val URL_PREFIX = "jdbc:postgresql://"
-
 /**
  * An implementation of [SQLExecutor] for PostgreSQL databases
  * @param dbHost the host of the PostgreSQL database (e.g., ims-db-server)
@@ -17,13 +15,10 @@ private const val URL_PREFIX = "jdbc:postgresql://"
  * @param password the password for authentication
  */
 class PostgreSQLExecutor(
-    dbHost: String,
-    dbPort: Int = 5432,
-    dbName: String,
+    private val url: String,
     user: String,
     password: String
 ) : SQLExecutor {
-    private val url: String = "$URL_PREFIX$dbHost:$dbPort/$dbName"
     private val properties: Properties = Properties().apply {
         put("user", user)
         put("password", password)

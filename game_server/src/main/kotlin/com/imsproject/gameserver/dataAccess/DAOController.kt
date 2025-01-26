@@ -4,6 +4,9 @@ import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.gameserver.dataAccess.implementations.*
 
 import com.imsproject.gameserver.dataAccess.models.*
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 
 import org.springframework.stereotype.Component
 import java.sql.SQLException
@@ -14,14 +17,39 @@ enum class SectionEnum {
 
 @Component
 class DAOController {
-    private val cursor: SQLExecutor = PostgreSQLExecutor(
-        "localhost", 5432, "ims-db", "admin", "adminMTAC"
-    )
 
-    val participantDAO: ParticipantsDAO = ParticipantsDAO(cursor)
-    val experimentDAO: ExperimentsDAO = ExperimentsDAO(cursor)
-    val sessionDAO: SessionsDAO = SessionsDAO(cursor)
-    val sessionEventDAO: SessionEventsDAO = SessionEventsDAO(cursor)
+    @Value("\${running.local}")
+    private var runningLocal: Boolean = false
+
+    @Value("\${database.scheme}")
+    private var scheme: String = ""
+    @Value("\${database.port}")
+    private var port: Int = 0
+    @Value("\${database.name}")
+    private var name: String = ""
+    @Value("\${database.host}")
+    private var host: String = ""
+
+    private val username: String = System.getenv("POSTGRES_USER")
+    private val password: String = System.getenv("POSTGRES_PASSWORD")
+
+    private lateinit var cursor: SQLExecutor
+    lateinit var participantDAO: ParticipantsDAO
+    lateinit var experimentDAO: ExperimentsDAO
+    lateinit var sessionDAO: SessionsDAO
+    lateinit var sessionEventDAO: SessionEventsDAO
+
+    @EventListener(ApplicationReadyEvent::class)
+    fun applicationReadyEvent(event: ApplicationReadyEvent) {
+        if(runningLocal){
+            host = "localhost"
+        }
+        cursor = PostgreSQLExecutor("$scheme://$host:$port/$name", username, password)
+        participantDAO = ParticipantsDAO(cursor)
+        experimentDAO = ExperimentsDAO(cursor)
+        sessionDAO = SessionsDAO(cursor)
+        sessionEventDAO = SessionEventsDAO(cursor)
+    }
 
     @Throws(SQLException::class)
     fun handleInsert(section: SectionEnum, dto: Any): Int {
