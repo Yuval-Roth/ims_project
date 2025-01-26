@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.imsproject.common)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.material.icons.core)
+    implementation(libs.okhttp)
 
     implementation (fileTree(
         "dir" to "libs",

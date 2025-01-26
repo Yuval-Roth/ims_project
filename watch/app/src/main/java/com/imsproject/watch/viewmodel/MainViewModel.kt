@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 private const val TAG = "MainViewModel"
@@ -133,16 +134,15 @@ class MainViewModel() : ViewModel() {
             _gameDuration.value = null
             when (result.code) {
                 Result.Code.OK -> {
-/*
-                    TODO: uncomment this when the data endpoint is ready
+//                    TODO: uncomment this when the data endpoint is ready
                     setState(State.UPLOADING_EVENTS)
                     withContext(Dispatchers.IO) {
-                    do {
-                        if(model.uploadSessionEvents()){
-                            break
-                        }
-                    } while(true)
-*/
+                        do {
+                            if (model.uploadSessionEvents()) {
+                                break
+                            }
+                        } while (true)
+                    }
                     setState(State.CONNECTED_IN_LOBBY)
                 }
 

@@ -5,13 +5,13 @@ import com.google.gson.JsonParseException
 import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
-import com.imsproject.common.networking.RestApiClient
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.fromJson
 import com.imsproject.common.utils.toJson
+import com.imsproject.watch.utils.RestApiClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,10 +22,11 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
+import java.util.stream.Collectors
 
 // set these values to run the app locally
-private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
-private const val RUNNING_ON_EMULATOR : Boolean = false
+private const val RUNNING_LOCAL_GAME_SERVER : Boolean = true
+private const val RUNNING_ON_EMULATOR : Boolean = true
 private const val COMPUTER_NETWORK_IP = "192.168.0.104"
 
 // ========== Constants ===========|
@@ -271,6 +272,7 @@ class MainModel (private val scope : CoroutineScope) {
         val eventCollector = SessionEventCollectorImpl.getInstance()
         val events = eventCollector.getAllEvents().stream()
             .map { it.toCompressedJson() }
+            .collect(Collectors.toList())
 
         val body = object {
             val sessionId = sessionId
@@ -278,7 +280,7 @@ class MainModel (private val scope : CoroutineScope) {
         }
 
         val returned = RestApiClient()
-            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/lol/klol")
             .withBody(body.toJson())
             .withPost()
             .send()
@@ -561,10 +563,14 @@ class MainModel (private val scope : CoroutineScope) {
         val eventCollector = SessionEventCollectorImpl.getInstance()
         val events = eventCollector.getAllEvents().stream()
             .map { it.toCompressedJson() }
-            .reduce("") { acc, s -> "$acc\n$s" }
+            .collect(Collectors.toList())
+
+        val body = object {
+            val events = events
+        }
         val returned = RestApiClient()
-            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
-            .withBody(events)
+            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/lolk/lol")
+            .withBody(body.toJson())
             .withPost()
             .send()
         val response = fromJson<Response>(returned)
