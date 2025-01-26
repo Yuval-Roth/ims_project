@@ -35,7 +35,7 @@ class LatencyTracker(
     private var lastLatency: Double? = null
     private var jitterSum = 0.0
     private var timeoutsCount = 0
-    private var currentTimeoutThreshold: Int = MIN_TIMEOUT_MS
+    private var currentTimeoutThreshold = initialTimeout
     private val dataLock = Mutex(false)
 
     var onReceive: (Double) -> Unit = {}
