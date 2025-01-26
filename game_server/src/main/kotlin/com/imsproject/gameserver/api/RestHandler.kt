@@ -128,29 +128,23 @@ class RestHandler(
             @PathVariable action: String,
             @RequestBody body: String,
         ): ResponseEntity<String> {
+
+        val eventDTOs: List<SessionEventDTO>?
         val events: Events
         try {
             events = fromJson<Events>(body)
-        } catch(e: Exception)
-        {
+            eventDTOs = events.events.stream()
+                .map { SessionEvent.fromCompressedJson(it) }
+                .map { SessionEventDTO.fromSessionEvent(it, events.sessionId) }
+                .toList()
+        } catch(e: Exception) {
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
         scope.launch {
-            val eventDTOs = events.events.stream()
-                .map { SessionEvent.fromCompressedJson(it) }
-                .map { SessionEventDTO(
-                    null,
-                    events.sessionId,
-                    it.type.name,
-                    it.subType.name,
-                    it.timestamp,
-                    it.actor,
-                    it.data
-                ) }.toList()
             val startTime = System.nanoTime()
             daoController.handleBulkInsert(SectionEnum.SESSIONEVENT, eventDTOs)
             val endTime = System.nanoTime()
-            log.debug("Inserted ${eventDTOs.size} events in ${(endTime - startTime) / 1_000_000}ms for session ${events.sessionId}")
+            log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
         }
         return Response.getOk().toResponseEntity()
     }

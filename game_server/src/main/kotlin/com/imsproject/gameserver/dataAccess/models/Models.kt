@@ -1,5 +1,7 @@
 package com.imsproject.gameserver.dataAccess.models
 
+import com.imsproject.common.gameserver.SessionEvent
+
 data class ParticipantDTO(
     val pid: Int?,
     val firstName: String?,
@@ -39,7 +41,20 @@ data class SessionEventDTO(
     val timestamp: Long?,
     val actor: String?,
     val data: String?
-)
+){
+    companion object {
+        fun fromSessionEvent(event: SessionEvent, sessionId: Int? = null) =
+            SessionEventDTO(
+                null,
+                sessionId,
+                event.type.name,
+                event.subType.name,
+                event.timestamp,
+                event.actor,
+                event.data
+            )
+    }
+}
 
 data class ExpWithSessionsData(
     val pid1: Int,
