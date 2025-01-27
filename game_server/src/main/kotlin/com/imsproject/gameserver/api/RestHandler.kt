@@ -7,11 +7,11 @@ import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.toResponseEntity
 import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
-import com.imsproject.gameserver.business.Participant
 import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.dataAccess.SectionEnum
+import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -91,22 +91,35 @@ class RestHandler(
         @PathVariable action: String,
         @RequestBody body : String?
     ): ResponseEntity<String> {
-        val participant : Participant = if(body != null){
+        val participant : ParticipantDTO = if(body != null){
             try{
                 fromJson(body)
             } catch(e: Exception){
                 return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
             }
         } else {
-            Participant(null,null,null,null,null,null,null)
+            ParticipantDTO(null,null,null,null,null,null,null)
         }
         try{
             when(action){
                 "add" -> {
+                    log.debug("Adding participant: {}", participant)
                     val id = participantController.addParticipant(participant)
+                    log.debug("Successfully Added participant with id: {}", id)
                     return Response.getOk(id).toResponseEntity()
                 }
-                "remove" -> participantController.remove(participant.pid!!)
+                "remove" ->{
+                    log.debug("Removing participant: {}", participant)
+                    val pid = participant.pid ?: throw IllegalArgumentException("Participant id not provided")
+                    participantController.remove(
+                        try{
+                            pid.toInt()
+                        } catch (e: Exception){
+                            throw IllegalArgumentException("Invalid participant id")
+                        }
+                    )
+                    log.debug("Successfully removed participant with id: {}", pid)
+                }
                 "get" -> {
                     val participants = participantController.getAll()
                     return Response.getOk(participants).toResponseEntity()
@@ -114,8 +127,10 @@ class RestHandler(
                 else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
             }
         } catch (e: IllegalArgumentException) {
+            log.debug("Error handling participant request", e)
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         } catch (e: Exception) {
+            log.error("Error handling participant request", e)
             return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
         return Response.getOk().toResponseEntity()
@@ -138,7 +153,7 @@ class RestHandler(
         }
         scope.launch {
             val startTime = System.nanoTime()
-            daoController.handleBulkInsert(SectionEnum.SESSIONEVENT, eventDTOs)
+            daoController.handleBulkInsert(SectionEnum.SESSION_EVENT, eventDTOs)
             val endTime = System.nanoTime()
             log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
         }

@@ -9,8 +9,9 @@ import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
+import org.springframework.stereotype.Component
 
-
+@Component
 class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ExperimentDTO {
         return ExperimentDTO(   expId = (resultSet.getObject("exp_id") as? Int),

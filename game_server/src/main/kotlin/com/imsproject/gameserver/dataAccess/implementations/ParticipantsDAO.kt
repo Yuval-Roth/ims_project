@@ -9,7 +9,9 @@ import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
+import org.springframework.stereotype.Component
 
+@Component
 class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<ParticipantDTO, ParticipantPK>(cursor, "Participants", ParticipantPK.primaryColumnsList, arrayOf("first_name", "last_name", "age", "gender", "phone", "email")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")

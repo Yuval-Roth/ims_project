@@ -2,32 +2,30 @@ package com.imsproject.gameserver.business
 
 import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.gameserver.dataAccess.DAOController
+import com.imsproject.gameserver.dataAccess.SectionEnum
+import com.imsproject.gameserver.dataAccess.implementations.ParticipantPK
+import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
 @Component
 class ParticipantController(val daoController: DAOController) {
 
-    //todo: sionara fields
-    val participants = ConcurrentHashMap<String, Participant>()
-    val idGenerator = SimpleIdGenerator(3)
-
-    operator fun contains(userId: String): Boolean {
-        return participants.containsKey(userId)
+    operator fun contains(userId: Int): Boolean {
+        val pk = ParticipantPK(userId)
+        return daoController.handleExists(SectionEnum.PARTICIPANT,pk)
     }
 
-    fun getAll(): List<Participant>{
-        return participants.values.toList()
+    fun getAll(): List<ParticipantDTO>{
+        return daoController.handleSelectAll(SectionEnum.PARTICIPANT)
     }
 
-    fun remove(userId: String) : Boolean {
-        return participants.remove(userId) != null
+    fun remove(userId: Int) {
+        val pk = ParticipantDTO(pid = userId)
+        daoController.handleDelete(SectionEnum.PARTICIPANT,pk)
     }
 
-    fun addParticipant(participant: Participant): String {
-        val id = idGenerator.generate()
-        participants[id] = participant.copy(pid = id)
-        // todo: add bdikat kelet
-        return id
+    fun addParticipant(participant: ParticipantDTO): Int {
+        return daoController.handleInsert(SectionEnum.PARTICIPANT,participant)
     }
 }

@@ -3,13 +3,13 @@ package com.imsproject.gameserver.dataAccess.models
 import com.imsproject.common.gameserver.SessionEvent
 
 data class ParticipantDTO(
-    val pid: Int?,
-    val firstName: String?,
-    val lastName: String?,
-    val age: Int?,
-    val gender: String?,
-    val phone: String?,
-    val email: String?
+    val pid: Int? = null,
+    val firstName: String? = null,
+    val lastName: String? = null,
+    val age: Int? = null,
+    val gender: String? = null,
+    val phone: String? = null,
+    val email: String? = null
 )
 
 data class ExperimentDTO(

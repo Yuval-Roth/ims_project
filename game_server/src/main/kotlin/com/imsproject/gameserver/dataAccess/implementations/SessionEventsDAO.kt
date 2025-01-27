@@ -9,7 +9,9 @@ import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
+import org.springframework.stereotype.Component
 
+@Component
 class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEventPK>(cursor, "SessionEvents", SessionEventPK.primaryColumnsList, arrayOf("session_id", "type", "subtype", "timestamp", "actor", "data")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")
