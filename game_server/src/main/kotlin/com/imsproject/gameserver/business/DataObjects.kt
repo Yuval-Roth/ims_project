@@ -2,15 +2,15 @@ package com.imsproject.gameserver.business
 
 import com.imsproject.common.gameserver.GameType
 
-data class Participant(
-    val pid: String?,
-    val firstName: String?,
-    val lastName: String?,
-    val age: Int?,
-    val gender: String?,
-    val phone: String?,
-    val email: String?
-)
+//data class Participant(
+//    val pid: String?,
+//    val firstName: String?,
+//    val lastName: String?,
+//    val age: Int?,
+//    val gender: String?,
+//    val phone: String?,
+//    val email: String?
+//)
 
 data class Session(
     val sessionId: String,

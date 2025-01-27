@@ -4,6 +4,7 @@ import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.dataAccess.SectionEnum
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantPK
+import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
@@ -15,16 +16,16 @@ class ParticipantController(val daoController: DAOController) {
         return daoController.handleExists(SectionEnum.PARTICIPANT,pk)
     }
 
-    fun getAll(): List<Participant>{
+    fun getAll(): List<ParticipantDTO>{
         return daoController.handleSelectAll(SectionEnum.PARTICIPANT)
     }
 
     fun remove(userId: Int) {
-        val pk = ParticipantPK(userId)
+        val pk = ParticipantDTO(pid = userId)
         daoController.handleDelete(SectionEnum.PARTICIPANT,pk)
     }
 
-    fun addParticipant(participant: Participant): Int {
+    fun addParticipant(participant: ParticipantDTO): Int {
         return daoController.handleInsert(SectionEnum.PARTICIPANT,participant)
     }
 }
