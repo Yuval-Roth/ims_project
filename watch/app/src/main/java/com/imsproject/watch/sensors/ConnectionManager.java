@@ -27,10 +27,6 @@ public class ConnectionManager {
         public void onConnectionSuccess() {
             Log.i(TAG, "Connected");
             connectionObserver.onConnectionResult(R.string.ConnectedToHs);
-            if (!isSpO2Available(healthTrackingService)) {
-                Log.i(TAG, "Device does not support SpO2 tracking");
-                connectionObserver.onConnectionResult(R.string.NoSpo2Support);
-            }
             if (!isHeartRateAvailable(healthTrackingService)) {
                 Log.i(TAG, "Device does not support Heart Rate tracking");
                 connectionObserver.onConnectionResult(R.string.NoHrSupport);
@@ -62,12 +58,6 @@ public class ConnectionManager {
             healthTrackingService.disconnectService();
     }
 
-    public void initSpO2(SpO2Listener spO2Listener) {
-        HealthTracker healthTracker = healthTrackingService.getHealthTracker(HealthTrackerType.SPO2_ON_DEMAND);
-        spO2Listener.setHealthTracker(healthTracker);
-        setHandlerForBaseListener(spO2Listener);
-    }
-
     public void initHeartRate(HeartRateListener heartRateListener) {
         HealthTracker healthTracker = healthTrackingService.getHealthTracker(HealthTrackerType.HEART_RATE_CONTINUOUS);
         heartRateListener.setHealthTracker(healthTracker);
@@ -76,11 +66,6 @@ public class ConnectionManager {
 
     private void setHandlerForBaseListener(BaseListener baseListener) {
         baseListener.setHandler(new Handler(Looper.getMainLooper()));
-    }
-
-    private boolean isSpO2Available(@NonNull HealthTrackingService healthTrackingService) {
-        final List<HealthTrackerType> availableTrackers = healthTrackingService.getTrackingCapability().getSupportHealthTrackerTypes();
-        return availableTrackers.contains(HealthTrackerType.SPO2_ON_DEMAND);
     }
 
     private boolean isHeartRateAvailable(@NonNull HealthTrackingService healthTrackingService) {

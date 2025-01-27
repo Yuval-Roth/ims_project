@@ -119,8 +119,8 @@ abstract class GameViewModel(
             }
 
             // TODO: SENSORS
-//            sensorsHandler = SensorsHandler(context, this@GameViewModel)
-//            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
+            sensorsHandler = SensorsHandler(context, this@GameViewModel)
+            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
 
             // latency tracker setup
             latencyTracker = LatencyTracker(
@@ -159,8 +159,8 @@ abstract class GameViewModel(
             addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
             Log.d(TAG, "onCreate: session started")
             // TODO: SENSORS
-//            locationSensorHandler.start()
-//            sensorsHandler.start()
+            locationSensorHandler.start()
+            sensorsHandler.start()
             setState(State.PLAYING)
         }
     }

@@ -70,12 +70,16 @@ class LocationSensorsHandler(
     fun start() {
         gyroscopeSensor?.let {
             sensorManager.registerListener(
-                gyroscopeListener, it, SensorManager.SENSOR_DELAY_UI
+                gyroscopeListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL // Use a slower sampling rate
             )
         }
         accelerometerSensor?.let {
             sensorManager.registerListener(
-                accelerometerListener, it, SensorManager.SENSOR_DELAY_UI
+                accelerometerListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL // Use a slower sampling rate
             )
         }
     }

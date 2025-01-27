@@ -33,8 +33,6 @@ public class BaseListener {
         trackerEventListener = tracker;
     }
 
-
-
     public void startTracker() {
         Log.i(APP_TAG, "startTracker called ");
         Log.d(APP_TAG, "healthTracker: " + healthTracker.toString());

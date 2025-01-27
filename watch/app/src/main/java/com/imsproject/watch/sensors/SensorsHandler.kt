@@ -19,8 +19,6 @@ class SensorsHandler(
     private val isMeasurementRunning = AtomicBoolean(false)
     private var connectionManager: ConnectionManager? = null
     private var heartRateListener: HeartRateListener? = null
-    private var spO2Listener: SpO2Listener? = null
-    private var previousStatus = SpO2Status.INITIAL_STATUS
     private var heartRateDataLast = HeartRateData()
     private val handler = Handler(Looper.getMainLooper())
     private var connected = false
@@ -30,76 +28,30 @@ class SensorsHandler(
         override fun onHeartRateTrackerDataChanged(hrData: HeartRateData) {
             handler.post {
                 heartRateDataLast = hrData
-                if (hrData.status == HeartRateStatus.HR_STATUS_FIND_HR) {
-                    gameViewModel.addEvent(
-                        SessionEvent.heartRate(
-                            gameViewModel.playerId,
-                            gameViewModel.getCurrentGameTime(),
-                            "${hrData.hr};${hrData.ibi}"
-                        )
+                gameViewModel.addEvent(
+                    SessionEvent.heartRate(
+                        gameViewModel.playerId,
+                        gameViewModel.getCurrentGameTime(),
+                        "${hrData.hr};${hrData.ibi}"
                     )
-                } else {
-                    gameViewModel.addEvent(
-                        SessionEvent.heartRate(
-                            gameViewModel.playerId,
-                            gameViewModel.getCurrentGameTime(),
-                            "no data"
-                        )
-                    )
-                }
-            }
-        }
-
-        override fun onSpO2TrackerDataChanged(status: Int, spO2Value: Int) {
-            if (status == previousStatus) return
-            previousStatus = status
-            when (status) {
-                SpO2Status.CALCULATING -> {
-                    handler.post {
-                        gameViewModel.addEvent(
-                            SessionEvent.bloodOxygen(
-                                gameViewModel.playerId,
-                                gameViewModel.getCurrentGameTime(),
-                                "Calculating"
-                            )
-                        )
-                    }
-                }
-                SpO2Status.DEVICE_MOVING -> {
-                    handler.post {
-                        gameViewModel.addEvent(
-                            SessionEvent.bloodOxygen(
-                                gameViewModel.playerId,
-                                gameViewModel.getCurrentGameTime(),
-                                "Device moving"
-                            )
-                        )
-                    }
-                }
-                SpO2Status.LOW_SIGNAL -> {
-                    handler.post {
-                        gameViewModel.addEvent(
-                            SessionEvent.bloodOxygen(
-                                gameViewModel.playerId,
-                                gameViewModel.getCurrentGameTime(),
-                                "Low signal quality"
-                            )
-                        )
-                    }
-                }
-                SpO2Status.MEASUREMENT_COMPLETED -> {
-                    isMeasurementRunning.set(false)
-                    spO2Listener?.stopTracker()
-                    handler.post {
-                        gameViewModel.addEvent(
-                            SessionEvent.bloodOxygen(
-                                gameViewModel.playerId,
-                                gameViewModel.getCurrentGameTime(),
-                                spO2Value.toString()
-                            )
-                        )
-                    }
-                }
+                )
+//                if (hrData.status == HeartRateStatus.HR_STATUS_FIND_HR) {
+//                    gameViewModel.addEvent(
+//                        SessionEvent.heartRate(
+//                            gameViewModel.playerId,
+//                            gameViewModel.getCurrentGameTime(),
+//                            "${hrData.hr};${hrData.ibi}"
+//                        )
+//                    )
+//                } else {
+//                    gameViewModel.addEvent(
+//                        SessionEvent.heartRate(
+//                            gameViewModel.playerId,
+//                            gameViewModel.getCurrentGameTime(),
+//                            "${hrData.hr};${hrData.ibi}"
+//                        )
+//                    )
+//                }
             }
         }
 
@@ -119,14 +71,11 @@ class SensorsHandler(
 
             connected = true
             TrackerDataNotifier.getInstance().addObserver(trackerDataObserver)
-
-            spO2Listener = SpO2Listener()
             heartRateListener = HeartRateListener()
 
             var tries = 0
             do{
                 try{
-                    connectionManager!!.initSpO2(spO2Listener)
                     connectionManager!!.initHeartRate(heartRateListener)
                 } catch (e: Exception){
                     Log.e(TAG, "Could not initialize the listeners",e)
@@ -153,31 +102,12 @@ class SensorsHandler(
         } catch (t: Throwable) {
             println("SensorError: Could not connect the ConnectionManager: " + t.message)
         }
-
-
-
-        heartRateListener = HeartRateListener()
-        spO2Listener = SpO2Listener()
-
-        TrackerDataNotifier.getInstance().addObserver(trackerDataObserver)
-        var tries = 0
-        do{
-            try{
-                connectionManager!!.initHeartRate(heartRateListener!!)
-                connectionManager!!.initSpO2(spO2Listener!!)
-            } catch (e: Exception){
-                Log.e(TAG, "Could not initialize the listeners",e)
-                tries++
-                continue
-            }
-            break
-        } while (tries < 10)
     }
 
     fun stop() {
 
         if (heartRateListener != null) heartRateListener!!.stopTracker()
-        if (spO2Listener != null) spO2Listener!!.stopTracker()
+//        if (spO2Listener != null) spO2Listener!!.stopTracker()
         TrackerDataNotifier.getInstance().removeObserver(trackerDataObserver)
         if (connectionManager != null) {
             connectionManager!!.disconnect()
@@ -187,8 +117,6 @@ class SensorsHandler(
     fun start() {
         if (!isMeasurementRunning.get() && connected) {
             // Start the measurement process
-            previousStatus = SpO2Status.INITIAL_STATUS
-            spO2Listener?.startTracker()  // Start measuring SpO2
             heartRateListener?.startTracker()  // Optionally, you can start heart rate tracking too
             isMeasurementRunning.set(true)
         }
