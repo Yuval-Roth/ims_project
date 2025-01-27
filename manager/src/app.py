@@ -45,8 +45,8 @@ def main_menu():
 def get_parts():
     participants = get_participants()  # Replace with your function to fetch participants
     # participants = None
-    if not participants:
-        participants = PARTICIPANTS
+    # if not participants:
+    #     participants = PARTICIPANTS
     if len(participants) > 0 and not isinstance(participants[0], dict):
         # Add some dummy data
         participants = [{"id": i,  # Convert i to int
