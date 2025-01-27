@@ -405,19 +405,9 @@ This endpoint is used to send session events after a session is finished
         
 #### **Response**
 
-- **Success**:
   ```json
   {
     "success": true,
-  }
-  ```
-
-- **Failure**:
-  ```json
-  {
-    "message": "Failed to select table Participants",
-    "success": false,
-    "payload": ["error details"]
   }
   ```
 
