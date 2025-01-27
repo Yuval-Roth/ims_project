@@ -9,8 +9,9 @@ import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.gameserver.dataAccess.models.SessionDTO
+import org.springframework.stereotype.Component
 
-
+@Component
 class SessionsDAO(cursor: SQLExecutor) : DAOBase<SessionDTO, SessionPK>(cursor, "Sessions", SessionPK.primaryColumnsList, arrayOf("exp_id", "duration", "session_type", "session_order", "tolerance", "window_length","state")) {
     override fun getCreateTableQueryBuilder(): CreateTableQueryBuilder {
         throw UnsupportedOperationException("Not yet implemented")

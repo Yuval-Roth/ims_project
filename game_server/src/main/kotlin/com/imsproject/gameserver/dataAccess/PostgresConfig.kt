@@ -43,4 +43,15 @@ class PostgresConfig {
             .type(HikariDataSource::class.java)
             .build()
     }
+
+    @Bean
+    fun sqlExecutor(): PostgreSQLExecutor {
+
+        if(runningLocal){
+            host = "localhost"
+        }
+
+        val url = "$scheme://$host:$port/$name"
+        return PostgreSQLExecutor(url,username,password)
+    }
 }
