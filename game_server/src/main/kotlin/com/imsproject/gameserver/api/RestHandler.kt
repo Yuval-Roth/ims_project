@@ -106,7 +106,16 @@ class RestHandler(
                     val id = participantController.addParticipant(participant)
                     return Response.getOk(id).toResponseEntity()
                 }
-                "remove" -> participantController.remove(participant.pid!!)
+                "remove" ->{
+                    val pid = participant.pid ?: throw IllegalArgumentException("Participant id not provided")
+                    participantController.remove(
+                        try{
+                            pid.toInt()
+                        } catch (e: Exception){
+                            throw IllegalArgumentException("Invalid participant id")
+                        }
+                    )
+                }
                 "get" -> {
                     val participants = participantController.getAll()
                     return Response.getOk(participants).toResponseEntity()

@@ -1,5 +1,6 @@
 package com.imsproject.gameserver.dataAccess
 
+import com.imsproject.common.dataAccess.DaoException
 import com.imsproject.gameserver.dataAccess.implementations.*
 
 import com.imsproject.gameserver.dataAccess.models.*
@@ -21,7 +22,7 @@ class DAOController(
     private val sessionEventDAO: SessionEventsDAO
 ) {
 
-    @Throws(SQLException::class)
+    @Throws(DaoException::class)
     fun handleInsert(section: SectionEnum, dto: Any): Int {
         return when (section) {
             SectionEnum.PARTICIPANT -> participantDAO.insert(dto as ParticipantDTO)
@@ -31,7 +32,7 @@ class DAOController(
         }
     }
 
-    @Throws(SQLException::class)
+    @Throws(DaoException::class)
     fun handleInsertAll(section: SectionEnum, dtos: List<Any>): List<Int> {
         return when (section) {
             SectionEnum.PARTICIPANT -> participantDAO.insertAll(dtos as List<ParticipantDTO>)
@@ -41,7 +42,7 @@ class DAOController(
         }
     }
 
-    @Throws(SQLException::class)
+    @Throws(DaoException::class)
     fun handleBulkInsert(section: SectionEnum, dtos: List<Any>): Int {
         return when (section) {
             SectionEnum.PARTICIPANT -> throw UnsupportedOperationException("Bulk insert not supported for participants")
@@ -51,7 +52,7 @@ class DAOController(
         }
     }
 
-    @Throws(SQLException::class)
+    @Throws(DaoException::class)
     fun handleExists(section: SectionEnum, pk: Any): Boolean {
         return when (section) {
             SectionEnum.PARTICIPANT -> participantDAO.exists(pk as ParticipantPK)
@@ -61,7 +62,7 @@ class DAOController(
         }
     }
 
-    @Throws(SQLException::class)
+    @Throws(DaoException::class)
     fun handleDelete(section: SectionEnum, pk: Any) {
         when (section) {
             SectionEnum.PARTICIPANT -> {
@@ -87,7 +88,7 @@ class DAOController(
         }
     }
 
-    @Throws(SQLException::class)
+    @Throws(DaoException::class)
     fun handleUpdate(section: SectionEnum, dto: Any) {
         when (section) {
             SectionEnum.PARTICIPANT -> {
@@ -113,7 +114,7 @@ class DAOController(
         }
     }
 
-    @Throws(SQLException::class)
+    @Throws(DaoException::class)
     fun handleSelect(section: SectionEnum, pk: Any): Any {
         return when (section) {
             SectionEnum.PARTICIPANT -> {
@@ -139,13 +140,13 @@ class DAOController(
         }
     }
 
-    @Throws(SQLException::class)
-    fun handleSelectAll(section: SectionEnum): List<Any> {
+    @Throws(DaoException::class)
+    fun <T> handleSelectAll(section: SectionEnum): List<T> {
         return when (section) {
-            SectionEnum.PARTICIPANT -> participantDAO.selectAll()
-            SectionEnum.EXPERIMENT -> experimentDAO.selectAll()
-            SectionEnum.SESSION -> sessionDAO.selectAll()
-            SectionEnum.SESSION_EVENT -> sessionEventDAO.selectAll()
+            SectionEnum.PARTICIPANT -> participantDAO.selectAll() as List<T>
+            SectionEnum.EXPERIMENT -> experimentDAO.selectAll() as List<T>
+            SectionEnum.SESSION -> sessionDAO.selectAll() as List<T>
+            SectionEnum.SESSION_EVENT -> sessionEventDAO.selectAll() as List<T>
         }
     }
 
