@@ -41,10 +41,12 @@ const val SERVER_UDP_PORT = 8641
 private const val TIME_SERVER_PORT = 8642
 // ================================|
 
+class AlreadyConnectedException : Exception("Already connected",null,true,false)
+class ParticipantNotFoundException: Exception("Participant id not found",null,true,false)
+
 class MainModel (private val scope : CoroutineScope) {
 
-    class CallbackNotSetException : Exception("Listener not set",null,true,false)
-    class AlreadyConnectedException : Exception("Already connected",null,true,false)
+    private class CallbackNotSetException : Exception("Listener not set",null,true,false)
 
     private lateinit var ws: WebSocketClient
     private lateinit var udp : UdpClient
@@ -91,12 +93,14 @@ class MainModel (private val scope : CoroutineScope) {
             clientsClosed = false
         }
 
-        if(!ws.connectBlocking(10, java.util.concurrent.TimeUnit.SECONDS)){
-            Log.e(TAG, "connectToServer: WebSocket connection timeout")
-            return false // timeout
-        }
+        if(!ws.isOpen){
+            if(!ws.connectBlocking(10, java.util.concurrent.TimeUnit.SECONDS)){
+                Log.e(TAG, "connectToServer: WebSocket connection timeout")
+                return false // timeout
+            }
 
-        startHeartBeat()
+            startHeartBeat()
+        }
         return true
     }
 
@@ -104,8 +108,9 @@ class MainModel (private val scope : CoroutineScope) {
      * Establishes a connection to the game server via both WebSocket and UDP protocols.
      * @return the player ID if the connection is successful, or null if any step fails.
      * @throws AlreadyConnectedException if the client is already connected.
+     * @throws ParticipantNotFoundException if the selected ID is not found on the server.
      */
-    @Throws(AlreadyConnectedException::class)
+    @Throws(AlreadyConnectedException::class, ParticipantNotFoundException::class)
     suspend fun enter(selectedId: String, force: Boolean = false) : String? {
         Log.d(TAG, "enter: Connecting to server with id $selectedId")
 
@@ -117,7 +122,7 @@ class MainModel (private val scope : CoroutineScope) {
         val udpEnterCode: String
         try{
             udpEnterCode = (wsSetup(enterType, selectedId) ?: return null)
-        } catch(e: AlreadyConnectedException){
+        } catch(e: Exception){
             startHeartBeat()
             throw e
         }
@@ -242,7 +247,7 @@ class MainModel (private val scope : CoroutineScope) {
 
     fun calculateTimeServerDelta(): Long {
         val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
-        val timeServerUdp = UdpClient().apply{ init(); setTimeout(TIMEOUT_MS.toInt()) }
+        val timeServerUdp = UdpClient().apply{ init(); setTimeout(100) }
         var count = 0
         val data = mutableListOf<Long>()
         while(count < 100){
@@ -321,7 +326,7 @@ class MainModel (private val scope : CoroutineScope) {
         return ws to udp
     }
 
-    @Throws(AlreadyConnectedException::class)
+    @Throws(AlreadyConnectedException::class, ParticipantNotFoundException::class)
     private fun wsSetup (
         connectType: GameRequest.Type,
         id: String
@@ -369,6 +374,11 @@ class MainModel (private val scope : CoroutineScope) {
             if(enterResponse.type == GameRequest.Type.ALREADY_CONNECTED){
                 Log.d(TAG, "wsSetup: Already connected")
                 throw AlreadyConnectedException()
+            }
+
+            if(enterResponse.type == GameRequest.Type.PARTICIPANT_NOT_FOUND){
+                Log.d(TAG, "wsSetup: Participant not found")
+                throw ParticipantNotFoundException()
             }
 
             if(enterResponse.type == GameRequest.Type.ERROR){
@@ -547,31 +557,6 @@ class MainModel (private val scope : CoroutineScope) {
             Log.e(TAG, "Failed to send UDP message", e)
             executeCallback { udpOnExceptionCallback(e) }
         }
-    }
-
-    fun uploadSessionEvents(): Boolean {
-        Log.d(TAG, "Uploading session events")
-        val eventCollector = SessionEventCollectorImpl.getInstance()
-        val events = eventCollector.getAllEvents().stream()
-            .map { it.toCompressedJson() }
-            .collect(Collectors.toList())
-
-        val body = object {
-            val events = events
-        }
-        val returned = RestApiClient()
-            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/lolk/lol")
-            .withBody(body.toJson())
-            .withPost()
-            .send()
-        val response = fromJson<Response>(returned)
-        if(response.success){
-            Log.d(TAG, "uploadSessionEvents: Success")
-            eventCollector.clearEvents()
-        } else {
-            Log.e(TAG, "uploadSessionEvents: Failed to upload events")
-        }
-        return response.success
     }
 
     companion object {

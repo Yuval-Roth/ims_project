@@ -10,6 +10,9 @@ import com.imsproject.gameserver.business.ClientController
 import com.imsproject.gameserver.business.ClientHandler
 import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.LobbyController
+import com.imsproject.gameserver.dataAccess.DAOController
+import com.imsproject.gameserver.dataAccess.SectionEnum
+import com.imsproject.gameserver.dataAccess.implementations.ParticipantPK
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.lang.NonNull
@@ -26,7 +29,8 @@ class WsGameRequestHandler(
     private val facade: GameRequestFacade,
     private val gameActionHandler: UdpGameActionHandler,
     private val clientController: ClientController,
-    private val lobbyController: LobbyController
+    private val lobbyController: LobbyController,
+    private val daoController: DAOController
 ) : TextWebSocketHandler() {
 
     companion object {
@@ -139,6 +143,21 @@ class WsGameRequestHandler(
     ) {
         val id = gameMessage.playerId ?: run {
             log.error("No client id provided")
+            return
+        }
+
+        // check if the participant exists in the database
+        val pk = ParticipantPK(
+            try{
+                id.toInt()
+            } catch (e: Exception){
+                log.error("Invalid participant id")
+                return
+            }
+        )
+        if(! daoController.handleExists(SectionEnum.PARTICIPANT,pk)){
+            log.debug("Participant with id {} not found", id)
+            session.send(GameRequest.builder(Type.PARTICIPANT_NOT_FOUND).build().toJson())
             return
         }
 

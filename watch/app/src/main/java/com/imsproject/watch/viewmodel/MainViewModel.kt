@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.watch.model.AlreadyConnectedException
 import com.imsproject.watch.model.MainModel
+import com.imsproject.watch.model.ParticipantNotFoundException
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -98,9 +100,12 @@ class MainViewModel() : ViewModel() {
                 val playerId: String?
                 try{
                     playerId = model.enter(selectedId,force)
-                } catch (_: MainModel.AlreadyConnectedException){
+                } catch (_: AlreadyConnectedException){
                     setState(State.ALREADY_CONNECTED)
                     temporaryPlayerId = selectedId
+                    return@launch
+                } catch (_: ParticipantNotFoundException){
+                    showError("Participant not found")
                     return@launch
                 }
                 if (playerId != null) {

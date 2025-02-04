@@ -24,6 +24,7 @@ data class GameRequest internal constructor(
         @SerializedName("enter")                    ENTER,
         @SerializedName("force_enter")              FORCE_ENTER,
         @SerializedName("already_connected")        ALREADY_CONNECTED,
+        @SerializedName("participant_not_found")    PARTICIPANT_NOT_FOUND,
         @SerializedName("reconnect")                RECONNECT,
         @SerializedName("exit")                     EXIT,
         @SerializedName("get_online_player_ids")    GET_ONLINE_PLAYER_IDS,

@@ -241,8 +241,6 @@ class LobbyController(
     }
 
     fun getLobbiesInfo() : List<LobbyInfo> {
-        log.debug("getLobbiesInfo()")
-
         return lobbies.values.map { it.getInfo() }
     }
 

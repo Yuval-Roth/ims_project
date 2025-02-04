@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -281,6 +282,11 @@ class MainActivity : ComponentActivity() {
         val leftNum = rememberPickerState(10, 0)
         val middleNum = rememberPickerState(10, 0)
         val rightNum = rememberPickerState(10, 0)
+        val getId = remember { getId@{
+            return@getId idsList[leftNum.selectedOption] +
+                    idsList[middleNum.selectedOption] +
+                    idsList[rightNum.selectedOption]
+        }}
 
         Box(
             modifier = Modifier
@@ -315,22 +321,17 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .size((SCREEN_WIDTH*0.11f).dp),
                         onClick = {
-                            // randomize the numbers
-                            scope.launch {
-                                leftNum.animateScrollToOption((0..15).random())
-                            }
-                            scope.launch {
-                                middleNum.animateScrollToOption((0..15).random())
-                            }
-                            scope.launch {
-                                rightNum.animateScrollToOption((0..15).random())
-                            }
+                            // reset to 000
+                            scope.launch { leftNum.animateScrollToOption(0) }
+                            scope.launch { middleNum.animateScrollToOption(0) }
+                            scope.launch { rightNum.animateScrollToOption(0) }
                         },
                         shape = CircleShape,
+                        enabled = getId() != "000"
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "shuffle"
+                            contentDescription = "reset"
                         )
                     }
                     Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.06f).dp))
@@ -338,11 +339,9 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier
                             .size((SCREEN_WIDTH*0.11f).dp),
                         onClick = {
-                            val id = idsList[leftNum.selectedOption] +
-                                     idsList[middleNum.selectedOption] +
-                                     idsList[rightNum.selectedOption]
-                            onClick(id)
+                            onClick(getId())
                         },
+                        enabled = getId() != "000"
                     ) {
                         Icon(
                             imageVector = Icons.Default.Check,

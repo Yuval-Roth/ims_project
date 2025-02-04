@@ -2,7 +2,6 @@ package com.imsproject.gameserver.business
 
 import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.dataAccess.SectionEnum
-import com.imsproject.gameserver.dataAccess.implementations.SessionPK
 import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 import com.imsproject.gameserver.dataAccess.models.SessionDTO
 import kotlinx.coroutines.*
@@ -52,18 +51,20 @@ class ExperimentOrchestrator(
         val experimentDTO = ExperimentDTO(null,pid1,pid2)
         val experimentId = daoController.handleInsert(SectionEnum.EXPERIMENT, experimentDTO)
         experimentSessions.forEachIndexed { index, session ->
-            val dto = SessionDTO(
-                null,
-                experimentId,
-                session.duration,
-                session.gameType.name,
-                index+1,
-                session.syncTolerance.toInt(),
-                session.syncWindowLength.toInt(),
-                SessionState.NOT_STARTED.name
-            )
-            val sessionId = daoController.handleInsert(SectionEnum.SESSION, dto)
-            session.dbId = sessionId
+            if(session.dbId == null){
+                val dto = SessionDTO(
+                    null,
+                    experimentId,
+                    session.duration,
+                    session.gameType.name,
+                    index+1,
+                    session.syncTolerance.toInt(),
+                    session.syncWindowLength.toInt(),
+                    SessionState.NOT_STARTED.name
+                )
+                val sessionId = daoController.handleInsert(SectionEnum.SESSION, dto)
+                session.dbId = sessionId
+            }
         }
 
         val job = scope.launch {
@@ -115,17 +116,20 @@ class ExperimentOrchestrator(
         lobby.experimentRunning = false
         games.endGame(lobbyId)
         if(lobby.hasSessions){
-            val session = sessions.getSessions(lobbyId).first()
-            lobbies.configureLobby(lobbyId, session)
-            if(session.state == SessionState.IN_PROGRESS){
-                val dbId = session.dbId ?: run {
+            val currentSession = sessions.getSessions(lobbyId).first()
+            if(currentSession.state == SessionState.IN_PROGRESS){
+                val dbId = currentSession.dbId ?: run {
                     // should not happen
                     log.error("stopExperiment: Session dbId not found for in-progress session in lobby $lobbyId")
                     throw IllegalStateException("Session dbId not found for in-progress session in lobby $lobbyId")
                 }
                 val updatedSessionDTO = SessionDTO(sessionId = dbId, state = SessionState.CANCELLED.name)
                 daoController.handleUpdate(SectionEnum.SESSION, updatedSessionDTO)
-                sessions.removeSession(lobbyId, session.sessionId)
+                sessions.removeSession(lobbyId, currentSession.sessionId)
+            }
+            if(lobby.hasSessions){
+                val nextSession = sessions.getSessions(lobbyId).first()
+                lobbies.configureLobby(lobbyId,nextSession)
             }
         }
         log.debug("stopExperiment() successful")
