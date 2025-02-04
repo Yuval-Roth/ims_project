@@ -51,27 +51,32 @@ class ExperimentOrchestrator(
 
         val experimentDTO = ExperimentDTO(null,pid1,pid2)
         val experimentId = daoController.handleInsert(SectionEnum.EXPERIMENT, experimentDTO)
+        experimentSessions.forEachIndexed { index, session ->
+            val dto = SessionDTO(
+                null,
+                experimentId,
+                session.duration,
+                session.gameType.name,
+                index+1,
+                session.syncTolerance.toInt(),
+                session.syncWindowLength.toInt(),
+                SessionState.NOT_STARTED.name
+            )
+            val sessionId = daoController.handleInsert(SectionEnum.SESSION, dto)
+            session.dbId = sessionId
+        }
 
         val job = scope.launch {
             lobby.experimentRunning = true
             val iterator = experimentSessions.iterator()
-            var sessionIndex = 1
             while(iterator.hasNext() && isActive) {
                 val session = iterator.next()
                 lobbies.configureLobby(lobbyId, session)
-
-                val sessionDTO = SessionDTO(
-                    null,
-                    experimentId,
-                    session.duration,
-                    session.gameType.name,
-                    sessionIndex++,
-                    session.syncTolerance.toInt(),
-                    session.syncWindowLength.toInt(),
-                    SessionState.NOT_STARTED.name
-                )
-                val sessionId = daoController.handleInsert(SectionEnum.SESSION, sessionDTO)
-                session.dbId = sessionId
+                val sessionId = session.dbId ?: run {
+                    // should not happen
+                    log.error("startExperiment: Session dbId not found for session in lobby $lobbyId")
+                    throw IllegalStateException("Session dbId not found for session in lobby $lobbyId")
+                }
                 while(! lobby.isReady()){
                     delay(1000)
                 }

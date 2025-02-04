@@ -85,8 +85,6 @@ class SessionController(
     }
 
     fun getSessions(lobbyId: String): Collection<Session> {
-        log.debug("getSessions() with lobbyId: {}",lobbyId)
-
         if(! lobbies.contains(lobbyId)){
             log.debug("getSessions: Lobby not found")
             throw IllegalArgumentException("Lobby not found")

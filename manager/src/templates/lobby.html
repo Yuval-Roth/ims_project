@@ -131,229 +131,246 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-    const sessionTableBody = document.getElementById('sessions-tbody');
-    const addSessionBtn = document.getElementById('add-session-btn');
-    const modal = document.getElementById('add-session-modal');
-    const overlay = document.getElementById('modal-overlay');
-    const cancelModalBtn = document.getElementById('cancel-modal-btn');
-    const addSessionForm = document.getElementById('add-session-form');
 
-    // Show modal
-    addSessionBtn.addEventListener('click', showModal);
+        const sessionTableBody = document.getElementById('sessions-tbody');
+        const addSessionBtn = document.getElementById('add-session-btn');
+        const modal = document.getElementById('add-session-modal');
+        const overlay = document.getElementById('modal-overlay');
+        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+        const addSessionForm = document.getElementById('add-session-form');
 
-    // Hide modal and reset the form
-    cancelModalBtn.addEventListener('click', closeModal);
+        // Show modal
+        addSessionBtn.addEventListener('click', showModal);
 
-    // Handle form submission for adding a session
-    addSessionForm.addEventListener('submit', handleAddSession);
+        // Hide modal and reset the form
+        cancelModalBtn.addEventListener('click', closeModal);
 
-    // Fetch and populate sessions on page load
-    fetchSessions();
+        // Handle form submission for adding a session
+        addSessionForm.addEventListener('submit', handleAddSession);
 
-    // Handle delete session
-    sessionTableBody.addEventListener('click', handleDeleteSession);
+        // Fetch and populate sessions on page load
+        fetchSessions();
 
-    // Make session rows sortable
-    new Sortable(sessionTableBody, {
-        animation: 150,
-        onEnd: updateSessionOrder
-    });
+        // Handle delete session
+        sessionTableBody.addEventListener('click', handleDeleteSession);
 
-    // Show modal and reset form
-    function showModal() {
-        resetForm();
-        modal.style.display = 'block';
-        overlay.style.display = 'block';
-    }
-
-    // Close modal
-    function closeModal() {
-        modal.style.display = 'none';
-        overlay.style.display = 'none';
-    }
-
-    // Reset form fields to default values
-    function resetForm() {
-        addSessionForm.reset();
-        document.getElementById('gameType').value = document.getElementById('gameType').options[0].value;
-        document.getElementById('duration').value = '';
-        updateCreateSessionParams()
-    }
-
-    // Handle adding a session
-    function handleAddSession(event) {
-        event.preventDefault();
-
-        const formData = new FormData(addSessionForm);
-        const gameType = formData.get('gameType');
-        let syncTolerance
-        let syncWindowLength
-        switch(gameType) {
-            case 'Water Ripples':
-                syncTolerance = parseInt(formData.get('syncTolerance'), 10);
-                syncWindowLength = -1;
-                break;
-            case 'Wine Glasses':
-                syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
-                syncWindowLength = parseInt(formData.get('window'), 10);
-                break;
-        }
-        const payload = {
-            lobby_id: formData.get('lobby_id'),
-            gameType: gameType,
-            duration: parseInt(formData.get('duration'), 10),
-            syncTolerance: syncTolerance,
-            syncWindowLength: syncWindowLength
-        };
-
-        fetch('/add_session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    console.log('Session added:', data.session);
-                    appendSessionRow(data.session);
-                    closeModal();
-                } else {
-                    alert('Failed to add session.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to add session.');
-            });
-    }
-
-    // Fetch sessions from backend
-    function fetchSessions() {
-    fetch('/get_sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lobby_id: "{{ lobby_id }}" })
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success' && Array.isArray(data.sessions) && data.sessions.length > 0) {
-                // Parse the first element if it's a JSON string
-                let sessions = [];
-                try {
-                    sessions = JSON.parse(data.sessions[0]); // Parse the JSON string
-                } catch (error) {
-                    console.error('Error parsing session payload:', error);
-                    alert('Failed to parse session data.');
-                    return;
-                }
-
-                // Clear existing sessions
-                sessionTableBody.innerHTML = '';
-
-                // Populate sessions table
-                sessions.forEach(session => {
-                    if (session && session.sessionId && session.gameType && session.duration) {
-                        appendSessionRow(session);
-                    } else {
-                        console.warn('Invalid session data:', session);
-                    }
-                });
-            } else if (data.status === 'success' && Array.isArray(data.sessions) && data.sessions.length === 0) {
-                // Handle empty session list gracefully
-                sessionTableBody.innerHTML = '<tr><td colspan="4">No sessions available.</td></tr>';
-            } else {
-                alert('Failed to fetch sessions.');
-            }
-        })
-        .catch(error => console.error('Error fetching sessions:', error));
-}
-
-
-    // Append a session row to the table
-    function appendSessionRow(session) {
-
-    if (!session || !session.sessionId || !session.gameType || !session.duration) {
-        console.warn('Invalid session data:', session);
-        return;
-    }
-
-    // Fetch the human-readable game type from the server
-    fetch('/game_type_from_name', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameType: session.gameType }) // Send the gameType name
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                const humanReadableGameType = data.gameType; // Get the real name from the server
-                // Create and append the row
-                const row = document.createElement('tr');
-                row.dataset.sessionId = session.sessionId;
-                row.innerHTML = `
-                    <td>${humanReadableGameType}</td>
-                    <td>${session.duration}</td>
-                    <td>${session.sessionId}</td>
-                    <td>${session.syncTolerance}</td>
-                    <td>${session.syncWindowLength}</td>
-                    <td>
-                        <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
-                    </td>
-                `;
-                sessionTableBody.appendChild(row);
-            } else {
-                console.error('Failed to fetch human-readable game type:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching game type:', error);
+        // Make session rows sortable
+        new Sortable(sessionTableBody, {
+            animation: 150,
+            onEnd: updateSessionOrder
         });
-}
 
-    // Handle delete session
-    function handleDeleteSession(event) {
-        if (event.target.classList.contains('delete-session-btn')) {
-            const sessionId = event.target.dataset.sessionId;
-            const lobbyId = "{{ lobby_id }}";
+        // Show modal and reset form
+        function showModal() {
+            resetForm();
+            modal.style.display = 'block';
+            overlay.style.display = 'block';
+        }
 
-            fetch('/delete_session', {
+        // Close modal
+        function closeModal() {
+            modal.style.display = 'none';
+            overlay.style.display = 'none';
+        }
+
+        // Reset form fields to default values
+        function resetForm() {
+            addSessionForm.reset();
+            document.getElementById('gameType').value = document.getElementById('gameType').options[0].value;
+            document.getElementById('duration').value = '';
+            updateCreateSessionParams()
+        }
+
+        // Handle adding a session
+        function handleAddSession(event) {
+            event.preventDefault();
+
+            const formData = new FormData(addSessionForm);
+            const gameType = formData.get('gameType');
+            let syncTolerance
+            let syncWindowLength
+            switch(gameType) {
+                case 'Water Ripples':
+                    syncTolerance = parseInt(formData.get('syncTolerance'), 10);
+                    syncWindowLength = -1;
+                    break;
+                case 'Wine Glasses':
+                    syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
+                    syncWindowLength = parseInt(formData.get('window'), 10);
+                    break;
+            }
+            const payload = {
+                lobby_id: formData.get('lobby_id'),
+                gameType: gameType,
+                duration: parseInt(formData.get('duration'), 10),
+                syncTolerance: syncTolerance,
+                syncWindowLength: syncWindowLength
+            };
+
+            fetch('/add_session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lobby_id: lobbyId, session_id: sessionId })
+                body: JSON.stringify(payload)
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        event.target.closest('tr').remove();
+                        console.log('Session added:', data.session);
+                        appendSessionRow(data.session);
+                        closeModal();
                     } else {
-                        alert('Failed to delete session.');
+                        alert('Failed to add session.');
                     }
                 })
-                .catch(error => console.error('Error deleting session:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to add session.');
+                });
         }
-    }
 
-    // Update session order
-    function updateSessionOrder() {
-        const sessionOrder = Array.from(sessionTableBody.children).map(row => row.dataset.sessionId);
-
-        fetch('/update_session_order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status !== 'success') {
-                    alert('Failed to update session order.');
-                }
+        // Fetch sessions from backend
+        function fetchSessions() {
+            fetch('/get_sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: "{{ lobby_id }}" })
             })
-            .catch(error => console.error('Error updating session order:', error));
-    }
-});
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && Array.isArray(data.sessions) && data.sessions.length > 0) {
+                        // Parse the first element if it's a JSON string
+                        let sessions = [];
+                        try {
+                            sessions = JSON.parse(data.sessions[0]); // Parse the JSON string
+                        } catch (error) {
+                            console.error('Error parsing session payload:', error);
+                            alert('Failed to parse session data.');
+                            return;
+                        }
+
+                        // Clear existing sessions
+                        {#sessionTableBody.innerHTML = '';#}
+
+                        if(sessionTableBody.children.length > sessions.length){
+                            for(let i = sessions.length; i < sessionTableBody.children.length; i++){
+                                sessionTableBody.children[i].remove();
+                            }
+                        }
+
+                        // Populate sessions table
+                        let index = 0;
+                        sessions.forEach(session => {
+                            if (session && session.sessionId && session.gameType && session.duration) {
+                                appendSessionRow(session,index++);
+                            } else {
+                                console.warn('Invalid session data:', session);
+                            }
+                        });
+                    } else if (data.status === 'success' && Array.isArray(data.sessions) && data.sessions.length === 0) {
+                        // Handle empty session list gracefully
+                        sessionTableBody.innerHTML = '<tr><td colspan="4">No sessions available.</td></tr>';
+                    } else {
+                        alert('Failed to fetch sessions.');
+                    }
+                })
+                .catch(error => console.error('Error fetching sessions:', error));
+        }
 
 
-    document.addEventListener('DOMContentLoaded', function () {
+        // Append a session row to the table
+        function appendSessionRow(session, index = -1) {
+            if (!session || !session.sessionId || !session.gameType || !session.duration) {
+                console.warn('Invalid session data:', session);
+                return;
+            }
+
+            if(!session.dbId){
+                session.dbId = ''
+            }
+
+            // Fetch the human-readable game type from the server
+            fetch('/game_type_from_name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameType: session.gameType }) // Send the gameType name
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const humanReadableGameType = data.gameType; // Get the real name from the server
+                        // Create and append the row
+                        const row = document.createElement('tr');
+                        row.dataset.sessionId = session.sessionId;
+                        row.innerHTML = `
+                            <td>${humanReadableGameType}</td>
+                            <td>${session.duration}</td>
+                            <td>${session.dbId}</td>
+                            <td>${session.syncTolerance}</td>
+                            <td>${session.syncWindowLength}</td>
+                            <td>
+                                <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
+                            </td>
+                        `;
+                        if(index === -1){
+                            sessionTableBody.appendChild(row);
+                        } else {
+                            // replace the row at the index
+                            if(sessionTableBody.children[index]){
+                                sessionTableBody.replaceChild(row, sessionTableBody.children[index]);
+                            } else {
+                                sessionTableBody.appendChild(row);
+                            }
+                        }
+                    } else {
+                        console.error('Failed to fetch human-readable game type:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching game type:', error);
+                });
+        }
+
+        // Handle delete session
+        function handleDeleteSession(event) {
+            if (event.target.classList.contains('delete-session-btn')) {
+                const sessionId = event.target.dataset.sessionId;
+                const lobbyId = "{{ lobby_id }}";
+
+                fetch('/delete_session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lobby_id: lobbyId, session_id: sessionId })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            event.target.closest('tr').remove();
+                        } else {
+                            alert('Failed to delete session.');
+                        }
+                    })
+                    .catch(error => console.error('Error deleting session:', error));
+            }
+        }
+
+        // Update session order
+        function updateSessionOrder() {
+            const sessionOrder = Array.from(sessionTableBody.children).map(row => row.dataset.sessionId);
+
+            fetch('/update_session_order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        alert('Failed to update session order.');
+                    }
+                })
+                .catch(error => console.error('Error updating session order:', error));
+        }
+
         const toggleGameBtn = document.getElementById('toggle-game-btn');
         const lobbyId = "{{ lobby_id }}";
 
@@ -367,12 +384,14 @@
                 toggleGameBtn.classList.add('success-button');
                 // Enable the button only if all participants are ready
                 toggleGameBtn.disabled = !(readyCount >= 2 && hasSessions);
+                addSessionBtn.disabled = false;
             } else {
                 toggleGameBtn.textContent = 'Stop Experiment';
                 toggleGameBtn.dataset.action = 'stop';
                 toggleGameBtn.classList.remove('success-button');
                 toggleGameBtn.classList.add('warning-button');
                 toggleGameBtn.disabled = false;
+                addSessionBtn.disabled = true;
             }
         }
 
@@ -404,6 +423,7 @@
                 }
             })
             .catch(error => console.error('Error:', error));
+            fetchSessions();
         }
 
         toggleGameBtn.addEventListener('click', () => {
@@ -428,6 +448,48 @@
             });
         });
 
+        function updateCreateSessionParams () {
+            const gameTypeSelect = document.getElementById('gameType');
+            const syncToleranceInput = document.getElementById('syncTolerance');
+            const syncToleranceDescription = document.getElementById('syncToleranceDescription');
+            const syncWindowLength = document.getElementById('window');
+
+            // Define default values for each game type
+            const defaultParams = {
+                'Water Ripples': {
+                    syncTolerance: 50,
+                    syncToleranceUnit: 'ms',
+                    syncToleranceStep: 1,
+                    syncToleranceMin: 1,
+                    syncWindowLength: -1,
+                    windowLengthEnabled: false
+                },
+                'Wine Glasses': {
+                    syncTolerance: 0.10,
+                    syncToleranceUnit: 'hz',
+                    syncToleranceStep: 0.01,
+                    syncToleranceMin: 0.01,
+                    syncWindowLength: 5000,
+                    windowLengthEnabled: true
+                },
+            };
+
+            function updateDefaultValues() {
+                const selectedGame = gameTypeSelect.value;
+                if (defaultParams[selectedGame]) {
+                    syncToleranceInput.value = defaultParams[selectedGame].syncTolerance;
+                    syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
+                    syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
+                    syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
+                    syncWindowLength.value = defaultParams[selectedGame].syncWindowLength;
+                    syncWindowLength.disabled = !defaultParams[selectedGame].windowLengthEnabled;
+                }
+            }
+
+            gameTypeSelect.addEventListener('change', updateDefaultValues);
+            updateDefaultValues()
+        }
+
         // Poll for the lobby state every 5 seconds
         setInterval(fetchLobbyState, 1000);
 
@@ -437,47 +499,9 @@
 
     // update default params for each game type when creating session
     document.addEventListener('DOMContentLoaded', updateCreateSessionParams);
-    function updateCreateSessionParams () {
-        const gameTypeSelect = document.getElementById('gameType');
-        const syncToleranceInput = document.getElementById('syncTolerance');
-        const syncToleranceDescription = document.getElementById('syncToleranceDescription');
-        const syncWindowLength = document.getElementById('window');
 
-        // Define default values for each game type
-        const defaultParams = {
-            'Water Ripples': {
-                syncTolerance: 50,
-                syncToleranceUnit: 'ms',
-                syncToleranceStep: 1,
-                syncToleranceMin: 1,
-                syncWindowLength: -1,
-                windowLengthEnabled: false
-            },
-            'Wine Glasses': {
-                syncTolerance: 0.10,
-                syncToleranceUnit: 'hz',
-                syncToleranceStep: 0.01,
-                syncToleranceMin: 0.01,
-                syncWindowLength: 5000,
-                windowLengthEnabled: true
-            },
-        };
 
-        function updateDefaultValues() {
-            const selectedGame = gameTypeSelect.value;
-            if (defaultParams[selectedGame]) {
-                syncToleranceInput.value = defaultParams[selectedGame].syncTolerance;
-                syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
-                syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
-                syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
-                syncWindowLength.value = defaultParams[selectedGame].syncWindowLength;
-                syncWindowLength.disabled = !defaultParams[selectedGame].windowLengthEnabled;
-            }
-        }
 
-        gameTypeSelect.addEventListener('change', updateDefaultValues);
-        setTimeout(updateDefaultValues, 0);
-    }
 
     </script>
 </body>
