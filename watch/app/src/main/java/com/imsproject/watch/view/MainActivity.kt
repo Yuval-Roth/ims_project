@@ -3,6 +3,7 @@ package com.imsproject.watch.view
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -84,7 +85,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
     private lateinit var flourMill: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var wifiLock: WifiManager.WifiLock
     private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,14 +96,22 @@ class MainActivity : ComponentActivity() {
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         registerActivities()
         setupSensorsPermission()
+        setupWifi()
         setContent {
             Main()
         }
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         viewModel.onDestroy()
+        wifiLock.release()
+        super.onDestroy()
+    }
+
+    private fun setupWifi() {
+        val wifiManager = getSystemService(WIFI_SERVICE) as WifiManager
+        wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_LOW_LATENCY, "imsproject")
+        wifiLock.acquire()
     }
 
     private fun registerActivities(){
