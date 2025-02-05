@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
@@ -62,8 +63,8 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         viewModel.onDestroy()
+        super.onDestroy()
     }
 
     @Composable
@@ -149,7 +150,7 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
                         ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
                             0f
                         } else {
-                            (ripple.currentAlpha - ripple.alphaStep).coerceAtLeast(0f)
+                            (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
                         }
                     }
                     delay(16)

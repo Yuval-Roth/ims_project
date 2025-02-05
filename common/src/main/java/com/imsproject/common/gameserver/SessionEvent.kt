@@ -195,8 +195,9 @@ data class SessionEvent internal constructor (
 
         fun timedOut(
             actor: String,
-            timestamp: Long
-        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMED_OUT, timestamp, actor)
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.NETWORK_DATA, SubType.TIMED_OUT, timestamp, actor, data)
 
         fun averageLatency(
             actor: String,

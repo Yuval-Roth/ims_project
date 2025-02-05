@@ -1,12 +1,19 @@
 package com.imsproject.watch.utils
 
+import android.os.SystemClock
+import androidx.compose.ui.util.fastCoerceAtLeast
+import androidx.compose.ui.util.fastRoundToInt
 import com.imsproject.common.networking.UdpClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.lang.Math.pow
 import java.net.SocketTimeoutException
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class LatencyTracker(
     private val scope: CoroutineScope,
@@ -39,7 +46,7 @@ class LatencyTracker(
     private val dataLock = Mutex(false)
 
     var onReceive: (Double) -> Unit = {}
-    var onTimeout: () -> Unit = {}
+    var onTimeout: (Double) -> Unit = {}
 
     fun start() {
         if (job != null) return
@@ -47,19 +54,23 @@ class LatencyTracker(
         job = scope.launch(Dispatchers.IO) {
             while (isActive) {
                 try {
-                    val sentTime = System.nanoTime()
+                    val sentTime = SystemClock.elapsedRealtimeNanos()
                     udpClient.send(pingMessage)
 
                     try {
                         udpClient.receive()
                     } catch (_: SocketTimeoutException) {
+                        val latency = (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000.0
+                        onTimeout(latency)
                         dataLock.withLock {
                             timeoutsCount++
+                            lastLatency?.let { jitterSum += abs(latency - it) }
+                            lastLatency = latency
+                            latencies.add(latency)
                         }
                         continue
                     }
-
-                    val latency = (System.nanoTime() - sentTime) / 1_000_000.0
+                    val latency = (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000.0
                     onReceive(latency)
 
                     // Update statistics
@@ -70,7 +81,7 @@ class LatencyTracker(
                     }
 
                     // try to get 20 samples per second
-                    delay(48 - (System.nanoTime() - sentTime) / 1_000_000)
+                    delay(45 - (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000)
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -136,36 +147,16 @@ class LatencyTracker(
     /**
      * Adjusts the UDP client's timeout dynamically based on the current latency data.
      */
-    private fun adjustTimeoutThreshold(latencies: List<Double>, averageLatency: Double) {
-        if (latencies.isEmpty()) return
-
-        val adjustedMax = computePercentile(latencies, 95)
-        val desiredTimeout = (averageLatency * 2)
-            .coerceAtLeast(adjustedMax)
-            .coerceAtLeast(MIN_TIMEOUT_MS.toDouble())
-
-        val smoothedTimeoutThreshold = (currentTimeoutThreshold * SMOOTHING_FACTOR + desiredTimeout * (1 - SMOOTHING_FACTOR)).toInt()
-
+    private fun adjustTimeoutThreshold(sortedLatencies: List<Double>, averageLatency: Double) {
+        if (sortedLatencies.isEmpty()) return
+        val standardDeviation = computeStandardDeviation(sortedLatencies, averageLatency)
+        val desiredTimeout = ceil(averageLatency + standardDeviation * 4).toInt()
+        val coercedTimeout = desiredTimeout.fastCoerceAtLeast(MIN_TIMEOUT_MS)
+        val smoothedTimeoutThreshold = (currentTimeoutThreshold * SMOOTHING_FACTOR + coercedTimeout * (1 - SMOOTHING_FACTOR)).toInt()
         udpClient.setTimeout(smoothedTimeoutThreshold)
         currentTimeoutThreshold = smoothedTimeoutThreshold
     }
 
-    /**
-     * Computes the Nth percentile from a list of latencies.
-     * @param sortedLatencies The list of latency measurements.
-     * @param percentile The desired percentile (0-100).
-     * @return The latency at the specified percentile or -1 if the list is empty.
-     */
-    private fun computePercentile(sortedLatencies: List<Double>, percentile: Int): Double {
-        if (sortedLatencies.isEmpty()) return -1.0
-
-        val index = (percentile / 100.0 * (sortedLatencies.size - 1)).toInt()
-        return sortedLatencies[index]
-    }
-
-    /**
-     * Calculates the median of the latencies from the sorted list.
-     */
     private fun computeMedian(sortedLatencies: List<Double>): Double {
         val size = sortedLatencies.size
         return if (size == 0) {
@@ -177,5 +168,10 @@ class LatencyTracker(
             // Middle value for odd number of latencies
             sortedLatencies[size / 2]
         }
+    }
+
+    private fun computeStandardDeviation(latencies: List<Double>, mean: Double): Double {
+        val variance = latencies.sumOf { (it - mean).pow(2) } / latencies.size
+        return sqrt(variance)
     }
 }

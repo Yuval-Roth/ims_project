@@ -175,4 +175,16 @@ fun calculateTriangleThirdPoint(
 
 fun Float.sign() = if(this < 0) -1 else if (this > 0) 1 else 0
 
+@Suppress("NOTHING_TO_INLINE")
+inline fun Int.fastCoerceAtLeast(min: Int) = if (this < min) min else this
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun Int.fastCoerceAtMost(max: Int) = if (this > max) max else this
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun Int.fastCoerceIn(min: Int, max: Int) = when {
+    this < min -> min
+    this > max -> max
+    else -> this
+}
 

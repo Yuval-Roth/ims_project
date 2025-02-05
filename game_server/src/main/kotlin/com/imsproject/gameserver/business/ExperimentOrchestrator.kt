@@ -17,6 +17,13 @@ class ExperimentOrchestrator(
     private val daoController: DAOController
 ) {
 
+    init{
+        games.onMalformedGameTermination = {lobbyId ->
+            log.debug("onMalformedGameTermination() with lobbyId: {}",lobbyId)
+            stopExperiment(lobbyId,false)
+        }
+    }
+
     private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
     private val scope = CoroutineScope(dispatcher)
     private val ongoingExperiments = mutableMapOf<String, Job>() // lobbyId to experiment
@@ -95,7 +102,7 @@ class ExperimentOrchestrator(
         log.debug("startExperiment() successful")
     }
 
-    fun stopExperiment(lobbyId: String) {
+    fun stopExperiment(lobbyId: String, endGame: Boolean = true) {
         log.debug("stopExperiment() with lobbyId: {}",lobbyId)
 
         val lobby = lobbies[lobbyId] ?: run{
@@ -114,7 +121,9 @@ class ExperimentOrchestrator(
         }
         ongoingExperiments.remove(lobbyId)
         lobby.experimentRunning = false
-        games.endGame(lobbyId)
+        if(endGame){
+            games.endGame(lobbyId)
+        }
         if(lobby.hasSessions){
             val currentSession = sessions.getSessions(lobbyId).first()
             if(currentSession.state == SessionState.IN_PROGRESS){

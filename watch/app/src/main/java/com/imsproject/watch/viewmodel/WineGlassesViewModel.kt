@@ -6,6 +6,9 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.util.fastCoerceAtLeast
+import androidx.compose.ui.util.fastCoerceAtMost
+import androidx.compose.ui.util.fastCoerceIn
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -227,7 +230,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         // based on the calculations of the previous iteration
         val angleSkew = myArc.angleSkew
         myArc.startAngle = addToAngle(angle,
-                myArc.direction.coerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET) * angleSkew
+                myArc.direction.fastCoerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET) * angleSkew
                 - MY_SWEEP_ANGLE / 2
         )
 
@@ -241,9 +244,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             val previousAngleDiff = myArc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
             myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
-                (angleSkew + angleDiff * 0.75f).coerceAtMost(MAX_ANGLE_SKEW)
+                (angleSkew + angleDiff * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
             } else if (angleDiffDiff < 1){
-                (angleSkew - angleDiff * 0.375f).coerceAtLeast(MIN_ANGLE_SKEW)
+                (angleSkew - angleDiff * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
             } else {
                 angleSkew
             }
@@ -255,9 +258,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         if (previousAngle != UNDEFINED_ANGLE){
             val direction = myArc.direction
             myArc.direction = if(isClockwise(previousAngle, angle)){
-                (direction + angleDiff * 0.2f).coerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
+                (direction + angleDiff * 0.2f).fastCoerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
             } else if (! isClockwise(previousAngle, angle)){
-                (direction - angleDiff * 0.2f).coerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
+                (direction - angleDiff * 0.2f).fastCoerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
             } else {
                 direction
             }

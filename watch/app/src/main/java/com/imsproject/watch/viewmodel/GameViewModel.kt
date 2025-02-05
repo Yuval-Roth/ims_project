@@ -133,7 +133,7 @@ abstract class GameViewModel(
                 addEvent(SessionEvent.latency(playerId,getCurrentGameTime(),it.toString()))
             }
             latencyTracker.onTimeout = {
-                addEvent(SessionEvent.timedOut(playerId,getCurrentGameTime()))
+                addEvent(SessionEvent.timedOut(playerId,getCurrentGameTime(),it.toString()))
             }
 
             // start collecting latency statistics

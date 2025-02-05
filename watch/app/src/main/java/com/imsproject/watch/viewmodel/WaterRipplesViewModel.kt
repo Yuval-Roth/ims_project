@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -155,7 +156,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                                             .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
             rippleToCheck.color = VIVID_ORANGE_COLOR
             if (rippleToCheck.actor != playerId) {
-                rippleToCheck.currentAlpha = (rippleToCheck.currentAlpha * 2).coerceAtMost(1.0f)
+                rippleToCheck.currentAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
                 rippleToCheck.updateAlphaStep()
             }
             viewModelScope.launch(Dispatchers.Default) {

@@ -9,7 +9,7 @@ class FrequencyTracker {
     private val samplesHistoryCount : Int = (SAMPLES_PER_SECOND * FREQUENCY_HISTORY_MILLISECONDS).toInt()
 
     val frequency : Float
-        get() = sum / sampleCount.coerceIn(1,samplesHistoryCount)
+        get() = sum / sampleCount.fastCoerceIn(1,samplesHistoryCount)
 
     private val samples = Array(samplesHistoryCount) {0f}
     private var sum : Float = 0f

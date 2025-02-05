@@ -28,6 +28,8 @@ class GameController(
     private val games = ConcurrentHashMap<String, Game>()
     private val clientIdToGame = ConcurrentHashMap<String, Game>()
 
+    lateinit var onMalformedGameTermination: ((String) -> Unit)
+
     /**
      * @throws IllegalArgumentException if anything is wrong with the message
      */
@@ -36,6 +38,8 @@ class GameController(
         // ========= parameter validation ========= |
         val game = clientIdToGame[clientHandler.id] ?: run{
             log.debug("handleGameAction: Game not found for client: {} action: {}",clientHandler.id,action)
+            log.debug("handleGameAction: Sending end game message to client")
+            clientHandler.sendTcp(GameRequest.builder(Type.END_GAME).success(true).build().toJson())
             throw IllegalArgumentException("Client not in game")
         }
         // ======================================== |
@@ -49,6 +53,7 @@ class GameController(
         if(game != null){
             log.debug("onClientDisconnect: Player was in game, ending game")
             endGame(game.lobbyId, "Player ${clientHandler.id} disconnected")
+            onMalformedGameTermination(game.lobbyId)
         } else  {
             log.debug("onClientDisconnect: Player not in game")
         }

@@ -33,6 +33,8 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceAtLeast
+import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.core.content.IntentSanitizer
 import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.CircularProgressIndicator
@@ -102,9 +104,9 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         viewModel.onDestroy()
         sound.releaseAll()
+        super.onDestroy()
     }
 
     @Composable
@@ -178,17 +180,17 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                     bezelWarningAlpha = 0.0f
                     while(touchingBezel){
                         while(bezelWarningAlpha < 0.5f){
-                            bezelWarningAlpha = (bezelWarningAlpha + 0.01f).coerceAtMost(0.5f)
+                            bezelWarningAlpha = (bezelWarningAlpha + 0.01f).fastCoerceAtMost(0.5f)
                             delay(16)
                         }
                         while(bezelWarningAlpha > 0.0f){
-                            bezelWarningAlpha = (bezelWarningAlpha - 0.01f).coerceAtLeast(0.0f)
+                            bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
                             delay(16)
                         }
                     }
                 } else {
                     while(bezelWarningAlpha > 0.0f){
-                        bezelWarningAlpha = (bezelWarningAlpha - 0.01f).coerceAtLeast(0.0f)
+                        bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
                 }
@@ -247,7 +249,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                     while(viewModel.released.value && myArc.currentAlpha > 0.0f){
                         myArc.currentAlpha =
                             (myArc.currentAlpha - alphaAnimStep)
-                                .coerceAtLeast(0.0f)
+                                .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
                     myArc.previousAngle = UNDEFINED_ANGLE
@@ -268,7 +270,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                     while(viewModel.opponentReleased.value && opponentArc.currentAlpha > 0.0f){
                         opponentArc.currentAlpha =
                             (opponentArc.currentAlpha - alphaAnimStep)
-                                .coerceAtLeast(0.0f)
+                                .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
                     opponentArc.startAngle = UNDEFINED_ANGLE
