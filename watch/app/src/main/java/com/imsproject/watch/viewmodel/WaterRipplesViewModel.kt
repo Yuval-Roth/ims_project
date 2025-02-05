@@ -6,8 +6,6 @@ import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastCoerceAtMost
@@ -24,16 +22,14 @@ import com.imsproject.watch.VIVID_ORANGE_COLOR
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
+import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.delay
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
-import com.imsproject.watch.view.contracts.Result
 
 
 class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {

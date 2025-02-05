@@ -10,10 +10,8 @@ import androidx.annotation.IntRange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.Executors
 
 class WavPlayer(private val context: Context, private val scope: CoroutineScope) {
 

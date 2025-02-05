@@ -20,11 +20,11 @@ import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RESET_COOLDOWN_WAIT_TIME
 import com.imsproject.watch.STRETCH_PEAK
 import com.imsproject.watch.utils.addToAngle
-import kotlin.math.absoluteValue
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.math.absoluteValue
 
 class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 

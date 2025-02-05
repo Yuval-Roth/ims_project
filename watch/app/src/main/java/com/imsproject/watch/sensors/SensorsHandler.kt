@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.R
 import com.imsproject.watch.viewmodel.GameViewModel

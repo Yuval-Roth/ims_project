@@ -6,7 +6,6 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import javax.net.ssl.*
 
 class RestApiClient {
     private var uri: String? = null

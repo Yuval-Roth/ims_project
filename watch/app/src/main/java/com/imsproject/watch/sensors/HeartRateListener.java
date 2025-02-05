@@ -2,16 +2,14 @@
 
 package com.imsproject.watch.sensors;
 
-import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.imsproject.watch.R;
 import com.samsung.android.service.health.tracking.HealthTracker;
-import com.samsung.android.service.health.tracking.HealthTrackingService;
 import com.samsung.android.service.health.tracking.data.DataPoint;
 import com.samsung.android.service.health.tracking.data.ValueKey;
-import com.imsproject.watch.R;
 
 import java.util.List;
 

@@ -1,13 +1,9 @@
 package com.imsproject.watch.viewmodel
 
-import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Vibrator
 import android.util.Log
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
@@ -16,7 +12,6 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.R
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SERVER_IP
 import com.imsproject.watch.model.SERVER_UDP_PORT
@@ -28,12 +23,12 @@ import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import org.java_websocket.exceptions.WebsocketNotConnectedException
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 
 abstract class GameViewModel(

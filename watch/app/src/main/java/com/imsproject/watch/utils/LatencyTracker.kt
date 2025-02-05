@@ -1,14 +1,11 @@
 package com.imsproject.watch.utils
 
 import android.os.SystemClock
-import androidx.compose.ui.util.fastCoerceAtLeast
-import androidx.compose.ui.util.fastRoundToInt
 import com.imsproject.common.networking.UdpClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.lang.Math.pow
 import java.net.SocketTimeoutException
 import kotlin.math.abs
 import kotlin.math.ceil

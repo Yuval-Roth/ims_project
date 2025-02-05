@@ -9,12 +9,12 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.imsproject.watch.R;
 import com.samsung.android.service.health.tracking.ConnectionListener;
 import com.samsung.android.service.health.tracking.HealthTracker;
 import com.samsung.android.service.health.tracking.HealthTrackerException;
 import com.samsung.android.service.health.tracking.HealthTrackingService;
 import com.samsung.android.service.health.tracking.data.HealthTrackerType;
-import com.imsproject.watch.R;
 
 import java.util.List;
 

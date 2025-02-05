@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastCoerceIn
@@ -14,9 +14,6 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.UNDEFINED_ANGLE
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
 import com.imsproject.watch.INNER_TOUCH_POINT
@@ -25,19 +22,20 @@ import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
+import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.watch.utils.addToAngle
-import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.calculateAngleDiff
+import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.isBetweenInclusive
 import com.imsproject.watch.utils.isClockwise
 import com.imsproject.watch.view.contracts.Result
-import com.imsproject.watch.viewmodel.WaterRipplesViewModel.Companion
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 

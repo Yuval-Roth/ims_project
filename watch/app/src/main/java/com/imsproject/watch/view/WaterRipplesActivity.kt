@@ -31,14 +31,13 @@ import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
+import com.imsproject.watch.R
 import com.imsproject.watch.RIPPLE_MAX_SIZE
-import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
-import com.imsproject.watch.R
-import com.imsproject.watch.SCREEN_RADIUS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

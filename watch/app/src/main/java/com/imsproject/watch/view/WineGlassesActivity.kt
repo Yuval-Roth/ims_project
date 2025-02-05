@@ -2,24 +2,15 @@ package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.collection.MutableIntList
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,10 +26,7 @@ import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
-import androidx.core.content.IntentSanitizer
 import androidx.lifecycle.viewModelScope
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.CYAN_COLOR
@@ -54,22 +42,17 @@ import com.imsproject.watch.OPPONENT_ARC_SIZE
 import com.imsproject.watch.OPPONENT_ARC_TOP_LEFT
 import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
-import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
-import com.imsproject.watch.SCREEN_WIDTH
+import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.initProperties
-import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-import com.imsproject.watch.R
-import com.imsproject.watch.SCREEN_RADIUS
-import com.imsproject.watch.SILVER_COLOR
 
 private const val LOW_BUILD_IN_TRACK = 0
 private const val LOW_LOOP_TRACK = 1
