@@ -270,7 +270,7 @@
                         // Handle empty session list gracefully
                         sessionTableBody.innerHTML = '<tr><td colspan="4">No sessions available.</td></tr>';
                     } else {
-                        alert('Failed to fetch sessions.');
+                        console.error('Failed to fetch sessions.');
                     }
                 })
                 .catch(error => console.error('Error fetching sessions:', error));

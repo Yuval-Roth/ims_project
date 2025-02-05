@@ -21,9 +21,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("${rootDir}/../watch_keystore.jks")
-            storePassword = "qwerty"
+            storePassword = "qwerty12345"
             keyAlias = "key0"
-            keyPassword = "qwerty"
+            keyPassword = "qwerty12345"
         }
     }
 
