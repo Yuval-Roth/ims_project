@@ -40,7 +40,6 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         val timestamp: Long,
         val actor: String
     ) {
-        //TODO: ADJUST THE STARTING SIZE EVERYWHERE
         var size by mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
         var currentAlpha by mutableFloatStateOf(startingAlpha)
         val sizeStep = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) / (WATER_RIPPLES_ANIMATION_DURATION / 16f)

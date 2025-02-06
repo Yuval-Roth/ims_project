@@ -19,7 +19,9 @@ import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RESET_COOLDOWN_WAIT_TIME
 import com.imsproject.watch.STRETCH_PEAK
+import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.utils.addToAngle
+import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -180,6 +182,14 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
         myAxleSide = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { AxleSide.fromString(it) }!!
         axle = Axle(AXLE_STARTING_ANGLE, myAxleSide)
+
+        val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
+        if (syncTolerance <= 0L) {
+            exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
+            return
+        }
+        FLOUR_MILL_SYNC_TIME_THRESHOLD = syncTolerance
+        Log.d(TAG, "syncTolerance: $syncTolerance")
     }
 
     // ================================================================================ |

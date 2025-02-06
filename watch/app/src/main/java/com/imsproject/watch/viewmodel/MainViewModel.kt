@@ -341,7 +341,7 @@ class MainViewModel() : ViewModel() {
         model.onUdpMessage(null)
     }
 
-    private fun fatalError(message: String) {
+    fun fatalError(message: String) {
         val oldModel = model
         _playerId.value = ""
         _lobbyId.value = ""

@@ -1,10 +1,14 @@
 package com.imsproject.watch.view
 
 import android.Manifest
+import android.app.PendingIntent.getActivity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.os.Looper
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -44,6 +48,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
@@ -67,7 +72,9 @@ import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlin.collections.mutableMapOf
+import kotlin.system.exitProcess
 
 
 class MainActivity : ComponentActivity() {
@@ -88,9 +95,18 @@ class MainActivity : ComponentActivity() {
         registerActivities()
         setupSensorsPermission()
         setupWifi()
+        setupUncaughtExceptionHandler()
         setContent {
             Main()
         }
+    }
+
+    private fun setupUncaughtExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler(object: Thread.UncaughtExceptionHandler {
+            override fun uncaughtException(t: Thread, e: Throwable) {
+                viewModel.fatalError("Uncaught Exception:\n${e.toString()}")
+            }
+        })
     }
 
     override fun onDestroy() {

@@ -81,6 +81,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             viewModel.exitWithError(msg, Result.Code.BAD_RESOURCE)
         }
 
+        setupUncaughtExceptionHandler(viewModel)
         setContent {
             Main()
         }

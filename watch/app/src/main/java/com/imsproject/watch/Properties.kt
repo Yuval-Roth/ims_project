@@ -77,7 +77,7 @@ var OPPONENT_ARC_SIZE = Size(0f,0f)
 // ================= Flour Mill ===================== |
 
 const val AXLE_STARTING_ANGLE = -90f
-const val FLOUR_MILL_SYNC_TIME_THRESHOLD = 100L
+var FLOUR_MILL_SYNC_TIME_THRESHOLD = 100L
 const val RESET_COOLDOWN_WAIT_TIME = 16
 const val STRETCH_PEAK = 12.0f
 // ============================================ |

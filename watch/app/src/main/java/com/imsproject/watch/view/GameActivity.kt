@@ -1,6 +1,9 @@
 package com.imsproject.watch.view
 
+import android.content.Context
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -41,10 +44,19 @@ import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
+import kotlin.system.exitProcess
 
 abstract class GameActivity(gameType: GameType) : ComponentActivity() {
 
     private val TAG = "$_TAG-${gameType.prettyName()}"
+
+    protected fun setupUncaughtExceptionHandler(viewModel: GameViewModel) {
+        Thread.setDefaultUncaughtExceptionHandler(object: Thread.UncaughtExceptionHandler {
+            override fun uncaughtException(t: Thread, e: Throwable) {
+                viewModel.exitWithError("Uncaught Exception:\n${e.toString()}", Result.Code.UNKNOWN_ERROR)
+            }
+        })
+    }
 
     @Composable
     protected fun Main(viewModel: GameViewModel){
