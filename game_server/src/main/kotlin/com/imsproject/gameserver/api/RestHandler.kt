@@ -43,6 +43,7 @@ class RestHandler(
         try{
             request = fromJson(body)
         } catch(e: Exception){
+            log.error("Error parsing request", e)
             return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
         }
 

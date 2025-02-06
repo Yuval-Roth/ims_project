@@ -142,7 +142,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
         if(inSync && side == myAxleSide){
             viewModelScope.launch(Dispatchers.Default) {
-                addEvent(SessionEvent.syncedAtTime(playerId,super.getCurrentGameTime()))
+                addEvent(SessionEvent.syncedAtTime(playerId,getCurrentGameTime()))
             }
         }
         return inSync

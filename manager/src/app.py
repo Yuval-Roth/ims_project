@@ -251,9 +251,9 @@ def add_session():
     lobby_id = data.get('lobby_id')
     game_type_name = data.get('gameType')  # Get the enum name
     duration = data.get('duration')
-    print(data)
     sync_tolerance = data.get('syncTolerance')
     sync_window_length = data.get('syncWindowLength')
+    print(data)
 
     if not (lobby_id and game_type_name and duration and sync_tolerance and sync_window_length):
         Logger.log_error(f"Invalid data: {data}")

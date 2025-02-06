@@ -1,5 +1,6 @@
 package com.imsproject.gameserver.business
 
+import com.imsproject.gameserver.business.lobbies.LobbyState
 import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.dataAccess.SectionEnum
 import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
@@ -20,7 +21,7 @@ class ExperimentOrchestrator(
     init{
         games.onMalformedGameTermination = {lobbyId ->
             log.debug("onMalformedGameTermination() with lobbyId: {}",lobbyId)
-            stopExperiment(lobbyId,false)
+            stopExperiment(lobbyId)
         }
     }
 
@@ -102,7 +103,7 @@ class ExperimentOrchestrator(
         log.debug("startExperiment() successful")
     }
 
-    fun stopExperiment(lobbyId: String, endGame: Boolean = true) {
+    fun stopExperiment(lobbyId: String) {
         log.debug("stopExperiment() with lobbyId: {}",lobbyId)
 
         val lobby = lobbies[lobbyId] ?: run{
@@ -121,7 +122,7 @@ class ExperimentOrchestrator(
         }
         ongoingExperiments.remove(lobbyId)
         lobby.experimentRunning = false
-        if(endGame){
+        if(lobby.state == LobbyState.PLAYING){
             games.endGame(lobbyId)
         }
         if(lobby.hasSessions){

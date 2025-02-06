@@ -139,6 +139,8 @@
         const cancelModalBtn = document.getElementById('cancel-modal-btn');
         const addSessionForm = document.getElementById('add-session-form');
 
+        let sessionsDragged = false;
+
         // Show modal
         addSessionBtn.addEventListener('click', showModal);
 
@@ -153,6 +155,14 @@
 
         // Handle delete session
         sessionTableBody.addEventListener('click', handleDeleteSession);
+
+        sessionTableBody.addEventListener("dragstart", (event) => {
+            sessionsDragged = true;
+        });
+
+        sessionTableBody.addEventListener("dragend", (event) => {
+            sessionsDragged = false;
+        });
 
         // Make session rows sortable
         new Sortable(sessionTableBody, {
@@ -191,6 +201,7 @@
             let syncWindowLength
             switch(gameType) {
                 case 'Water Ripples':
+                case 'Flour Mill':
                     syncTolerance = parseInt(formData.get('syncTolerance'), 10);
                     syncWindowLength = -1;
                     break;
@@ -228,8 +239,15 @@
                 });
         }
 
+
+
         // Fetch sessions from backend
         function fetchSessions() {
+
+            if(sessionsDragged === true){
+                return;
+            }
+
             fetch('/get_sessions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -448,7 +466,7 @@
             });
         });
 
-        function updateCreateSessionParams () {
+        function updateCreateSessionParams() {
             const gameTypeSelect = document.getElementById('gameType');
             const syncToleranceInput = document.getElementById('syncTolerance');
             const syncToleranceDescription = document.getElementById('syncToleranceDescription');
@@ -457,6 +475,14 @@
             // Define default values for each game type
             const defaultParams = {
                 'Water Ripples': {
+                    syncTolerance: 50,
+                    syncToleranceUnit: 'ms',
+                    syncToleranceStep: 1,
+                    syncToleranceMin: 1,
+                    syncWindowLength: -1,
+                    windowLengthEnabled: false
+                },
+                'Flour Mill': {
                     syncTolerance: 50,
                     syncToleranceUnit: 'ms',
                     syncToleranceStep: 1,
@@ -495,14 +521,8 @@
 
         // Initial state fetch on page load
         fetchLobbyState();
+        updateCreateSessionParams();
     });
-
-    // update default params for each game type when creating session
-    document.addEventListener('DOMContentLoaded', updateCreateSessionParams);
-
-
-
-
     </script>
 </body>
 </html>
