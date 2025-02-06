@@ -305,8 +305,7 @@ class MainViewModel() : ViewModel() {
 
     private fun handleGameAction(action: GameAction){
         when(action.type){
-            GameAction.Type.PONG -> {}
-            GameAction.Type.HEARTBEAT -> {}
+            GameAction.Type.USER_INPUT -> {}
             else -> {
                 Log.e(TAG, "handleGameAction: Unexpected action type: ${action.type}")
                 val errorMsg = "Unexpected request type received\n" +

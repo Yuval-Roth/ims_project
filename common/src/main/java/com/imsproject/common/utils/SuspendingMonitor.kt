@@ -33,11 +33,9 @@ class SuspendingMonitor {
             with(CoroutineScope(coroutineContext)){
                 job = launch {
                     try {
-                        withTimeout(time) {
-                            delay(time)
+                        withTimeoutOrNull<Nothing>(time) {
+                            awaitCancellation()
                         }
-                    } catch (e: TimeoutCancellationException){
-                        // do nothing
                     } catch (e: CancellationException){
                         // do nothing
                     }

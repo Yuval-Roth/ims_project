@@ -22,6 +22,7 @@ import com.imsproject.watch.sensors.SensorsHandler
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
+import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -179,9 +180,12 @@ abstract class GameViewModel(
         return System.currentTimeMillis() - myStartTime
     }
 
-    fun showError(msg: String) {
-        Log.d(TAG, "showError: $msg")
-        _error.value = msg
+    fun showError(string: String) {
+        _error.value = if(_error.value != null){
+            string + "\n- - - - - - -\n" + _error.value
+        } else {
+            string
+        }
         setState(State.ERROR)
     }
 
@@ -199,8 +203,6 @@ abstract class GameViewModel(
 
     protected open suspend fun handleGameAction(action: GameAction) {
         when (action.type) {
-            GameAction.Type.PONG -> {}
-            GameAction.Type.HEARTBEAT -> {}
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected action type: ${action.type}")
                 val errorMsg = "Unexpected request type received\n" +
@@ -213,7 +215,6 @@ abstract class GameViewModel(
 
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
-            GameRequest.Type.HEARTBEAT -> {}
             GameRequest.Type.EXIT -> {
                 val errorMessage = request.message ?: ""
                 exitWithError(errorMessage,Result.Code.SERVER_CLOSED_CONNECTION)
@@ -257,12 +258,10 @@ abstract class GameViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val timeout = System.currentTimeMillis() + 10000
             var reconnected = false
-            model.closeAllResources()
             while(!reconnected && System.currentTimeMillis() < timeout){
-                if(model.connectToServer()){
-                    if(model.reconnect()){
-                        reconnected = true
-                    }
+                model.closeAllResources()
+                if(model.connectToServer(2) && model.reconnect()){
+                    reconnected = true
                 }
                 Log.d(TAG, "reconnect: reconnected = $reconnected")
             }
