@@ -51,11 +51,13 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
     private val TAG = "$_TAG-${gameType.prettyName()}"
 
     protected fun setupUncaughtExceptionHandler(viewModel: GameViewModel) {
-        Thread.setDefaultUncaughtExceptionHandler(object: Thread.UncaughtExceptionHandler {
-            override fun uncaughtException(t: Thread, e: Throwable) {
-                viewModel.exitWithError("Uncaught Exception:\n${e.toString()}", Result.Code.UNKNOWN_ERROR)
-            }
-        })
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            viewModel.exitWithError("""
+                Uncaught Exception in thread ${t.name}:
+                ${e.stackTraceToString()}
+                """.trimIndent(), Result.Code.UNKNOWN_ERROR
+            )
+        }
     }
 
     @Composable
