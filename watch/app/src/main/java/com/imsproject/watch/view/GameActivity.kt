@@ -138,57 +138,6 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
         }
     }
 
-    @Composable
-    private fun ErrorScreen(error: String, onDismiss: () -> Unit) {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(start=COLUMN_PADDING,end=COLUMN_PADDING)
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState(0)),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Spacer(modifier = Modifier.height(COLUMN_PADDING))
-                    BasicText(
-                        text = "ERROR",
-                        style = TextStyle(color = Color.White, fontSize = TEXT_SIZE, textAlign = TextAlign.Center, textDecoration = TextDecoration.Underline, letterSpacing = 1.sp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = (SCREEN_HEIGHT * 0.04f).dp)
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    BasicText(
-                        text = error,
-                        style = textStyle,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterHorizontally)
-                    )
-                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
-                    Button(
-                        onClick = { onDismiss() },
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .fillMaxHeight(0.4f)
-                    ) {
-                        BasicText(
-                            text = "Dismiss",
-                            style = textStyle
-                        )
-                    }
-                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
-                }
-            }
-        }
-    }
-
     companion object {
         private const val _TAG = "GameActivity"
     }
