@@ -117,7 +117,6 @@ class MainModel (private val scope : CoroutineScope) {
                 Log.e(TAG, "connectToServer: WebSocket connection timeout")
                 return false // timeout
             }
-
             startListeners()
             startHeartBeat()
         }
@@ -599,10 +598,11 @@ class MainModel (private val scope : CoroutineScope) {
             private set
     }
 
-    private fun WebSocketClient.reset() {
+    private fun org.java_websocket.client.WebSocketClient.reset() {
         this::class.java.superclass.getDeclaredMethod("reset").apply{
             isAccessible = true
-            invoke(this)
+            invoke(this@reset)
         }
     }
+
 }
