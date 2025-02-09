@@ -182,6 +182,7 @@ class MainViewModel() : ViewModel() {
     }
 
     fun showError(string: String) {
+        Log.e(TAG, string)
         _error.value = if(_error.value != null){
             string + "\n- - - - - - -\n" + _error.value
         } else {

@@ -45,9 +45,9 @@ data class SessionEvent internal constructor (
         @SerializedName("orientation_azimuth")      ORIENTATION_AZIMUTH,
         @SerializedName("orientation_pitch")        ORIENTATION_PITCH,
         @SerializedName("orientation_roll")         ORIENTATION_ROLL,
-        @SerializedName("accelerometer_x")          ACCELEROMETER_X,
-        @SerializedName("accelerometer_y")          ACCELEROMETER_Y,
-        @SerializedName("accelerometer_z")          ACCELEROMETER_Z,
+        @SerializedName("linear_acceleration_x")    LINEAR_ACCELERATION_X,
+        @SerializedName("linear_acceleration_y")    LINEAR_ACCELERATION_Y,
+        @SerializedName("linear_acceleration_z")    LINEAR_ACCELERATION_Z,
 
         // NETWORK_DATA
         @SerializedName("latency")                  LATENCY,
@@ -188,23 +188,23 @@ data class SessionEvent internal constructor (
             data: String
         ) = SessionEvent(Type.SENSOR_DATA, Subtype.ORIENTATION_ROLL , timestamp, actor, data)
 
-        fun accelerometerX(
+        fun linearAccelerationX(
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, Subtype.ACCELEROMETER_X, timestamp, actor, data)
+        ) = SessionEvent(Type.SENSOR_DATA, Subtype.LINEAR_ACCELERATION_X, timestamp, actor, data)
 
-        fun accelerometerY(
+        fun linearAccelerationY(
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, Subtype.ACCELEROMETER_Y, timestamp, actor, data)
+        ) = SessionEvent(Type.SENSOR_DATA, Subtype.LINEAR_ACCELERATION_Y, timestamp, actor, data)
 
-        fun accelerometerZ(
+        fun linearAccelerationZ(
             actor: String,
             timestamp: Long,
             data: String
-        ) = SessionEvent(Type.SENSOR_DATA, Subtype.ACCELEROMETER_Z, timestamp, actor, data)
+        ) = SessionEvent(Type.SENSOR_DATA, Subtype.LINEAR_ACCELERATION_Z, timestamp, actor, data)
 
         // ==================== NETWORK_DATA ==================== |
 
