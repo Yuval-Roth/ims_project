@@ -74,6 +74,12 @@ var OPPONENT_RADIUS_OUTER_EDGE = 0f
 var OPPONENT_ARC_TOP_LEFT = Offset(0f,0f)
 var OPPONENT_ARC_SIZE = Size(0f,0f)
 
+// tracks
+const val LOW_BUILD_IN_TRACK = 0
+const val LOW_LOOP_TRACK = 1
+const val LOW_BUILD_OUT_TRACK = 2
+const val HIGH_LOOP_TRACK = 4
+
 // ================= Flour Mill ===================== |
 
 const val AXLE_STARTING_ANGLE = -90f

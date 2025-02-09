@@ -49,8 +49,8 @@ class LatencyTracker(
         if (job != null) return
 
         job = scope.launch(Dispatchers.IO) {
-            while (isActive) {
-                try {
+            try {
+                while (isActive) {
                     val sentTime = SystemClock.elapsedRealtimeNanos()
                     udpClient.send(pingMessage)
 
@@ -79,11 +79,10 @@ class LatencyTracker(
 
                     // try to get 20 samples per second
                     delay(45 - (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000)
-                } catch (e: Exception) {
-                    e.printStackTrace()
                 }
+            } finally {
+                udpClient.close()
             }
-            udpClient.close()
         }
     }
 

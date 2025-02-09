@@ -26,12 +26,15 @@ import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
-import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
+import com.imsproject.watch.HIGH_LOOP_TRACK
+import com.imsproject.watch.LOW_BUILD_IN_TRACK
+import com.imsproject.watch.LOW_BUILD_OUT_TRACK
+import com.imsproject.watch.LOW_LOOP_TRACK
 import com.imsproject.watch.MARKER_FADE_DURATION
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_ARC_SIZE
@@ -42,27 +45,19 @@ import com.imsproject.watch.OPPONENT_ARC_SIZE
 import com.imsproject.watch.OPPONENT_ARC_TOP_LEFT
 import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
-import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.initProperties
-import com.imsproject.watch.utils.WavPlayer
-import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import kotlinx.coroutines.delay
 
-private const val LOW_BUILD_IN_TRACK = 0
-private const val LOW_LOOP_TRACK = 1
-private const val LOW_BUILD_OUT_TRACK = 2
-private const val HIGH_LOOP_TRACK = 4
-
 class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
     private val viewModel : WineGlassesViewModel by viewModels<WineGlassesViewModel>()
-    private lateinit var sound: WavPlayer
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,27 +65,10 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
         initProperties(metrics.bounds.width(), metrics.bounds.height())
         viewModel.onCreate(intent,applicationContext)
-        try{
-            sound = WavPlayer(applicationContext, viewModel.viewModelScope)
-            sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
-            sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
-            sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
-            sound.load(HIGH_LOOP_TRACK, R.raw.wine_high_loop)
-        } catch (e: IllegalArgumentException){
-            val msg = e.message ?: "Unknown error"
-            viewModel.exitWithError(msg, Result.Code.BAD_RESOURCE)
-        }
-
         setupUncaughtExceptionHandler(viewModel)
         setContent {
             Main()
         }
-    }
-
-    override fun onDestroy() {
-        viewModel.onDestroy()
-        sound.releaseAll()
-        super.onDestroy()
     }
 
     @Composable
@@ -185,6 +163,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             // play sound when the user touches the screen
             LaunchedEffect(released){
                 if(playSound){
+                    val sound = viewModel.sound
                     if(released){
                         val currentlyPlaying = if(sound.isPlaying(LOW_LOOP_TRACK)){
                             LOW_LOOP_TRACK
@@ -204,6 +183,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
             // play high sound when in sync
             LaunchedEffect(released){
+                val sound = viewModel.sound
                 if(!released) {
                     var playing = false
                     var inSync: Boolean

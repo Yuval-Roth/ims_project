@@ -90,14 +90,22 @@ class WavPlayer(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun pause(@IntRange(0,31) trackNumber: Int) {
-        tracks[trackNumber]?.pause() ?: throw IllegalArgumentException("Track not loaded")
+        tracks[trackNumber]?.pause()
     }
 
     fun release(@IntRange(0,31) trackNumber: Int) {
-        tracks[trackNumber]?.release() ?: throw IllegalArgumentException("Track not loaded")
+        tracks[trackNumber]?.release()
         jobs[trackNumber]?.cancel()
         tracks[trackNumber] = null
         wavs[trackNumber] = null
+    }
+
+    fun pauseAll() {
+        for (i in 0 until 32) {
+            if(tracks[i] != null){
+                pause(i)
+            }
+        }
     }
 
     fun releaseAll() {

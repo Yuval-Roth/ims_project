@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Vibrator
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
@@ -17,12 +18,11 @@ import com.imsproject.watch.model.SERVER_IP
 import com.imsproject.watch.model.SERVER_UDP_PORT
 import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
+import com.imsproject.watch.sensors.HeartRateSensorHandler
 import com.imsproject.watch.sensors.LocationSensorsHandler
-import com.imsproject.watch.sensors.SensorsHandler
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.view.contracts.Result
-import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,8 +55,8 @@ abstract class GameViewModel(
         private set
     protected val packetTracker = PacketTracker()
     private lateinit var latencyTracker : LatencyTracker
-    private lateinit var sensorsHandler: SensorsHandler
-    private lateinit var locationSensorHandler: LocationSensorsHandler
+    private lateinit var heartRateSensorHandler: HeartRateSensorHandler
+    private lateinit var locationSensorsHandler: LocationSensorsHandler
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -114,9 +114,8 @@ abstract class GameViewModel(
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
 
-            // TODO: SENSORS
-            sensorsHandler = SensorsHandler(context, this@GameViewModel)
-            locationSensorHandler = LocationSensorsHandler(context, this@GameViewModel)
+            heartRateSensorHandler = HeartRateSensorHandler()
+            locationSensorsHandler = LocationSensorsHandler(context, this@GameViewModel)
 
             // latency tracker setup
             latencyTracker = LatencyTracker(
@@ -152,28 +151,30 @@ abstract class GameViewModel(
             }
 
             // =================== game start =================== |
-            addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
-            Log.d(TAG, "onCreate: session started")
-            // TODO: SENSORS
-            locationSensorHandler.start()
-            sensorsHandler.start()
-            setState(State.PLAYING)
-        }
-    }
 
-    fun onDestroy() {
-        // TODO: SENSORS
-        if(::sensorsHandler.isInitialized) sensorsHandler.stop()
-        if(::locationSensorHandler.isInitialized) locationSensorHandler.stop()
+            locationSensorsHandler.start()
+            heartRateSensorHandler.connect(context){ connected, e ->
+                if(connected){
+                    heartRateSensorHandler.startTracking(this@GameViewModel)
+                } else {
+                    Log.e(TAG, "Could not connect to heart rate monitor", e)
+                    viewModelScope.launch(Dispatchers.Main) {
+                        Toast.makeText(context, "Heart rate unavailable", Toast.LENGTH_LONG).show()
+                    }
+                }
+                addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
+                Log.d(TAG, "onCreate: session started")
+                setState(State.PLAYING)
+            }
+        }
     }
 
     fun exitWithError(errorMessage: String, code: Result.Code) {
         Log.d(TAG, "exitWithError: game ended with code: $code and error: $errorMessage")
-        clearListeners() // clear the listeners to prevent any further messages from being processed.
         addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         _error.value = errorMessage
         _resultCode.value = code
-        setState(State.TERMINATED)
+        onExit()
     }
 
     fun getCurrentGameTime(): Long {
@@ -245,7 +246,13 @@ abstract class GameViewModel(
     protected fun exitOk() {
         Log.d(TAG, "exitOk: game ended successfully")
         addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),"ok"))
+        onExit()
+    }
+
+    protected open fun onExit(){
         clearListeners() // clear the listeners to prevent any further messages from being processed.
+        locationSensorsHandler.stop()
+        heartRateSensorHandler.disconnect()
         setState(State.TERMINATED)
     }
 

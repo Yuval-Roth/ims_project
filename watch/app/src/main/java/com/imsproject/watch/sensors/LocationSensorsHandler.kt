@@ -9,82 +9,61 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.viewmodel.GameViewModel
 
 class LocationSensorsHandler(
-    val context: Context,
-    val gameViewModel: GameViewModel
+    context: Context,
+    gameViewModel: GameViewModel
 ) {
 
-    // Sensor Manager and sensor references
-    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private var gyroscopeSensor: Sensor? = null
-    private var accelerometerSensor: Sensor? = null
-    private var gyroscopeListener: SensorEventListener? = null
-    private var accelerometerListener: SensorEventListener? = null
+    private val sensorManager = context.getSystemService(SensorManager::class.java)
+        ?: throw Exception("Sensor manager not found")
 
-    init {
-        // Initialize the gyroscope and accelerometer sensors
-        gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    private val gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        ?: throw Exception("Gyroscope sensor not found")
 
-        // Create listener for gyroscope
-        gyroscopeListener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent?) {
-                if (event != null && event.sensor.type == Sensor.TYPE_GYROSCOPE) {
-                    val x = event.values[0]
-                    val y = event.values[1]
-                    val z = event.values[2]
-                    gameViewModel.addEvent(
-                        SessionEvent.gyroscope(
-                            gameViewModel.playerId,
-                            gameViewModel.getCurrentGameTime(),
-                            "$x,$y,$z"
-                        )
-                    )
-                }
-            }
+    private val accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        ?: throw Exception("Accelerometer sensor not found")
 
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    private val gyroscopeListener: SensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            val (x,y,z) = event.values
+            gameViewModel.addEvent(
+                SessionEvent.gyroscope(
+                    gameViewModel.playerId,
+                    gameViewModel.getCurrentGameTime(),
+                    "$x,$y,$z"
+                )
+            )
         }
 
-        // Create listener for accelerometer
-        accelerometerListener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent?) {
-                if (event != null && event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                    val x = event.values[0]
-                    val y = event.values[1]
-                    val z = event.values[2]
-                    gameViewModel.addEvent(
-                        SessionEvent.accelerometer(
-                            gameViewModel.playerId,
-                            gameViewModel.getCurrentGameTime(),
-                            "$x,$y,$z"
-                        )
-                    )
-                }
-            }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-        }
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
     }
 
-    // Method to start listening to the sensors
+    private val accelerometerListener: SensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            val (x,y,z) = event.values
+            gameViewModel.addEvent(
+                SessionEvent.accelerometer(
+                    gameViewModel.playerId,
+                    gameViewModel.getCurrentGameTime(),
+                    "$x,$y,$z"
+                )
+            )
+        }
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    }
+
     fun start() {
-        gyroscopeSensor?.let {
-            sensorManager.registerListener(
-                gyroscopeListener,
-                it,
-                SensorManager.SENSOR_DELAY_NORMAL // Use a slower sampling rate
-            )
-        }
-        accelerometerSensor?.let {
-            sensorManager.registerListener(
-                accelerometerListener,
-                it,
-                SensorManager.SENSOR_DELAY_NORMAL // Use a slower sampling rate
-            )
-        }
+        sensorManager.registerListener(
+            gyroscopeListener,
+            gyroscopeSensor,
+            SensorManager.SENSOR_DELAY_NORMAL
+        )
+        sensorManager.registerListener(
+            accelerometerListener,
+            accelerometerSensor,
+            SensorManager.SENSOR_DELAY_NORMAL
+        )
     }
 
-    // Method to stop listening to the sensors
     fun stop() {
         sensorManager.unregisterListener(gyroscopeListener)
         sensorManager.unregisterListener(accelerometerListener)

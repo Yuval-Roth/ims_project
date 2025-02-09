@@ -19,7 +19,6 @@ import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RESET_COOLDOWN_WAIT_TIME
 import com.imsproject.watch.STRETCH_PEAK
-import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.utils.addToAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers

@@ -9,7 +9,6 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.model.AlreadyConnectedException
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.ParticipantNotFoundException
-import com.imsproject.watch.view.MainActivity
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

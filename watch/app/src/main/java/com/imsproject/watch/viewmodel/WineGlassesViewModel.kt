@@ -16,15 +16,21 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
+import com.imsproject.watch.HIGH_LOOP_TRACK
 import com.imsproject.watch.INNER_TOUCH_POINT
+import com.imsproject.watch.LOW_BUILD_IN_TRACK
+import com.imsproject.watch.LOW_BUILD_OUT_TRACK
+import com.imsproject.watch.LOW_LOOP_TRACK
 import com.imsproject.watch.MAX_ANGLE_SKEW
 import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.R
 import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.watch.utils.FrequencyTracker
+import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.addToAngle
 import com.imsproject.watch.utils.calculateAngleDiff
 import com.imsproject.watch.utils.cartesianToPolar
@@ -51,6 +57,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         var previousAngleDiff = 0f
         var currentAlpha by mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
+
+    lateinit var sound: WavPlayer
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -106,6 +114,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             }
             return
         }
+
+        setupWavPlayer(context)
 
         // set up sync params
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
@@ -270,6 +280,25 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         // current angle becomes previous angle for the next iteration
         myArc.previousAngle = angle
         myArc.previousAngleDiff = angleDiff
+    }
+
+    private fun setupWavPlayer(context: Context){
+        try{
+            sound = WavPlayer(context, viewModelScope)
+            sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
+            sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
+            sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
+            sound.load(HIGH_LOOP_TRACK, R.raw.wine_high_loop)
+        } catch (e: IllegalArgumentException){
+            val msg = e.message ?: "Unknown error"
+            exitWithError(msg, Result.Code.BAD_RESOURCE)
+        }
+    }
+
+    override fun onExit(){
+        sound.pauseAll()
+        sound.releaseAll()
+        super.onExit()
     }
 
     companion object {

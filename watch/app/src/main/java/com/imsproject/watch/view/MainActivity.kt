@@ -9,7 +9,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,10 +22,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -37,16 +34,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -64,7 +54,6 @@ import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_WIDTH
-import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.view.contracts.FlourMillResultContract
@@ -74,7 +63,6 @@ import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.launch
-import java.lang.Thread.UncaughtExceptionHandler
 import kotlin.collections.mutableMapOf
 
 
@@ -137,7 +125,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setupSensorsPermission() {
-        // TODO: SENSORS
         if (ActivityCompat.checkSelfPermission(applicationContext, applicationContext.getString(R.string.BodySensors)) == PackageManager.PERMISSION_DENIED){
             requestPermissions(arrayOf(Manifest.permission.BODY_SENSORS), 0)
         }
