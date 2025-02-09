@@ -47,13 +47,10 @@ class HeartRateSensorHandler() {
         tracker.setEventListener(object : HealthTracker.TrackerEventListener {
             override fun onDataReceived(dataPoints: List<DataPoint>) = dataPoints.forEach {
                 val (hr,ibi) = it.toHeartRateData()
-                gameViewModel.addEvent(
-                    SessionEvent.heartRate(
-                        gameViewModel.playerId,
-                        gameViewModel.getCurrentGameTime(),
-                        "${hr};${ibi}"
-                    )
-                )
+                val actor = gameViewModel.playerId
+                val timestamp = gameViewModel.getCurrentGameTime()
+                gameViewModel.addEvent(SessionEvent.heartRate(actor, timestamp, hr.toString()))
+                gameViewModel.addEvent(SessionEvent.interBeatInterval(actor, timestamp, ibi.toString()))
             }
             override fun onFlushCompleted() = Unit
             override fun onError(error: HealthTracker.TrackerError) {
@@ -68,6 +65,6 @@ class HeartRateSensorHandler() {
                 (getValue(ValueKey.HeartRateSet.IBI_LIST).lastOrNull() ?: 0)
 
     companion object {
-        private const val TAG = "HeartRateMonitor"
+        private const val TAG = "HeartRateSensorHandler"
     }
 }

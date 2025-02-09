@@ -291,7 +291,7 @@ class MainModel (private val scope : CoroutineScope) {
             Log.d(TAG, "uploadSessionEvents: Success")
             eventCollector.clearEvents()
         } else {
-            Log.e(TAG, "uploadSessionEvents: Failed to upload events")
+            Log.e(TAG, "uploadSessionEvents: Failed to upload events\n${response.message}")
         }
         return response.success
     }
