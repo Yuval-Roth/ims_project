@@ -140,6 +140,7 @@
         const addSessionForm = document.getElementById('add-session-form');
 
         let sessionsDragged = false;
+        let experimentRunning = false;
 
         // Show modal
         addSessionBtn.addEventListener('click', showModal);
@@ -437,6 +438,7 @@
             .then(data => {
                 if (data.status === 'success') {
                     const lobby = data.lobby;
+                    experimentRunning = lobby.experimentRunning;
                     updateButtonState(lobby.experimentRunning, lobby.readyStatus, lobby.hasSessions);
                     updateParticipantStatuses(lobby.players, lobby.readyStatus);
                 } else {
@@ -445,7 +447,7 @@
                 }
             })
             .catch(error => console.error('Error:', error));
-            fetchSessions();
+            if(experimentRunning === true) fetchSessions()
         }
 
         toggleGameBtn.addEventListener('click', () => {
