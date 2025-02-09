@@ -114,6 +114,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun afterGame(result: Result) {
+        viewModel.setState(State.AFTER_GAME)
         setupUncaughtExceptionHandler()
         viewModel.afterGame(result)
     }
@@ -185,6 +186,8 @@ class MainActivity : ComponentActivity() {
                     else -> viewModel.showError("Unknown game type")
                 }
             }
+
+            State.AFTER_GAME -> BlankScreen()
 
             State.UPLOADING_EVENTS -> LoadingScreen("Uploading events...")
 

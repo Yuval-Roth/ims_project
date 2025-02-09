@@ -31,7 +31,8 @@ class MainViewModel() : ViewModel() {
         IN_GAME,
         UPLOADING_EVENTS,
         ERROR,
-        ALREADY_CONNECTED
+        ALREADY_CONNECTED,
+        AFTER_GAME
     }
 
     private var model = MainModel(viewModelScope)
@@ -151,7 +152,6 @@ class MainViewModel() : ViewModel() {
                     }
                     setState(State.CONNECTED_IN_LOBBY)
                 }
-
                 else -> {
                     // typically, when reaching here, the game ended due to a network error
                     // or some other issue that hasn't been discovered yet.
