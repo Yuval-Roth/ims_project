@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 // set these values to run the app locally
-private const val RUNNING_LOCAL_GAME_SERVER : Boolean = false
+private const val RUNNING_LOCAL : Boolean = false
 private const val RUNNING_ON_EMULATOR : Boolean = false
 private const val COMPUTER_NETWORK_IP = "192.168.0.105"
 
@@ -37,10 +37,11 @@ private const val COMPUTER_NETWORK_IP = "192.168.0.105"
 private const val TIMEOUT_MS = 2000L
 private const val REMOTE_IP = "ims-project.cs.bgu.ac.il"
 private val LOCAL_IP = if(RUNNING_ON_EMULATOR) "10.0.2.2" else COMPUTER_NETWORK_IP
-val SERVER_IP = if (RUNNING_LOCAL_GAME_SERVER) LOCAL_IP else REMOTE_IP
-private val WS_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "ws" else "wss"
-private val REST_SCHEME = if (RUNNING_LOCAL_GAME_SERVER) "http" else "https"
-private val SERVER_HTTP_PORT = if (RUNNING_LOCAL_GAME_SERVER) 8080 else 8640
+val SERVER_IP = if (RUNNING_LOCAL) LOCAL_IP else REMOTE_IP
+val WS_SCHEME = if (RUNNING_LOCAL) "ws" else "wss"
+val REST_SCHEME = if (RUNNING_LOCAL) "http" else "https"
+val SERVER_HTTP_PORT = if (RUNNING_LOCAL) 8080 else 8640
+val SERVER_ERROR_REPORTS_PORT = if (RUNNING_LOCAL) 8085 else 8645
 const val SERVER_UDP_PORT = 8641
 private const val TIME_SERVER_PORT = 8642
 // ================================|

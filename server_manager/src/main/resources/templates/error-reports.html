@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Error Reports</title>
+    <style>
+        /* Reused styles from home.html */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7fb;
+            color: #333;
+        }
+        header {
+            background-color: #0073e6;
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        main {
+            padding: 30px;
+            max-width: 1000px;
+            margin: 30px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #0073e6;
+            padding-bottom: 10px;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 8px;
+            font-size: 1em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+            font-size: 1.1em;
+        }
+        table th {
+            background-color: #0073e6;
+            color: white;
+        }
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        table tr:hover {
+            background-color: #f1f1f1;
+        }
+        a.report-link {
+            color: #0073e6;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        a.report-link:hover {
+            color: #005bb5;
+            text-decoration: underline;
+        }
+        footer {
+            text-align: center;
+            padding: 15px 0;
+            margin-top: 40px;
+            font-size: 1em;
+            color: #666;
+            border-top: 1px solid #ddd;
+        }
+        .empty-state {
+            color: #666;
+            text-align: center;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: red;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .delete-btn:hover {
+            color: darkred;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+        }
+        td:last-child {
+            text-align: center;
+            width: 80px;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+    <script>
+        function updateFilter() {
+            const filterValue = document.getElementById('timeFilter').value;
+            const params = new URLSearchParams(window.location.search);
+            params.set('notolderthan', filterValue);
+            window.location.search = params.toString();
+        }
+
+        window.onload = function () {
+            const params = new URLSearchParams(window.location.search);
+            const selectedValue = params.get('notolderthan');
+
+            if (selectedValue) {
+                document.getElementById('timeFilter').value = selectedValue;
+            }
+        };
+
+        function deleteReport(fileName, button) {
+            if (!confirm(`Are you sure you want to delete "${fileName}"?`)) {
+                return;
+            }
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+            fetch('/error-reports/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                },
+                body: JSON.stringify({ fileName: fileName })
+            })
+            .then(response => {
+                if (response.ok) {
+                    button.closest('tr').remove(); // Remove row from table after successful deletion
+                } else {
+                    alert('Failed to delete the file.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting the file.');
+            });
+        }
+    </script>
+</head>
+<body>
+<header>
+    <h1>Error Reports</h1>
+</header>
+<main>
+    <h2>Available Reports</h2>
+
+    <div class="filter-container">
+        <label for="timeFilter">Filter by:</label>
+        <select id="timeFilter" onchange="updateFilter()">
+            <option value="86400000" selected>Last Day</option>
+            <option value="604800000">Last Week</option>
+            <option value="2629536000">Last Month</option>
+            <option value="-1">No Filter</option>
+        </select>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>File Name</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="fileName : ${reports}">
+            <td>
+                <a class="report-link"
+                   th:href="@{/error-reports/get(filename=${fileName})}"
+                   target="_blank"
+                   th:text="${fileName}">
+                </a>
+            </td>
+            <td>
+                <button class="delete-btn"
+                        th:attr="data-filename=${fileName}"
+                        onclick="deleteReport(this.getAttribute('data-filename'), this)"
+                        title="Delete">
+                    ❌
+                </button>
+            </td>
+        </tr>
+
+        <tr th:if="${reports.size() == 0}">
+            <td colspan="2" class="empty-state">No error reports available.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+<footer>
+    IMS Project
+</footer>
+</body>
+</html>

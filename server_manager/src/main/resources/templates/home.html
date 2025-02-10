@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,22 +56,24 @@
             color: #005bb5;
             text-decoration: underline;
         }
-        table {
+        .scrollable-table {
+            overflow-x: auto;
             width: 100%;
-            border-collapse: collapse;
             margin-top: 20px;
             border-radius: 8px;
-            overflow: hidden;
-            table-layout: fixed; /* Ensure even column widths */
+            -webkit-overflow-scrolling: touch;
+        }
+        table {
+            width: auto;
+            min-width: 100%;
+            border-collapse: collapse;
         }
         table th, table td {
             padding: 12px;
             text-align: center;
             border: 1px solid #ddd;
             font-size: 1.1em;
-            overflow: hidden; /* Prevent text from overflowing */
-            white-space: nowrap; /* Prevent text wrapping */
-            text-overflow: ellipsis; /* Display ellipsis for overflowing text */
+            white-space: nowrap;
         }
         table th {
             background-color: #0073e6;
@@ -83,6 +85,19 @@
         table tr:hover {
             background-color: #f1f1f1;
         }
+        .error-row {
+            background-color: #ffe6e6 !important;
+            color: #cc0000;
+        }
+        .error-row td {
+            padding: 20px !important;
+            font-weight: bold;
+            white-space: normal;
+        }
+        .empty-state {
+            color: #666;
+            text-align: center;
+        }
         footer {
             text-align: center;
             padding: 15px 0;
@@ -92,27 +107,23 @@
             border-top: 1px solid #ddd;
         }
 
-        /* Responsive Table */
         @media (max-width: 768px) {
-            table {
-                display: block;
-                width: 100%;
-                overflow-x: auto;
-                white-space: nowrap;
+            main {
+                padding: 20px;
+                margin: 20px;
+            }
+            .scrollable-table {
+                border: 1px solid #ddd;
             }
             table th, table td {
-                display: inline-block;
-                padding: 10px;
-                text-align: left;
-                width: 100%;
-                border-bottom: 1px solid #ddd;
+                padding: 10px 15px;
             }
         }
     </style>
 </head>
 <body>
 <header>
-    <h1>Docker Controller Dashboard</h1>
+    <h1>Server Manager Dashboard</h1>
 </header>
 <main>
     <h2>Available Operations</h2>
@@ -122,26 +133,48 @@
         <li><a href="/docker/down" target="_blank">Stop services</a></li>
         <li><a href="/docker/restart" target="_blank">Restart services</a></li>
         <li><a href="/logs/manager" target="_blank">Manager logs</a></li>
-        <li><a href="/logs/game-server" target="_blank">Game Server logs</a></li>
+        <li><a href="/logs/game-server" target="_blank">Game server logs</a></li>
+        <li><a href="/error-reports" target="_blank">Error reports</a></li>
     </ul>
+
     <h2>Docker Processes</h2>
-    <table>
-        <thead>
-        <tr>
-            <th>Name</th>
-            <th>State</th>
-            <th>Running for</th>
-        </tr>
-        </thead>
-        <tbody>
-        <!-- Loop through Docker process data -->
-        <tr th:each="process : ${processes}">
-            <td th:text="${process.names}"></td>
-            <td th:text="${process.state}"></td>
-            <td th:text="${process.runningFor}"></td>
-        </tr>
-        </tbody>
-    </table>
+    <div class="scrollable-table">
+        <table>
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>State</th>
+                <th>Running for</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Error Message Row -->
+            <tr class="error-row" th:if="${error}">
+                <td colspan="3">
+                    ⚠️
+                </td>
+            <tr class="error-row" th:if="${error}">
+                <td colspan="3">
+                    <span th:text="${error}"></span>
+                </td>
+            </tr>
+
+            <!-- Process List -->
+            <tr th:each="process : ${processes}">
+                <td th:text="${process.names}"></td>
+                <td th:text="${process.state}"></td>
+                <td th:text="${process.runningFor}"></td>
+            </tr>
+
+            <!-- Empty State -->
+            <tr th:if="${#lists.isEmpty(processes) and error == null}">
+                <td colspan="3" class="empty-state">
+                    No running Docker processes found
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </main>
 <footer>
     IMS Project

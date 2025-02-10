@@ -10,8 +10,6 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-fun Float.isBetweenInclusive(min: Float, max: Float) =  min <= this && this <= max
-
 /**
  * this function assumes that the angle is in the range of (-180,180]
  * and the quadrant is in the range of [1,4]
@@ -173,7 +171,11 @@ fun calculateTriangleThirdPoint(
     return p3X to p3Y
 }
 
-fun Float.sign() = if(this < 0) -1 else if (this > 0) 1 else 0
+@Suppress("NOTHING_TO_INLINE")
+inline fun Float.isBetweenInclusive(min: Float, max: Float) =  min <= this && this <= max
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun Float.sign() = if(this < 0) -1 else if (this > 0) 1 else 0
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Int.fastCoerceAtLeast(min: Int) = if (this < min) min else this

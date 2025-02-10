@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.imsproject</groupId>
-    <artifactId>docker_controller</artifactId>
+    <artifactId>server_manager</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>docker_controller</name>
-    <description>docker_controller</description>
+    <name>server_manager</name>
+    <description>server_manager</description>
     <url/>
     <licenses>
         <license/>
@@ -48,17 +48,17 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.11.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
         <dependency>
             <groupId>org.thymeleaf.extras</groupId>
             <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.imsproject</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 

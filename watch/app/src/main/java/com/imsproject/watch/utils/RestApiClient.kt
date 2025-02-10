@@ -70,7 +70,7 @@ class RestApiClient {
 
     fun withParam(key: String, value: String) = apply {
         require(!params.containsKey(key)) { "Param $key set more than once" }
-        params[key] = value.replace(" ", "%20")
+        params[key] = value
     }
 
     fun withParams(params: Map<String, String>) = apply {

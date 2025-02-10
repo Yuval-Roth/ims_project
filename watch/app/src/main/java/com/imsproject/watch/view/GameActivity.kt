@@ -25,6 +25,7 @@ import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.textStyle
+import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 
@@ -34,6 +35,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
 
     protected fun setupUncaughtExceptionHandler(viewModel: GameViewModel) {
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            ErrorReporter.report(e)
             viewModel.exitWithError("""
                 Uncaught Exception in thread ${t.name}:
                 ${e.stackTraceToString()}

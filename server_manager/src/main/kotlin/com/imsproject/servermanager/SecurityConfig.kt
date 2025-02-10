@@ -1,4 +1,4 @@
-package com.imsproject.docker_controller
+package com.imsproject.servermanager
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -20,15 +20,13 @@ class SecurityConfig {
     @Throws(Exception::class)
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .requiresChannel { requiresChannel ->
-                requiresChannel
-                    .anyRequest()
-                    .requiresSecure()
-            }
             .authorizeHttpRequests { authorize ->
                 authorize
-                    .anyRequest()
-                    .authenticated()
+                    .requestMatchers("/error-reports/add").permitAll()
+                    .anyRequest().authenticated()
+            }
+            .csrf { csrf ->
+                csrf.ignoringRequestMatchers("/error-reports/add")
             }
             .formLogin(Customizer.withDefaults())
             .httpBasic{ obj -> obj.disable() }

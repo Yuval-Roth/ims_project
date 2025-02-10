@@ -1,4 +1,4 @@
-package com.imsproject.docker_controller
+package com.imsproject.servermanager
 
 import com.google.gson.annotations.SerializedName
 

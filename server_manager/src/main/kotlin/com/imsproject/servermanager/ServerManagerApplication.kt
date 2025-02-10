@@ -1,4 +1,4 @@
-package com.imsproject.docker_controller
+package com.imsproject.servermanager
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

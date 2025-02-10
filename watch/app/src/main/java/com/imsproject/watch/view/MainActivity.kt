@@ -40,6 +40,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
@@ -56,12 +57,14 @@ import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
+import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.FlourMillResultContract
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.collections.mutableMapOf
 
@@ -92,6 +95,7 @@ class MainActivity : ComponentActivity() {
 
     private fun setupUncaughtExceptionHandler() {
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            ErrorReporter.report(e)
             viewModel.fatalError(
                 """
                 Uncaught Exception in thread ${t.name}:
