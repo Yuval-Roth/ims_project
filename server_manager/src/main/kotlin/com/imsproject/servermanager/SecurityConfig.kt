@@ -1,5 +1,9 @@
 package com.imsproject.servermanager
 
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
@@ -12,6 +16,9 @@ import org.springframework.security.core.Authentication
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.WebAuthenticationDetails
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 @EnableWebSecurity
 @Configuration
@@ -34,17 +41,45 @@ class SecurityConfig {
 
                 private val encoder: PasswordEncoder = BCryptPasswordEncoder()
                 private val pass = "\$2a\$10\$Ss09W28r0vuNd67EHqcAw.piDzMvPFV4YHK0d0rh2C30O26NYAewG"
+                private val badAttemptsMap : MutableMap<String, AtomicInteger> = ConcurrentHashMap()
+                private val lockedOutAddresses : MutableMap<String, Job> = ConcurrentHashMap()
 
                 override fun authenticate(authentication: Authentication): Authentication {
-                    val userName = authentication.name
-                    if(userName.lowercase() != "admin") {
-                        throw BadCredentialsException("Bad Credentials")
+                    val details = authentication.details as WebAuthenticationDetails
+                    val remoteAddress = details.remoteAddress
+
+                    if(lockedOutAddresses.contains(remoteAddress)) {
+                        throw BadCredentialsException("Login attempts exceeded, try again later")
                     }
-                    val password = authentication.credentials.toString()
-                    if (encoder.matches(password, pass)) {
-                        return UsernamePasswordAuthenticationToken(userName, password, emptyList())
-                    } else {
-                        throw BadCredentialsException("Bad Credentials")
+
+                    try{
+                        val userName = authentication.name
+                        if(userName.lowercase() != "admin") {
+                            badAttemptsMap.computeIfAbsent(remoteAddress) { AtomicInteger(0) }.incrementAndGet()
+                            throw BadCredentialsException("Bad Credentials")
+                        }
+                        val password = authentication.credentials.toString()
+                        if (encoder.matches(password, pass)) {
+                            badAttemptsMap.remove(remoteAddress)
+                            return UsernamePasswordAuthenticationToken(userName, password, emptyList())
+                        } else {
+                            badAttemptsMap.computeIfAbsent(remoteAddress) { AtomicInteger(0) }.incrementAndGet()
+                            throw BadCredentialsException("Bad Credentials")
+                        }
+                    } finally {
+                        val attemptsCount = badAttemptsMap[remoteAddress]
+                        if(attemptsCount != null){
+                            synchronized(attemptsCount) {
+                                if(remoteAddress !in lockedOutAddresses && attemptsCount.get() >= 3) {
+                                    @OptIn(DelicateCoroutinesApi::class)
+                                    lockedOutAddresses[remoteAddress] = GlobalScope.launch {
+                                        kotlinx.coroutines.delay(30 * 1000)
+                                        lockedOutAddresses.remove(remoteAddress)
+                                        badAttemptsMap.remove(remoteAddress)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             })
