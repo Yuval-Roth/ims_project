@@ -25,7 +25,7 @@ def get_game_type_name_from_value(value):
 class GAME_TYPE(Enum):
     water_ripples = 'Water Ripples'
     wine_glasses = 'Wine Glasses'
-    flour_mill = 'Flour Mill'
+    # flour_mill = 'Flour Mill'
 
 
 class GAME_REQUEST_TYPE(Enum):
