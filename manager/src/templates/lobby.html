@@ -141,6 +141,20 @@
 
         let sessionsDragged = false;
         let experimentRunning = false;
+        let addSessionValueHistory = {
+            'Water Ripples': {
+                syncTolerance: null,
+            },
+            'Flour Mill': {
+                syncTolerance: null,
+            },
+            'Wine Glasses': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
+            'gameTime': null,
+            'gameType': 'Water Ripples',
+        }
 
         // Show modal
         addSessionBtn.addEventListener('click', showModal);
@@ -173,7 +187,7 @@
 
         // Show modal and reset form
         function showModal() {
-            resetForm();
+            {#resetForm();#}
             modal.style.display = 'block';
             overlay.style.display = 'block';
         }
@@ -321,15 +335,28 @@
                 .then(data => {
                     if (data.status === 'success') {
                         const humanReadableGameType = data.gameType; // Get the real name from the server
+                        let syncTolerance = null;
+                        let syncWindowLength = null;
+                        switch(humanReadableGameType){
+                            case 'Water Ripples':
+                            case 'Flour Mill':
+                                syncTolerance = session.syncTolerance + ' ms';
+                                syncWindowLength = 'N/A';
+                                break;
+                            case 'Wine Glasses':
+                                syncTolerance = session.syncTolerance / 100 + ' hz';
+                                syncWindowLength = session.syncWindowLength + ' ms';
+                                break;
+                        }
                         // Create and append the row
                         const row = document.createElement('tr');
                         row.dataset.sessionId = session.sessionId;
                         row.innerHTML = `
                             <td>${humanReadableGameType}</td>
-                            <td>${session.duration}</td>
+                            <td>${session.duration} sec</td>
                             <td>${session.dbId}</td>
-                            <td>${session.syncTolerance}</td>
-                            <td>${session.syncWindowLength}</td>
+                            <td>${syncTolerance}</td>
+                            <td>${syncWindowLength}</td>
                             <td>
                                 <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
                             </td>
@@ -508,12 +535,27 @@
 
             function updateDefaultValues() {
                 const selectedGame = gameTypeSelect.value;
+                const oldGame = addSessionValueHistory["gameType"];
+                switch(oldGame){
+                    case 'Water Ripples':
+                    case 'Flour Mill':
+                        addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
+                        break;
+                    case 'Wine Glasses':
+                        addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
+                        addSessionValueHistory[oldGame].syncWindowLength = syncWindowLength.value;
+                        break;
+                }
+                addSessionValueHistory["gameType"] = selectedGame;
+                const lastSyncTolerance = addSessionValueHistory[selectedGame].syncTolerance;
+                const lastSyncWindowLength = addSessionValueHistory[selectedGame].syncWindowLength;
+
                 if (defaultParams[selectedGame]) {
-                    syncToleranceInput.value = defaultParams[selectedGame].syncTolerance;
+                    syncToleranceInput.value = lastSyncTolerance ? lastSyncTolerance : defaultParams[selectedGame].syncTolerance;
                     syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
                     syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
                     syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
-                    syncWindowLength.value = defaultParams[selectedGame].syncWindowLength;
+                    syncWindowLength.value = lastSyncWindowLength ? lastSyncWindowLength : defaultParams[selectedGame].syncWindowLength;
                     syncWindowLength.disabled = !defaultParams[selectedGame].windowLengthEnabled;
                 }
             }
