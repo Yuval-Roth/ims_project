@@ -2,7 +2,7 @@ import requests
 import json
 from ..ENUMS import *
 
-RUNNING_LOCAL = True
+RUNNING_LOCAL = False
 
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
