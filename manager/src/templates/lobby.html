@@ -6,7 +6,7 @@
     <title>Lobby {{ lobby_id }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='lobby.css') }}">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="sortable.min.js"></script>
 </head>
 <body>
     <!-- Home Button -->
@@ -117,9 +117,9 @@
                 <label for="window">Sync Window Length (ms):</label>
                 <input type="number" name="window" id="window" required>
 
-                <div class="modal-actions">
-                    <button type="submit" class="primary-button">Add</button>
-                    <button type="button" id="cancel-modal-btn" class="cancel-button">Cancel</button>
+                <div class="modal-actions" style="display:flex; justify-content: center; gap: 30px;">
+                    <button type="button" id="cancel-modal-btn" class="cancel-button" style="width:150px">Cancel</button>
+                    <button type="submit" class="primary-button" style="width:150px">Add</button>
                 </div>
             </form>
         </div>
