@@ -55,21 +55,25 @@
     <div class="modal-content">
         <h2>Create Lobby</h2>
         <form action="/create_lobby" method="post">
-            <div class="table-container">
-                <table class="online-participants-table">
-                    <thead>
+            <div style="height:100%; width:100%; display:flex; flex-direction:column; justify-content: center; align-items:center;">
+                <div class="table-container">
+                    <table class="online-participants-table">
+                        <thead>
                         <tr>
                             <th>Participant Name</th>
                             <th>Select</th>
                         </tr>
-                    </thead>
-                    <tbody id="participant-list">
+                        </thead>
+                        <tbody id="participant-list">
                         <!-- Participants will be dynamically populated here -->
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="display:flex; justify-content: center; height:50px; gap:30px;">
+                    <button type="button" id="close-modal-btn" class="cancel-button" style="width: 150px;">Cancel</button>
+                    <button type="submit" class="create-lobby-button" disabled style="width: 150px;">Create Lobby</button>
+                </div>
             </div>
-            <button type="submit" class="create-lobby-button" disabled>Create Lobby</button>
-            <button type="button" id="close-modal-btn" class="cancel-button">Cancel</button>
         </form>
     </div>
 </div>
