@@ -187,7 +187,7 @@
 
         // Show modal and reset form
         function showModal() {
-            {#resetForm();#}
+            resetForm();
             modal.style.display = 'block';
             overlay.style.display = 'block';
         }
@@ -200,9 +200,9 @@
 
         // Reset form fields to default values
         function resetForm() {
-            addSessionForm.reset();
-            document.getElementById('gameType').value = document.getElementById('gameType').options[0].value;
-            document.getElementById('duration').value = '';
+            {#addSessionForm.reset();#}
+            {#document.getElementById('gameType').value = document.getElementById('gameType').options[0].value;#}
+            {#document.getElementById('duration').value = '';#}
             updateCreateSessionParams()
         }
 
