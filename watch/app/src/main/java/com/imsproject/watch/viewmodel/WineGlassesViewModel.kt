@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastCoerceIn
+import androidx.compose.ui.util.fastMapTo
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -67,7 +68,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
     val myArc = Arc()
     val opponentArc = Arc()
     private lateinit var myFrequencyTracker : FrequencyTracker
-    private lateinit var opponentFrequencyTracker : FrequencyTracker
+    @Volatile
+    private var opponentFrequency = 0f
 
     private var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
@@ -96,17 +98,23 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent,context)
 
+        setupWavPlayer(context)
+        myFrequencyTracker = FrequencyTracker()
+
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
+                val opponentFrequencyTracker = FrequencyTracker()
                 while(true) {
-                    var angle = 0.0f
-                    while(angle < 360 * 15){
-                        opponentArc.startAngle = angle
-                        opponentFrequencyTracker.addSample(angle)
-                        angle += 4
+                    var rawAngle = 0.0f
+                    while(rawAngle < 360 * 15){
+                        opponentFrequencyTracker.addSample(rawAngle)
+                        opponentFrequency = opponentFrequencyTracker.frequency
+                        updateArc(rawAngle,opponentArc)
+                        rawAngle += 4
                         delay(16)
                     }
                     _opponentReleased.value = true
+                    opponentFrequency = 0f
                     opponentFrequencyTracker.reset()
                     delay(2000)
                     _opponentReleased.value = false
@@ -114,8 +122,6 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             }
             return
         }
-
-        setupWavPlayer(context)
 
         // set up sync params
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
@@ -133,19 +139,13 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
 
-        // set up frequency trackers
-        myFrequencyTracker = FrequencyTracker()
-        opponentFrequencyTracker = FrequencyTracker()
-
         // start the frequency tracking loop
         viewModelScope.launch(Dispatchers.Default){
             while(true){
                 delay(100) // run this loop roughly 10 times per second
-                if(inSync){
-                    val timestamp = getCurrentGameTime()
-                    addEvent(SessionEvent.frequency(playerId, timestamp, myFrequencyTracker.frequency.toString()))
-                    addEvent(SessionEvent.opponentFrequency(playerId, timestamp, opponentFrequencyTracker.frequency.toString()))
-                }
+                val timestamp = getCurrentGameTime()
+                addEvent(SessionEvent.frequency(playerId, timestamp, myFrequencyTracker.frequency.toString()))
+                addEvent(SessionEvent.opponentFrequency(playerId,timestamp,opponentFrequency.toString()))
             }
         }
     }
@@ -159,9 +159,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
 
         if(inBounds){
-            updateMyArc(rawAngle)
+            updateArc(rawAngle,myArc)
             _released.value = false
-            myFrequencyTracker.addSample(myArc.startAngle)
+            myFrequencyTracker.addSample(rawAngle)
         } else {
             _released.value = true
             myFrequencyTracker.reset()
@@ -172,7 +172,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         // send input to server
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = getCurrentGameTime()
-            val data = if(inBounds) myArc.startAngle.toString() else UNDEFINED_ANGLE.toString()
+            val angle = if(inBounds) rawAngle else UNDEFINED_ANGLE
+            val frequency = myFrequencyTracker.frequency
+            val data = "$angle,$frequency"
             model.sendUserInput(timestamp, packetTracker.newPacket(),data)
             addEvent(SessionEvent.angle(playerId,timestamp,data))
         }
@@ -180,7 +182,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     fun inSync() = (
             !released.value && !opponentReleased.value
-            && (myFrequencyTracker.frequency - opponentFrequencyTracker.frequency)
+            && (myFrequencyTracker.frequency - opponentFrequency)
                 .absoluteValue < WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
     ).also { inSync = it }
 
@@ -203,7 +205,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                     Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
-                val angle = action.data?.toFloat() ?: run{
+                val data = action.data?: run{
                     Log.e(TAG, "handleGameAction: missing data in user input action")
                     return
                 }
@@ -214,44 +216,49 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
                 val arrivedTimestamp = getCurrentGameTime()
 
-                if(angle == UNDEFINED_ANGLE){
+                val outOfOrder = packetTracker.receivedOtherPacket(sequenceNumber)
+                if(outOfOrder) return
+
+                val (rawAngle, frequency) = data.split(",").let{
+                    Pair(it[0].toFloat(), it[1].toFloat())
+                }
+                if(rawAngle == UNDEFINED_ANGLE){
                     _opponentReleased.value = true
-                    opponentFrequencyTracker.reset()
+                    opponentFrequency = 0f
                 } else {
                     _opponentReleased.value = false
-                    opponentArc.startAngle = angle
-                    opponentFrequencyTracker.addSample(angle)
+                    opponentFrequency = frequency
+                    updateArc(rawAngle,opponentArc)
                 }
 
-                packetTracker.receivedOtherPacket(sequenceNumber)
-                addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,angle.toString()))
+                addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,rawAngle.toString()))
             }
             else -> super.handleGameAction(action)
         }
     }
 
-    private fun updateMyArc(angle: Float){
+    private fun updateArc(angle: Float, arc: Arc){
 
         // =========== for current iteration =============== |
 
         // calculate the skew angle to show the arc ahead of the finger
         // based on the calculations of the previous iteration
-        val angleSkew = myArc.angleSkew
-        myArc.startAngle = addToAngle(angle,
-                myArc.direction.fastCoerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET) * angleSkew
+        val angleSkew = arc.angleSkew
+        arc.startAngle = addToAngle(angle,
+                arc.direction.fastCoerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET) * angleSkew
                 - MY_SWEEP_ANGLE / 2
         )
 
         // ============== for next iteration =============== |
 
         // prepare the skew angle for the next iteration
-        val previousAngle = myArc.previousAngle
+        val previousAngle = arc.previousAngle
         var angleDiff = 0f
         if(previousAngle != UNDEFINED_ANGLE){
             angleDiff = calculateAngleDiff(previousAngle, angle)
-            val previousAngleDiff = myArc.previousAngleDiff
+            val previousAngleDiff = arc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
-            myArc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
+            arc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
                 (angleSkew + angleDiff * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
             } else if (angleDiffDiff < 1){
                 (angleSkew - angleDiff * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
@@ -264,22 +271,22 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         // we add a bit to the max offset to prevent random jitter in the direction
         // we clamp the direction to the max offset when calculating the skewed angle
         if (previousAngle != UNDEFINED_ANGLE){
-            val direction = myArc.direction
-            myArc.direction = if(isClockwise(previousAngle, angle)){
+            val direction = arc.direction
+            arc.direction = if(isClockwise(previousAngle, angle)){
                 (direction + angleDiff * 0.2f).fastCoerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
             } else if (! isClockwise(previousAngle, angle)){
                 (direction - angleDiff * 0.2f).fastCoerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
             } else {
                 direction
             }
-            if(myArc.direction.isBetweenInclusive(-WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD,
+            if(arc.direction.isBetweenInclusive(-WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD,
                     WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
-                )) myArc.angleSkew = MIN_ANGLE_SKEW
+                )) arc.angleSkew = MIN_ANGLE_SKEW
         }
 
         // current angle becomes previous angle for the next iteration
-        myArc.previousAngle = angle
-        myArc.previousAngleDiff = angleDiff
+        arc.previousAngle = angle
+        arc.previousAngleDiff = angleDiff
     }
 
     private fun setupWavPlayer(context: Context){

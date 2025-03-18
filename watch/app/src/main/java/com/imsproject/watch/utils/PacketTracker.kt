@@ -24,11 +24,16 @@ class PacketTracker() {
         }
     }
 
-    fun receivedOtherPacket(packetNum: Long)  {
+    /**
+     * @return true if the packet is out of order
+     */
+    fun receivedOtherPacket(packetNum: Long) : Boolean {
         val lastReceived = otherLastReceivedPacket
         otherLastReceivedPacket = packetNum
         if (packetNum != lastReceived + 1) {
             onOutOfOrderPacket?.invoke()
+            return true
         }
+        return false
     }
 }

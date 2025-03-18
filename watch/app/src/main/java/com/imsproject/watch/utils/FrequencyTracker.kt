@@ -1,15 +1,19 @@
 package com.imsproject.watch.utils
 
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
 
-private const val SAMPLES_PER_SECOND = 1000 / 60 // 60 fps
+private const val SAMPLES_PER_SECOND = 1000 / 16f // 60 fps
 
 class FrequencyTracker {
 
-    private val samplesHistoryCount : Int = (SAMPLES_PER_SECOND * FREQUENCY_HISTORY_MILLISECONDS).toInt()
+    private val samplesHistoryCount : Int = (SAMPLES_PER_SECOND * FREQUENCY_HISTORY_MILLISECONDS / 1000f).toInt()
 
     val frequency : Float
-        get() = sum / sampleCount.fastCoerceIn(1,samplesHistoryCount)
+        get() = (sum / sampleCount.fastCoerceIn(1,samplesHistoryCount)).let { if(it < 0.001) 0f else it }
 
     private val samples = Array(samplesHistoryCount) {0f}
     private var sum : Float = 0f
@@ -21,6 +25,7 @@ class FrequencyTracker {
     fun addSample(angle: Float) {
         val currentTime = System.currentTimeMillis()
         val timeDiff = currentTime - lastSampleTime
+        if(timeDiff == 0L) return
         val angleDiff = calculateAngleDiff(lastSampleAngle,angle)
         val radiansDiff = Math.toRadians(angleDiff.toDouble())
         val omega = radiansDiff / (timeDiff / 1000.0)

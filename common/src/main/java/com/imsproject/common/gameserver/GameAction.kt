@@ -27,6 +27,9 @@ data class GameAction internal constructor(
 
         fun fromString(message: String): GameAction {
             val parts = message.split(";")
+            if(parts.size != 5){
+                throw IllegalArgumentException("GameAction string must have 5 parts, but found ${parts.size}")
+            }
             return GameAction(
                 Type.valueOf(parts[0]),
                 if (parts[1] == "") null else parts[1],
