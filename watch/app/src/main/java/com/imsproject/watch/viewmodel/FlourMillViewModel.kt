@@ -170,12 +170,12 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         if(ACTIVITY_DEBUG_MODE) {
             myAxleSide = AxleSide.RIGHT
             axle = Axle(AXLE_STARTING_ANGLE, myAxleSide)
-            viewModelScope.launch(Dispatchers.Default) {
-                while (true) {
-                    delay(1000)
-                    rotateAxle(AxleSide.LEFT, 1, System.currentTimeMillis())
-                }
-            }
+//            viewModelScope.launch(Dispatchers.Default) {
+//                while (true) {
+//                    delay(1000)
+//                    rotateAxle(AxleSide.LEFT, 1, System.currentTimeMillis())
+//                }
+//            }
             return
         }
 

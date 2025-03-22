@@ -10,18 +10,22 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -55,6 +59,11 @@ import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.PointerEventType
+import com.imsproject.watch.UNDEFINED_ANGLE
+import com.imsproject.watch.utils.calculateAngleDiff
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
@@ -77,7 +86,8 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
         val state by viewModel.state.collectAsState()
         when(state){
             GameViewModel.State.PLAYING -> {
-                FlourMill()
+                Gear()
+//                FlourMill()
             }
             else -> super.Main(viewModel)}
     }
@@ -108,7 +118,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                             viewModel.onDragEnd()
                         },
                     ) { change, offset ->
-                        if(viewModel.isDragged()) return@detectDragGestures
+                        if (viewModel.isDragged()) return@detectDragGestures
                         viewModel.dragged()
 
                         if (!viewModel.isCoolingDown()) {
@@ -166,7 +176,8 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
             // =============== Draw background ================ |
             Box(
-                modifier = Modifier.Companion.fillMaxSize()
+                modifier = Modifier.Companion
+                    .fillMaxSize()
                     .background(color = BROWN_COLOR)
             )
             Box( // ground
@@ -174,8 +185,16 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
                     .background(color = LIGHT_BROWN_COLOR)
-                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = Color.Green)
-                    .shadow(elevation = (SCREEN_RADIUS*0.5).dp, CircleShape, spotColor = Color.Green)
+                    .shadow(
+                        elevation = (SCREEN_RADIUS * 0.5).dp,
+                        CircleShape,
+                        spotColor = Color.Green
+                    )
+                    .shadow(
+                        elevation = (SCREEN_RADIUS * 0.5).dp,
+                        CircleShape,
+                        spotColor = Color.Green
+                    )
             )
 
             Box( // center axis
@@ -306,6 +325,104 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     private fun getDirection(angle: Float, targetAngle: Float) : Float {
         return if (isClockwise(angle, targetAngle)) 1f else -1f
+    }
+
+    @Composable
+    fun Gear() {
+        var gearAngle by remember { mutableFloatStateOf(0f) }
+        var lastAngle = remember { UNDEFINED_ANGLE }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.White)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val pointerEvent = awaitPointerEvent()
+                            when (pointerEvent.type) {
+                                PointerEventType.Move, PointerEventType.Press -> {
+                                    val inputChange = pointerEvent.changes.first()
+                                    inputChange.consume()
+                                    val position = inputChange.position
+                                    val (_, angle) = cartesianToPolar(
+                                        position.x.toDouble(),
+                                        position.y.toDouble()
+                                    )
+                                    if (lastAngle == UNDEFINED_ANGLE) {
+                                        lastAngle = angle
+                                        continue
+                                    }
+                                    val diff = calculateAngleDiff(angle, lastAngle)
+                                    gearAngle = (gearAngle + (diff / 8f) * getDirection(lastAngle,angle)) % 360f
+                                    lastAngle = angle
+                                }
+
+                                PointerEventType.Release -> {
+                                    lastAngle = UNDEFINED_ANGLE
+                                }
+                            }
+                        }
+                    }
+                }
+            ,
+            contentAlignment = Alignment.Center
+
+        ){
+            Canvas(modifier = Modifier.Companion.fillMaxSize()){
+                val canvasSize = 150f
+
+                // gear body
+                drawCircle(
+                    color = Color.Gray,
+                    radius = canvasSize,
+                    style = Stroke(width = 25f)
+                )
+
+                // Gear teeth (simplified)
+                val teethCount = 24
+                val angleStep = 360f / teethCount
+                for (i in 0 until teethCount) {
+                    val angle = i * angleStep + gearAngle
+
+                    val startX: Float
+                    val startY: Float
+                    val endX: Float
+                    val endY: Float
+                    if(true){
+                        polarToCartesian(150f, angle).also {
+                            startX = it.first
+                            startY = it.second
+                        }
+                        polarToCartesian(175f, angle).also {
+                            endX = it.first
+                            endY = it.second
+                        }
+                    } else {
+                        polarToCartesian(125f, angle).also {
+                            startX = it.first
+                            startY = it.second
+                        }
+                        polarToCartesian(150f, angle).also {
+                            endX = it.first
+                            endY = it.second
+                        }
+                    }
+
+                    drawLine(
+                        color = Color.Gray,
+                        start = Offset(startX, startY),
+                        end = Offset(endX, endY),
+                        strokeWidth = 20f
+                    )
+                }
+
+                drawCircle(
+                    color = Color.Black,
+                    radius = canvasSize,
+                    style = Stroke(width = 3f)
+                )
+            }
+        }
     }
 
     companion object {
