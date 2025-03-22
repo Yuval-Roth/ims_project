@@ -10,7 +10,6 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,7 +17,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.MutableFloatState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,9 +57,10 @@ import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.pointer.PointerEventType
+import com.imsproject.watch.BRIGHT_CYAN_COLOR
+import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.utils.calculateAngleDiff
 
@@ -329,12 +328,12 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     @Composable
     fun Gear() {
+        val (centerX, centerY) = remember { polarToCartesian(0f, 0f) }
         var gearAngle by remember { mutableFloatStateOf(0f) }
         var lastAngle = remember { UNDEFINED_ANGLE }
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color.White)
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
@@ -368,13 +367,48 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
             contentAlignment = Alignment.Center
 
         ){
+            Box(
+                modifier = Modifier.Companion
+                    .fillMaxSize()
+                    .background(color = BROWN_COLOR)
+            )
+            Box( // ground
+                modifier = Modifier.Companion
+                    .fillMaxSize(0.8f)
+                    .clip(shape = CircleShape)
+                    .background(color = LIGHT_BROWN_COLOR)
+                    .shadow(
+                        elevation = (SCREEN_RADIUS * 0.5).dp,
+                        CircleShape,
+                        spotColor = Color.Green
+                    )
+                    .shadow(
+                        elevation = (SCREEN_RADIUS * 0.5).dp,
+                        CircleShape,
+                        spotColor = Color.Green
+                    )
+            )
+
+            Box( // center axis
+                modifier = Modifier.Companion
+                    .fillMaxSize(0.3f)
+                    .clip(shape = CircleShape)
+                    .background(color = GLOWING_YELLOW_COLOR)
+            )
+
+            Box( // center axis filler
+                modifier = Modifier.Companion
+                    .fillMaxSize(0.200f)
+                    .clip(shape = CircleShape)
+                    .background(color = DARK_BACKGROUND_COLOR)
+            )
             Canvas(modifier = Modifier.Companion.fillMaxSize()){
-                val canvasSize = 150f
+                val gearRadius = SCREEN_RADIUS*0.9f
 
                 // gear body
                 drawCircle(
-                    color = Color.Gray,
-                    radius = canvasSize,
+                    color = GLOWING_YELLOW_COLOR,
+                    radius = gearRadius,
                     style = Stroke(width = 25f)
                 )
 
@@ -383,44 +417,97 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 val angleStep = 360f / teethCount
                 for (i in 0 until teethCount) {
                     val angle = i * angleStep + gearAngle
+                    val (startX, startY) = polarToCartesian(gearRadius, angle)
+                    val (endX, endY) = polarToCartesian(gearRadius + 25f, angle)
 
-                    val startX: Float
-                    val startY: Float
-                    val endX: Float
-                    val endY: Float
-                    if(true){
-                        polarToCartesian(150f, angle).also {
-                            startX = it.first
-                            startY = it.second
-                        }
-                        polarToCartesian(175f, angle).also {
-                            endX = it.first
-                            endY = it.second
-                        }
-                    } else {
-                        polarToCartesian(125f, angle).also {
-                            startX = it.first
-                            startY = it.second
-                        }
-                        polarToCartesian(150f, angle).also {
-                            endX = it.first
-                            endY = it.second
-                        }
-                    }
+//                    val startX: Float
+//                    val startY: Float
+//                    val endX: Float
+//                    val endY: Float
+//                    if(true){
+//                        polarToCartesian(gearRadius, angle).also {
+//                            startX = it.first
+//                            startY = it.second
+//                        }
+//                        polarToCartesian(gearRadius + 25f, angle).also {
+//                            endX = it.first
+//                            endY = it.second
+//                        }
+//                    } else {
+//                        polarToCartesian(gearRadius - 25f, angle).also {
+//                            startX = it.first
+//                            startY = it.second
+//                        }
+//                        polarToCartesian(gearRadius
+//                            , angle).also {
+//                            endX = it.first
+//                            endY = it.second
+//                        }
+//                    }
 
                     drawLine(
-                        color = Color.Gray,
+                        color = GLOWING_YELLOW_COLOR,
                         start = Offset(startX, startY),
                         end = Offset(endX, endY),
                         strokeWidth = 20f
                     )
                 }
 
-                drawCircle(
-                    color = Color.Black,
-                    radius = canvasSize,
-                    style = Stroke(width = 3f)
+                val (bezierStartX,bezierStartY) = polarToCartesian(BEZIER_START_DISTANCE, 0f)
+                val (controlX,controlY) = polarToCartesian(CONTROL_POINT_DISTANCE, 0f)
+                val (stretchX,stretchY) = polarToCartesian(STRETCH_POINT_DISTANCE, gearAngle)
+
+                val myAxleEndPath = Path().apply {
+                    moveTo(centerX, centerY)
+                    lineTo(bezierStartX, bezierStartY)
+                    quadraticTo(controlX, controlY, stretchX, stretchY)
+                }
+
+                drawPath(
+                    path = myAxleEndPath,
+                    color = GLOWING_YELLOW_COLOR,
+                    style = Stroke(width = AXLE_WIDTH)
                 )
+
+                // TODO: replace with actual data
+                val (bezierStartX2,bezierStartY2) = polarToCartesian(BEZIER_START_DISTANCE, -179.9999f)
+                val (controlX2,controlY2) = polarToCartesian(CONTROL_POINT_DISTANCE*0.8f, -179.9999f)
+                val (stretchX2,stretchY2) = polarToCartesian(STRETCH_POINT_DISTANCE*0.8f, -179.9999f)
+                val (handleStartX,handleStartY) = calculateTriangleThirdPoint(
+                    centerX, centerY,
+                    stretchX2, stretchY2,
+                    AXLE_HANDLE_LENGTH / 2
+                )
+                val (handleEndX,handleEndY) = calculateTriangleThirdPoint(
+                    centerX, centerY,
+                    stretchX2, stretchY2,
+                    -AXLE_HANDLE_LENGTH / 2
+                )
+
+                val otherAxleEndPath = Path().apply {
+                    moveTo(centerX, centerY)
+                    lineTo(bezierStartX2, bezierStartY2)
+                    quadraticTo(controlX2, controlY2, stretchX2, stretchY2)
+                }
+
+                drawPath(
+                    path = otherAxleEndPath,
+                    color = BRIGHT_CYAN_COLOR,
+                    style = Stroke(width = AXLE_WIDTH)
+                )
+
+                drawLine(
+                    color = BRIGHT_CYAN_COLOR,
+                    start = Offset(handleStartX,handleStartY),
+                    end = Offset(handleEndX,handleEndY),
+                    strokeWidth = AXLE_WIDTH
+                )
+
+//                drawCircle(
+//                    color = Color.Black,
+//                    radius = gearRadius,
+//                    style = Stroke(width = 3f)
+//                )
             }
         }
     }
