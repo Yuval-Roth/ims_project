@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
@@ -19,7 +19,8 @@ import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RESET_COOLDOWN_WAIT_TIME
 import com.imsproject.watch.STRETCH_PEAK
-import com.imsproject.watch.utils.addToAngle
+import com.imsproject.watch.utils.Angle
+import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -47,8 +48,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
     }
 
-    class AxleEnd(val handleColor: Color, startingAngle: Float){
-        var angle by mutableFloatStateOf(startingAngle)
+    class AxleEnd(val handleColor: Color, startingAngle: Angle){
+        var angle by mutableStateOf(startingAngle)
         var targetAngle = startingAngle
         var stretchPeak = 0.0f
         var direction = 0
@@ -56,8 +57,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         var resetting = false
     }
 
-    class Axle(startingAngle: Float, mySide: AxleSide) {
-        var angle by mutableFloatStateOf(startingAngle)
+    class Axle(startingAngle: Angle, mySide: AxleSide) {
+        var angle by mutableStateOf(startingAngle)
         var targetAngle = startingAngle
         var isRotating = false
         // The axle ends are animated based on the effective angle
@@ -81,8 +82,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             rightEnd = AxleEnd(rightColor,getEndAngle(AxleSide.RIGHT))
         }
 
-        fun getEndAngle(endSide : AxleSide) = addToAngle(angle, endSide.angle)
-        fun getEffectiveEndAngle(endSide : AxleSide) = addToAngle(effectiveAngle, endSide.angle)
+        fun getEndAngle(endSide : AxleSide) = angle + endSide.angle
+        fun getEffectiveEndAngle(endSide : AxleSide) = effectiveAngle + endSide.angle
         fun getEnd(endSide: AxleSide) = when(endSide){
             AxleSide.LEFT -> leftEnd
             AxleSide.RIGHT -> rightEnd
@@ -169,7 +170,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
         if(ACTIVITY_DEBUG_MODE) {
             myAxleSide = AxleSide.RIGHT
-            axle = Axle(AXLE_STARTING_ANGLE, myAxleSide)
+            axle = Axle(AXLE_STARTING_ANGLE.toAngle(), myAxleSide)
             viewModelScope.launch(Dispatchers.Default) {
                 while (true) {
                     delay(1000)
@@ -180,7 +181,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
 
         myAxleSide = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { AxleSide.fromString(it) }!!
-        axle = Axle(AXLE_STARTING_ANGLE, myAxleSide)
+        axle = Axle(AXLE_STARTING_ANGLE.toAngle(), myAxleSide)
 
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
         if (syncTolerance <= 0L) {
@@ -242,7 +243,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         val axleEnd = axle.getEnd(side)
         axleEnd.direction = direction
         axleEnd.stretchPeak = STRETCH_PEAK * direction
-        axleEnd.targetAngle = addToAngle(axle.getEffectiveEndAngle(side), direction * STRETCH_PEAK)
+        axleEnd.targetAngle = axle.getEffectiveEndAngle(side) + direction * STRETCH_PEAK
         axleEnd.syncThresholdTimeout = System.currentTimeMillis() + FLOUR_MILL_SYNC_TIME_THRESHOLD
 
         val sameDirection = axle.leftEnd.direction == axle.rightEnd.direction
@@ -268,7 +269,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     }
 
     private fun setInSync(direction: Int) {
-        axle.targetAngle = addToAngle(axle.angle, direction * STRETCH_PEAK)
+        axle.targetAngle = axle.angle + direction * STRETCH_PEAK
         axle.isRotating = true
         leftSyncStatusObserved = false
         rightSyncStatusObserved = false
