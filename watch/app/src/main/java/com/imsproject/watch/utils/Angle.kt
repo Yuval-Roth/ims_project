@@ -8,6 +8,10 @@ import kotlin.math.absoluteValue
  * This class represents an angle in degrees in the range of (-180,180]
  *
  * The constructor also accepts a special value for undefined angle which is defined by [UNDEFINED_ANGLE]
+ *
+ * The [plus] and [minus] operators are overloaded to support two operations:
+ * 1. [plus] allows adding a positive or negative number (or an `Angle` object) to the current angle, resulting in a new angle
+ * 2. [minus] allows calculating the absolute difference between two angles
  */
 class Angle(
     val floatValue: Float
@@ -22,6 +26,9 @@ class Angle(
     val doubleValue: Double
         get() = floatValue.toDouble()
 
+    /**
+     * @return absolute difference between this angle and the other angle
+     */
     operator fun minus(other: Angle): Angle {
         // handle the gap between 2nd and 3rd quadrants
         val diff = if(this.isInQuadrant(2) && other.isInQuadrant(3)){
@@ -37,21 +44,20 @@ class Angle(
         return Angle(diff.absoluteValue)
     }
 
-    operator fun minus(other: Number): Angle {
-        return minus(Angle(other.toFloat()))
-    }
-
-    operator fun plus(other: Angle): Angle {
-        var added = this.floatValue + other.floatValue
+    /**
+     * @return a new angle that is the sum of this angle and the other angle
+     */
+    operator fun plus(other: Float): Angle {
+        var added = this.floatValue + other
 
         //handle the gap between 2nd and 3rd quadrants
-        added = if(this.isInQuadrant(2) && other.floatValue > 0){
+        added = if(this.isInQuadrant(2) && other > 0){
             if (added > 180){
                 added - 360
             } else {
                 added
             }
-        } else if(this.isInQuadrant(3) && other.floatValue < 0){
+        } else if(this.isInQuadrant(3) && other < 0){
             if (added <= -180){
                 added + 360
             } else {
@@ -65,16 +71,18 @@ class Angle(
         return Angle(added)
     }
 
+    /**
+     * @return a new angle that is the sum of this angle and the other angle
+     */
+    operator fun plus(other: Angle): Angle {
+        return plus(other.floatValue)
+    }
+
+    /**
+     * @return a new angle that is the sum of this angle and the other angle
+     */
     operator fun plus(other: Number): Angle {
-        return plus(Angle(other.toFloat()))
-    }
-
-    operator fun compareTo(other: Angle): Int {
-        return floatValue.compareTo(other.floatValue)
-    }
-
-    operator fun compareTo(other: Number): Int {
-        return compareTo(Angle(other.toFloat()))
+        return plus(other.toFloat())
     }
 
     fun isBetweenInclusive(min: Float, max: Float) =  min <= floatValue && floatValue <= max
@@ -96,6 +104,11 @@ class Angle(
         return floatValue.hashCode()
     }
 
+
+    private fun isInQuadrant(@IntRange(1,4) quadrant: Int) : Boolean {
+        return floatValue.isInQuadrant(quadrant)
+    }
+
     /**
      * this function assumes that the angle is in the range of (-180,180]
      * and the quadrant is in the range of [1,4]
@@ -108,12 +121,12 @@ class Angle(
      *
      * meaning, clockwise side of the quadrant is inclusive and the counter-clockwise side is exclusive
      */
-    private fun isInQuadrant(@IntRange(1,4) quadrant: Int) : Boolean {
+    private fun Float.isInQuadrant(@IntRange(1,4) quadrant: Int) : Boolean {
         return when(quadrant){
-            1 -> 0f < floatValue && floatValue <= 90f
-            2 -> 90f < floatValue && floatValue <= 180f
-            3 -> -180f < floatValue && floatValue <= -90f
-            4 -> -90f < floatValue && floatValue <= 0f
+            1 -> 0f < this && this <= 90f
+            2 -> 90f < this && this <= 180f
+            3 -> -180f < this && this <= -90f
+            4 -> -90f < this && this <= 0f
             else -> throw IllegalArgumentException("Invalid quadrant: $quadrant")
         }
     }
@@ -121,6 +134,7 @@ class Angle(
     companion object {
         /**
          * This function assumes that the angles are in the range of (-180,180]
+         * and that the difference between the angles is less than 180 degrees
          */
         fun isClockwise(
             from: Angle,
@@ -134,7 +148,7 @@ class Angle(
             }
             // simple case
             else {
-                from < to
+                from.floatValue < to.floatValue
             }
         }
     }

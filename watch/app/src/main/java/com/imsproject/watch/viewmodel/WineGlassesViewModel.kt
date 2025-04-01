@@ -104,11 +104,13 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             viewModelScope.launch(Dispatchers.Default) {
                 val opponentFrequencyTracker = FrequencyTracker()
                 while(true) {
-                    var rawAngle = 0.0f.toAngle()
+                    var rawAngle = 0.0f
                     while(rawAngle < 360 * 15){
-                        opponentFrequencyTracker.addSample(rawAngle)
+                        var angle = rawAngle % 360
+                        if(angle > 180) angle -= 360
+                        opponentFrequencyTracker.addSample(angle.toAngle())
                         opponentFrequency = opponentFrequencyTracker.frequency
-                        updateArc(rawAngle,opponentArc)
+                        updateArc(angle.toAngle(),opponentArc)
                         rawAngle += 4
                         delay(16)
                     }
@@ -257,9 +259,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             angleDiff = previousAngle - angle
             val previousAngleDiff = arc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
-            arc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
+            arc.angleSkew = if (angleDiffDiff.floatValue > 1 && angleDiff.floatValue > 3){
                 (angleSkew + angleDiff.floatValue * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
-            } else if (angleDiffDiff < 1){
+            } else if (angleDiffDiff.floatValue < 1){
                 (angleSkew - angleDiff.floatValue * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
             } else {
                 angleSkew
