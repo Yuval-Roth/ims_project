@@ -60,7 +60,8 @@
                     <table class="online-participants-table">
                         <thead>
                         <tr>
-                            <th>Participant Name</th>
+                            <th>ID</th>
+                            <th>Participant</th>
                             <th>Select</th>
                         </tr>
                         </thead>
@@ -165,6 +166,7 @@ document.querySelectorAll('.lobby-row').forEach(row => {
                     data.forEach(participant => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
+                            <td>${participant.pid}</td>
                             <td>${participant.firstName} ${participant.lastName}</td>
                             <td><input type="checkbox" name="selected_participants" value="${participant.id}"></td>
                         `;

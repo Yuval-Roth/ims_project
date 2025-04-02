@@ -43,20 +43,25 @@ def main_menu():
 
 @app.route('/get_participants', methods=['GET'])
 def get_parts():
-    participants = get_participants()  # Replace with your function to fetch participants
+    online_participants_ids = get_participants()  # Replace with your function to fetch participants
+    all_participants = get_participants_for_view()
     # participants = None
     # if not participants:
     #     participants = PARTICIPANTS
-    if len(participants) > 0 and not isinstance(participants[0], dict):
-        # Add some dummy data
-        participants = [{"id": i,  # Convert i to int
-                         "firstName": f"Participant {i}",
-                         "lastName": f"Lastname {i}",
-                         "age": 20,  # Convert i to int before adding
-                         "gender": "Male",
-                         "email": f"{i}@gmail.com",
-                         "phone": f"1234567{i}"} for i in participants]
-    return jsonify(participants)
+
+    if len(online_participants_ids) > 0 and not isinstance(online_participants_ids[0], dict):
+        # make every id in the list, from a '003' to '3'
+        online_participants_ids = [int(x) for x in online_participants_ids]
+
+        online_participants = []
+        for part in all_participants:
+            # convert from string to dict
+            part = json.loads(part)
+            if part['pid'] in online_participants_ids:
+                online_participants.append(part)
+
+        return jsonify(online_participants)
+    return jsonify(all_participants)
 
 
 @app.route('/lobbies', methods=['GET'])
@@ -78,17 +83,16 @@ def create_lobby_action():
         selected_participants = request.form.getlist('selected_participants')  # Get all selected participants
         if len(selected_participants) != 2:  # Ensure exactly two participants are selected
             return "Exactly two participants must be selected to create a lobby.", 400
-        
+
         lobby_id = create_lobby(selected_participants)
         if not lobby_id:
             return "Failed to create lobby.", 500
-        
+
         return redirect(url_for('lobby', lobby_id=lobby_id, selected_participants=",".join(selected_participants)))
 
     except Exception as e:
         Logger.log_error(f"Error creating lobby: {e}")
         return f"Error: {e}", 500
-
 
 
 @app.route('/delete_lobby', methods=['GET'])
@@ -195,6 +199,8 @@ def stop_game_route():
     except Exception as e:
         Logger.log_error(f"Unexpected error in /stop_game: {e}")
         return jsonify({"status": "error", "message": "Internal server error"}), 500
+
+
 @app.route('/get_lobby', methods=['POST'])
 def get_lobby_route():
     lobby_id = request.json.get('lobby_id')
@@ -212,7 +218,6 @@ def get_lobby_route():
 
 @app.route('/update_session_order', methods=['POST'])
 def update_session_order():
-
     data = request.json
     lobby_id = data.get('lobby_id')
     session_order = data.get('session_order')
@@ -241,8 +246,6 @@ def get_sessions_route():
     except Exception as e:
         Logger.log_error(f"Error getting sessions: {e}")
         return jsonify({"status": "error", "message": "Internal server error"}), 500
-
-
 
 
 @app.route('/add_session', methods=['POST'])
@@ -296,6 +299,7 @@ def game_type_from_name():
         game_type = game_type_name
     return jsonify({'status': 'success', 'gameType': game_type})
 
+
 @app.route('/delete_session', methods=['POST'])
 def delete_session_route():
     # return jsonify({"status": "success"})
@@ -326,6 +330,7 @@ def participants_menu():
 
     return render_template('participants.html', participants=participants)
 
+
 @app.route('/add_participant', methods=['POST'])
 def add_part():
     try:
@@ -347,12 +352,11 @@ def add_part():
 def remove_part():
     try:
         if remove_participant(request.json.get('id')):
-            return jsonify({"success":True})
+            return jsonify({"success": True})
         return jsonify({"status": "error", "message": "Failed to remove participant"}), 500
     except Exception as e:
         Logger.log_error(f"Error removing participant: {e}")
         return jsonify({"status": "error", "message": "Internal server error"}), 500
-
 
 
 ###################### OPERATORS ######################
@@ -361,6 +365,7 @@ def operators_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
     return render_template('operators.html')
+
 
 @app.route('/add_operator', methods=['POST'])
 def add_oper():
@@ -375,12 +380,16 @@ def add_oper():
     return add_operator(username, password)
     # return jsonify({"success":True})
 
+
 @app.route('/get_operators', methods=['GET'])
 def get_opers():
     return get_operators()
+
+
 @app.route('/remove_operator', methods=['DELETE'])
 def remove_oper():
     return remove_operator(request.json.get('username'))
+
 
 # @app.route('/edit_operator', methods=['PUT'])
 # def edit_operator():
