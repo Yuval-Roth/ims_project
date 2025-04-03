@@ -1,8 +1,6 @@
 package com.imsproject.watch.utils
 
 import android.util.Log
-import com.imsproject.common.utils.Response
-import com.imsproject.common.utils.fromJson
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.REST_SCHEME
 import com.imsproject.watch.model.SERVER_ERROR_REPORTS_PORT

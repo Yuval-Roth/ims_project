@@ -40,7 +40,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
@@ -64,9 +63,7 @@ import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.collections.mutableMapOf
 
 
 class MainActivity : ComponentActivity() {

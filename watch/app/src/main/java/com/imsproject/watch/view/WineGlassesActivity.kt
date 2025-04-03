@@ -11,7 +11,14 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +57,7 @@ import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.initProperties
+import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import kotlinx.coroutines.delay
@@ -113,14 +121,11 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                                     val inputChange = pointerEvent.changes.first()
                                     inputChange.consume()
                                     val position = inputChange.position
-                                    viewModel.setTouchPoint(
-                                        position.x.toDouble(),
-                                        position.y.toDouble()
-                                    )
+                                    viewModel.setTouchPoint(position.x, position.y)
                                 }
 
                                 PointerEventType.Release -> {
-                                    viewModel.setTouchPoint(-1.0, -1.0)
+                                    viewModel.setTouchPoint(-1.0f, -1.0f)
                                 }
                             }
                             playSound = true
@@ -216,12 +221,12 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                                 .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
-                    myArc.previousAngle = UNDEFINED_ANGLE
-                    myArc.previousAngleDiff = 0f
-                    myArc.startAngle = UNDEFINED_ANGLE
+                    myArc.previousAngle = UNDEFINED_ANGLE.toAngle()
+                    myArc.previousAngleDiff = 0f.toAngle()
+                    myArc.startAngle = UNDEFINED_ANGLE.toAngle()
                     myArc.direction = 0f
                     myArc.angleSkew = MIN_ANGLE_SKEW
-                    viewModel.setTouchPoint(-1.0,-1.0)
+                    viewModel.setTouchPoint(-1.0f,-1.0f)
                 } else {
                     myArc.currentAlpha = ARC_DEFAULT_ALPHA
                 }
@@ -237,7 +242,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                                 .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
-                    opponentArc.startAngle = UNDEFINED_ANGLE
+                    opponentArc.startAngle = UNDEFINED_ANGLE.toAngle()
                 } else {
                     opponentArc.currentAlpha = ARC_DEFAULT_ALPHA
                 }
@@ -269,10 +274,10 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             Canvas(modifier = Modifier.fillMaxSize()) {
 
                 // draw only if the touch point is within the defined borders
-                if (myArc.startAngle != UNDEFINED_ANGLE) {
+                if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
                     drawArc(
                         color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha),
-                        startAngle = myArc.startAngle,
+                        startAngle = myArc.startAngle.floatValue,
                         sweepAngle = MY_SWEEP_ANGLE,
                         useCenter = false,
                         topLeft = MY_ARC_TOP_LEFT,
@@ -282,10 +287,10 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                 }
 
                 // draw opponent's arc
-                if (opponentArc.startAngle != UNDEFINED_ANGLE) {
+                if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
                     drawArc(
                         color = CYAN_COLOR.copy(alpha = opponentArc.currentAlpha),
-                        startAngle = opponentArc.startAngle,
+                        startAngle = opponentArc.startAngle.floatValue,
                         sweepAngle = OPPONENT_SWEEP_ANGLE,
                         useCenter = false,
                         topLeft = OPPONENT_ARC_TOP_LEFT,

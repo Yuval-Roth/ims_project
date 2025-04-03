@@ -44,13 +44,13 @@ import com.imsproject.watch.STRETCH_PEAK_DECAY
 import com.imsproject.watch.STRETCH_POINT_DISTANCE
 import com.imsproject.watch.STRETCH_STEP
 import com.imsproject.watch.initProperties
-import com.imsproject.watch.utils.addToAngle
+import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.utils.calculateTriangleThirdPoint
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.isBetweenInclusive
-import com.imsproject.watch.utils.isClockwise
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.utils.sign
+import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.FlourMillViewModel.Axle
 import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
@@ -62,7 +62,6 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import com.imsproject.watch.BRIGHT_CYAN_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.UNDEFINED_ANGLE
-import com.imsproject.watch.utils.calculateAngleDiff
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
@@ -93,7 +92,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     @Composable
     fun FlourMill() {
-        val (centerX, centerY) = remember { polarToCartesian(0f, 0f) }
+        val (centerX, centerY) = remember { polarToCartesian(0f, 0f.toAngle()) }
         val axle = remember { viewModel.axle }
         val mySide = remember { viewModel.myAxleSide }
         val focusRequester = remember { FocusRequester() }
@@ -122,10 +121,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
                         if (!viewModel.isCoolingDown()) {
                             val position = change.position
-                            val (_, angle) = cartesianToPolar(
-                                position.x.toDouble(),
-                                position.y.toDouble()
-                            )
+                            val (_, angle) = cartesianToPolar(position.x, position.y)
                             val direction = if (angle.isBetweenInclusive(-135.0001f, -45f)) {
                                 if (offset.x < 0) -1 else 1
                             } else if (angle.isBetweenInclusive(-45.0001f, 45f)) {
@@ -161,7 +157,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     // axle
                     if(axle.angle != axle.targetAngle){
                         val direction = getDirection(axle.angle, axle.targetAngle)
-                        axle.angle = addToAngle(axle.angle, STRETCH_STEP * direction)
+                        axle.angle = axle.angle + STRETCH_STEP * direction
                     } else {
                         if(axle.isRotating){
                             axle.effectiveAngle = axle.angle
@@ -268,7 +264,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
         // First thing we do is get the angle of the axle end to its target angle
         if (axleEnd.angle != axleEnd.targetAngle) {
             val direction = getDirection(axleEnd.angle, axleEnd.targetAngle)
-            axleEnd.angle = addToAngle(axleEnd.angle, STRETCH_STEP * direction)
+            axleEnd.angle = axleEnd.angle + STRETCH_STEP * direction
         }
 
         // If the axle end is at its target angle, we check if there is more work to be done
@@ -282,7 +278,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     val baseAngle = axle.getEffectiveEndAngle(animatedSide)
                     val newStretchPeakSign = -1f * axleEnd.stretchPeak.sign()
                     val newStretchPeak = (axleEnd.stretchPeak.absoluteValue - STRETCH_PEAK_DECAY) * newStretchPeakSign
-                    val newTargetAngle = addToAngle(baseAngle, newStretchPeak)
+                    val newTargetAngle = baseAngle + newStretchPeak
                     axleEnd.stretchPeak = newStretchPeak
                     axleEnd.targetAngle = newTargetAngle
 
@@ -322,8 +318,8 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
         }
     }
 
-    private fun getDirection(angle: Float, targetAngle: Float) : Float {
-        return if (isClockwise(angle, targetAngle)) 1f else -1f
+    private fun getDirection(angle: Angle, targetAngle: Angle) : Float {
+        return if (Angle.isClockwise(angle, targetAngle)) 1f else -1f
     }
 
     @Composable

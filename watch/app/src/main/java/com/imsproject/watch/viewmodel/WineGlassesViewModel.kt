@@ -5,11 +5,11 @@ import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastCoerceIn
-import androidx.compose.ui.util.fastMapTo
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -30,13 +30,12 @@ import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
 import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.watch.utils.WavPlayer
-import com.imsproject.watch.utils.addToAngle
-import com.imsproject.watch.utils.calculateAngleDiff
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.isBetweenInclusive
-import com.imsproject.watch.utils.isClockwise
+import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -51,11 +50,11 @@ private const val DIRECTION_MAX_OFFSET = 1.0f
 class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     class Arc{
-        var startAngle by mutableFloatStateOf(UNDEFINED_ANGLE)
+        var startAngle by mutableStateOf(UNDEFINED_ANGLE.toAngle())
         var angleSkew = 0f
         var direction = 0f
-        var previousAngle by mutableFloatStateOf(UNDEFINED_ANGLE)
-        var previousAngleDiff = 0f
+        var previousAngle by mutableStateOf(UNDEFINED_ANGLE.toAngle())
+        var previousAngleDiff = 0f.toAngle()
         var currentAlpha by mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
 
@@ -107,9 +106,11 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                 while(true) {
                     var rawAngle = 0.0f
                     while(rawAngle < 360 * 15){
-                        opponentFrequencyTracker.addSample(rawAngle)
+                        var angle = rawAngle % 360
+                        if(angle > 180) angle -= 360
+                        opponentFrequencyTracker.addSample(angle.toAngle())
                         opponentFrequency = opponentFrequencyTracker.frequency
-                        updateArc(rawAngle,opponentArc)
+                        updateArc(angle.toAngle(),opponentArc)
                         rawAngle += 4
                         delay(16)
                     }
@@ -150,9 +151,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
     }
 
-    fun setTouchPoint(x: Double, y: Double) {
+    fun setTouchPoint(x: Float, y: Float) {
         val (distance,rawAngle) = cartesianToPolar(x, y)
-        val inBounds = if(x != -1.0 && y != -1.0){
+        val inBounds = if(x != -1.0f && y != -1.0f){
             distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
         } else {
             false // not touching the screen
@@ -228,7 +229,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                 } else {
                     _opponentReleased.value = false
                     opponentFrequency = frequency
-                    updateArc(rawAngle,opponentArc)
+                    updateArc(rawAngle.toAngle(),opponentArc)
                 }
 
                 addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,rawAngle.toString()))
@@ -237,31 +238,31 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
     }
 
-    private fun updateArc(angle: Float, arc: Arc){
+    private fun updateArc(angle: Angle, arc: Arc){
 
         // =========== for current iteration =============== |
 
         // calculate the skew angle to show the arc ahead of the finger
         // based on the calculations of the previous iteration
         val angleSkew = arc.angleSkew
-        arc.startAngle = addToAngle(angle,
-                arc.direction.fastCoerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET) * angleSkew
-                - MY_SWEEP_ANGLE / 2
-        )
+        arc.startAngle =
+            angle + (arc.direction.fastCoerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET)
+                                * angleSkew - MY_SWEEP_ANGLE / 2)
+
 
         // ============== for next iteration =============== |
 
         // prepare the skew angle for the next iteration
         val previousAngle = arc.previousAngle
-        var angleDiff = 0f
-        if(previousAngle != UNDEFINED_ANGLE){
-            angleDiff = calculateAngleDiff(previousAngle, angle)
+        var angleDiff = 0f.toAngle()
+        if(previousAngle.floatValue != UNDEFINED_ANGLE){
+            angleDiff = previousAngle - angle
             val previousAngleDiff = arc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
-            arc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
-                (angleSkew + angleDiff * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
-            } else if (angleDiffDiff < 1){
-                (angleSkew - angleDiff * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
+            arc.angleSkew = if (angleDiffDiff.floatValue > 1 && angleDiff.floatValue > 3){
+                (angleSkew + angleDiff.floatValue * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
+            } else if (angleDiffDiff.floatValue < 1){
+                (angleSkew - angleDiff.floatValue * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
             } else {
                 angleSkew
             }
@@ -270,12 +271,12 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         // prepare the direction for the next iteration
         // we add a bit to the max offset to prevent random jitter in the direction
         // we clamp the direction to the max offset when calculating the skewed angle
-        if (previousAngle != UNDEFINED_ANGLE){
+        if (previousAngle.floatValue != UNDEFINED_ANGLE){
             val direction = arc.direction
-            arc.direction = if(isClockwise(previousAngle, angle)){
-                (direction + angleDiff * 0.2f).fastCoerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
-            } else if (! isClockwise(previousAngle, angle)){
-                (direction - angleDiff * 0.2f).fastCoerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
+            arc.direction = if(Angle.isClockwise(previousAngle, angle)){
+                (direction + angleDiff.floatValue * 0.2f).fastCoerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
+            } else if (! Angle.isClockwise(previousAngle, angle)){
+                (direction - angleDiff.floatValue * 0.2f).fastCoerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
             } else {
                 direction
             }

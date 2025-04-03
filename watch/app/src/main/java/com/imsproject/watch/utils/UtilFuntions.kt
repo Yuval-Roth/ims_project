@@ -1,9 +1,7 @@
 package com.imsproject.watch.utils
 
 import androidx.annotation.FloatRange
-import androidx.annotation.IntRange
 import com.imsproject.watch.SCREEN_CENTER
-import kotlin.math.absoluteValue
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -11,53 +9,26 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * this function assumes that the angle is in the range of (-180,180]
- * and the quadrant is in the range of [1,4]
- *
- * the quadrant are defined as follows:
- * 1. 0 < angle <= 90
- * 2. 90 < angle <= 180
- * 3. -180 < angle <= -90
- * 4. -90 < angle <= 0
- *
- * meaning, clockwise side of the quadrant is inclusive and the counter-clockwise side is exclusive
- */
-fun Float.isInQuadrant(@IntRange(1,4) quadrant: Int) : Boolean {
-    return when(quadrant){
-        1 -> 0f < this && this <= 90f
-        2 -> 90f < this && this <= 180f
-        3 -> -180f < this && this <= -90f
-        4 -> -90f < this && this <= 0f
-        else -> throw IllegalArgumentException("Invalid quadrant: $quadrant")
-    }
-}
-
-/**
  * @return Pair of `<distance,angle>` where angle in the range of (-180,180]
  */
-fun cartesianToPolar(x: Double, y:Double) : Pair<Float,Float> {
-    val distance = sqrt(
-        (x - SCREEN_CENTER.x).pow(2) + (y - SCREEN_CENTER.y).pow(2)
-    ).toFloat()
+fun cartesianToPolar(x: Float, y:Float) : Pair<Float,Angle> {
+    val distance = sqrt((x - SCREEN_CENTER.x).pow(2) + (y - SCREEN_CENTER.y).pow(2))
     val angle = Math.toDegrees(
         atan2(
             y - SCREEN_CENTER.y,
             x - SCREEN_CENTER.x
-        )
+        ).toDouble()
     ).toFloat()
-    return distance to angle
+    return distance to angle.toAngle()
 }
 
 /**
  * This function assumes that the angles are in the range of (-180,180]
  * @return Pair of `<x,y>`
  */
-fun polarToCartesian(
-    distanceFromCenter: Float,
-    @FloatRange(-180.0,180.0,false,true) angle: Float
-) : Pair<Float, Float> {
+fun polarToCartesian(distanceFromCenter: Float, angle: Angle) : Pair<Float, Float> {
     // Convert angle to radians
-    val angleRadians = Math.toRadians(angle.toDouble())
+    val angleRadians = Math.toRadians(angle.doubleValue)
 
     // Calculate coordinates
     val (centerX, centerY) = SCREEN_CENTER
@@ -65,76 +36,6 @@ fun polarToCartesian(
     val y = centerY + distanceFromCenter * sin(angleRadians)
 
     return x.toFloat() to y.toFloat()
-}
-
-/**
- * This function assumes that the angles are in the range of (-180,180]
- */
-fun calculateAngleDiff(
-    @FloatRange(-180.0,180.0,false,true) angle1: Float,
-    @FloatRange(-180.0,180.0,false,true) angle2: Float
-) : Float {
-    // handle the gap between 2nd and 3rd quadrants
-    val diff = if(angle1.isInQuadrant(2) && angle2.isInQuadrant(3)){
-        angle1 - (angle2+360)
-    }
-    else if(angle1.isInQuadrant(3) && angle2.isInQuadrant(2)){
-        (angle1+360) - angle2
-    }
-    // simple case
-    else {
-        angle1 - angle2
-    }
-    return diff.absoluteValue
-}
-
-/**
- * This function assumes that the angles are in the range of (-180,180]
- */
-fun isClockwise(
-    @FloatRange(-180.0,180.0,false,true) previousAngle: Float,
-    @FloatRange(-180.0,180.0,false,true) newAngle: Float
-) : Boolean {
-    //handle the gap between 2nd and 3rd quadrants
-    return if(previousAngle.isInQuadrant(2) && newAngle.isInQuadrant(3)){
-        true
-    } else if(previousAngle.isInQuadrant(3) && newAngle.isInQuadrant(2)){
-        false
-    }
-    // simple case
-    else {
-        previousAngle < newAngle
-    }
-}
-
-/**
- * This function assumes that the angles are in the range of (-180,180]
- * and the addition is in the range of [-180,180]
- */
-fun addToAngle(
-    @FloatRange(-180.0,180.0,false,true) angle: Float,
-    @FloatRange(-180.0,180.0,true,true) addition: Float
-) : Float {
-    val added = angle + addition
-
-    //handle the gap between 2nd and 3rd quadrants
-    if(angle.isInQuadrant(2) && addition > 0){
-        return if (added > 180){
-            added - 360
-        } else {
-            added
-        }
-    } else if(angle.isInQuadrant(3) && addition < 0){
-        return if (added <= -180){
-            added + 360
-        } else {
-            added
-        }
-    }
-    // simple case
-    else {
-        return added
-    }
 }
 
 /**
@@ -172,7 +73,7 @@ fun calculateTriangleThirdPoint(
 }
 
 @Suppress("NOTHING_TO_INLINE")
-inline fun Float.isBetweenInclusive(min: Float, max: Float) =  min <= this && this <= max
+inline fun Float.isBetweenInclusive(min: Float, max: Float) = min <= this && this <= max
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Float.sign() = if(this < 0) -1 else if (this > 0) 1 else 0
@@ -189,4 +90,7 @@ inline fun Int.fastCoerceIn(min: Int, max: Int) = when {
     this > max -> max
     else -> this
 }
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun Float.toAngle() = Angle(this)
 
