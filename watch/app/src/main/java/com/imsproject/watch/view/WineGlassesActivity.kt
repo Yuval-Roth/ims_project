@@ -222,7 +222,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                         delay(16)
                     }
                     myArc.previousAngle = UNDEFINED_ANGLE.toAngle()
-                    myArc.previousAngleDiff = 0f.toAngle()
+                    myArc.previousAngleDiff = 0f
                     myArc.startAngle = UNDEFINED_ANGLE.toAngle()
                     myArc.direction = 0f
                     myArc.angleSkew = MIN_ANGLE_SKEW

@@ -27,8 +27,16 @@ fun cartesianToPolar(x: Float, y:Float) : Pair<Float,Angle> {
  * @return Pair of `<x,y>`
  */
 fun polarToCartesian(distanceFromCenter: Float, angle: Angle) : Pair<Float, Float> {
+    return polarToCartesian(distanceFromCenter,angle.doubleValue)
+}
+
+/**
+ * This function assumes that the angles are in the range of (-180,180]
+ * @return Pair of `<x,y>`
+ */
+fun polarToCartesian(distanceFromCenter: Float, angle: Double) : Pair<Float, Float> {
     // Convert angle to radians
-    val angleRadians = Math.toRadians(angle.doubleValue)
+    val angleRadians = Math.toRadians(angle)
 
     // Calculate coordinates
     val (centerX, centerY) = SCREEN_CENTER

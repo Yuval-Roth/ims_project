@@ -29,7 +29,7 @@ class Angle(
     /**
      * @return absolute difference between this angle and the other angle
      */
-    operator fun minus(other: Angle): Angle {
+    operator fun minus(other: Angle): Float {
         // handle the gap between 2nd and 3rd quadrants
         val diff = if(this.isInQuadrant(2) && other.isInQuadrant(3)){
             this.floatValue - (other.floatValue+360)
@@ -41,7 +41,7 @@ class Angle(
         else {
             this.floatValue - other.floatValue
         }
-        return Angle(diff.absoluteValue)
+        return diff.absoluteValue
     }
 
     /**

@@ -23,7 +23,7 @@ class FrequencyTracker {
         val timeDiff = currentTime - lastSampleTime
         if(timeDiff == 0L) return
         val angleDiff = lastSampleAngle - angle
-        val radiansDiff = Math.toRadians(angleDiff.doubleValue)
+        val radiansDiff = Math.toRadians(angleDiff.toDouble())
         val omega = radiansDiff / (timeDiff / 1000.0)
         val frequency = (omega / (2 * Math.PI)).toFloat()
         samples[index] = frequency

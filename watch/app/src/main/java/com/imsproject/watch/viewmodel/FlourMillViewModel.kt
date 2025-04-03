@@ -48,46 +48,9 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
     }
 
-    class AxleEnd(val handleColor: Color, startingAngle: Angle){
-        var angle by mutableStateOf(startingAngle)
-        var targetAngle = startingAngle
-        var stretchPeak = 0.0f
-        var direction = 0
-        var syncThresholdTimeout = 0L
-        var resetting = false
-    }
-
     class Axle(startingAngle: Angle, mySide: AxleSide) {
         var angle by mutableStateOf(startingAngle)
         var targetAngle = startingAngle
-        var isRotating = false
-        // The axle ends are animated based on the effective angle
-        // the effective angle only changes when the axle finishes rotating
-        var effectiveAngle = startingAngle
-        // ================================= |
-        val leftEnd : AxleEnd
-        val rightEnd : AxleEnd
-
-
-        init {
-            val leftColor = when(mySide){
-                AxleSide.LEFT -> BRIGHT_CYAN_COLOR
-                AxleSide.RIGHT -> LIGHT_GRAY_COLOR
-            }
-            val rightColor = when(mySide){
-                AxleSide.LEFT -> LIGHT_GRAY_COLOR
-                AxleSide.RIGHT -> BRIGHT_CYAN_COLOR
-            }
-            leftEnd = AxleEnd(leftColor,getEndAngle(AxleSide.LEFT))
-            rightEnd = AxleEnd(rightColor,getEndAngle(AxleSide.RIGHT))
-        }
-
-        fun getEndAngle(endSide : AxleSide) = angle + endSide.angle
-        fun getEffectiveEndAngle(endSide : AxleSide) = effectiveAngle + endSide.angle
-        fun getEnd(endSide: AxleSide) = when(endSide){
-            AxleSide.LEFT -> leftEnd
-            AxleSide.RIGHT -> rightEnd
-        }
     }
 
     // ================================================================================ |
@@ -99,71 +62,9 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     lateinit var myAxleSide : AxleSide
         private set
 
-    private var coolingDown = false
-    private var resetCooldownTime = 0L
-    private var leftSyncStatusObserved = true
-    private var rightSyncStatusObserved = true
-    private var leftLastRotation =  0L
-    private var rightLastRotation = 0L
-
-    private var dragged = false
-
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
-
-    fun onDragEnd(){
-        dragged = false
-    }
-
-    fun isDragged() = dragged
-
-    fun dragged(){
-        dragged = true
-    }
-
-    fun isCoolingDown() = coolingDown || (System.currentTimeMillis() - resetCooldownTime) < RESET_COOLDOWN_WAIT_TIME
-
-    fun resetCoolDown(){
-        coolingDown = false
-        resetCooldownTime = System.currentTimeMillis()
-    }
-
-    fun isSynced(side: AxleSide): Boolean {
-        val inSync : Boolean
-        when (side) {
-                AxleSide.LEFT -> {
-                    inSync = !leftSyncStatusObserved
-                    leftSyncStatusObserved = true
-                }
-
-                AxleSide.RIGHT -> {
-                    inSync = !rightSyncStatusObserved
-                    rightSyncStatusObserved = true
-                }
-        }
-        if(inSync && side == myAxleSide){
-            viewModelScope.launch(Dispatchers.Default) {
-                addEvent(SessionEvent.syncedAtTime(playerId,getCurrentGameTime()))
-            }
-        }
-        return inSync
-    }
-
-    fun rotateMyAxleEnd(direction: Int){
-        coolingDown = true
-
-        if(ACTIVITY_DEBUG_MODE){
-            rotateAxle(myAxleSide, direction, System.currentTimeMillis())
-            return
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val timestamp = super.getCurrentGameTime()
-            model.sendUserInput(timestamp, packetTracker.newPacket(), direction.toString())
-            addEvent(SessionEvent.rotation(playerId,timestamp, direction.toString()))
-        }
-    }
 
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent,context)
@@ -174,7 +75,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             viewModelScope.launch(Dispatchers.Default) {
                 while (true) {
                     delay(1000)
-                    rotateAxle(AxleSide.LEFT, 1, System.currentTimeMillis())
+                    // TODO: add rotation code
                 }
             }
             return
@@ -190,6 +91,10 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
         FLOUR_MILL_SYNC_TIME_THRESHOLD = syncTolerance
         Log.d(TAG, "syncTolerance: $syncTolerance")
+    }
+
+    fun setTouchPoint(x: Float, y: Float) {
+
     }
 
     // ================================================================================ |
@@ -221,13 +126,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
                 val arrivedTimestamp = getCurrentGameTime()
 
-                withContext(Dispatchers.Main) {
-                    if (actor == playerId) {
-                        rotateAxle(myAxleSide, direction, timestamp)
-                    } else {
-                        rotateAxle(myAxleSide.otherSide(), direction, timestamp)
-                    }
-                }
+                // TODO: handle user input
+
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
@@ -237,42 +137,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             }
             else -> super.handleGameAction(action)
         }
-    }
-
-    private fun rotateAxle(side: AxleSide, direction: Int, timestamp: Long){
-        val axleEnd = axle.getEnd(side)
-        axleEnd.direction = direction
-        axleEnd.stretchPeak = STRETCH_PEAK * direction
-        axleEnd.targetAngle = axle.getEffectiveEndAngle(side) + direction * STRETCH_PEAK
-        axleEnd.syncThresholdTimeout = System.currentTimeMillis() + FLOUR_MILL_SYNC_TIME_THRESHOLD
-
-        val sameDirection = axle.leftEnd.direction == axle.rightEnd.direction
-
-        when(side){
-            AxleSide.LEFT ->{
-                leftLastRotation = timestamp
-
-                if((timestamp - rightLastRotation).absoluteValue < FLOUR_MILL_SYNC_TIME_THRESHOLD
-                    && sameDirection){
-                    setInSync(direction)
-                }
-            }
-            AxleSide.RIGHT ->{
-                rightLastRotation = timestamp
-
-                if((timestamp - leftLastRotation).absoluteValue < FLOUR_MILL_SYNC_TIME_THRESHOLD
-                    && sameDirection){
-                    setInSync(direction)
-                }
-            }
-        }
-    }
-
-    private fun setInSync(direction: Int) {
-        axle.targetAngle = axle.angle + direction * STRETCH_PEAK
-        axle.isRotating = true
-        leftSyncStatusObserved = false
-        rightSyncStatusObserved = false
     }
 
     companion object {
