@@ -6,6 +6,7 @@ from .managers.participants import *
 from .managers.lobby import *
 from .managers.game import *
 from .managers.operators import *
+from .managers.session_data import *
 from .managers.logger import Logger
 from .ENUMS import *
 import json
@@ -14,6 +15,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 Logger()
+
 
 @app.route('/')
 def home():
@@ -391,9 +393,32 @@ def remove_oper():
     return remove_operator(request.json.get('username'))
 
 
-# @app.route('/edit_operator', methods=['PUT'])
-# def edit_operator():
-#     return jsonify({"success":True})
+###################### SESSION DATA ######################
+@app.route('/get_all_sessions', methods=['GET'])
+def get_all_sessions_route():
+    try:
+        sessions = get_all_sessions()
+        return jsonify({"status": "success", "sessions": sessions})
+    except Exception as e:
+        Logger.log_error(f"Error getting all sessions: {e}")
+        return jsonify({"status": "error", "message": "Internal server error"}), 500
+
+
+@app.route('/session_data', methods=['GET'])
+def session_data_menu():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('session_data.html')
+
+@app.route('/session_data/single', methods=['GET'])
+def single_session_data():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    session_id = request.args.get('session_id', '')
+    # You can later use this session_id to load dynamic data from DB or API
+    return render_template('single_session_data.html', session_id=session_id)
+
 
 if __name__ == '__main__':
     # run on port 80

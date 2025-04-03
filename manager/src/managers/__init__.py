@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 from ..ENUMS import *
 
 RUNNING_LOCAL = False
@@ -12,7 +13,7 @@ else:
     URL = "http://ims-game-server:8080/"
 
 
-GAL = False
+GAL = os.getenv("GAL", "False").lower() == "true"
 
 if GAL:
     URL = "https://ims-project.cs.bgu.ac.il:8640/"

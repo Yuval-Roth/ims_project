@@ -1,0 +1,106 @@
+/* Scope everything inside .session-container so it doesn't clash with global styles */
+
+.session-container {
+    width: 90%;
+    /*max-width: 1000px;*/
+    height: 90vh;
+    margin: 40px auto;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px 30px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.session-container h1 {
+    font-size: 26px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.session-container .filters {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+/* Shared input styling for consistent height */
+.session-container .filters input[type="date"] {
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-width: 180px;
+}
+
+/* Type dropdown with reduced height */
+.session-container .filters select {
+    height: 43px; /* adjust as needed */
+    padding: 6px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    min-width: 180px;
+}
+
+
+.session-container .filters button {
+    background-color: #007BFF;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.3s ease;
+}
+
+.session-container .filters button:hover {
+    background-color: #0056b3;
+}
+
+.session-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.session-container th,
+.session-container td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+.session-container th {
+    background-color: #f0f0f0;
+    color: #333;
+    font-weight: bold;
+}
+
+.session-container tr:hover {
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+
+/* Scrollbar styling for session container */
+.session-container::-webkit-scrollbar {
+    width: 5px;
+}
+
+.session-container::-webkit-scrollbar-thumb {
+    background-color: #aaa;
+    border-radius: 8px;
+}
+
+.session-container::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}

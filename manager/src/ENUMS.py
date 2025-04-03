@@ -51,3 +51,6 @@ class GAME_REQUEST_TYPE(Enum):
     add_operator = "add_operator"
     remove_operator = "remove_operator"
     edit_operator = "edit_operator"
+
+    ## Session Data
+    get_all_sessions = "get_all_sessions"

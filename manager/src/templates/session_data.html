@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Session Data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
+</head>
+<body>
+<a href="/main_menu" class="home-button">
+    <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
+</a>
+
+<div class="session-container">
+    <h1>Session Data</h1>
+
+    <div class="filters">
+        <select id="typeFilter">
+            <option value="">All Types</option>
+            <option value="Water Ripples">Water Ripples</option>
+            <option value="Flour Mill">Flour Mill</option>
+            <option value="Wine Glasses">Wine Glasses</option>
+        </select>
+        <input type="date" id="dateFilter">
+        <button onclick="applyFilters()">Filter</button>
+    </div>
+
+    <table id="sessionTable">
+        <thead>
+        <tr>
+            <th>Session ID</th>
+            <th>Participants</th>
+            <th>Game Type</th>
+            <th>Duration</th>
+            <th>Date</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+    let allSessions = [];
+
+    function fetchSessions() {
+        fetch("/get_all_sessions")
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "success") {
+                    allSessions = data.sessions;
+                    renderSessions(allSessions);
+                }
+            });
+    }
+
+    function renderSessions(sessions) {
+        const tbody = document.querySelector("#sessionTable tbody");
+        tbody.innerHTML = "";
+
+        sessions.forEach(session => {
+            const date = session.timestamp ? session.timestamp.split("T")[0] : '';
+            const row = document.createElement("tr");
+            row.onclick = () => {
+                window.location.href = `/session_data/single?session_id=${session.sessionId}`;
+            };
+            row.innerHTML = `
+                <td>${session.sessionId}</td>
+                <td>${session.participants.join(", ")}</td>
+                <td>${session.gameType}</td>
+                <td>${session.duration}</td>
+                <td>${date}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function applyFilters() {
+        const type = document.getElementById("typeFilter").value;
+        const date = document.getElementById("dateFilter").value;
+
+        const filtered = allSessions.filter(s => {
+            const matchesType = !type || s.gameType === type;
+            const matchesDate = !date || (s.timestamp && s.timestamp.startsWith(date));
+            return matchesType && matchesDate;
+        });
+
+        renderSessions(filtered);
+    }
+
+    fetchSessions();
+</script>
+</body>
+</html>
