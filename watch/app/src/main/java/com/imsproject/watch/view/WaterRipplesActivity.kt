@@ -54,26 +54,20 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initProperties(metrics.bounds.width(), metrics.bounds.height())
-        viewModel.onCreate(intent,applicationContext)
+        super.onCreate(viewModel)
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         clickSoundId = soundPool.load(applicationContext, R.raw.ripple_click_sound, 1)
-        setupUncaughtExceptionHandler(viewModel)
         setContent {
             Main()
         }
     }
 
     @Composable
-    fun Main(){
+    override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> {
-                WaterRipples()
-            }
-            else -> super.Main(viewModel)
+            GameViewModel.State.PLAYING -> WaterRipples()
+            else -> super.Main()
         }
     }
 

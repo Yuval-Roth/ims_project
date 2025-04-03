@@ -69,24 +69,18 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initProperties(metrics.bounds.width(), metrics.bounds.height())
-        viewModel.onCreate(intent,applicationContext)
-        setupUncaughtExceptionHandler(viewModel)
+        super.onCreate(viewModel)
         setContent {
             Main()
         }
     }
 
     @Composable
-    fun Main(){
+    override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> {
-                WineGlasses()
-            }
-            else -> super.Main(viewModel)
+            GameViewModel.State.PLAYING -> WineGlasses()
+            else -> super.Main()
         }
     }
 
