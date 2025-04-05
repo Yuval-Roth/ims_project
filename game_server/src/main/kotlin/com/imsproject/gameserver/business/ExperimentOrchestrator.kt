@@ -94,7 +94,7 @@ class ExperimentOrchestrator(
                 delay(session.duration.toLong()*1000)
                 games.endGame(lobbyId)
                 val updatedSessionDTO = SessionDTO(sessionId = sessionId, state = SessionState.COMPLETED.name)
-                daoController.handleUpdate(SectionEnum.SESSION, updatedSessionDTO)
+                daoController.handleUpdate(updatedSessionDTO)
                 sessions.removeSession(lobbyId, session.sessionId)
             }
             lobby.experimentRunning = false
@@ -134,7 +134,7 @@ class ExperimentOrchestrator(
                     throw IllegalStateException("Session dbId not found for in-progress session in lobby $lobbyId")
                 }
                 val updatedSessionDTO = SessionDTO(sessionId = dbId, state = SessionState.CANCELLED.name)
-                daoController.handleUpdate(SectionEnum.SESSION, updatedSessionDTO)
+                daoController.handleUpdate(updatedSessionDTO)
                 sessions.removeSession(lobbyId, currentSession.sessionId)
             }
             if(lobby.hasSessions){

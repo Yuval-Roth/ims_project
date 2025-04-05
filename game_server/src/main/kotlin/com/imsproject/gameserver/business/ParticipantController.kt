@@ -22,7 +22,7 @@ class ParticipantController(val daoController: DAOController) {
 
     fun remove(userId: Int) {
         val pk = ParticipantDTO(pid = userId)
-        daoController.handleDelete(SectionEnum.PARTICIPANT,pk)
+        daoController.handleDelete(pk)
     }
 
     fun addParticipant(participant: ParticipantDTO): Int {
