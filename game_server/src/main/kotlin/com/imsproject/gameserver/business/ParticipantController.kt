@@ -17,7 +17,7 @@ class ParticipantController(val daoController: DAOController) {
     }
 
     fun getAll(): List<ParticipantDTO>{
-        return daoController.handleSelectAll(SectionEnum.PARTICIPANT)
+        return daoController.handleSelectAllParticipants()
     }
 
     fun remove(userId: Int) {

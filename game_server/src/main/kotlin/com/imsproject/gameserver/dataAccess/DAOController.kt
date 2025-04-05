@@ -223,41 +223,61 @@ class DAOController(
     }
 
 
+//    @Throws(DaoException::class)
+//    fun handleSelect(section: SectionEnum, pk: Any): Any {
+//        return when (section) {
+//            SectionEnum.PARTICIPANT -> {
+//                val participantDTO = pk as ParticipantDTO
+//                if (participantDTO.pid == null) throw Exception("A participant id was not provided for selection")
+//                participantDAO.select(ParticipantPK(participantDTO.pid))
+//            }
+//            SectionEnum.EXPERIMENT -> {
+//                val exp = pk as ExperimentDTO
+//                if (exp.expId == null) throw Exception("An experiment id was not provided for selection")
+//                experimentDAO.select(ExperimentPK(exp.expId))
+//            }
+//            SectionEnum.SESSION -> {
+//                val sessionDTO = pk as SessionDTO
+//                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for selection")
+//                sessionDAO.select(SessionPK(sessionDTO.sessionId))
+//            }
+//            SectionEnum.SESSION_EVENT -> {
+//                val sessionEventDTO = pk as SessionEventDTO
+//                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for selection")
+//                sessionEventDAO.select(SessionEventPK(sessionEventDTO.eventId))
+//            }
+//        }
+//    }
+
     @Throws(DaoException::class)
-    fun handleSelect(section: SectionEnum, pk: Any): Any {
-        return when (section) {
-            SectionEnum.PARTICIPANT -> {
-                val participantDTO = pk as ParticipantDTO
-                if (participantDTO.pid == null) throw Exception("A participant id was not provided for selection")
-                participantDAO.select(ParticipantPK(participantDTO.pid))
-            }
-            SectionEnum.EXPERIMENT -> {
-                val exp = pk as ExperimentDTO
-                if (exp.expId == null) throw Exception("An experiment id was not provided for selection")
-                experimentDAO.select(ExperimentPK(exp.expId))
-            }
-            SectionEnum.SESSION -> {
-                val sessionDTO = pk as SessionDTO
-                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for selection")
-                sessionDAO.select(SessionPK(sessionDTO.sessionId))
-            }
-            SectionEnum.SESSION_EVENT -> {
-                val sessionEventDTO = pk as SessionEventDTO
-                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for selection")
-                sessionEventDAO.select(SessionEventPK(sessionEventDTO.eventId))
-            }
-        }
+    fun handleSelect(participantDTO: ParticipantDTO): Any {
+        if (participantDTO.pid == null) throw Exception("A participant id was not provided for selection")
+        return participantDAO.select(ParticipantPK(participantDTO.pid))
     }
 
     @Throws(DaoException::class)
-    fun <T> handleSelectAll(section: SectionEnum): List<T> {
-        return when (section) {
-            SectionEnum.PARTICIPANT -> participantDAO.selectAll() as List<T>
-            SectionEnum.EXPERIMENT -> experimentDAO.selectAll() as List<T>
-            SectionEnum.SESSION -> sessionDAO.selectAll() as List<T>
-            SectionEnum.SESSION_EVENT -> sessionEventDAO.selectAll() as List<T>
-        }
+    fun handleSelect(exp: ExperimentDTO): Any {
+        if (exp.expId == null) throw Exception("An experiment id was not provided for selection")
+        return experimentDAO.select(ExperimentPK(exp.expId))
     }
+
+    @Throws(DaoException::class)
+    fun handleSelect(sessionDTO: SessionDTO): Any {
+        if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for selection")
+        return sessionDAO.select(SessionPK(sessionDTO.sessionId))
+    }
+
+    @Throws(DaoException::class)
+    fun handleSelect(sessionEventDTO: SessionEventDTO): Any {
+        if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for selection")
+        return sessionEventDAO.select(SessionEventPK(sessionEventDTO.eventId))
+    }
+
+    fun handleSelectAllParticipants(): List<ParticipantDTO> = participantDAO.selectAll()
+    fun handleSelectAllExperiments(): List<ExperimentDTO> = experimentDAO.selectAll()
+    fun handleSelectAllSessions(): List<SessionDTO> = sessionDAO.selectAll()
+    fun handleSelectAllSessionEvents(): List<SessionEventDTO> = sessionEventDAO.selectAll()
+
 
     companion object {
         private val log = LoggerFactory.getLogger(DAOController::class.java)
