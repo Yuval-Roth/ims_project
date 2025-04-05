@@ -26,6 +26,6 @@ class ParticipantController(val daoController: DAOController) {
     }
 
     fun addParticipant(participant: ParticipantDTO): Int {
-        return daoController.handleInsert(SectionEnum.PARTICIPANT,participant)
+        return daoController.handleInsert(participant)
     }
 }

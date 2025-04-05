@@ -154,7 +154,7 @@ class RestHandler(
         }
         scope.launch {
             val startTime = System.nanoTime()
-            daoController.handleBulkInsert(SectionEnum.SESSION_EVENT, eventDTOs)
+            daoController.handleBulkInsert(eventDTOs)
             val endTime = System.nanoTime()
             log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
         }

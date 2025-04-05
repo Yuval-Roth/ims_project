@@ -57,7 +57,7 @@ class ExperimentOrchestrator(
         val pid2 = Integer.parseInt(player2Id)
 
         val experimentDTO = ExperimentDTO(null,pid1,pid2)
-        val experimentId = daoController.handleInsert(SectionEnum.EXPERIMENT, experimentDTO)
+        val experimentId = daoController.handleInsert(experimentDTO)
         experimentSessions.forEachIndexed { index, session ->
             if(session.dbId == null){
                 val dto = SessionDTO(
@@ -70,7 +70,7 @@ class ExperimentOrchestrator(
                     session.syncWindowLength.toInt(),
                     SessionState.NOT_STARTED.name
                 )
-                val sessionId = daoController.handleInsert(SectionEnum.SESSION, dto)
+                val sessionId = daoController.handleInsert(dto)
                 session.dbId = sessionId
             }
         }

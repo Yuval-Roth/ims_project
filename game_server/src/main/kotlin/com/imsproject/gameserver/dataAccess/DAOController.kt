@@ -52,24 +52,64 @@ class DAOController(
         return sessionEventDAO.insert(dto)
     }
 
+//    @Throws(DaoException::class)
+//    fun handleInsertAll(section: SectionEnum, dtos: List<Any>): List<Int> {
+//        return when (section) {
+//            SectionEnum.PARTICIPANT -> participantDAO.insertAll(dtos as List<ParticipantDTO>)
+//            SectionEnum.EXPERIMENT -> experimentDAO.insertAll(dtos as List<ExperimentDTO>)
+//            SectionEnum.SESSION -> sessionDAO.insertAll(dtos as List<SessionDTO>)
+//            SectionEnum.SESSION_EVENT -> sessionEventDAO.insertAll(dtos as List<SessionEventDTO>)
+//        }
+//    }
+
     @Throws(DaoException::class)
-    fun handleInsertAll(section: SectionEnum, dtos: List<Any>): List<Int> {
-        return when (section) {
-            SectionEnum.PARTICIPANT -> participantDAO.insertAll(dtos as List<ParticipantDTO>)
-            SectionEnum.EXPERIMENT -> experimentDAO.insertAll(dtos as List<ExperimentDTO>)
-            SectionEnum.SESSION -> sessionDAO.insertAll(dtos as List<SessionDTO>)
-            SectionEnum.SESSION_EVENT -> sessionEventDAO.insertAll(dtos as List<SessionEventDTO>)
-        }
+    fun handleInsertAll(dtos: List<ParticipantDTO>): List<Int> {
+        return participantDAO.insertAll(dtos)
     }
 
     @Throws(DaoException::class)
-    fun handleBulkInsert(section: SectionEnum, dtos: List<Any>): Int {
-        return when (section) {
-            SectionEnum.PARTICIPANT -> throw UnsupportedOperationException("Bulk insert not supported for participants")
-            SectionEnum.EXPERIMENT -> throw UnsupportedOperationException("Bulk insert not supported for experiments")
-            SectionEnum.SESSION -> throw UnsupportedOperationException("Bulk insert not supported for sessions")
-            SectionEnum.SESSION_EVENT -> sessionEventDAO.bulkInsert(dtos as List<SessionEventDTO>)
-        }
+    fun handleInsertAll(dtos: List<ExperimentDTO>): List<Int> {
+        return experimentDAO.insertAll(dtos)
+    }
+
+    @Throws(DaoException::class)
+    fun handleInsertAll(dtos: List<SessionDTO>): List<Int> {
+        return sessionDAO.insertAll(dtos)
+    }
+
+    @Throws(DaoException::class)
+    fun handleInsertAll(dtos: List<SessionEventDTO>): List<Int> {
+        return sessionEventDAO.insertAll(dtos)
+    }
+//
+//    @Throws(DaoException::class)
+//    fun handleBulkInsert(section: SectionEnum, dtos: List<Any>): Int {
+//        return when (section) {
+//            SectionEnum.PARTICIPANT -> throw UnsupportedOperationException("Bulk insert not supported for participants")
+//            SectionEnum.EXPERIMENT -> throw UnsupportedOperationException("Bulk insert not supported for experiments")
+//            SectionEnum.SESSION -> throw UnsupportedOperationException("Bulk insert not supported for sessions")
+//            SectionEnum.SESSION_EVENT -> sessionEventDAO.bulkInsert(dtos as List<SessionEventDTO>)
+//        }
+//    }
+
+    @Throws(DaoException::class)
+    fun handleBulkInsert(dtos: List<ParticipantDTO>): Int {
+        throw UnsupportedOperationException("Bulk insert not supported for participants")
+    }
+
+    @Throws(DaoException::class)
+    fun handleBulkInsert(dtos: List<ExperimentDTO>): Int {
+        throw UnsupportedOperationException("Bulk insert not supported for experiments")
+    }
+
+    @Throws(DaoException::class)
+    fun handleBulkInsert(dtos: List<SessionDTO>): Int {
+            throw UnsupportedOperationException("Bulk insert not supported for sessions")
+    }
+
+    @Throws(DaoException::class)
+    fun handleBulkInsert(dtos: List<SessionEventDTO>): Int {
+        return sessionEventDAO.bulkInsert(dtos)
     }
 
     @Throws(DaoException::class)
