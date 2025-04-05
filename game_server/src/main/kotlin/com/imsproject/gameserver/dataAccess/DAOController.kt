@@ -22,14 +22,34 @@ class DAOController(
     private val sessionEventDAO: SessionEventsDAO
 ) {
 
+//    @Throws(DaoException::class)
+//    fun handleInsert(section: SectionEnum, dto: Any): Int {
+//        return when (section) {
+//            SectionEnum.PARTICIPANT -> participantDAO.insert(dto as ParticipantDTO)
+//            SectionEnum.EXPERIMENT -> experimentDAO.insert(dto as ExperimentDTO)
+//            SectionEnum.SESSION -> sessionDAO.insert(dto as SessionDTO)
+//            SectionEnum.SESSION_EVENT -> sessionEventDAO.insert(dto as SessionEventDTO)
+//        }
+//    }
+
     @Throws(DaoException::class)
-    fun handleInsert(section: SectionEnum, dto: Any): Int {
-        return when (section) {
-            SectionEnum.PARTICIPANT -> participantDAO.insert(dto as ParticipantDTO)
-            SectionEnum.EXPERIMENT -> experimentDAO.insert(dto as ExperimentDTO)
-            SectionEnum.SESSION -> sessionDAO.insert(dto as SessionDTO)
-            SectionEnum.SESSION_EVENT -> sessionEventDAO.insert(dto as SessionEventDTO)
-        }
+    fun handleInsert(dto: ParticipantDTO): Int {
+        return participantDAO.insert(dto)
+    }
+
+    @Throws(DaoException::class)
+    fun handleInsert(dto: ExperimentDTO): Int {
+        return experimentDAO.insert(dto)
+    }
+
+    @Throws(DaoException::class)
+    fun handleInsert(dto: SessionDTO): Int {
+        return sessionDAO.insert(dto)
+    }
+
+    @Throws(DaoException::class)
+    fun handleInsert(dto: SessionEventDTO): Int {
+        return sessionEventDAO.insert(dto)
     }
 
     @Throws(DaoException::class)
