@@ -151,5 +151,7 @@ class Angle(
                 from.floatValue < to.floatValue
             }
         }
+
+        fun undefined(): Angle = Angle(UNDEFINED_ANGLE)
     }
 }

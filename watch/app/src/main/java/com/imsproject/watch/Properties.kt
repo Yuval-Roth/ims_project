@@ -86,6 +86,7 @@ const val AXLE_STARTING_ANGLE = -90f
 var FLOUR_MILL_SYNC_TIME_THRESHOLD = 100L
 const val RESET_COOLDOWN_WAIT_TIME = 16
 const val STRETCH_PEAK = 12.0f
+const val TOUCH_CIRCLE_RADIUS = 30f
 // ============================================ |
 // these values must be a normal fraction of STRETCH_PEAK to ensure that we reach
 // the target angle exactly and not overshoot it

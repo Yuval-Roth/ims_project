@@ -24,6 +24,8 @@ import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.absoluteValue
@@ -62,6 +64,18 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     lateinit var myAxleSide : AxleSide
         private set
 
+    private var _myTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
+    /**
+     *  <relativeRadius,angle>
+     */
+    val myTouchPoint: StateFlow<Pair<Float,Angle>> = _myTouchPoint
+
+    private var _opponentTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
+    /**
+     *  <relativeRadius,angle>
+     */
+    val opponentTouchPoint: StateFlow<Pair<Float,Angle>> = _opponentTouchPoint
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -93,8 +107,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         Log.d(TAG, "syncTolerance: $syncTolerance")
     }
 
-    fun setTouchPoint(x: Float, y: Float) {
-
+    fun setTouchPoint(relativeRadius: Float, angle: Angle) {
+        _myTouchPoint.value = relativeRadius to angle
     }
 
     // ================================================================================ |
