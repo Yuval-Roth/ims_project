@@ -18,7 +18,7 @@ class DAOController(
     private val sessionDAO: SessionsDAO,
     private val sessionEventDAO: SessionEventsDAO
 ) {
-    
+
     @Throws(DaoException::class)
     fun handleInsert(dto: ParticipantDTO): Int {
         return participantDAO.insert(dto)

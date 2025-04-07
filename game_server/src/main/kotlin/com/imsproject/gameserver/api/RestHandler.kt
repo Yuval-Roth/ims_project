@@ -10,8 +10,9 @@ import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
-import com.imsproject.gameserver.dataAccess.SectionEnum
+import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
+import com.imsproject.gameserver.dataAccess.models.SessionDTO
 import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -160,8 +161,6 @@ class RestHandler(
         }
         return Response.getOk().toResponseEntity()
     }
-
-
 
     @GetMapping("/login")
     fun login(@RequestHeader(value = "Authorization") header : String?): ResponseEntity<String> {
