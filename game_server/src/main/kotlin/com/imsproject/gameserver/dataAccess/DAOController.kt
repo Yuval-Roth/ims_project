@@ -9,9 +9,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.sql.SQLException
 
-enum class SectionEnum {
-    PARTICIPANT, EXPERIMENT, SESSION, SESSION_EVENT
-}
 
 @Suppress("UNCHECKED_CAST")
 @Component
@@ -22,15 +19,6 @@ class DAOController(
     private val sessionEventDAO: SessionEventsDAO
 ) {
 
-//    @Throws(DaoException::class)
-//    fun handleInsert(section: SectionEnum, dto: Any): Int {
-//        return when (section) {
-//            SectionEnum.PARTICIPANT -> participantDAO.insert(dto as ParticipantDTO)
-//            SectionEnum.EXPERIMENT -> experimentDAO.insert(dto as ExperimentDTO)
-//            SectionEnum.SESSION -> sessionDAO.insert(dto as SessionDTO)
-//            SectionEnum.SESSION_EVENT -> sessionEventDAO.insert(dto as SessionEventDTO)
-//        }
-//    }
 
     @Throws(DaoException::class)
     fun handleInsert(dto: ParticipantDTO): Int {
@@ -105,41 +93,28 @@ class DAOController(
     fun handleBulkInsertSessionEvents(dtos: List<SessionEventDTO>): Int =
         sessionEventDAO.bulkInsert(dtos)
 
+
     @Throws(DaoException::class)
-    fun handleExists(section: SectionEnum, pk: Any): Boolean {
-        return when (section) {
-            SectionEnum.PARTICIPANT -> participantDAO.exists(pk as ParticipantPK)
-            SectionEnum.EXPERIMENT -> experimentDAO.exists(pk as ExperimentPK)
-            SectionEnum.SESSION -> sessionDAO.exists(pk as SessionPK)
-            SectionEnum.SESSION_EVENT -> sessionEventDAO.exists(pk as SessionEventPK)
-        }
+    fun handleExists(pk: ParticipantPK): Boolean {
+        return participantDAO.exists(pk)
     }
 
-//    @Throws(DaoException::class)
-//    fun handleDelete(section: SectionEnum, pk: Any) {
-//        when (section) {
-//            SectionEnum.PARTICIPANT -> {
-//                val participantDTO = pk as ParticipantDTO
-//                if (participantDTO.pid == null) throw Exception("A participant id was not provided for deletion")
-//                participantDAO.delete(ParticipantPK(participantDTO.pid))
-//            }
-//            SectionEnum.EXPERIMENT -> {
-//                val exp = pk as ExperimentDTO
-//                if (exp.expId == null) throw Exception("An experiment id was not provided for deletion")
-//                experimentDAO.delete(ExperimentPK(exp.expId))
-//            }
-//            SectionEnum.SESSION -> {
-//                val sessionDTO = pk as SessionDTO
-//                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for deletion")
-//                sessionDAO.delete(SessionPK(sessionDTO.sessionId))
-//            }
-//            SectionEnum.SESSION_EVENT -> {
-//                val sessionEventDTO = pk as SessionEventDTO
-//                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for deletion")
-//                sessionEventDAO.delete(SessionEventPK(sessionEventDTO.eventId))
-//            }
-//        }
-//    }
+    @Throws(DaoException::class)
+    fun handleExists(pk: ExperimentPK): Boolean {
+        return experimentDAO.exists(pk)
+    }
+
+    @Throws(DaoException::class)
+    fun handleExists(pk: SessionPK): Boolean {
+        return sessionDAO.exists(pk)
+    }
+
+    @Throws(DaoException::class)
+    fun handleExists(pk: SessionEventPK): Boolean {
+        return sessionEventDAO.exists(pk)
+    }
+
+
 
     @Throws(DaoException::class)
     fun handleDelete(participantDTO: ParticipantDTO) {

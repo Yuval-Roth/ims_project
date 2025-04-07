@@ -161,6 +161,8 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
+
+
     @GetMapping("/login")
     fun login(@RequestHeader(value = "Authorization") header : String?): ResponseEntity<String> {
         if(header == null){
