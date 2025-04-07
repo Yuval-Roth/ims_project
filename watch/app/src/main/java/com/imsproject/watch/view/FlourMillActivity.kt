@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -39,6 +40,7 @@ import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.TOUCH_CIRCLE_RADIUS
 import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
+import kotlinx.coroutines.delay
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
@@ -64,9 +66,28 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
     @Composable
     fun FlourMill() {
         val (centerX, centerY) = remember { polarToCartesian(0f, 0.0) }
+        val myAxleSide = remember { viewModel.myAxleSide }
         val axle = viewModel.axle.collectAsState().value
         val myTouchPoint = viewModel.myTouchPoint.collectAsState().value
         val opponentTouchPoint = viewModel.opponentTouchPoint.collectAsState().value
+
+        LaunchedEffect(Unit){
+            while(true){
+                delay(16)
+                val axle = viewModel.axle.value ?: continue
+                if(axle.targetAngle != axle.angle){
+                    val diff = axle.targetAngle - axle.angle
+                    val direction = if(Angle.isClockwise(axle.angle,axle.targetAngle)) 1 else -1
+                    if(diff < 1) {
+                        axle.angle = axle.targetAngle
+                    } else if(diff > 4) {
+                        axle.angle += 2f * direction
+                    } else {
+                        axle.angle += 1f * direction
+                    }
+                }
+            }
+        }
 
         Box(
             modifier = Modifier
@@ -84,6 +105,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                                     val relativeRadius = radius / SCREEN_RADIUS
                                     viewModel.setTouchPoint(relativeRadius, angle)
                                 }
+
                                 PointerEventType.Release -> {
                                     viewModel.setTouchPoint(-1f, Angle.undefined())
                                 }
@@ -133,6 +155,8 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
             Canvas(modifier = Modifier.Companion.fillMaxSize()){
                 if(axle != null){
 
+                    // ===== Draw the axle without the colored tips ===== |
+
                     val axleLeftAngle = axle.angle + -90f
                     val axleRightAngle = axle.angle + 90f
                     val (leftTipStartX, leftTipStartY) = polarToCartesian(SCREEN_RADIUS * 0.7f, axleLeftAngle)
@@ -158,20 +182,16 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                         style = Stroke(width = AXLE_WIDTH)
                     )
 
-                    val sides = listOf(myTouchPoint to axle.mySide, opponentTouchPoint to axle.mySide.otherSide())
-                    for((touchPoint, side) in sides){
-                        val color = if (side == axle.mySide) BRIGHT_CYAN_COLOR else SILVER_COLOR
-                        val path: Path
-                        val sideAngle: Angle
-                        when (side) {
-                            AxleSide.LEFT -> {
-                                path = leftTipPath
-                                sideAngle = axleLeftAngle
-                            }
-                            AxleSide.RIGHT -> {
-                                path = rightTipPath
-                                sideAngle = axleRightAngle
-                            }
+                    val sides = listOf(
+                        Triple(myTouchPoint,myAxleSide,BRIGHT_CYAN_COLOR),
+                        Triple(opponentTouchPoint,myAxleSide.otherSide(),SILVER_COLOR)
+                    )
+                    for((touchPoint, side, color) in sides){
+
+                        // ===== Draw the colored tips of the axle ====== |
+                        val path = when (side) {
+                            AxleSide.LEFT -> leftTipPath
+                            AxleSide.RIGHT -> rightTipPath
                         }
                         drawPath(
                             path = path,
@@ -181,13 +201,10 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
                         if(touchPoint.first < 0f) continue
 
-                        val touchPointDistance = touchPoint.first * SCREEN_RADIUS
-                        val touchPointAngle = touchPoint.second
-                        val touchPointInBounds = (touchPointAngle - sideAngle <= (360f / TOUCH_CIRCLE_RADIUS))
-                                && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
-                                && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)
+                        // ===== Draw the touch point ====== |
 
-                        val (x,y) = polarToCartesian(touchPointDistance, touchPointAngle)
+                        val touchPointInBounds = viewModel.isTouchPointInbounds(side)
+                        val (x,y) = polarToCartesian(touchPoint.first * SCREEN_RADIUS, touchPoint.second)
 
                         drawCircle(
                             radius = TOUCH_CIRCLE_RADIUS,
