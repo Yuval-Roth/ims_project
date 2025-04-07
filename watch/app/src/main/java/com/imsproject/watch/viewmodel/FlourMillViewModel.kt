@@ -50,7 +50,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
     }
 
-    class Axle(startingAngle: Angle, mySide: AxleSide) {
+    class Axle(startingAngle: Angle, val mySide: AxleSide) {
         var angle by mutableStateOf(startingAngle)
         var targetAngle = startingAngle
     }
@@ -59,18 +59,19 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    lateinit var axle : Axle
-        private set
+    private val _axle = MutableStateFlow<Axle?>(null)
+    val axle: StateFlow<Axle?> = _axle
+
     lateinit var myAxleSide : AxleSide
         private set
 
-    private var _myTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
+    private val _myTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
     /**
      *  <relativeRadius,angle>
      */
     val myTouchPoint: StateFlow<Pair<Float,Angle>> = _myTouchPoint
 
-    private var _opponentTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
+    private val _opponentTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
     /**
      *  <relativeRadius,angle>
      */
@@ -85,7 +86,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
         if(ACTIVITY_DEBUG_MODE) {
             myAxleSide = AxleSide.RIGHT
-            axle = Axle(AXLE_STARTING_ANGLE.toAngle(), myAxleSide)
+//            axle = Axle(AXLE_STARTING_ANGLE.toAngle(), myAxleSide)
             viewModelScope.launch(Dispatchers.Default) {
                 while (true) {
                     delay(1000)
@@ -96,7 +97,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
 
         myAxleSide = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { AxleSide.fromString(it) }!!
-        axle = Axle(AXLE_STARTING_ANGLE.toAngle(), myAxleSide)
 
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
         if (syncTolerance <= 0L) {
@@ -109,6 +109,13 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
     fun setTouchPoint(relativeRadius: Float, angle: Angle) {
         _myTouchPoint.value = relativeRadius to angle
+
+        if(relativeRadius < 0f){
+            _axle.value = null
+        } else if (relativeRadius >= 0f && _axle.value == null){
+            val axleAngle = if(myAxleSide == AxleSide.RIGHT) angle + -90f else angle + 90f
+            _axle.value = Axle(axleAngle, myAxleSide)
+        }
     }
 
     // ================================================================================ |

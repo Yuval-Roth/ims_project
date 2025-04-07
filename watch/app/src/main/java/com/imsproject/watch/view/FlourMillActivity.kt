@@ -11,9 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,8 +35,10 @@ import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import androidx.compose.ui.input.pointer.PointerEventType
 import com.imsproject.watch.BRIGHT_CYAN_COLOR
+import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.TOUCH_CIRCLE_RADIUS
 import com.imsproject.watch.utils.Angle
+import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
@@ -64,8 +64,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
     @Composable
     fun FlourMill() {
         val (centerX, centerY) = remember { polarToCartesian(0f, 0.0) }
-        val axle = remember { viewModel.axle }
-        var showAxle by remember { mutableStateOf(false) }
+        val axle = viewModel.axle.collectAsState().value
         val myTouchPoint = viewModel.myTouchPoint.collectAsState().value
         val opponentTouchPoint = viewModel.opponentTouchPoint.collectAsState().value
 
@@ -78,21 +77,15 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                             val pointerEvent = awaitPointerEvent()
                             val inputChange = pointerEvent.changes.first()
                             inputChange.consume()
-                            val position = inputChange.position
-                            val (radius, angle) = cartesianToPolar(position.x, position.y)
-                            val relativeRadius = radius / SCREEN_RADIUS
                             when (pointerEvent.type) {
-                                PointerEventType.Press -> {
-                                    axle.angle = angle + -90f
-                                    viewModel.setTouchPoint(relativeRadius, angle)
-                                    showAxle = true
-                                }
-                                PointerEventType.Move -> {
+                                PointerEventType.Press, PointerEventType.Move -> {
+                                    val position = inputChange.position
+                                    val (radius, angle) = cartesianToPolar(position.x, position.y)
+                                    val relativeRadius = radius / SCREEN_RADIUS
                                     viewModel.setTouchPoint(relativeRadius, angle)
                                 }
                                 PointerEventType.Release -> {
                                     viewModel.setTouchPoint(-1f, Angle.undefined())
-                                    showAxle = false
                                 }
                             }
                         }
@@ -138,46 +131,68 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     .background(color = DARK_BACKGROUND_COLOR)
             )
             Canvas(modifier = Modifier.Companion.fillMaxSize()){
-                for(touchPoint in listOf(myTouchPoint, opponentTouchPoint)){
-                    if(touchPoint.first < 0f) continue
+                if(axle != null){
 
-                    val (leftX, leftY) = polarToCartesian(SCREEN_RADIUS * 0.7f, axle.angle + 90f)
-                    val (leftX2, leftY2) = polarToCartesian(SCREEN_RADIUS * 0.9f, axle.angle + 90f)
-                    val (rightX, rightY) = polarToCartesian(SCREEN_RADIUS * 0.9f, axle.angle + -90f)
-
-                    val touchPointDistance = touchPoint.first * SCREEN_RADIUS
-                    val touchPointAngle = touchPoint.second
-                    val touchPointInBounds = (touchPointAngle - (axle.angle + 90f) <= (360f / TOUCH_CIRCLE_RADIUS))
-                            && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
-                            && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)
-
-                    val (x,y) = polarToCartesian(touchPointDistance, touchPointAngle)
+                    val axleLeftAngle = axle.angle + -90f
+                    val axleRightAngle = axle.angle + 90f
+                    val (leftTipStartX, leftTipStartY) = polarToCartesian(SCREEN_RADIUS * 0.7f, axleLeftAngle)
+                    val (leftTipEndX, leftTipEndY) = polarToCartesian(SCREEN_RADIUS * 0.9f, axleLeftAngle)
+                    val (rightTipStartX, rightTipStartY) = polarToCartesian(SCREEN_RADIUS * 0.7f, axleRightAngle)
+                    val (rightTipEndX, rightTipEndY) = polarToCartesian(SCREEN_RADIUS * 0.9f, axleRightAngle)
 
                     val axlePath = Path().apply {
-                        moveTo(rightX,rightY)
-                        lineTo(leftX, leftY)
+                        moveTo(rightTipStartX,rightTipStartY)
+                        lineTo(leftTipStartX, leftTipStartY)
                     }
-
-                    val axlePath2 = Path().apply {
-                        moveTo(leftX,leftY)
-                        lineTo(leftX2, leftY2)
+                    val leftTipPath = Path().apply {
+                        moveTo(leftTipStartX,leftTipStartY)
+                        lineTo(leftTipEndX, leftTipEndY)
                     }
+                    val rightTipPath = Path().apply {
+                        moveTo(rightTipStartX,rightTipStartY)
+                        lineTo(rightTipEndX, rightTipEndY)
+                    }
+                    drawPath(
+                        path = axlePath,
+                        color = GLOWING_YELLOW_COLOR,
+                        style = Stroke(width = AXLE_WIDTH)
+                    )
 
-                    if(showAxle){
+                    val sides = listOf(myTouchPoint to axle.mySide, opponentTouchPoint to axle.mySide.otherSide())
+                    for((touchPoint, side) in sides){
+                        val color = if (side == axle.mySide) BRIGHT_CYAN_COLOR else SILVER_COLOR
+                        val path: Path
+                        val sideAngle: Angle
+                        when (side) {
+                            AxleSide.LEFT -> {
+                                path = leftTipPath
+                                sideAngle = axleLeftAngle
+                            }
+                            AxleSide.RIGHT -> {
+                                path = rightTipPath
+                                sideAngle = axleRightAngle
+                            }
+                        }
                         drawPath(
-                            path = axlePath,
-                            color = GLOWING_YELLOW_COLOR,
+                            path = path,
+                            color = color,
                             style = Stroke(width = AXLE_WIDTH)
                         )
-                        drawPath(
-                            path = axlePath2,
-                            color = BRIGHT_CYAN_COLOR,
-                            style = Stroke(width = AXLE_WIDTH)
-                        )
+
+                        if(touchPoint.first < 0f) continue
+
+                        val touchPointDistance = touchPoint.first * SCREEN_RADIUS
+                        val touchPointAngle = touchPoint.second
+                        val touchPointInBounds = (touchPointAngle - sideAngle <= (360f / TOUCH_CIRCLE_RADIUS))
+                                && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
+                                && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)
+
+                        val (x,y) = polarToCartesian(touchPointDistance, touchPointAngle)
+
                         drawCircle(
                             radius = TOUCH_CIRCLE_RADIUS,
                             center = Offset(x, y),
-                            color = if (touchPointInBounds) BRIGHT_CYAN_COLOR else BRIGHT_CYAN_COLOR.copy(alpha = 0.5f),
+                            color = if (touchPointInBounds) color else color.copy(alpha = 0.5f),
                         )
                     }
                 }
