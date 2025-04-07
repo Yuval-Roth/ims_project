@@ -18,8 +18,7 @@ class DAOController(
     private val sessionDAO: SessionsDAO,
     private val sessionEventDAO: SessionEventsDAO
 ) {
-
-
+    
     @Throws(DaoException::class)
     fun handleInsert(dto: ParticipantDTO): Int {
         return participantDAO.insert(dto)
@@ -40,16 +39,6 @@ class DAOController(
         return sessionEventDAO.insert(dto)
     }
 
-//    @Throws(DaoException::class)
-//    fun handleInsertAll(section: SectionEnum, dtos: List<Any>): List<Int> {
-//        return when (section) {
-//            SectionEnum.PARTICIPANT -> participantDAO.insertAll(dtos as List<ParticipantDTO>)
-//            SectionEnum.EXPERIMENT -> experimentDAO.insertAll(dtos as List<ExperimentDTO>)
-//            SectionEnum.SESSION -> sessionDAO.insertAll(dtos as List<SessionDTO>)
-//            SectionEnum.SESSION_EVENT -> sessionEventDAO.insertAll(dtos as List<SessionEventDTO>)
-//        }
-//    }
-
     @Throws(DaoException::class)
     fun handleInsertAllParticipants(dtos: List<ParticipantDTO>): List<Int> =
         participantDAO.insertAll(dtos)
@@ -66,17 +55,6 @@ class DAOController(
     fun handleInsertAllSessionEvents(dtos: List<SessionEventDTO>): List<Int> =
         sessionEventDAO.insertAll(dtos)
 
-//
-//    @Throws(DaoException::class)
-//    fun handleBulkInsert(section: SectionEnum, dtos: List<Any>): Int {
-//        return when (section) {
-//            SectionEnum.PARTICIPANT -> throw UnsupportedOperationException("Bulk insert not supported for participants")
-//            SectionEnum.EXPERIMENT -> throw UnsupportedOperationException("Bulk insert not supported for experiments")
-//            SectionEnum.SESSION -> throw UnsupportedOperationException("Bulk insert not supported for sessions")
-//            SectionEnum.SESSION_EVENT -> sessionEventDAO.bulkInsert(dtos as List<SessionEventDTO>)
-//        }
-//    }
-
     @Throws(DaoException::class)
     fun handleBulkInsertParticipants(dtos: List<ParticipantDTO>): Int =
         throw UnsupportedOperationException("Bulk insert not supported for participants")
@@ -92,7 +70,6 @@ class DAOController(
     @Throws(DaoException::class)
     fun handleBulkInsertSessionEvents(dtos: List<SessionEventDTO>): Int =
         sessionEventDAO.bulkInsert(dtos)
-
 
     @Throws(DaoException::class)
     fun handleExists(pk: ParticipantPK): Boolean {
@@ -140,32 +117,6 @@ class DAOController(
         sessionEventDAO.delete(SessionEventPK(sessionEventDTO.eventId))
     }
 
-//    @Throws(DaoException::class)
-//    fun handleUpdate(section: SectionEnum, dto: Any) {
-//        when (section) {
-//            SectionEnum.PARTICIPANT -> {
-//                val participantDTO = dto as ParticipantDTO
-//                if (participantDTO.pid == null) throw Exception("A participant id was not provided for update")
-//                participantDAO.update(participantDTO)
-//            }
-//            SectionEnum.EXPERIMENT -> {
-//                val exp = dto as ExperimentDTO
-//                if (exp.expId == null) throw Exception("An experiment id was not provided for update")
-//                experimentDAO.update(exp)
-//            }
-//            SectionEnum.SESSION -> {
-//                val sessionDTO = dto as SessionDTO
-//                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for update")
-//                sessionDAO.update(sessionDTO)
-//            }
-//            SectionEnum.SESSION_EVENT -> {
-//                val sessionEventDTO = dto as SessionEventDTO
-//                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for update")
-//                sessionEventDAO.update(sessionEventDTO)
-//            }
-//        }
-//    }
-
     @Throws(DaoException::class)
     fun handleUpdate(participantDTO: ParticipantDTO) {
         if (participantDTO.pid == null) throw Exception("A participant id was not provided for update")
@@ -189,33 +140,6 @@ class DAOController(
         if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for update")
         sessionEventDAO.update(sessionEventDTO)
     }
-
-
-//    @Throws(DaoException::class)
-//    fun handleSelect(section: SectionEnum, pk: Any): Any {
-//        return when (section) {
-//            SectionEnum.PARTICIPANT -> {
-//                val participantDTO = pk as ParticipantDTO
-//                if (participantDTO.pid == null) throw Exception("A participant id was not provided for selection")
-//                participantDAO.select(ParticipantPK(participantDTO.pid))
-//            }
-//            SectionEnum.EXPERIMENT -> {
-//                val exp = pk as ExperimentDTO
-//                if (exp.expId == null) throw Exception("An experiment id was not provided for selection")
-//                experimentDAO.select(ExperimentPK(exp.expId))
-//            }
-//            SectionEnum.SESSION -> {
-//                val sessionDTO = pk as SessionDTO
-//                if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for selection")
-//                sessionDAO.select(SessionPK(sessionDTO.sessionId))
-//            }
-//            SectionEnum.SESSION_EVENT -> {
-//                val sessionEventDTO = pk as SessionEventDTO
-//                if (sessionEventDTO.eventId == null) throw Exception("A session event id was not provided for selection")
-//                sessionEventDAO.select(SessionEventPK(sessionEventDTO.eventId))
-//            }
-//        }
-//    }
 
     @Throws(DaoException::class)
     fun handleSelect(participantDTO: ParticipantDTO): Any {
