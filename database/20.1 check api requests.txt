@@ -91,3 +91,62 @@ EXP WITH SESSION
 
 curl -X POST "http://localhost:8080/data/experimentSession/insert" -H "Content-Type: application/json" -d "{\"pid1\":1,\"pid2\":2,\"sessions\":[{\"duration\":30,\"sessionType\":\"type1\",\"sessionOrder\":1,\"tolerance\":10,\"windowLength\":5},{\"duration\":45,\"sessionType\":\"Use PostgreSQLExecutor.\",\"sessionOrder\":2,\"tolerance\":12,\"windowLength\":6}]}"
 
+
+code for api testing: 
+    @PostMapping("/data/participant/{action}")
+    fun dataTest1(        @PathVariable action: String,
+                         @RequestBody body: String): ResponseEntity<String> {
+        var obj = fromJson<ParticipantDTO>(body)
+
+        when(action) {
+            "insert" -> { daoController.handleInsert(obj) }
+            "delete" -> { daoController.handleDelete(obj) }
+            "update" -> { daoController.handleUpdate(obj) }
+            "select" -> { daoController.handleSelect(obj) }
+        }
+        return Response.getOk().toResponseEntity()
+    }
+
+    @PostMapping("/data/experiment/{action}")
+    fun dataTest2(
+                         @PathVariable action: String,
+                         @RequestBody body: String): ResponseEntity<String> {
+        var obj = fromJson<ExperimentDTO>(body)
+
+        when(action) {
+            "insert" -> { daoController.handleInsert(obj) }
+            "delete" -> { daoController.handleDelete(obj) }
+            "update" -> { daoController.handleUpdate(obj) }
+            "select" -> { daoController.handleSelect(obj) }
+        }
+        return Response.getOk().toResponseEntity()
+    }
+
+    @PostMapping("/data/session/{action}")
+    fun dataTest3(
+        @PathVariable action: String,
+        @RequestBody body: String): ResponseEntity<String> {
+        var obj = fromJson<SessionDTO>(body)
+        when(action) {
+            "insert" -> { daoController.handleInsert(obj) }
+            "delete" -> { daoController.handleDelete(obj) }
+            "update" -> { daoController.handleUpdate(obj) }
+            "select" -> { daoController.handleSelect(obj) }
+        }
+        return Response.getOk().toResponseEntity()
+    }
+
+    @PostMapping("/data/sessionEvent/{action}")
+    fun dataTest4(
+        @PathVariable action: String,
+        @RequestBody body: String): ResponseEntity<String> {
+        var obj = fromJson<SessionEventDTO>(body)
+
+        when(action) {
+            "insert" -> { daoController.handleInsert(obj) }
+            "delete" -> { daoController.handleDelete(obj) }
+            "update" -> { daoController.handleUpdate(obj) }
+            "select" -> { daoController.handleSelect(obj) }
+        }
+        return Response.getOk().toResponseEntity()
+    }
