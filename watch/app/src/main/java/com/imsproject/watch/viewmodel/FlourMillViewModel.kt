@@ -9,13 +9,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.FLOUR_MILL_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.TOUCH_CIRCLE_RADIUS
-import com.imsproject.watch.utils.Angle
+import com.imsproject.common.utils.Angle
+import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.utils.PacketTracker
+import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -49,6 +51,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         var targetAngle = startingAngle
     }
 
+    private val serverPacketTracker = PacketTracker()
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
@@ -59,17 +63,23 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     lateinit var myAxleSide : AxleSide
         private set
 
-    private val _myTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
+    private val _myTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined)
     /**
      *  <relativeRadius,angle>
      */
     val myTouchPoint: StateFlow<Pair<Float,Angle>> = _myTouchPoint
 
-    private val _opponentTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined())
+    private val _opponentTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined)
     /**
      *  <relativeRadius,angle>
      */
     val opponentTouchPoint: StateFlow<Pair<Float,Angle>> = _opponentTouchPoint
+
+    private val _myInBounds = MutableStateFlow(false)
+    val myInBounds: StateFlow<Boolean> = _myInBounds
+
+    private val _opponentInBounds = MutableStateFlow(false)
+    val opponentInBounds: StateFlow<Boolean> = _opponentInBounds
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -78,24 +88,25 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent,context)
 
-        viewModelScope.launch {
-            while(true){
-                delay(16)
-                updateAxleAngle()
-            }
-        }
-
         if(ACTIVITY_DEBUG_MODE) {
             myAxleSide = AxleSide.RIGHT
+            viewModelScope.launch {
+                while(true){
+                    delay(16)
+                    updateAxleAngle()
+                }
+            }
             viewModelScope.launch(Dispatchers.Default) {
                 while (true) {
                     delay(100)
                     val axle = _axle.value
                     if(axle == null){
-                        _opponentTouchPoint.value = -1f to Angle.undefined()
+                        _opponentTouchPoint.value = -1f to Angle.undefined
+                        _opponentInBounds.value = false
                     } else {
                         val angle = axle.angle + -80f
                         _opponentTouchPoint.value = 0.8f to angle
+                        _opponentInBounds.value = true
                     }
                 }
             }
@@ -115,31 +126,13 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
     fun setTouchPoint(relativeRadius: Float, angle: Angle) {
         _myTouchPoint.value = relativeRadius to angle
-
-        if(relativeRadius < 0f){
-            _axle.value = null
-        } else if (relativeRadius >= 0f && _axle.value == null){
-
-            //TODO: do this in the correct place as it won't be local in the future
-            val axleAngle = angle + if(myAxleSide == AxleSide.RIGHT) -AxleSide.RIGHT.angle else AxleSide.LEFT.angle
-            _axle.value = Axle(axleAngle)
+        val touchPointInbounds = isTouchPointInbounds()
+        _myInBounds.value = touchPointInbounds
+        val data = "$relativeRadius,$angle,$touchPointInbounds"
+        viewModelScope.launch(Dispatchers.IO) {
+            // TODO: add event logging of action
+            model.sendUserInput(super.getCurrentGameTime(), packetTracker.newPacket(),data)
         }
-
-        //TODO: network calls
-    }
-
-    fun isTouchPointInbounds(side: AxleSide): Boolean {
-        val axle = _axle.value ?: return false
-
-        val touchPoint = if(side == myAxleSide) _myTouchPoint.value else _opponentTouchPoint.value
-        if(touchPoint.first < 0f) return false
-
-        val touchPointDistance = touchPoint.first * SCREEN_RADIUS
-        val touchPointAngle = touchPoint.second
-        val sideAngle = axle.angle + if(side == AxleSide.LEFT) AxleSide.LEFT.angle else AxleSide.RIGHT.angle
-        return (touchPointAngle - sideAngle <= (360f / TOUCH_CIRCLE_RADIUS))
-                && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
-                && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)
     }
 
     // ================================================================================ |
@@ -160,7 +153,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
-                val direction = action.data?.toInt() ?: run{
+                val data = action.data?.split(",") ?: run{
                     Log.e(TAG, "handleGameAction: missing data in user input action")
                     return
                 }
@@ -169,24 +162,60 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     return
                 }
 
+
+                //TODO: add logging of action event
+
                 val arrivedTimestamp = getCurrentGameTime()
 
-                // TODO: handle user input
+                if(actor == "system"){
+                    val outOfOrder = serverPacketTracker.receivedOtherPacket(sequenceNumber)
+                    if(outOfOrder) return
 
-                if(actor == playerId){
-                    packetTracker.receivedMyPacket(sequenceNumber)
+                    val axle = _axle.value
+                    val newAxleAngle = data[0].toFloat().toAngle()
+                    if(axle == null){
+                        if(newAxleAngle != Angle.undefined){
+                            _axle.value = Axle(newAxleAngle)
+                        }
+                    } else {
+                        if(newAxleAngle != Angle.undefined){
+                            axle.angle = newAxleAngle
+                        } else {
+                            _axle.value = null
+                        }
+                    }
                 } else {
-                    packetTracker.receivedOtherPacket(sequenceNumber)
-                    addEvent(SessionEvent.opponentRotation(playerId,arrivedTimestamp,direction.toString()))
+                    val outOfOrder = packetTracker.receivedOtherPacket(sequenceNumber)
+                    if(outOfOrder) return
+
+                    val relativeRadius = data[0].toFloat()
+                    val angle = data[1].toFloat().toAngle()
+                    val inBounds = data[2].toBoolean()
+                    _opponentTouchPoint.value = relativeRadius to angle
+                    _opponentInBounds.value = inBounds
                 }
             }
             else -> super.handleGameAction(action)
         }
     }
 
+    private fun isTouchPointInbounds(): Boolean {
+        val axle = _axle.value ?: return false
+
+        val touchPoint = _myTouchPoint.value
+        if(touchPoint.first < 0f) return false
+
+        val touchPointDistance = touchPoint.first * SCREEN_RADIUS
+        val touchPointAngle = touchPoint.second
+        val sideAngle = axle.angle + myAxleSide.angle
+        return (touchPointAngle - sideAngle <= (360f / TOUCH_CIRCLE_RADIUS))
+                && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
+                && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)
+    }
+
     private fun updateAxleAngle(){
         val axle = _axle.value ?: return
-        if(isTouchPointInbounds(AxleSide.LEFT) && isTouchPointInbounds(AxleSide.RIGHT)){
+        if(myInBounds.value && opponentInBounds.value){
             val myAngle = _myTouchPoint.value.second
             val opponentAngle = _opponentTouchPoint.value.second
             val mySideAngle = axle.angle + myAxleSide.angle

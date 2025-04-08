@@ -28,10 +28,10 @@ import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
-import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
-import com.imsproject.watch.utils.Angle
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.utils.FrequencyTracker
+import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.isBetweenInclusive
@@ -50,10 +50,10 @@ private const val DIRECTION_MAX_OFFSET = 1.0f
 class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     class Arc{
-        var startAngle by mutableStateOf(UNDEFINED_ANGLE.toAngle())
+        var startAngle by mutableStateOf(Angle.undefined)
         var angleSkew = 0f
         var direction = 0f
-        var previousAngle by mutableStateOf(UNDEFINED_ANGLE.toAngle())
+        var previousAngle by mutableStateOf(Angle.undefined)
         var previousAngleDiff = 0f
         var currentAlpha by mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }

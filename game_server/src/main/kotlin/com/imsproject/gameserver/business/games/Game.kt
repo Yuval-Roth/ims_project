@@ -4,6 +4,7 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
+import com.imsproject.gameserver.business.TimeServerHandler
 
 abstract class Game (
     val lobbyId: String,
@@ -12,19 +13,22 @@ abstract class Game (
 ) {
 
     abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
-    var startTime: Long = -1
+    var localStartTime = -1L
+    var timeServerStartTime = -1L
 
-    open fun startGame(timestamp: Long, sessionId: Int) {
-        startTime = timestamp
+    open fun startGame(sessionId: Int) {
+        val timeHandler = TimeServerHandler.instance
+        timeServerStartTime = timeHandler.timeServerCurrentTimeMillis()
+        localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
-            .timestamp(timestamp.toString())
+            .timestamp(timeServerStartTime.toString())
             .sessionId(sessionId.toString())
             .build().toJson()
         player1.sendTcp(startMessage)
         player2.sendTcp(startMessage)
     }
 
-    fun endGame(errorMessage: String? = null) {
+    open fun endGame(errorMessage: String? = null) {
         // Send exit message
         val exitMessage = GameRequest.builder(GameRequest.Type.END_GAME)
             .apply { errorMessage?.let { message(it) } }

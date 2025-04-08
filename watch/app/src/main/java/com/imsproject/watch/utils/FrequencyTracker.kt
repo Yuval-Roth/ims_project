@@ -1,5 +1,6 @@
 package com.imsproject.watch.utils
 
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
 
 private const val SAMPLES_PER_SECOND = 1000 / 16f // 60 fps

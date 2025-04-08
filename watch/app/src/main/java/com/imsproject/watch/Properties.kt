@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -51,7 +51,6 @@ var RIPPLE_MAX_SIZE = 0
 
 // general
 const val MARKER_FADE_DURATION = 500
-const val UNDEFINED_ANGLE = 600f
 const val ARC_DEFAULT_ALPHA = 0.8f
 const val MAX_ANGLE_SKEW = 60f
 const val MIN_ANGLE_SKEW = 15f

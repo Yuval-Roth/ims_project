@@ -38,7 +38,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import com.imsproject.watch.BRIGHT_CYAN_COLOR
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.TOUCH_CIRCLE_RADIUS
-import com.imsproject.watch.utils.Angle
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
 import kotlinx.coroutines.delay
 
@@ -107,7 +107,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                                 }
 
                                 PointerEventType.Release -> {
-                                    viewModel.setTouchPoint(-1f, Angle.undefined())
+                                    viewModel.setTouchPoint(-1f, Angle.undefined)
                                 }
                             }
                         }
@@ -203,7 +203,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
                         // ===== Draw the touch point ====== |
 
-                        val touchPointInBounds = viewModel.isTouchPointInbounds(side)
+                        val touchPointInBounds = if(side == myAxleSide) viewModel.myInBounds.value else viewModel.opponentInBounds.value
                         val (x,y) = polarToCartesian(touchPoint.first * SCREEN_RADIUS, touchPoint.second)
 
                         drawCircle(

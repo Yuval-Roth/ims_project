@@ -55,8 +55,9 @@ import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
-import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.initProperties
+import com.imsproject.common.utils.Angle
+import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
@@ -215,9 +216,9 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                                 .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
-                    myArc.previousAngle = UNDEFINED_ANGLE.toAngle()
+                    myArc.previousAngle = Angle.undefined
                     myArc.previousAngleDiff = 0f
-                    myArc.startAngle = UNDEFINED_ANGLE.toAngle()
+                    myArc.startAngle = Angle.undefined
                     myArc.direction = 0f
                     myArc.angleSkew = MIN_ANGLE_SKEW
                     viewModel.setTouchPoint(-1.0f,-1.0f)
@@ -236,7 +237,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                                 .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
-                    opponentArc.startAngle = UNDEFINED_ANGLE.toAngle()
+                    opponentArc.startAngle = Angle.undefined
                 } else {
                     opponentArc.currentAlpha = ARC_DEFAULT_ALPHA
                 }

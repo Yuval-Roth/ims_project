@@ -17,7 +17,6 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 class GameController(
     private val clients: ClientController,
-    private val timeServer: TimeServerHandler,
     private val lobbies: LobbyController
 ) {
 
@@ -84,7 +83,7 @@ class GameController(
         }
         log.debug("onClientConnect: Player was in game, rejoining player to game")
         GameRequest.builder(Type.RECONNECT_TO_GAME)
-            .timestamp(game.startTime.toString())
+            .timestamp(game.timeServerStartTime.toString())
             .build().toJson()
             .also{ client.sendTcp(it) } // notify the client
 
@@ -166,7 +165,7 @@ class GameController(
         clientIdToGame[player2Id] = game
 
         // game.startGame() notifies the clients
-        game.startGame(timeServer.timeServerCurrentTimeMillis(), sessionId)
+        game.startGame(sessionId)
 
         log.debug("startGame() successful")
     }

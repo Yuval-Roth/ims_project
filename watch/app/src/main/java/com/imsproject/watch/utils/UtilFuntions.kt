@@ -1,6 +1,6 @@
 package com.imsproject.watch.utils
 
-import androidx.annotation.FloatRange
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.SCREEN_CENTER
 import kotlin.math.atan2
 import kotlin.math.cos

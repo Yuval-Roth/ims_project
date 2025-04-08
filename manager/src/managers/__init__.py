@@ -2,15 +2,12 @@ import requests
 import json
 from ..ENUMS import *
 
-RUNNING_LOCAL = False
-
-
+RUNNING_LOCAL = True
 
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
 else:
     URL = "http://ims-game-server:8080/"
-
 
 GAL = False
 
