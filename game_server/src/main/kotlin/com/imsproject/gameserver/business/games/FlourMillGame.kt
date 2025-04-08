@@ -138,7 +138,7 @@ class FlourMillGame(
         val timeServerCurr = timeHandler.timeServerCurrentTimeMillis().toString()
         localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
         val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
-            .sessionId(timeServerCurr)
+            .sessionId(sessionId.toString())
             .timestamp(timeServerCurr)
         player1.sendTcp(toSend.data(listOf("left")).build().toJson())
         player2.sendTcp(toSend.data(listOf("right")).build().toJson())
