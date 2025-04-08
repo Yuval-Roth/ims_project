@@ -22,15 +22,23 @@ class FlourMillGame(
     private var packetNumber = 0L
 
     // player 1 data
+    @Volatile
     private var player1TouchPoint = -1f to Angle.undefined
+    @Volatile
     private var player1InBounds = false
+    @Volatile
     private var player1LastUpdate = 0L
+    @Volatile
     private var player1LastSequenceNumber = 0L
 
     // player 2 data
+    @Volatile
     private var player2TouchPoint = -1f to Angle.undefined
+    @Volatile
     private var player2InBounds = false
+    @Volatile
     private var player2LastUpdate = 0L
+    @Volatile
     private var player2LastSequenceNumber = 0L
 
     // axle data
@@ -49,6 +57,12 @@ class FlourMillGame(
                     } else {
                         axleAngle = player2TouchPoint.second + Angle(-90f)
                     }
+                } else if (player1TouchPoint.first > 0f) {
+                    axleAngle = player1TouchPoint.second + Angle(90f)
+                } else if (player2TouchPoint.first > 0f) {
+                    axleAngle = player2TouchPoint.second + Angle(-90f)
+                } else {
+                    axleAngle = Angle.undefined
                 }
             } else {
                 if(player1TouchPoint.first > 0f && player2TouchPoint.first > 0f) {
@@ -66,6 +80,8 @@ class FlourMillGame(
                             axleAngle += amountToRotate * player1Direction
                         }
                     }
+                } else if (player1TouchPoint.first < 0f && player2TouchPoint.first < 0f) {
+                    axleAngle = Angle.undefined
                 }
             }
             sendGameAction(GameAction.builder(GameAction.Type.USER_INPUT)
@@ -148,8 +164,8 @@ class FlourMillGame(
     }
 
     override fun endGame(errorMessage: String?) {
-        super.endGame(errorMessage)
         scope.cancel()
+        super.endGame(errorMessage)
     }
 
     companion object {

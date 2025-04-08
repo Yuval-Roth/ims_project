@@ -122,17 +122,24 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
         FLOUR_MILL_SYNC_TIME_THRESHOLD = syncTolerance
         Log.d(TAG, "syncTolerance: $syncTolerance")
+
+        viewModelScope.launch(Dispatchers.IO) {
+            while(true){
+                delay(16)
+                val timestamp = super.getCurrentGameTime()
+                val (relativeRadius,angle) = _myTouchPoint.value
+                val touchPointInbounds = _myInBounds.value
+                val data = "$relativeRadius,$angle,$touchPointInbounds"
+                // TODO: add event logging of action
+                model.sendUserInput(timestamp, packetTracker.newPacket(),data)
+            }
+        }
     }
 
     fun setTouchPoint(relativeRadius: Float, angle: Angle) {
         _myTouchPoint.value = relativeRadius to angle
         val touchPointInbounds = isTouchPointInbounds()
         _myInBounds.value = touchPointInbounds
-        val data = "$relativeRadius,$angle,$touchPointInbounds"
-        viewModelScope.launch(Dispatchers.IO) {
-            // TODO: add event logging of action
-            model.sendUserInput(super.getCurrentGameTime(), packetTracker.newPacket(),data)
-        }
     }
 
     // ================================================================================ |
@@ -179,7 +186,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                         }
                     } else {
                         if(newAxleAngle != Angle.undefined){
-                            axle.angle = newAxleAngle
+                            axle.targetAngle = newAxleAngle
                         } else {
                             _axle.value = null
                         }
