@@ -10,8 +10,9 @@ import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
-import com.imsproject.gameserver.dataAccess.SectionEnum
+import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
+import com.imsproject.gameserver.dataAccess.models.SessionDTO
 import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -154,7 +155,7 @@ class RestHandler(
         }
         scope.launch {
             val startTime = System.nanoTime()
-            daoController.handleBulkInsert(SectionEnum.SESSION_EVENT, eventDTOs)
+            daoController.handleBulkInsertSessionEvents(eventDTOs)
             val endTime = System.nanoTime()
             log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
         }

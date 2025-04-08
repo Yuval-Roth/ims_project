@@ -2,7 +2,6 @@ package com.imsproject.gameserver.business
 
 import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.gameserver.dataAccess.DAOController
-import com.imsproject.gameserver.dataAccess.SectionEnum
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantPK
 import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 import org.springframework.stereotype.Component
@@ -13,19 +12,19 @@ class ParticipantController(val daoController: DAOController) {
 
     operator fun contains(userId: Int): Boolean {
         val pk = ParticipantPK(userId)
-        return daoController.handleExists(SectionEnum.PARTICIPANT,pk)
+        return daoController.handleExists(pk)
     }
 
     fun getAll(): List<ParticipantDTO>{
-        return daoController.handleSelectAll(SectionEnum.PARTICIPANT)
+        return daoController.handleSelectAllParticipants()
     }
 
     fun remove(userId: Int) {
         val pk = ParticipantDTO(pid = userId)
-        daoController.handleDelete(SectionEnum.PARTICIPANT,pk)
+        daoController.handleDelete(pk)
     }
 
     fun addParticipant(participant: ParticipantDTO): Int {
-        return daoController.handleInsert(SectionEnum.PARTICIPANT,participant)
+        return daoController.handleInsert(participant)
     }
 }
