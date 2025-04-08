@@ -45,21 +45,18 @@ def main_menu():
 def get_parts():
     online_participants_ids = get_participants()  # Replace with your function to fetch participants
     all_participants = get_participants_for_view()
-    # participants = None
-    # if not participants:
-    #     participants = PARTICIPANTS
 
-    if len(online_participants_ids) > 0 and not isinstance(online_participants_ids[0], dict):
+    if len(online_participants_ids) > 0 and all_participants:
         # make every id in the list, from a '003' to '3'
         online_participants_ids = [int(x) for x in online_participants_ids]
 
         online_participants = []
         for part in all_participants:
-            # convert from string to dict
             part = json.loads(part)
             if part['pid'] in online_participants_ids:
+                part['id'] = str(part['pid']).zfill(3)
                 online_participants.append(part)
-
+        print(f"online_participants: {online_participants}")
         return jsonify(online_participants)
     return jsonify(all_participants)
 
