@@ -41,6 +41,7 @@ import com.imsproject.watch.TOUCH_CIRCLE_RADIUS
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
@@ -78,12 +79,16 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 if(axle.targetAngle != axle.angle){
                     val diff = axle.targetAngle - axle.angle
                     val direction = if(Angle.isClockwise(axle.angle,axle.targetAngle)) 1 else -1
-                    if(diff < 1) {
+                    if(diff < 1f) {
                         axle.angle = axle.targetAngle
-                    } else if(diff > 4) {
-                        axle.angle += 2f * direction
-                    } else {
+                    } else if (1f <= diff && diff < 4f) {
                         axle.angle += 1f * direction
+                    } else if(4f <= diff && diff < 8f) {
+                        axle.angle += 2f * direction
+                    } else if(8f <= diff && diff < 16f) {
+                        axle.angle += 4f * direction
+                    } else {
+                        axle.angle += 8f * direction
                     }
                 }
             }

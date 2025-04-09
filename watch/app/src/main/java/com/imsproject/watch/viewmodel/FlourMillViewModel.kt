@@ -16,7 +16,10 @@ import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.TOUCH_CIRCLE_RADIUS
 import com.imsproject.common.utils.Angle
 import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.AXLE_WIDTH
+import com.imsproject.watch.TURNING_BONUS_THRESHOLD
 import com.imsproject.watch.utils.PacketTracker
+import com.imsproject.watch.utils.polarDistance
 import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +84,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     private val _opponentInBounds = MutableStateFlow(false)
     val opponentInBounds: StateFlow<Boolean> = _opponentInBounds
 
+    private var turning = false
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -93,6 +98,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             viewModelScope.launch {
                 while(true){
                     delay(16)
+                    val touchPointInbounds = isTouchPointInbounds()
+                    _myInBounds.value = touchPointInbounds
                     updateAxleAngle()
                 }
             }
@@ -126,9 +133,10 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         viewModelScope.launch(Dispatchers.IO) {
             while(true){
                 delay(16)
+                val touchPointInbounds = isTouchPointInbounds()
+                _myInBounds.value = touchPointInbounds
                 val timestamp = super.getCurrentGameTime()
                 val (relativeRadius,angle) = _myTouchPoint.value
-                val touchPointInbounds = _myInBounds.value
                 val data = "$relativeRadius,$angle,$touchPointInbounds"
                 // TODO: add event logging of action
                 model.sendUserInput(timestamp, packetTracker.newPacket(),data)
@@ -138,8 +146,14 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
     fun setTouchPoint(relativeRadius: Float, angle: Angle) {
         _myTouchPoint.value = relativeRadius to angle
-        val touchPointInbounds = isTouchPointInbounds()
-        _myInBounds.value = touchPointInbounds
+
+        if(ACTIVITY_DEBUG_MODE){
+            if(relativeRadius > 0 && _axle.value == null){
+                _axle.value = Axle(angle + -myAxleSide.angle)
+            } else if(relativeRadius < 0 && _axle.value != null){
+                _axle.value = null
+            }
+        }
     }
 
     // ================================================================================ |
@@ -215,9 +229,14 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         val touchPointDistance = touchPoint.first * SCREEN_RADIUS
         val touchPointAngle = touchPoint.second
         val sideAngle = axle.angle + myAxleSide.angle
-        return (touchPointAngle - sideAngle <= (360f / TOUCH_CIRCLE_RADIUS))
+        val polarDistance = polarDistance(touchPointDistance, sideAngle, touchPointDistance, touchPointAngle)
+        val bonusThreshold = TURNING_BONUS_THRESHOLD * if(turning) 1 else 0
+        println(polarDistance)
+        return ((polarDistance <= TOUCH_CIRCLE_RADIUS + AXLE_WIDTH / 2f + bonusThreshold)
                 && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
-                && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)
+                && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)).also{
+                    if(!it) turning = false
+        }
     }
 
     private fun updateAxleAngle(){
@@ -233,7 +252,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             val opponentDirection = if(Angle.isClockwise(opponentSideAngle, opponentAngle)) 1 else -1
             if(myAngleDiff > 0 && opponentAngleDiff > 0 && myDirection == opponentDirection){
                 val amountToRotate = abs(myAngleDiff - opponentAngleDiff)
-                axle.targetAngle = axle.targetAngle + (amountToRotate * myDirection)
+                axle.targetAngle = axle.angle + (amountToRotate * myDirection)
+                turning = true
             }
         }
     }
