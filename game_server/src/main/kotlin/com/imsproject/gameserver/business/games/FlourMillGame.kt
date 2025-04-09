@@ -97,48 +97,48 @@ class FlourMillGame(
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {
             GameAction.Type.USER_INPUT -> {
-                val dataSplit = action.data?.split(",") ?: run {
-                    log.error("Missing data in USER_INPUT GameAction")
-                    return
-                }
-                if (dataSplit.size != 3) {
-                    log.error("Invalid data in USER_INPUT GameAction: $dataSplit")
-                    return
-                }
-                val timestamp = action.timestamp?.toLong() ?: run {
-                    log.error("Missing timestamp in USER_INPUT GameAction")
-                    return
-                }
-                val sequenceNumber = action.sequenceNumber ?: run {
-                    log.error("Missing sequence number in USER_INPUT GameAction")
-                    return
-                }
-                val relativeRadius = dataSplit[0].toFloat()
-                val angle = Angle(dataSplit[1].toFloat())
-                val inBounds = dataSplit[2].toBoolean()
-
-                if (actor == player1) {
-                    if(sequenceNumber <= player1LastSequenceNumber){
-                        // Ignore old messages that are not in order
-                        return
-                    }
-                    player1TouchPoint = relativeRadius to angle
-                    player1InBounds = inBounds
-                    player1LastUpdate = timestamp
-                    player1LastSequenceNumber = sequenceNumber
-                } else if (actor == player2) {
-                    if(sequenceNumber <= player2LastSequenceNumber){
-                        // Ignore old messages that are not in order
-                        return
-                    }
-                    player2TouchPoint = relativeRadius to angle
-                    player2InBounds = inBounds
-                    player2LastUpdate = timestamp
-                    player2LastSequenceNumber = sequenceNumber
-                } else {
-                    log.error("Unknown actor: ${actor.id}")
-                    return
-                }
+//                val dataSplit = action.data?.split(",") ?: run {
+//                    log.error("Missing data in USER_INPUT GameAction")
+//                    return
+//                }
+//                if (dataSplit.size != 3) {
+//                    log.error("Invalid data in USER_INPUT GameAction: $dataSplit")
+//                    return
+//                }
+//                val timestamp = action.timestamp?.toLong() ?: run {
+//                    log.error("Missing timestamp in USER_INPUT GameAction")
+//                    return
+//                }
+//                val sequenceNumber = action.sequenceNumber ?: run {
+//                    log.error("Missing sequence number in USER_INPUT GameAction")
+//                    return
+//                }
+//                val relativeRadius = dataSplit[0].toFloat()
+//                val angle = Angle(dataSplit[1].toFloat())
+//                val inBounds = dataSplit[2].toBoolean()
+//
+//                if (actor == player1) {
+//                    if(sequenceNumber <= player1LastSequenceNumber){
+//                        // Ignore old messages that are not in order
+//                        return
+//                    }
+//                    player1TouchPoint = relativeRadius to angle
+//                    player1InBounds = inBounds
+//                    player1LastUpdate = timestamp
+//                    player1LastSequenceNumber = sequenceNumber
+//                } else if (actor == player2) {
+//                    if(sequenceNumber <= player2LastSequenceNumber){
+//                        // Ignore old messages that are not in order
+//                        return
+//                    }
+//                    player2TouchPoint = relativeRadius to angle
+//                    player2InBounds = inBounds
+//                    player2LastUpdate = timestamp
+//                    player2LastSequenceNumber = sequenceNumber
+//                } else {
+//                    log.error("Unknown actor: ${actor.id}")
+//                    return
+//                }
 
                 val otherPlayer = if (actor == player1) player2 else player1
                 otherPlayer.sendUdp(action.toString())
@@ -158,9 +158,9 @@ class FlourMillGame(
             .timestamp(timeServerCurr)
         player1.sendTcp(toSend.data(listOf("left")).build().toJson())
         player2.sendTcp(toSend.data(listOf("right")).build().toJson())
-        scope.launch {
-            manageAxle()
-        }
+//        scope.launch {
+//            manageAxle()
+//        }
     }
 
     override fun endGame(errorMessage: String?) {

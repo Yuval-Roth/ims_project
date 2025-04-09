@@ -86,6 +86,9 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
     private var turning = false
 
+    private var myFirstTouch = -1L
+    private var opponentFirstTouch = -1L
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
@@ -135,6 +138,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 delay(16)
                 val touchPointInbounds = isTouchPointInbounds()
                 _myInBounds.value = touchPointInbounds
+                updateAxleAngle()
                 val timestamp = super.getCurrentGameTime()
                 val (relativeRadius,angle) = _myTouchPoint.value
                 val data = "$relativeRadius,$angle,$touchPointInbounds"
@@ -145,6 +149,10 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     }
 
     fun setTouchPoint(relativeRadius: Float, angle: Angle) {
+        if(_myTouchPoint.value.first < 0f && relativeRadius >= 0f){
+            myFirstTouch = getCurrentGameTime()
+        }
+
         _myTouchPoint.value = relativeRadius to angle
 
         if(ACTIVITY_DEBUG_MODE){
@@ -188,33 +196,19 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
                 val arrivedTimestamp = getCurrentGameTime()
 
-                if(actor == "system"){
-                    val outOfOrder = serverPacketTracker.receivedOtherPacket(sequenceNumber)
-                    if(outOfOrder) return
+                val outOfOrder = packetTracker.receivedOtherPacket(sequenceNumber)
+                if(outOfOrder) return
 
-                    val axle = _axle.value
-                    val newAxleAngle = data[0].toFloat().toAngle()
-                    if(axle == null){
-                        if(newAxleAngle != Angle.undefined){
-                            _axle.value = Axle(newAxleAngle)
-                        }
-                    } else {
-                        if(newAxleAngle != Angle.undefined){
-                            axle.targetAngle = newAxleAngle
-                        } else {
-                            _axle.value = null
-                        }
-                    }
-                } else {
-                    val outOfOrder = packetTracker.receivedOtherPacket(sequenceNumber)
-                    if(outOfOrder) return
+                val relativeRadius = data[0].toFloat()
+                val angle = data[1].toFloat().toAngle()
+                val inBounds = data[2].toBoolean()
 
-                    val relativeRadius = data[0].toFloat()
-                    val angle = data[1].toFloat().toAngle()
-                    val inBounds = data[2].toBoolean()
-                    _opponentTouchPoint.value = relativeRadius to angle
-                    _opponentInBounds.value = inBounds
+                if(_opponentTouchPoint.value.first < 0f && relativeRadius >= 0f){
+                    opponentFirstTouch = timestamp
                 }
+
+                _opponentTouchPoint.value = relativeRadius to angle
+                _opponentInBounds.value = inBounds
             }
             else -> super.handleGameAction(action)
         }
@@ -240,21 +234,48 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     }
 
     private fun updateAxleAngle(){
-        val axle = _axle.value ?: return
-        if(myInBounds.value && opponentInBounds.value){
-            val myAngle = _myTouchPoint.value.second
-            val opponentAngle = _opponentTouchPoint.value.second
-            val mySideAngle = axle.angle + myAxleSide.angle
-            val opponentSideAngle = axle.angle + myAxleSide.otherSide().angle
-            val myAngleDiff = myAngle - mySideAngle
-            val opponentAngleDiff = opponentAngle - opponentSideAngle
-            val myDirection = if(Angle.isClockwise(mySideAngle,myAngle)) 1 else -1
-            val opponentDirection = if(Angle.isClockwise(opponentSideAngle, opponentAngle)) 1 else -1
-            if(myAngleDiff > 0 && opponentAngleDiff > 0 && myDirection == opponentDirection){
-                val amountToRotate = abs(myAngleDiff - opponentAngleDiff)
-                axle.targetAngle = axle.angle + (amountToRotate * myDirection)
-                turning = true
+
+        val axle = _axle.value
+        val myTouchPoint = _myTouchPoint.value
+        val opponentTouchPoint = _opponentTouchPoint.value
+        if(axle == null){
+            val angle = if(myTouchPoint.first >= 0f && opponentTouchPoint.first >= 0f) {
+                if(myFirstTouch > opponentFirstTouch) {
+                    myTouchPoint.second + -myAxleSide.angle
+                } else {
+                    opponentTouchPoint.second + -myAxleSide.otherSide().angle
+                }
+            } else if(myTouchPoint.first >= 0f) {
+                myTouchPoint.second + -myAxleSide.angle
+            } else if(opponentTouchPoint.first >= 0f) {
+                opponentTouchPoint.second + -myAxleSide.otherSide().angle
+            } else {
+                Angle(UNDEFINED_ANGLE)
             }
+            if(angle != Angle.undefined) {
+                _axle.value = Axle(angle)
+                turning = false
+            }
+        } else if (myTouchPoint.first >= 0f && opponentTouchPoint.first >= 0f){
+            if(myInBounds.value && opponentInBounds.value){
+                val myAngle = myTouchPoint.second
+                val opponentAngle = opponentTouchPoint.second
+                val axleAngle = axle.angle
+                val mySideAngle = axleAngle + myAxleSide.angle
+                val opponentSideAngle = axleAngle + myAxleSide.otherSide().angle
+                val myAngleDiff = myAngle - mySideAngle
+                val opponentAngleDiff = opponentAngle - opponentSideAngle
+                val myDirection = if(Angle.isClockwise(mySideAngle,myAngle)) 1 else -1
+                val opponentDirection = if(Angle.isClockwise(opponentSideAngle, opponentAngle)) 1 else -1
+                if(myAngleDiff > 0 && opponentAngleDiff > 0 && myDirection == opponentDirection){
+                    val amountToRotate = abs(myAngleDiff - opponentAngleDiff)
+                    axle.targetAngle = axleAngle + (amountToRotate * myDirection)
+                    turning = true
+                }
+            }
+        } else if (myTouchPoint.first < 0f && opponentTouchPoint.first < 0f){
+            _axle.value = null
+            turning = false
         }
     }
 
