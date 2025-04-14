@@ -1,5 +1,5 @@
+Particiapnt
 insertion
-
 
 curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"pid\":1,\"firstName\":\"try\",\"lastName\":\"numone\",\"age\":25,\"gender\":\"Male\",\"phone\":\"123456789\",\"email\":\"john.doe@example.com\"}"
 

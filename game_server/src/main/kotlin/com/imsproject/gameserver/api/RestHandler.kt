@@ -10,6 +10,7 @@ import com.imsproject.gameserver.business.GameRequestFacade
 import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
+import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
 import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 import com.imsproject.gameserver.dataAccess.models.SessionDTO
@@ -32,8 +33,9 @@ class RestHandler(
     private val authController: AuthController,
     private val participantController: ParticipantController,
     private val daoController: DAOController,
-    private val resources : ResourceLoader
-    ) : ErrorController {
+    private val resources: ResourceLoader,
+    private val participantsDAO: ParticipantsDAO
+) : ErrorController {
 
     private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
     private val scope = CoroutineScope(dispatcher)
@@ -160,6 +162,70 @@ class RestHandler(
             log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
         }
         return Response.getOk().toResponseEntity()
+    }
+
+    @PostMapping("/data/experiment/select")
+    fun dataSelectExperiments(@RequestBody body: String): ResponseEntity<String> {
+        val experimentDTO: ExperimentDTO
+
+        try {
+            experimentDTO = fromJson<ExperimentDTO>(body)
+            return if(experimentDTO.expId == null) {
+                 Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
+            } else {
+                 Response.getOk(daoController.handleSelect(experimentDTO)).toResponseEntity()
+            }
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @PostMapping("/data/participants/select")
+    fun dataSelectParticipants(@RequestBody body: String): ResponseEntity<String> {
+        val participantDTO: ParticipantDTO
+
+        try {
+            participantDTO = fromJson<ParticipantDTO>(body)
+            return if(participantDTO.pid == null) {
+                Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
+            } else {
+                Response.getOk(daoController.handleSelect(participantDTO)).toResponseEntity()
+            }
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @PostMapping("/data/sessions/select")
+    fun dataSelectSessions(@RequestBody body: String): ResponseEntity<String> {
+        val sessionDTO: SessionDTO
+
+        try {
+            sessionDTO = fromJson<SessionDTO>(body)
+            return if(sessionDTO.sessionId == null) {
+                Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
+            } else {
+                Response.getOk(daoController.handleSelect(sessionDTO)).toResponseEntity()
+            }
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @PostMapping("/data/sessionEvents/select")
+    fun dataSelectSessionEvents(@RequestBody body: String): ResponseEntity<String> {
+        val sessionEventDTO: SessionEventDTO
+
+        try {
+            sessionEventDTO = fromJson<SessionEventDTO>(body)
+            return if(sessionEventDTO.eventId == null) {
+                Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
+            } else {
+                Response.getOk(daoController.handleSelect(sessionEventDTO)).toResponseEntity()
+            }
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 
     @GetMapping("/login")

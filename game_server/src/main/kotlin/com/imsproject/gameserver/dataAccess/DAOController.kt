@@ -148,7 +148,7 @@ class DAOController(
     }
 
     @Throws(DaoException::class)
-    fun handleSelect(exp: ExperimentDTO): Any {
+    fun handleSelect(exp: ExperimentDTO): ExperimentDTO {
         if (exp.expId == null) throw Exception("An experiment id was not provided for selection")
         return experimentDAO.select(ExperimentPK(exp.expId))
     }
