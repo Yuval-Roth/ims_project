@@ -101,8 +101,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             viewModelScope.launch {
                 while(true){
                     delay(16)
-                    val touchPointInbounds = isTouchPointInbounds()
-                    _myInBounds.value = touchPointInbounds
+                    _myInBounds.value = isTouchPointInbounds()
                     updateAxleAngle()
                 }
             }
@@ -133,27 +132,32 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         FLOUR_MILL_SYNC_TIME_THRESHOLD = syncTolerance
         Log.d(TAG, "syncTolerance: $syncTolerance")
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             while(true){
                 delay(16)
-                val touchPointInbounds = isTouchPointInbounds()
-                _myInBounds.value = touchPointInbounds
                 updateAxleAngle()
-                val timestamp = super.getCurrentGameTime()
-                val (relativeRadius,angle) = _myTouchPoint.value
-                val data = "$relativeRadius,$angle,$touchPointInbounds"
-                // TODO: add event logging of action
-                model.sendUserInput(timestamp, packetTracker.newPacket(),data)
+                val touchPointInbounds = isTouchPointInbounds()
+                if(touchPointInbounds != _myInBounds.value){
+                    sendCurrentState()
+                }
+                _myInBounds.value = touchPointInbounds
             }
         }
     }
 
     fun setTouchPoint(relativeRadius: Float, angle: Angle) {
-        if(_myTouchPoint.value.first < 0f && relativeRadius >= 0f){
+        val firstTouch = _myTouchPoint.value.first < 0f && relativeRadius >= 0f
+        if(firstTouch){
             myFirstTouch = getCurrentGameTime()
         }
 
         _myTouchPoint.value = relativeRadius to angle
+        if(firstTouch){
+            updateAxleAngle()
+        }
+
+        val touchPointInbounds = isTouchPointInbounds()
+        _myInBounds.value = touchPointInbounds
 
         if(ACTIVITY_DEBUG_MODE){
             if(relativeRadius > 0 && _axle.value == null){
@@ -161,7 +165,13 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             } else if(relativeRadius < 0 && _axle.value != null){
                 _axle.value = null
             }
+            return
         }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            sendCurrentState()
+        }
+
     }
 
     // ================================================================================ |
@@ -277,6 +287,15 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             _axle.value = null
             turning = false
         }
+    }
+
+    private fun sendCurrentState(){
+        val timestamp = super.getCurrentGameTime()
+        val touchPointInbounds = _myInBounds.value
+        val (relativeRadius, angle) = _myTouchPoint.value
+        val data = "$relativeRadius,$angle,$touchPointInbounds"
+        // TODO: add event logging of action
+        model.sendUserInput(timestamp, packetTracker.newPacket(),data)
     }
 
     companion object {
