@@ -27,6 +27,7 @@ import java.net.SocketTimeoutException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
+import kotlin.math.roundToLong
 
 // set these values to run the app locally
 private const val RUNNING_LOCAL : Boolean = false
@@ -267,7 +268,7 @@ class MainModel (private val scope : CoroutineScope) {
             }
         }
         timeServerUdp.close()
-        return data.average().toLong()
+        return data.average().roundToLong()
     }
 
     fun uploadSessionEvents(sessionId: Int): Boolean {
