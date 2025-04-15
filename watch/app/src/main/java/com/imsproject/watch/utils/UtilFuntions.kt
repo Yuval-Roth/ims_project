@@ -2,8 +2,10 @@ package com.imsproject.watch.utils
 
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.SCREEN_CENTER
+import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -79,6 +81,13 @@ fun calculateTriangleThirdPoint(
 
     return p3X to p3Y
 }
+
+fun polarDistance(radius1: Float, angle1: Angle, radius2: Float, angle2: Angle): Float {
+    val (x1, y1) = polarToCartesian(radius1, angle1)
+    val (x2, y2) = polarToCartesian(radius2, angle2)
+    return sqrt((x1 - x2).pow(2) + (y1 - y2).pow(2))
+}
+
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Float.isBetweenInclusive(min: Float, max: Float) = min <= this && this <= max

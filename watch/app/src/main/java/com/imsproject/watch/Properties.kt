@@ -85,7 +85,8 @@ const val AXLE_STARTING_ANGLE = -90f
 var FLOUR_MILL_SYNC_TIME_THRESHOLD = 100L
 const val RESET_COOLDOWN_WAIT_TIME = 16
 const val STRETCH_PEAK = 12.0f
-const val TOUCH_CIRCLE_RADIUS = 30f
+const val TOUCH_CIRCLE_RADIUS = 40f
+const val TURNING_BONUS_THRESHOLD = 40f
 // ============================================ |
 // these values must be a normal fraction of STRETCH_PEAK to ensure that we reach
 // the target angle exactly and not overshoot it
@@ -134,7 +135,7 @@ fun initProperties(screenWidth : Int, screenHeight : Int){
     CONTROL_POINT_DISTANCE = SCREEN_RADIUS * 0.5f
     BEZIER_START_DISTANCE = SCREEN_RADIUS * 0.2f
     STRETCH_POINT_DISTANCE = SCREEN_RADIUS * 0.9f
-    AXLE_WIDTH = SCREEN_WIDTH * 0.04f
+    AXLE_WIDTH = SCREEN_WIDTH * 0.05f
     AXLE_HANDLE_LENGTH = AXLE_WIDTH * 4
 }
 
