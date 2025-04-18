@@ -180,14 +180,14 @@ class RestHandler(
         }
     }
 
-    @PostMapping("/data/participants/select")
+    @PostMapping("/data/participant/select")
     fun dataSelectParticipants(@RequestBody body: String): ResponseEntity<String> {
         val participantDTO: ParticipantDTO
 
         try {
             participantDTO = fromJson<ParticipantDTO>(body)
             return if(participantDTO.pid == null) {
-                Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
+                Response.getOk(daoController.handleSelectAllParticipants()).toResponseEntity()
             } else {
                 Response.getOk(daoController.handleSelect(participantDTO)).toResponseEntity()
             }
@@ -196,14 +196,14 @@ class RestHandler(
         }
     }
 
-    @PostMapping("/data/sessions/select")
+    @PostMapping("/data/session/select")
     fun dataSelectSessions(@RequestBody body: String): ResponseEntity<String> {
         val sessionDTO: SessionDTO
 
         try {
             sessionDTO = fromJson<SessionDTO>(body)
             return if(sessionDTO.sessionId == null) {
-                Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
+                Response.getOk(daoController.handleSelectAllSessions()).toResponseEntity()
             } else {
                 Response.getOk(daoController.handleSelect(sessionDTO)).toResponseEntity()
             }
@@ -212,14 +212,14 @@ class RestHandler(
         }
     }
 
-    @PostMapping("/data/sessionEvents/select")
+    @PostMapping("/data/sessionEvent/select")
     fun dataSelectSessionEvents(@RequestBody body: String): ResponseEntity<String> {
         val sessionEventDTO: SessionEventDTO
 
         try {
             sessionEventDTO = fromJson<SessionEventDTO>(body)
             return if(sessionEventDTO.eventId == null) {
-                Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
+                Response.getOk(daoController.handleSelectAllSessionEvents()).toResponseEntity()
             } else {
                 Response.getOk(daoController.handleSelect(sessionEventDTO)).toResponseEntity()
             }
