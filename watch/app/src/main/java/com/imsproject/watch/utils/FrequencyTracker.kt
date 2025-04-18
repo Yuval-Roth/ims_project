@@ -1,5 +1,6 @@
 package com.imsproject.watch.utils
 
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
 
 private const val SAMPLES_PER_SECOND = 1000 / 16f // 60 fps
@@ -23,7 +24,7 @@ class FrequencyTracker {
         val timeDiff = currentTime - lastSampleTime
         if(timeDiff == 0L) return
         val angleDiff = lastSampleAngle - angle
-        val radiansDiff = Math.toRadians(angleDiff.doubleValue)
+        val radiansDiff = Math.toRadians(angleDiff.toDouble())
         val omega = radiansDiff / (timeDiff / 1000.0)
         val frequency = (omega / (2 * Math.PI)).toFloat()
         samples[index] = frequency

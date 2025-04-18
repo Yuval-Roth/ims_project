@@ -6,27 +6,28 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.AXLE_STARTING_ANGLE
-import com.imsproject.watch.BRIGHT_CYAN_COLOR
 import com.imsproject.watch.FLOUR_MILL_SYNC_TIME_THRESHOLD
-import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.RESET_COOLDOWN_WAIT_TIME
-import com.imsproject.watch.STRETCH_PEAK
-import com.imsproject.watch.utils.Angle
+import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.TOUCH_CIRCLE_RADIUS
+import com.imsproject.common.utils.Angle
+import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.AXLE_WIDTH
+import com.imsproject.watch.TURNING_BONUS_THRESHOLD
+import com.imsproject.watch.utils.PacketTracker
+import com.imsproject.watch.utils.polarDistance
 import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.math.absoluteValue
+import kotlin.math.abs
 
 class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
@@ -48,140 +49,80 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
     }
 
-    class AxleEnd(val handleColor: Color, startingAngle: Angle){
+    class Axle(startingAngle: Angle) {
         var angle by mutableStateOf(startingAngle)
         var targetAngle = startingAngle
-        var stretchPeak = 0.0f
-        var direction = 0
-        var syncThresholdTimeout = 0L
-        var resetting = false
     }
 
-    class Axle(startingAngle: Angle, mySide: AxleSide) {
-        var angle by mutableStateOf(startingAngle)
-        var targetAngle = startingAngle
-        var isRotating = false
-        // The axle ends are animated based on the effective angle
-        // the effective angle only changes when the axle finishes rotating
-        var effectiveAngle = startingAngle
-        // ================================= |
-        val leftEnd : AxleEnd
-        val rightEnd : AxleEnd
-
-
-        init {
-            val leftColor = when(mySide){
-                AxleSide.LEFT -> BRIGHT_CYAN_COLOR
-                AxleSide.RIGHT -> LIGHT_GRAY_COLOR
-            }
-            val rightColor = when(mySide){
-                AxleSide.LEFT -> LIGHT_GRAY_COLOR
-                AxleSide.RIGHT -> BRIGHT_CYAN_COLOR
-            }
-            leftEnd = AxleEnd(leftColor,getEndAngle(AxleSide.LEFT))
-            rightEnd = AxleEnd(rightColor,getEndAngle(AxleSide.RIGHT))
-        }
-
-        fun getEndAngle(endSide : AxleSide) = angle + endSide.angle
-        fun getEffectiveEndAngle(endSide : AxleSide) = effectiveAngle + endSide.angle
-        fun getEnd(endSide: AxleSide) = when(endSide){
-            AxleSide.LEFT -> leftEnd
-            AxleSide.RIGHT -> rightEnd
-        }
-    }
+    private val serverPacketTracker = PacketTracker()
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    lateinit var axle : Axle
-        private set
+    private val _axle = MutableStateFlow<Axle?>(null)
+    val axle: StateFlow<Axle?> = _axle
+
     lateinit var myAxleSide : AxleSide
         private set
 
-    private var coolingDown = false
-    private var resetCooldownTime = 0L
-    private var leftSyncStatusObserved = true
-    private var rightSyncStatusObserved = true
-    private var leftLastRotation =  0L
-    private var rightLastRotation = 0L
+    private val _myTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined)
+    /**
+     *  <relativeRadius,angle>
+     */
+    val myTouchPoint: StateFlow<Pair<Float,Angle>> = _myTouchPoint
 
-    private var dragged = false
+    private val _opponentTouchPoint = MutableStateFlow<Pair<Float,Angle>>(-1f to Angle.undefined)
+    /**
+     *  <relativeRadius,angle>
+     */
+    val opponentTouchPoint: StateFlow<Pair<Float,Angle>> = _opponentTouchPoint
+
+    private val _myInBounds = MutableStateFlow(false)
+    val myInBounds: StateFlow<Boolean> = _myInBounds
+
+    private val _opponentInBounds = MutableStateFlow(false)
+    val opponentInBounds: StateFlow<Boolean> = _opponentInBounds
+
+    private var turning = false
+
+    private var myFirstTouch = -1L
+    private var opponentFirstTouch = -1L
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
-
-    fun onDragEnd(){
-        dragged = false
-    }
-
-    fun isDragged() = dragged
-
-    fun dragged(){
-        dragged = true
-    }
-
-    fun isCoolingDown() = coolingDown || (System.currentTimeMillis() - resetCooldownTime) < RESET_COOLDOWN_WAIT_TIME
-
-    fun resetCoolDown(){
-        coolingDown = false
-        resetCooldownTime = System.currentTimeMillis()
-    }
-
-    fun isSynced(side: AxleSide): Boolean {
-        val inSync : Boolean
-        when (side) {
-                AxleSide.LEFT -> {
-                    inSync = !leftSyncStatusObserved
-                    leftSyncStatusObserved = true
-                }
-
-                AxleSide.RIGHT -> {
-                    inSync = !rightSyncStatusObserved
-                    rightSyncStatusObserved = true
-                }
-        }
-        if(inSync && side == myAxleSide){
-            viewModelScope.launch(Dispatchers.Default) {
-                addEvent(SessionEvent.syncedAtTime(playerId,getCurrentGameTime()))
-            }
-        }
-        return inSync
-    }
-
-    fun rotateMyAxleEnd(direction: Int){
-        coolingDown = true
-
-        if(ACTIVITY_DEBUG_MODE){
-            rotateAxle(myAxleSide, direction, System.currentTimeMillis())
-            return
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val timestamp = super.getCurrentGameTime()
-            model.sendUserInput(timestamp, packetTracker.newPacket(), direction.toString())
-            addEvent(SessionEvent.rotation(playerId,timestamp, direction.toString()))
-        }
-    }
 
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent,context)
 
         if(ACTIVITY_DEBUG_MODE) {
             myAxleSide = AxleSide.RIGHT
-            axle = Axle(AXLE_STARTING_ANGLE.toAngle(), myAxleSide)
+            viewModelScope.launch {
+                while(true){
+                    delay(16)
+                    _myInBounds.value = isTouchPointInbounds()
+                    updateAxleAngle()
+                }
+            }
             viewModelScope.launch(Dispatchers.Default) {
                 while (true) {
-                    delay(1000)
-                    rotateAxle(AxleSide.LEFT, 1, System.currentTimeMillis())
+                    delay(100)
+                    val axle = _axle.value
+                    if(axle == null){
+                        _opponentTouchPoint.value = -1f to Angle.undefined
+                        _opponentInBounds.value = false
+                    } else {
+                        val angle = axle.angle + -80f
+                        _opponentTouchPoint.value = 0.8f to angle
+                        _opponentInBounds.value = true
+                    }
                 }
             }
             return
         }
 
         myAxleSide = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { AxleSide.fromString(it) }!!
-        axle = Axle(AXLE_STARTING_ANGLE.toAngle(), myAxleSide)
 
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
         if (syncTolerance <= 0L) {
@@ -190,6 +131,47 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
         FLOUR_MILL_SYNC_TIME_THRESHOLD = syncTolerance
         Log.d(TAG, "syncTolerance: $syncTolerance")
+
+        viewModelScope.launch {
+            while(true){
+                delay(16)
+                updateAxleAngle()
+                val touchPointInbounds = isTouchPointInbounds()
+                if(touchPointInbounds != _myInBounds.value){
+                    sendCurrentState()
+                }
+                _myInBounds.value = touchPointInbounds
+            }
+        }
+    }
+
+    fun setTouchPoint(relativeRadius: Float, angle: Angle) {
+        val firstTouch = _myTouchPoint.value.first < 0f && relativeRadius >= 0f
+        if(firstTouch){
+            myFirstTouch = getCurrentGameTime()
+        }
+
+        _myTouchPoint.value = relativeRadius to angle
+        if(firstTouch){
+            updateAxleAngle()
+        }
+
+        val touchPointInbounds = isTouchPointInbounds()
+        _myInBounds.value = touchPointInbounds
+
+        if(ACTIVITY_DEBUG_MODE){
+            if(relativeRadius > 0 && _axle.value == null){
+                _axle.value = Axle(angle + -myAxleSide.angle)
+            } else if(relativeRadius < 0 && _axle.value != null){
+                _axle.value = null
+            }
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            sendCurrentState()
+        }
+
     }
 
     // ================================================================================ |
@@ -210,7 +192,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     Log.e(TAG, "handleGameAction: missing timestamp in user input action")
                     return
                 }
-                val direction = action.data?.toInt() ?: run{
+                val data = action.data?.split(",") ?: run{
                     Log.e(TAG, "handleGameAction: missing data in user input action")
                     return
                 }
@@ -219,60 +201,101 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     return
                 }
 
+
+                //TODO: add logging of action event
+
                 val arrivedTimestamp = getCurrentGameTime()
 
-                withContext(Dispatchers.Main) {
-                    if (actor == playerId) {
-                        rotateAxle(myAxleSide, direction, timestamp)
-                    } else {
-                        rotateAxle(myAxleSide.otherSide(), direction, timestamp)
-                    }
+                val outOfOrder = packetTracker.receivedOtherPacket(sequenceNumber)
+                if(outOfOrder) return
+
+                val relativeRadius = data[0].toFloat()
+                val angle = data[1].toFloat().toAngle()
+                val inBounds = data[2].toBoolean()
+
+                if(_opponentTouchPoint.value.first < 0f && relativeRadius >= 0f){
+                    opponentFirstTouch = timestamp
                 }
-                if(actor == playerId){
-                    packetTracker.receivedMyPacket(sequenceNumber)
-                } else {
-                    packetTracker.receivedOtherPacket(sequenceNumber)
-                    addEvent(SessionEvent.opponentRotation(playerId,arrivedTimestamp,direction.toString()))
-                }
+
+                _opponentTouchPoint.value = relativeRadius to angle
+                _opponentInBounds.value = inBounds
             }
             else -> super.handleGameAction(action)
         }
     }
 
-    private fun rotateAxle(side: AxleSide, direction: Int, timestamp: Long){
-        val axleEnd = axle.getEnd(side)
-        axleEnd.direction = direction
-        axleEnd.stretchPeak = STRETCH_PEAK * direction
-        axleEnd.targetAngle = axle.getEffectiveEndAngle(side) + direction * STRETCH_PEAK
-        axleEnd.syncThresholdTimeout = System.currentTimeMillis() + FLOUR_MILL_SYNC_TIME_THRESHOLD
+    private fun isTouchPointInbounds(): Boolean {
+        val axle = _axle.value ?: return false
 
-        val sameDirection = axle.leftEnd.direction == axle.rightEnd.direction
+        val touchPoint = _myTouchPoint.value
+        if(touchPoint.first < 0f) return false
 
-        when(side){
-            AxleSide.LEFT ->{
-                leftLastRotation = timestamp
-
-                if((timestamp - rightLastRotation).absoluteValue < FLOUR_MILL_SYNC_TIME_THRESHOLD
-                    && sameDirection){
-                    setInSync(direction)
-                }
-            }
-            AxleSide.RIGHT ->{
-                rightLastRotation = timestamp
-
-                if((timestamp - leftLastRotation).absoluteValue < FLOUR_MILL_SYNC_TIME_THRESHOLD
-                    && sameDirection){
-                    setInSync(direction)
-                }
-            }
+        val touchPointDistance = touchPoint.first * SCREEN_RADIUS
+        val touchPointAngle = touchPoint.second
+        val sideAngle = axle.angle + myAxleSide.angle
+        val polarDistance = polarDistance(touchPointDistance, sideAngle, touchPointDistance, touchPointAngle)
+        val bonusThreshold = TURNING_BONUS_THRESHOLD * if(turning) 1 else 0
+        println(polarDistance)
+        return ((polarDistance <= TOUCH_CIRCLE_RADIUS + AXLE_WIDTH / 2f + bonusThreshold)
+                && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
+                && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)).also{
+                    if(!it) turning = false
         }
     }
 
-    private fun setInSync(direction: Int) {
-        axle.targetAngle = axle.angle + direction * STRETCH_PEAK
-        axle.isRotating = true
-        leftSyncStatusObserved = false
-        rightSyncStatusObserved = false
+    private fun updateAxleAngle(){
+
+        val axle = _axle.value
+        val myTouchPoint = _myTouchPoint.value
+        val opponentTouchPoint = _opponentTouchPoint.value
+        if(axle == null){
+            val angle = if(myTouchPoint.first >= 0f && opponentTouchPoint.first >= 0f) {
+                if(myFirstTouch > opponentFirstTouch) {
+                    myTouchPoint.second + -myAxleSide.angle
+                } else {
+                    opponentTouchPoint.second + -myAxleSide.otherSide().angle
+                }
+            } else if(myTouchPoint.first >= 0f) {
+                myTouchPoint.second + -myAxleSide.angle
+            } else if(opponentTouchPoint.first >= 0f) {
+                opponentTouchPoint.second + -myAxleSide.otherSide().angle
+            } else {
+                Angle(UNDEFINED_ANGLE)
+            }
+            if(angle != Angle.undefined) {
+                _axle.value = Axle(angle)
+                turning = false
+            }
+        } else if (myTouchPoint.first >= 0f && opponentTouchPoint.first >= 0f){
+            if(myInBounds.value && opponentInBounds.value){
+                val myAngle = myTouchPoint.second
+                val opponentAngle = opponentTouchPoint.second
+                val axleAngle = axle.angle
+                val mySideAngle = axleAngle + myAxleSide.angle
+                val opponentSideAngle = axleAngle + myAxleSide.otherSide().angle
+                val myAngleDiff = myAngle - mySideAngle
+                val opponentAngleDiff = opponentAngle - opponentSideAngle
+                val myDirection = if(Angle.isClockwise(mySideAngle,myAngle)) 1 else -1
+                val opponentDirection = if(Angle.isClockwise(opponentSideAngle, opponentAngle)) 1 else -1
+                if(myAngleDiff > 0 && opponentAngleDiff > 0 && myDirection == opponentDirection){
+                    val amountToRotate = abs(myAngleDiff - opponentAngleDiff)
+                    axle.targetAngle = axleAngle + (amountToRotate * myDirection)
+                    turning = true
+                }
+            }
+        } else if (myTouchPoint.first < 0f && opponentTouchPoint.first < 0f){
+            _axle.value = null
+            turning = false
+        }
+    }
+
+    private fun sendCurrentState(){
+        val timestamp = super.getCurrentGameTime()
+        val touchPointInbounds = _myInBounds.value
+        val (relativeRadius, angle) = _myTouchPoint.value
+        val data = "$relativeRadius,$angle,$touchPointInbounds"
+        // TODO: add event logging of action
+        model.sendUserInput(timestamp, packetTracker.newPacket(),data)
     }
 
     companion object {

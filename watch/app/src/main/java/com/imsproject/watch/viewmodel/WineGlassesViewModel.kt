@@ -28,10 +28,10 @@ import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
-import com.imsproject.watch.UNDEFINED_ANGLE
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
-import com.imsproject.watch.utils.Angle
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.utils.FrequencyTracker
+import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.isBetweenInclusive
@@ -50,11 +50,11 @@ private const val DIRECTION_MAX_OFFSET = 1.0f
 class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     class Arc{
-        var startAngle by mutableStateOf(UNDEFINED_ANGLE.toAngle())
+        var startAngle by mutableStateOf(Angle.undefined)
         var angleSkew = 0f
         var direction = 0f
-        var previousAngle by mutableStateOf(UNDEFINED_ANGLE.toAngle())
-        var previousAngleDiff = 0f.toAngle()
+        var previousAngle by mutableStateOf(Angle.undefined)
+        var previousAngleDiff = 0f
         var currentAlpha by mutableFloatStateOf(ARC_DEFAULT_ALPHA)
     }
 
@@ -254,15 +254,15 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
         // prepare the skew angle for the next iteration
         val previousAngle = arc.previousAngle
-        var angleDiff = 0f.toAngle()
+        var angleDiff = 0f
         if(previousAngle.floatValue != UNDEFINED_ANGLE){
             angleDiff = previousAngle - angle
             val previousAngleDiff = arc.previousAngleDiff
             val angleDiffDiff = angleDiff - previousAngleDiff
-            arc.angleSkew = if (angleDiffDiff.floatValue > 1 && angleDiff.floatValue > 3){
-                (angleSkew + angleDiff.floatValue * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
-            } else if (angleDiffDiff.floatValue < 1){
-                (angleSkew - angleDiff.floatValue * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
+            arc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
+                (angleSkew + angleDiff * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
+            } else if (angleDiffDiff < 1){
+                (angleSkew - angleDiff * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
             } else {
                 angleSkew
             }
@@ -274,9 +274,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         if (previousAngle.floatValue != UNDEFINED_ANGLE){
             val direction = arc.direction
             arc.direction = if(Angle.isClockwise(previousAngle, angle)){
-                (direction + angleDiff.floatValue * 0.2f).fastCoerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
+                (direction + angleDiff * 0.2f).fastCoerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
             } else if (! Angle.isClockwise(previousAngle, angle)){
-                (direction - angleDiff.floatValue * 0.2f).fastCoerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
+                (direction - angleDiff * 0.2f).fastCoerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
             } else {
                 direction
             }

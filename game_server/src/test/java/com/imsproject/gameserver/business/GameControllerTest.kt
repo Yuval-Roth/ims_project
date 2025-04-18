@@ -78,7 +78,7 @@ class GameControllerTest {
         MockitoAnnotations.openMocks(this) // initializes the mocks
 
         // test subject setup
-        gameController = spy(GameController(mockClients, mockTimeServer, mockLobbies))
+        gameController = spy(GameController(mockClients, mockLobbies))
 
         // client handlers setup
         whenever(mockClientHandler1.id).thenReturn(CLIENT1_ID)

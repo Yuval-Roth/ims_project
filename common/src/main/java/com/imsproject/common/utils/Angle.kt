@@ -1,8 +1,8 @@
-package com.imsproject.watch.utils
+package com.imsproject.common.utils
 
-import androidx.annotation.IntRange
-import com.imsproject.watch.UNDEFINED_ANGLE
 import kotlin.math.absoluteValue
+
+const val UNDEFINED_ANGLE = 600f
 
 /**
  * This class represents an angle in degrees in the range of (-180,180]
@@ -29,7 +29,7 @@ class Angle(
     /**
      * @return absolute difference between this angle and the other angle
      */
-    operator fun minus(other: Angle): Angle {
+    operator fun minus(other: Angle): Float {
         // handle the gap between 2nd and 3rd quadrants
         val diff = if(this.isInQuadrant(2) && other.isInQuadrant(3)){
             this.floatValue - (other.floatValue+360)
@@ -41,7 +41,7 @@ class Angle(
         else {
             this.floatValue - other.floatValue
         }
-        return Angle(diff.absoluteValue)
+        return diff.absoluteValue
     }
 
     /**
@@ -105,7 +105,7 @@ class Angle(
     }
 
 
-    private fun isInQuadrant(@IntRange(1,4) quadrant: Int) : Boolean {
+    private fun isInQuadrant(quadrant: Int) : Boolean {
         return floatValue.isInQuadrant(quadrant)
     }
 
@@ -121,7 +121,7 @@ class Angle(
      *
      * meaning, clockwise side of the quadrant is inclusive and the counter-clockwise side is exclusive
      */
-    private fun Float.isInQuadrant(@IntRange(1,4) quadrant: Int) : Boolean {
+    private fun Float.isInQuadrant(quadrant: Int) : Boolean {
         return when(quadrant){
             1 -> 0f < this && this <= 90f
             2 -> 90f < this && this <= 180f
@@ -151,5 +151,7 @@ class Angle(
                 from.floatValue < to.floatValue
             }
         }
+
+        val undefined: Angle = Angle(UNDEFINED_ANGLE)
     }
 }

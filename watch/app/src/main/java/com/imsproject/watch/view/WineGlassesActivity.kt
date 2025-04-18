@@ -2,7 +2,6 @@ package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
@@ -55,9 +54,8 @@ import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
-import com.imsproject.watch.UNDEFINED_ANGLE
-import com.imsproject.watch.initProperties
-import com.imsproject.watch.utils.toAngle
+import com.imsproject.common.utils.Angle
+import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import kotlinx.coroutines.delay
@@ -69,24 +67,18 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initProperties(metrics.bounds.width(), metrics.bounds.height())
-        viewModel.onCreate(intent,applicationContext)
-        setupUncaughtExceptionHandler(viewModel)
+        super.onCreate(viewModel)
         setContent {
             Main()
         }
     }
 
     @Composable
-    fun Main(){
+    override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> {
-                WineGlasses()
-            }
-            else -> super.Main(viewModel)
+            GameViewModel.State.PLAYING -> WineGlasses()
+            else -> super.Main()
         }
     }
 
@@ -99,7 +91,8 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
         var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
         var touchingBezel by remember { mutableStateOf(false) }
         var playSound by remember { mutableStateOf(false) }
-        val released by viewModel.released.collectAsState() // my released state
+        val myReleased by viewModel.released.collectAsState()
+        val opponentReleased by viewModel.opponentReleased.collectAsState()
 
         Box(
             modifier = Modifier
@@ -166,45 +159,45 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             // ================== Sound effects ================== |
 
             // play sound when the user touches the screen
-            LaunchedEffect(released){
-                if(playSound){
-                    val sound = viewModel.sound
-                    if(released){
-                        val currentlyPlaying = if(sound.isPlaying(LOW_LOOP_TRACK)){
-                            LOW_LOOP_TRACK
-                        } else {
-                            LOW_BUILD_IN_TRACK
-                        }
-                        sound.stopFadeOut(currentlyPlaying,20)
-                        sound.play(LOW_BUILD_OUT_TRACK)
-                        playSound = false
-                    } else {
-                        sound.play(LOW_BUILD_IN_TRACK) {
-                            sound.playLooped(LOW_LOOP_TRACK)
-                        }
-                    }
-                }
-            }
+//            LaunchedEffect(myReleased){
+//                if(playSound){
+//                    val sound = viewModel.sound
+//                    if(myReleased){
+//                        val currentlyPlaying = if(sound.isPlaying(LOW_LOOP_TRACK)){
+//                            LOW_LOOP_TRACK
+//                        } else {
+//                            LOW_BUILD_IN_TRACK
+//                        }
+//                        sound.stopFadeOut(currentlyPlaying,20)
+//                        sound.play(LOW_BUILD_OUT_TRACK)
+//                        playSound = false
+//                    } else {
+//                        sound.play(LOW_BUILD_IN_TRACK) {
+//                            sound.playLooped(LOW_LOOP_TRACK)
+//                        }
+//                    }
+//                }
+//            }
 
             // play high sound when in sync
-            LaunchedEffect(released){
+            LaunchedEffect(myReleased){
                 val sound = viewModel.sound
-                if(!released) {
+                if(!myReleased) {
                     var playing = false
                     var inSync: Boolean
                     while (true) {
                         inSync = viewModel.inSync()
                         if (!playing && inSync) {
-                            sound.playLooped(HIGH_LOOP_TRACK)
+                            sound.playLooped(LOW_LOOP_TRACK)
                             playing = true
                         } else if (playing && !inSync) {
-                            sound.pause(HIGH_LOOP_TRACK)
+                            sound.pause(LOW_LOOP_TRACK)
                             playing = false
                         }
                         delay(100)
                     }
-                } else if(sound.isPlaying(HIGH_LOOP_TRACK)) {
-                    sound.stopFadeOut(HIGH_LOOP_TRACK, 20)
+                } else if(sound.isPlaying(LOW_LOOP_TRACK)) {
+                    sound.stopFadeOut(LOW_LOOP_TRACK, 20)
                 }
             }
 
@@ -212,7 +205,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
             // arc fade animation - my arc
 
-            LaunchedEffect(released) {
+            LaunchedEffect(myReleased) {
                 if(viewModel.released.value){
                     val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
                     while(viewModel.released.value && myArc.currentAlpha > 0.0f){
@@ -221,9 +214,9 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                                 .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
-                    myArc.previousAngle = UNDEFINED_ANGLE.toAngle()
-                    myArc.previousAngleDiff = 0f.toAngle()
-                    myArc.startAngle = UNDEFINED_ANGLE.toAngle()
+                    myArc.previousAngle = Angle.undefined
+                    myArc.previousAngleDiff = 0f
+                    myArc.startAngle = Angle.undefined
                     myArc.direction = 0f
                     myArc.angleSkew = MIN_ANGLE_SKEW
                     viewModel.setTouchPoint(-1.0f,-1.0f)
@@ -233,7 +226,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             }
 
             // arc fade animation - opponent's arc
-            LaunchedEffect(viewModel.opponentReleased.collectAsState().value) {
+            LaunchedEffect(opponentReleased) {
                 if(viewModel.opponentReleased.value){
                     val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
                     while(viewModel.opponentReleased.value && opponentArc.currentAlpha > 0.0f){
@@ -242,7 +235,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                                 .fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
-                    opponentArc.startAngle = UNDEFINED_ANGLE.toAngle()
+                    opponentArc.startAngle = Angle.undefined
                 } else {
                     opponentArc.currentAlpha = ARC_DEFAULT_ALPHA
                 }

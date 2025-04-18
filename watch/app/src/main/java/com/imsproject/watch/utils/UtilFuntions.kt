@@ -1,9 +1,11 @@
 package com.imsproject.watch.utils
 
-import androidx.annotation.FloatRange
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.SCREEN_CENTER
+import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -27,8 +29,16 @@ fun cartesianToPolar(x: Float, y:Float) : Pair<Float,Angle> {
  * @return Pair of `<x,y>`
  */
 fun polarToCartesian(distanceFromCenter: Float, angle: Angle) : Pair<Float, Float> {
+    return polarToCartesian(distanceFromCenter,angle.doubleValue)
+}
+
+/**
+ * This function assumes that the angles are in the range of (-180,180]
+ * @return Pair of `<x,y>`
+ */
+fun polarToCartesian(distanceFromCenter: Float, angle: Double) : Pair<Float, Float> {
     // Convert angle to radians
-    val angleRadians = Math.toRadians(angle.doubleValue)
+    val angleRadians = Math.toRadians(angle)
 
     // Calculate coordinates
     val (centerX, centerY) = SCREEN_CENTER
@@ -71,6 +81,13 @@ fun calculateTriangleThirdPoint(
 
     return p3X to p3Y
 }
+
+fun polarDistance(radius1: Float, angle1: Angle, radius2: Float, angle2: Angle): Float {
+    val (x1, y1) = polarToCartesian(radius1, angle1)
+    val (x2, y2) = polarToCartesian(radius2, angle2)
+    return sqrt((x1 - x2).pow(2) + (y1 - y2).pow(2))
+}
+
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Float.isBetweenInclusive(min: Float, max: Float) = min <= this && this <= max

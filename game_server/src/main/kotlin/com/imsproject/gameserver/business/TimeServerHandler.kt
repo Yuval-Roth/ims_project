@@ -12,6 +12,7 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.util.concurrent.Semaphore
 
 @Component
 class TimeServerHandler {
@@ -28,6 +29,7 @@ class TimeServerHandler {
         private set
 
     private val timeServerUdp = UdpClient()
+    private val lock = Semaphore(1,true)
 
     /**
      * Sends a request to the time server to get the current time in milliseconds.
@@ -39,6 +41,7 @@ class TimeServerHandler {
      * @throws IOException If there is an I/O error while sending or receiving the request.
      */
     fun timeServerCurrentTimeMillis(): Long {
+        lock.acquire()
         val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
         try{
             val startTime = System.currentTimeMillis()
@@ -57,28 +60,50 @@ class TimeServerHandler {
         } catch (e: IOException){
             log.error("Failed to fetch time", e)
             throw e
+        } finally {
+            lock.release()
         }
     }
 
     private fun run(){
+        val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
         while(true){
+            Thread.sleep(10000)
             try{
-                val data : List<Long> = List(100) {
-                    val currentLocal = System.currentTimeMillis()
-                    val currentTimeServer = timeServerCurrentTimeMillis()
-                    currentLocal-currentTimeServer
+                lock.acquire()
+                var count = 0
+                val data = mutableListOf<Long>()
+                while(count < 100){
+                    try {
+                        val currentLocalTime = System.currentTimeMillis()
+                        timeServerUdp.send(request)
+                        val response = timeServerUdp.receive()
+                        val timeDelta = System.currentTimeMillis() - currentLocalTime
+                        val timeResponse = fromJson<TimeRequest>(response)
+                        val currentServerTime = timeResponse.time!! - timeDelta / 2 // approximation
+                        data.add(currentLocalTime-currentServerTime)
+                        count++
+                    } catch(e: SocketTimeoutException){
+                        log.error("Time request timeout", e)
+                    } catch(e: JsonParseException){
+                        log.error("Failed to parse time response", e)
+                    } catch (e: IOException){
+                        log.error("Failed to fetch time", e)
+                    }
                 }
                 timeServerDelta = data.average().toLong()
             } catch(e: Exception){
                 log.error("Failed to fetch time from time server", e)
                 continue
+            } finally {
+                lock.release()
             }
-            Thread.sleep(10000)
         }
     }
 
     @EventListener
     fun onApplicationReady(event: ApplicationReadyEvent){
+        instance = this
         timeServerIp = if(runningLocal) "localhost" else "host.docker.internal"
         // set up udp client for time server
         timeServerUdp.remoteAddress = timeServerIp
@@ -89,6 +114,10 @@ class TimeServerHandler {
     }
 
     companion object {
+        lateinit var instance: TimeServerHandler
         private val log = LoggerFactory.getLogger(TimeServerHandler::class.java)
     }
+
+
+
 }

@@ -1,6 +1,8 @@
 package com.imsproject.watch.view
 
+import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +26,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_WIDTH
+import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
@@ -32,8 +35,18 @@ import com.imsproject.watch.viewmodel.GameViewModel
 abstract class GameActivity(gameType: GameType) : ComponentActivity() {
 
     private val TAG = "$_TAG-${gameType.prettyName()}"
+    private lateinit var viewModel: GameViewModel
 
-    protected fun setupUncaughtExceptionHandler(viewModel: GameViewModel) {
+    protected fun onCreate(viewModel: GameViewModel) {
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        initProperties(metrics.bounds.width(), metrics.bounds.height())
+        viewModel.onCreate(intent,applicationContext)
+        this.viewModel = viewModel
+        setupUncaughtExceptionHandler()
+    }
+
+    private fun setupUncaughtExceptionHandler() {
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             ErrorReporter.report(e)
             viewModel.exitWithError("""
@@ -45,7 +58,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
     }
 
     @Composable
-    protected fun Main(viewModel: GameViewModel){
+    protected open fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
             GameViewModel.State.LOADING -> {
