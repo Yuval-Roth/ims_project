@@ -1,5 +1,5 @@
+Particiapnt
 insertion
-
 
 curl -X POST "http://localhost:8080/data/participant/insert" -H "Content-Type: application/json" -d "{\"pid\":1,\"firstName\":\"try\",\"lastName\":\"numone\",\"age\":25,\"gender\":\"Male\",\"phone\":\"123456789\",\"email\":\"john.doe@example.com\"}"
 
@@ -61,9 +61,12 @@ curl -X POST "http://localhost:8080/data/session/insert" -H "Content-Type: appli
 
 curl -X POST "http://localhost:8080/data/session/update" -H "Content-Type: application/json" -d "{\"sessionId\":2,\"windowLength\":50}" 
 
+***select with id***
 curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{\"sessionId\":2}" 
-
+***select all***
 curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{}" 
+***select where x***
+curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{\"expId\":2}" 
 
 curl -X POST "http://localhost:8080/data/session/delete" -H "Content-Type: application/json" -d "{\"sessionId\":3}" 
 
@@ -75,10 +78,12 @@ curl -X POST "http://localhost:8080/data/sessionEvent/insert" -H "Content-Type: 
 
 curl -X POST "http://localhost:8080/data/sessionEvent/insert" -H "Content-Type: application/json" -d "{\"sessionId\":2,\"type\":\"START\",\"subtype\":\"SUB_START\",\"timestamp\":1672531200000,\"actor\":\"user456\",\"data\":\"anothedata\"}"
 
+***select with id***
 curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{\"eventId\":1}"
-
-
+***select all***
 curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{}"
+***select where x***
+curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{\"sessionId\":4}"
 
 
 curl -X POST "http://localhost:8080/data/sessionEvent/update" -H "Content-Type: application/json" -d "{\"eventId\":1,\"data\":\"CHANGEDdata\"}"

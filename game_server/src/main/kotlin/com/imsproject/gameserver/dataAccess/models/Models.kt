@@ -28,9 +28,24 @@ data class SessionDTO(
     val windowLength: Int? = null,
     val state: String? = null
 ) {
+    fun toNonNullMap(): Map<String, Any> {
+        return listOf(
+            "session_id" to sessionId,
+            "exp_id" to expId,
+            "duration" to duration,
+            "session_type" to sessionType,
+            "session_order" to sessionOrder,
+            "tolerance" to tolerance,
+            "window_length" to windowLength,
+            "state" to state
+        ).filter { it.second != null }
+            .associate { it.first to it.second!! }
+    }
+
     companion object {
         fun create(expId: Int, sessionData: SessionData) =
             SessionDTO(null, expId, sessionData.duration, sessionData.sessionType, sessionData.sessionOrder, sessionData.tolerance, sessionData.windowLength)
+
     }
 }
 data class SessionEventDTO(
@@ -42,6 +57,18 @@ data class SessionEventDTO(
     val actor: String?,
     val data: String?
 ){
+    fun toNonNullMap(): Map<String, Any> {
+        return listOf(
+            "event_id" to eventId,
+            "session_id" to sessionId,
+            "type" to type,
+            "subtype" to subtype,
+            "timestamp" to timestamp,
+            "actor" to actor,
+            "data" to data
+        ).filter { it.second != null }
+            .associate { it.first to it.second!! }
+    }
     companion object {
         fun fromSessionEvent(event: SessionEvent, sessionId: Int? = null) =
             SessionEventDTO(
@@ -70,3 +97,9 @@ data class SessionData(
     val tolerance: Int,
     val windowLength: Int
 )
+
+data class ExperimentWithParticipantNamesDTO(
+    val expId: Int,
+    val participant1Name: String,
+    val participant2Name: String
+) //todo: add date?

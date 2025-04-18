@@ -12,6 +12,8 @@ interface DAO<T, PK : PrimaryKey> {
     @Throws(DaoException::class)
     fun selectAll(transactionId : String? = null): List<T>
 
+    fun selectAggregate(columns : Array<String>, values : Array<out Any>, transactionId: String? = null): List<T>
+
     @Throws(DaoException::class)
     fun selectAll(keys: List<PK>, transactionId : String? = null): List<T>
 
