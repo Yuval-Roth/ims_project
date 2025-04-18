@@ -218,10 +218,10 @@ class RestHandler(
 
         try {
             sessionEventDTO = fromJson<SessionEventDTO>(body)
-            return if(sessionEventDTO.eventId == null) {
-                Response.getOk(daoController.handleSelectAllSessionEvents()).toResponseEntity()
-            } else {
+            return if(sessionEventDTO.eventId != null) {
                 Response.getOk(daoController.handleSelect(sessionEventDTO)).toResponseEntity()
+            } else {
+                Response.getOk(daoController.handleSelectListSessionEvents(sessionEventDTO)).toResponseEntity()
             }
         } catch(e: Exception) {
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)

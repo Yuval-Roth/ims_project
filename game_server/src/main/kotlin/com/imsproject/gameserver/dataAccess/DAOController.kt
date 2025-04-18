@@ -178,6 +178,13 @@ class DAOController(
         return sessionDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
     }
 
+    fun handleSelectListSessionEvents(sessionEventDTO: SessionEventDTO): List<SessionEventDTO> {
+        val data = sessionEventDTO.toNonNullMap()
+        if (data.isEmpty())
+            return handleSelectAllSessionEvents()
+        return sessionEventDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(DAOController::class.java)
     }

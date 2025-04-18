@@ -57,6 +57,18 @@ data class SessionEventDTO(
     val actor: String?,
     val data: String?
 ){
+    fun toNonNullMap(): Map<String, Any> {
+        return listOf(
+            "event_id" to eventId,
+            "session_id" to sessionId,
+            "type" to type,
+            "subtype" to subtype,
+            "timestamp" to timestamp,
+            "actor" to actor,
+            "data" to data
+        ).filter { it.second != null }
+            .associate { it.first to it.second!! }
+    }
     companion object {
         fun fromSessionEvent(event: SessionEvent, sessionId: Int? = null) =
             SessionEventDTO(

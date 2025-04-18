@@ -78,10 +78,12 @@ curl -X POST "http://localhost:8080/data/sessionEvent/insert" -H "Content-Type: 
 
 curl -X POST "http://localhost:8080/data/sessionEvent/insert" -H "Content-Type: application/json" -d "{\"sessionId\":2,\"type\":\"START\",\"subtype\":\"SUB_START\",\"timestamp\":1672531200000,\"actor\":\"user456\",\"data\":\"anothedata\"}"
 
+***select with id***
 curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{\"eventId\":1}"
-
-
+***select all***
 curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{}"
+***select where x***
+curl -X POST "http://localhost:8080/data/sessionEvent/select" -H "Content-Type: application/json" -d "{\"sessionId\":4}"
 
 
 curl -X POST "http://localhost:8080/data/sessionEvent/update" -H "Content-Type: application/json" -d "{\"eventId\":1,\"data\":\"CHANGEDdata\"}"
