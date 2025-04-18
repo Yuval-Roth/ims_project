@@ -185,6 +185,10 @@ class DAOController(
         return sessionEventDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
     }
 
+    fun handleSelectAllExperimentsWithNames(): List<ExperimentWithParticipantNamesDTO> {
+        return experimentDAO.selectWithParticipantNames()
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(DAOController::class.java)
     }

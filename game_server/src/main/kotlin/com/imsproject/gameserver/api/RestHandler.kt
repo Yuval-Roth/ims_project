@@ -164,22 +164,6 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
-    @PostMapping("/data/experiment/select")
-    fun dataSelectExperiments(@RequestBody body: String): ResponseEntity<String> {
-        val experimentDTO: ExperimentDTO
-
-        try {
-            experimentDTO = fromJson<ExperimentDTO>(body)
-            return if(experimentDTO.expId == null) {
-                 Response.getOk(daoController.handleSelectAllExperiments()).toResponseEntity()
-            } else {
-                 Response.getOk(daoController.handleSelect(experimentDTO)).toResponseEntity()
-            }
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-    }
-
     @PostMapping("/data/participant/select")
     fun dataSelectParticipants(@RequestBody body: String): ResponseEntity<String> {
         val participantDTO: ParticipantDTO
@@ -191,6 +175,18 @@ class RestHandler(
             } else {
                 Response.getOk(daoController.handleSelect(participantDTO)).toResponseEntity()
             }
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
+
+    @PostMapping("/data/experiment/select/names")
+    fun dataSelectExperiments(@RequestBody body: String): ResponseEntity<String> {
+        val experimentDTO: ExperimentDTO
+
+        try {
+            experimentDTO = fromJson<ExperimentDTO>(body)
+            return Response.getOk(daoController.handleSelectAllExperimentsWithNames()).toResponseEntity()
         } catch(e: Exception) {
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }

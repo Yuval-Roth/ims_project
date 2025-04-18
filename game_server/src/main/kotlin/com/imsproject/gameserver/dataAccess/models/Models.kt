@@ -97,3 +97,9 @@ data class SessionData(
     val tolerance: Int,
     val windowLength: Int
 )
+
+data class ExperimentWithParticipantNamesDTO(
+    val expId: Int,
+    val participant1Name: String,
+    val participant2Name: String
+) //todo: add date?
