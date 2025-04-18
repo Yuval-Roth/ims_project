@@ -28,9 +28,24 @@ data class SessionDTO(
     val windowLength: Int? = null,
     val state: String? = null
 ) {
+    fun toNonNullMap(): Map<String, Any> {
+        return listOf(
+            "session_id" to sessionId,
+            "exp_id" to expId,
+            "duration" to duration,
+            "session_type" to sessionType,
+            "session_order" to sessionOrder,
+            "tolerance" to tolerance,
+            "window_length" to windowLength,
+            "state" to state
+        ).filter { it.second != null }
+            .associate { it.first to it.second!! }
+    }
+
     companion object {
         fun create(expId: Int, sessionData: SessionData) =
             SessionDTO(null, expId, sessionData.duration, sessionData.sessionType, sessionData.sessionOrder, sessionData.tolerance, sessionData.windowLength)
+
     }
 }
 data class SessionEventDTO(

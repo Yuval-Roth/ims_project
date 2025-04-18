@@ -65,7 +65,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         if (resultSet.next()) {
             return buildObjectFromResultSet(resultSet)
         } else {
-            throw DaoException("Failed to select from table $tableName")
+            throw DaoException("Requested item might not exist in table $tableName")
         }
     }
 

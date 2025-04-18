@@ -202,10 +202,10 @@ class RestHandler(
 
         try {
             sessionDTO = fromJson<SessionDTO>(body)
-            return if(sessionDTO.sessionId == null) {
-                Response.getOk(daoController.handleSelectAllSessions()).toResponseEntity()
-            } else {
+            return if(sessionDTO.sessionId != null) {
                 Response.getOk(daoController.handleSelect(sessionDTO)).toResponseEntity()
+            } else {
+                Response.getOk(daoController.handleSelectListSessions(sessionDTO)).toResponseEntity()
             }
         } catch(e: Exception) {
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)

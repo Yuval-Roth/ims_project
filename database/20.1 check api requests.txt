@@ -61,9 +61,12 @@ curl -X POST "http://localhost:8080/data/session/insert" -H "Content-Type: appli
 
 curl -X POST "http://localhost:8080/data/session/update" -H "Content-Type: application/json" -d "{\"sessionId\":2,\"windowLength\":50}" 
 
+***select with id***
 curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{\"sessionId\":2}" 
-
+***select all***
 curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{}" 
+***select where x***
+curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: application/json" -d "{\"expId\":2}" 
 
 curl -X POST "http://localhost:8080/data/session/delete" -H "Content-Type: application/json" -d "{\"sessionId\":3}" 
 

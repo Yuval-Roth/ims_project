@@ -156,6 +156,7 @@ class DAOController(
     @Throws(DaoException::class)
     fun handleSelect(sessionDTO: SessionDTO): Any {
         if (sessionDTO.sessionId == null) throw Exception("A session id was not provided for selection")
+
         return sessionDAO.select(SessionPK(sessionDTO.sessionId))
     }
 
@@ -170,6 +171,12 @@ class DAOController(
     fun handleSelectAllSessions(): List<SessionDTO> = sessionDAO.selectAll()
     fun handleSelectAllSessionEvents(): List<SessionEventDTO> = sessionEventDAO.selectAll()
 
+    fun handleSelectListSessions(sessionDTO: SessionDTO): List<SessionDTO> {
+        val data = sessionDTO.toNonNullMap()
+        if (data.isEmpty())
+            return handleSelectAllSessions()
+        return sessionDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
+    }
 
     companion object {
         private val log = LoggerFactory.getLogger(DAOController::class.java)
