@@ -34,10 +34,11 @@ data class SessionEvent internal constructor (
         @SerializedName("opponent_click")           OPPONENT_CLICK,
         @SerializedName("angle")                    ANGLE,
         @SerializedName("opponent_angle")           OPPONENT_ANGLE,
-        @SerializedName("rotation")                 ROTATION,
-        @SerializedName("opponent_rotation")        OPPONENT_ROTATION,
         @SerializedName("frequency")                FREQUENCY,
         @SerializedName("opponent_frequency")       OPPONENT_FREQUENCY,
+        @SerializedName("touch_point")              TOUCH_POINT,
+        @SerializedName("opponent_touch_point")     OPPONENT_TOUCH_POINT,
+        @SerializedName("axle_angle")               AXLE_ANGLE,
 
         // SENSOR_DATA
         @SerializedName("heart_rate")               HEART_RATE,
@@ -132,18 +133,6 @@ data class SessionEvent internal constructor (
             data: String
         ) = SessionEvent(Type.USER_INPUT, Subtype.OPPONENT_ANGLE, timestamp, actor, data)
 
-        fun rotation(
-            actor: String,
-            timestamp: Long,
-            data: String
-        ) = SessionEvent(Type.USER_INPUT, Subtype.ROTATION, timestamp, actor, data)
-
-        fun opponentRotation(
-            actor: String,
-            timestamp: Long,
-            data: String
-        ) = SessionEvent(Type.USER_INPUT, Subtype.OPPONENT_ROTATION, timestamp, actor, data)
-
         fun frequency(
             actor: String,
             timestamp: Long,
@@ -155,6 +144,24 @@ data class SessionEvent internal constructor (
             timestamp: Long,
             data: String
         ) = SessionEvent(Type.USER_INPUT, Subtype.OPPONENT_FREQUENCY, timestamp, actor, data)
+
+        fun touchPoint(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, Subtype.TOUCH_POINT, timestamp, actor, data)
+
+        fun opponentTouchPoint(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, Subtype.OPPONENT_TOUCH_POINT, timestamp, actor, data)
+
+        fun axleAngle(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, Subtype.ANGLE, timestamp, actor, data)
 
         // ==================== SENSOR_DATA ==================== |
 

@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.FLOUR_MILL_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.PACKAGE_PREFIX
@@ -53,8 +54,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         var angle by mutableStateOf(startingAngle)
         var targetAngle = startingAngle
     }
-
-    private val serverPacketTracker = PacketTracker()
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -201,9 +200,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                     return
                 }
 
-
-                //TODO: add logging of action event
-
                 val arrivedTimestamp = getCurrentGameTime()
 
                 val outOfOrder = packetTracker.receivedOtherPacket(sequenceNumber)
@@ -219,6 +215,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
                 _opponentTouchPoint.value = relativeRadius to angle
                 _opponentInBounds.value = inBounds
+
+                addEvent(SessionEvent.opponentTouchPoint(actor,arrivedTimestamp,"$relativeRadius,$angle,$inBounds"))
             }
             else -> super.handleGameAction(action)
         }
@@ -235,7 +233,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         val sideAngle = axle.angle + myAxleSide.angle
         val polarDistance = polarDistance(touchPointDistance, sideAngle, touchPointDistance, touchPointAngle)
         val bonusThreshold = TURNING_BONUS_THRESHOLD * if(turning) 1 else 0
-        println(polarDistance)
         return ((polarDistance <= TOUCH_CIRCLE_RADIUS + AXLE_WIDTH / 2f + bonusThreshold)
                 && touchPointDistance > (SCREEN_RADIUS * 0.7f - TOUCH_CIRCLE_RADIUS)
                 && touchPointDistance < (SCREEN_RADIUS * 0.9f + TOUCH_CIRCLE_RADIUS)).also{
@@ -244,6 +241,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     }
 
     private fun updateAxleAngle(){
+
+        val timestamp = super.getCurrentGameTime()
 
         val axle = _axle.value
         val myTouchPoint = _myTouchPoint.value
@@ -265,6 +264,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             if(angle != Angle.undefined) {
                 _axle.value = Axle(angle)
                 turning = false
+                addEvent(SessionEvent.axleAngle(playerId,timestamp,angle.floatValue.toString()))
             }
         } else if (myTouchPoint.first >= 0f && opponentTouchPoint.first >= 0f){
             if(myInBounds.value && opponentInBounds.value){
@@ -279,13 +279,16 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 val opponentDirection = if(Angle.isClockwise(opponentSideAngle, opponentAngle)) 1 else -1
                 if(myAngleDiff > 0 && opponentAngleDiff > 0 && myDirection == opponentDirection){
                     val amountToRotate = abs(myAngleDiff - opponentAngleDiff)
-                    axle.targetAngle = axleAngle + (amountToRotate * myDirection)
+                    val newTargetAngle = axleAngle + (amountToRotate * myDirection)
+                    axle.targetAngle = newTargetAngle
                     turning = true
+                    addEvent(SessionEvent.axleAngle(playerId,timestamp,newTargetAngle.toString()))
                 }
             }
         } else if (myTouchPoint.first < 0f && opponentTouchPoint.first < 0f){
             _axle.value = null
             turning = false
+            addEvent(SessionEvent.axleAngle(playerId,timestamp,UNDEFINED_ANGLE.toString()))
         }
     }
 
@@ -294,8 +297,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         val touchPointInbounds = _myInBounds.value
         val (relativeRadius, angle) = _myTouchPoint.value
         val data = "$relativeRadius,$angle,$touchPointInbounds"
-        // TODO: add event logging of action
         model.sendUserInput(timestamp, packetTracker.newPacket(),data)
+        addEvent(SessionEvent.touchPoint(playerId,timestamp,data))
     }
 
     companion object {
