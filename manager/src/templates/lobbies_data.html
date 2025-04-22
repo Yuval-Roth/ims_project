@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lobby Data</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='general.css') }}">
+{#  <link rel="stylesheet" href="{{ url_for('static','session_data.css') }}">#}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='session_data.css') }}">
+</head>
+<body>
+<a href="/main_menu" class="home-button">
+    <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
+</a>
+
+  <div class="session-container">
+    <h1>All Lobbies</h1>
+    <table id="lobbyTable">
+      <thead>
+        <tr>
+          <th>Lobby ID</th>
+          <th>Players</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for lobby in lobbies %}
+        <tr onclick="window.location.href='{{ url_for('session_data_menu') }}?lobby_id={{ lobby.lobbyId }}'">
+          <td>{{ lobby.lobbyId }}</td>
+          <td>{{ lobby.players | join(', ') }}</td>
+          <td>{{ lobby.created_at }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

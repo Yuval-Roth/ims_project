@@ -13,7 +13,8 @@
 </a>
 
 <div class="session-container">
-    <h1>Session Data</h1>
+    <h1>Sessions for Lobby</h1>
+
 
     <div class="filters">
         <select id="typeFilter">
@@ -41,54 +42,35 @@
 </div>
 
 <script>
-    let allSessions = [];
+  // passed in by Jinja
+  const allSessions = {{ sessions|tojson }};
+  const lobbyId     = "{{ lobby_id }}";
 
-    function fetchSessions() {
-        fetch("/get_all_sessions")
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") {
-                    allSessions = data.sessions;
-                    renderSessions(allSessions);
-                }
-            });
-    }
+  function renderSessions(sessions) {
+    const tbody = document.querySelector("#sessionTable tbody");
+    tbody.innerHTML = "";
 
-    function renderSessions(sessions) {
-        const tbody = document.querySelector("#sessionTable tbody");
-        tbody.innerHTML = "";
+    sessions.forEach(s => {
+      const date = s.timestamp ? s.timestamp.split("T")[0] : '';
+      const row  = document.createElement("tr");
+      row.onclick = () => {
+        window.location.href = `/session_data/single?session_id=${s.sessionId}`;
+      };
+      row.innerHTML = `
+        <td>${s.sessionId}</td>
+        <td>${s.participants.join(", ")}</td>
+        <td>${s.gameType}</td>
+        <td>${s.duration}</td>
+        <td>${date}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
 
-        sessions.forEach(session => {
-            const date = session.timestamp ? session.timestamp.split("T")[0] : '';
-            const row = document.createElement("tr");
-            row.onclick = () => {
-                window.location.href = `/session_data/single?session_id=${session.sessionId}`;
-            };
-            row.innerHTML = `
-                <td>${session.sessionId}</td>
-                <td>${session.participants.join(", ")}</td>
-                <td>${session.gameType}</td>
-                <td>${session.duration}</td>
-                <td>${date}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    function applyFilters() {
-        const type = document.getElementById("typeFilter").value;
-        const date = document.getElementById("dateFilter").value;
-
-        const filtered = allSessions.filter(s => {
-            const matchesType = !type || s.gameType === type;
-            const matchesDate = !date || (s.timestamp && s.timestamp.startsWith(date));
-            return matchesType && matchesDate;
-        });
-
-        renderSessions(filtered);
-    }
-
-    fetchSessions();
+  // initialize
+  document.querySelector("h1").textContent = `Sessions for Lobby #${lobbyId}`;
+  renderSessions(allSessions);
 </script>
+
 </body>
 </html>

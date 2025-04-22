@@ -1,108 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Single Session Data</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <title>Single Session Data</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* simple 2‑column grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 30px;
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
+    }
+  </style>
 </head>
 <body>
-<a href="/session_data" class="home-button">
+  <a href="/session_data" class="home-button">
     <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
-</a>
+  </a>
 
-<div class="session-container">
-    <h1>Session ID: #123</h1>
+  <div class="session-container">
+    <h1>Session ID: #{{ metadata.sessionId }}</h1>
     <p style="text-align: center;">
-        <strong>Game Type:</strong> Water Ripples &nbsp; | &nbsp;
-        <strong>Duration:</strong> 120s &nbsp; | &nbsp;
-        <strong>Participants:</strong> Alice & Bob
+      <strong>Game Type:</strong> {{ metadata.gameType }} &nbsp;|&nbsp;
+      <strong>Duration:</strong> {{ metadata.duration }}s &nbsp;|&nbsp;
+      <strong>Participants:</strong> {{ metadata.participants | join(' & ') }}
     </p>
 
-    <div style="display: flex; flex-direction: column; gap: 40px; margin-top: 30px;">
-        <div>
-            <h3 style="text-align:center;">Sync Over Time</h3>
-            <canvas id="syncChart" height="300"></canvas>
-        </div>
-
-        <div>
-            <h3 style="text-align:center;">Tap Intensity</h3>
-            <canvas id="intensityChart" height="300"></canvas>
-        </div>
+    <div class="charts-grid">
+      <div class="chart-container">
+        <h3 style="text-align:center;">Heart Rate</h3>
+        <canvas id="hrChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3 style="text-align:center;">HR Variation</h3>
+        <canvas id="hrvChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3 style="text-align:center;">Latency</h3>
+        <canvas id="latencyChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3 style="text-align:center;">Sync Over Time</h3>
+        <canvas id="syncChart"></canvas>
+      </div>
     </div>
-</div>
+  </div>
 
-<script>
-    // Dummy line chart for sync levels
+  <script>
+    const meta = {{ metadata|tojson }};
+    const timeLabels = [...Array(20).keys()].map(i => `t+${i}s`);
+
+    function randArray(len, min, max) {
+      return Array.from({ length: len }, () => +(Math.random() * (max - min) + min).toFixed(2));
+    }
+
+    // 1) Heart Rate (line) for both participants
+    new Chart(document.getElementById('hrChart'), {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: meta.participants.map(name => ({
+          label: name,
+          data: randArray(timeLabels.length, 60, 100),
+          tension: 0.3,
+          fill: false
+        }))
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: false, title: { display: true, text: 'BPM' } } }
+      }
+    });
+
+    // 2) HR Variation (line) for both participants
+    new Chart(document.getElementById('hrvChart'), {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: meta.participants.map(name => ({
+          label: name,
+          data: randArray(timeLabels.length, 5, 20),
+          tension: 0.3,
+          fill: false
+        }))
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'ms' } } }
+      }
+    });
+
+    // 3) Latency (bar) for both participants
+    new Chart(document.getElementById('latencyChart'), {
+      type: 'bar',
+      data: {
+        labels: timeLabels,
+        datasets: meta.participants.map(name => ({
+          label: name,
+          data: randArray(timeLabels.length, 50, 200)
+        }))
+      },
+      options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'ms' } } }
+      }
+    });
+
+    // 4) Sync Over Time (line) already supports both participants
     new Chart(document.getElementById('syncChart'), {
-        type: 'line',
-        data: {
-            labels: [...Array(10).keys()].map(i => `t+${i}s`),
-            datasets: [
-                {
-                    label: 'Alice',
-                    data: [0.2, 0.4, 0.3, 0.5, 0.45, 0.6, 0.55, 0.7, 0.65, 0.75],
-                    borderColor: 'blue',
-                    tension: 0.4,
-                    fill: false
-                },
-                {
-                    label: 'Bob',
-                    data: [0.3, 0.35, 0.4, 0.6, 0.5, 0.55, 0.6, 0.7, 0.7, 0.8],
-                    borderColor: 'green',
-                    tension: 0.4,
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 1,
-                    title: {
-                        display: true,
-                        text: 'Sync Level'
-                    }
-                }
-            }
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: meta.participants.map(name => ({
+          label: name,
+          data: randArray(timeLabels.length, 0, 1),
+          tension: 0.4,
+          fill: false
+        }))
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true, max: 1, title: { display: true, text: 'Sync Level' } }
         }
+      }
     });
-
-    // Dummy bar chart for tap intensity
-    new Chart(document.getElementById('intensityChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Tap 1', 'Tap 2', 'Tap 3', 'Tap 4', 'Tap 5'],
-            datasets: [
-                {
-                    label: 'Alice',
-                    data: [5, 7, 6, 9, 8],
-                    backgroundColor: 'rgba(0, 123, 255, 0.7)'
-                },
-                {
-                    label: 'Bob',
-                    data: [6, 6, 7, 8, 7],
-                    backgroundColor: 'rgba(40, 167, 69, 0.7)'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Tap Intensity'
-                    }
-                }
-            }
-        }
-    });
-</script>
+  </script>
 </body>
 </html>
