@@ -76,9 +76,10 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
     fun WaterRipples() {
         val ripples = remember { viewModel.ripples }
 
-        // this is used only to to trigger recomposition
+        // this is used only to to trigger recomposition when new ripples are added
         viewModel.counter.collectAsState().value
 
+        // Box to draw the background
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -92,6 +93,7 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
             contentAlignment = Alignment.Center
         ) {
 
+            // Center button
             Button(
                 modifier = Modifier
                     .border(
@@ -99,6 +101,8 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
                         CircleShape
                     )
                     .size(WATER_RIPPLES_BUTTON_SIZE.dp)
+
+                    // handle clicks on the center button
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
                             while (true) {
@@ -113,43 +117,18 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
                             }
                         }
                     },
-                onClick = {},
+                onClick = {}, // no-op, handled by pointerInput.
+                              // We want the action to be on-touch and not on-release
+                              // and the onClick callback is called on-release
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = LIGHT_GRAY_COLOR,
                     contentColor = Color.Black
                 )
             ){
-                // button content
+                // empty button content
             }
 
-            // ================================================= |
-            // =============== Ripple Effect =================== |
-            // ================================================= |
-
-            LaunchedEffect(Unit){
-                while(true){
-                    val rippleIterator = ripples.iterator()
-                    while (rippleIterator.hasNext()) {
-                        val ripple = rippleIterator.next()
-
-                        // remove ripples that are done animating
-                        if(ripple.size >= RIPPLE_MAX_SIZE){
-                            rippleIterator.remove()
-                            continue
-                        }
-
-                        // animation step
-                        ripple.size += ripple.sizeStep
-                        ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
-                            0f
-                        } else {
-                            (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
-                        }
-                    }
-                    delay(16)
-                }
-            }
-
+            // Draw the ripples
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -164,6 +143,34 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
                         style = Stroke(width = 4.dp.toPx())
                     )
                 }
+            }
+        }
+
+        // Ripple animation loop
+        // We set the parameter to Unit because we continuously iterate over the ripples
+        // and we don't need to cancel the LaunchedEffect ever
+        LaunchedEffect(Unit){
+            while(true){
+                val rippleIterator = ripples.iterator()
+                while (rippleIterator.hasNext()) {
+                    val ripple = rippleIterator.next()
+
+                    // remove ripples that are done animating
+                    if(ripple.size >= RIPPLE_MAX_SIZE){
+                        rippleIterator.remove()
+                        continue
+                    }
+
+                    // animation step
+                    ripple.size += ripple.sizeStep
+                    ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
+                        0f
+                    } else {
+                        // Sometimes the step can make the alpha drop below 0 so we coerce it to at least 0
+                        (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
+                    }
+                }
+                delay(16)
             }
         }
     }
