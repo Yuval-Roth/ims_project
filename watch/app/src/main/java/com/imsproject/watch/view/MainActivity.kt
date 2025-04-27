@@ -184,6 +184,7 @@ class MainActivity : ComponentActivity() {
                     GameType.WATER_RIPPLES -> waterRipples.launch(input)
                     GameType.WINE_GLASSES -> wineGlasses.launch(input)
                     GameType.FLOUR_MILL -> flourMill.launch(input)
+                    GameType.FLOWER_GARDEN -> flowerGarden.launch(input)
                     else -> viewModel.showError("Unknown game type")
                 }
             }

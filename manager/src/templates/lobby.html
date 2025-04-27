@@ -152,6 +152,10 @@
                 syncTolerance: null,
                 syncWindowLength: null,
             },
+            'Flower Garden': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
             'gameTime': null,
             'gameType': 'Water Ripples',
         }
@@ -215,6 +219,7 @@
             let syncTolerance
             let syncWindowLength
             switch(gameType) {
+                case 'Flower Garden':
                 case 'Water Ripples':
                 case 'Flour Mill':
                     syncTolerance = parseInt(formData.get('syncTolerance'), 10);
@@ -338,6 +343,7 @@
                         let syncTolerance = null;
                         let syncWindowLength = null;
                         switch(humanReadableGameType){
+                            case 'Flower Garden':
                             case 'Water Ripples':
                             case 'Flour Mill':
                                 syncTolerance = session.syncTolerance + ' ms';
@@ -528,8 +534,16 @@
                     syncToleranceUnit: 'hz',
                     syncToleranceStep: 0.01,
                     syncToleranceMin: 0.01,
-                    syncWindowLength: 5000,
+                    syncWindowLength: 1000,
                     windowLengthEnabled: true
+                },
+                'Flower Garden': {
+                    syncTolerance: 50,
+                    syncToleranceUnit: 'ms',
+                    syncToleranceStep: 1,
+                    syncToleranceMin: 1,
+                    syncWindowLength: -1,
+                    windowLengthEnabled: false
                 },
             };
 
@@ -537,6 +551,7 @@
                 const selectedGame = gameTypeSelect.value;
                 const oldGame = addSessionValueHistory["gameType"];
                 switch(oldGame){
+                    case 'Flower Garden':
                     case 'Water Ripples':
                     case 'Flour Mill':
                         addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;

@@ -35,7 +35,7 @@ class SessionController(
         val invalidArgs = mutableListOf<String>()
         val errorMsg = "The following params are invalid: "
         if(duration <= 0) invalidArgs.add("duration")
-        if(gameType != GameType.WATER_RIPPLES && gameType != GameType.FLOUR_MILL){
+        if(gameType == GameType.WINE_GLASSES){
             if(syncWindowLength <= 0) invalidArgs.add("syncWindowLength")
         }
         if(syncTolerance <= 0) invalidArgs.add("syncTolerance")
