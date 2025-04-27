@@ -53,6 +53,11 @@
             android:taskAffinity=""
             android:exported="true"
             android:theme="@style/FlourMillActivityTheme" />
+        <activity
+            android:name=".view.FlowerGardenActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:theme="@style/FlowerGardenActivityTheme" />
 
     </application>
 

@@ -5,10 +5,7 @@ import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.toJson
-import com.imsproject.gameserver.business.games.FlourMillGame
-import com.imsproject.gameserver.business.games.Game
-import com.imsproject.gameserver.business.games.WaterRipplesGame
-import com.imsproject.gameserver.business.games.WineGlassesGame
+import com.imsproject.gameserver.business.games.*
 import com.imsproject.gameserver.business.lobbies.LobbyState
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -153,6 +150,10 @@ class GameController(
                 GameType.FLOUR_MILL -> {
                     log.debug("startGame: Selected FlourMillGame")
                     FlourMillGame(lobbyId,player1Handler, player2Handler)
+                }
+                GameType.FLOWER_GARDEN -> {
+                    log.debug("startGame: Selected FlowerGardenGame")
+                    FlowerGardenGame(lobbyId,player1Handler, player2Handler)
                 }
                 else -> {
                     log.debug("startGame: Invalid game type")
