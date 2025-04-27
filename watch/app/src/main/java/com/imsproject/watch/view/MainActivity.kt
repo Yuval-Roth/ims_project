@@ -57,10 +57,7 @@ import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
-import com.imsproject.watch.view.contracts.FlourMillResultContract
-import com.imsproject.watch.view.contracts.Result
-import com.imsproject.watch.view.contracts.WaterRipplesResultContract
-import com.imsproject.watch.view.contracts.WineGlassesResultContract
+import com.imsproject.watch.view.contracts.*
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.launch
@@ -72,6 +69,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
     private lateinit var flourMill: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var flowerGarden: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wifiLock: WifiManager.WifiLock
     private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
 
@@ -124,6 +122,8 @@ class MainActivity : ComponentActivity() {
         waterRipples = registerForActivityResult(WaterRipplesResultContract()) { afterGame(it) }
         wineGlasses = registerForActivityResult(WineGlassesResultContract()) { afterGame(it) }
         flourMill = registerForActivityResult(FlourMillResultContract()) { afterGame(it) }
+        flowerGarden = registerForActivityResult(FlowerGardenResultContract()) { afterGame(it) }
+
     }
 
     private fun setupSensorsPermission() {
