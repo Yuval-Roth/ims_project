@@ -44,10 +44,6 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         var currentAlpha by mutableFloatStateOf(startingAlpha)
         val sizeStep = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
         var alphaStep = startingAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-
-        fun updateAlphaStep(){
-            alphaStep =  currentAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-        }
     }
 
     private lateinit var clickVibration : VibrationEffect
@@ -140,6 +136,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     }
 
     private fun showRipple(actor: String, timestamp : Long) {
+
+        // find the latest ripple that is not by the same actor
         val rippleToCheck = if (actor == playerId) {
             ripples.find { it.actor != playerId }
         } else {
@@ -151,12 +149,12 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                                             .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
             rippleToCheck.color = VIVID_ORANGE_COLOR
             if (rippleToCheck.actor != playerId) {
-                rippleToCheck.currentAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
-                rippleToCheck.updateAlphaStep()
+                // update the ripple's alpha to make it seem like it started from 1.0f and not from 0.5f
+                val newAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
+                rippleToCheck.currentAlpha = newAlpha
+                rippleToCheck.alphaStep = newAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
             }
-            viewModelScope.launch(Dispatchers.Default) {
-                addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
-            }
+            addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
         // not synced click
         else {
@@ -169,6 +167,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             }
             ripples.addFirst(ripple)
         }
+
+        // add a vibration effect to clicks that are not mine
         if (actor != playerId) {
             viewModelScope.launch(Dispatchers.IO) {
                 delay(100)

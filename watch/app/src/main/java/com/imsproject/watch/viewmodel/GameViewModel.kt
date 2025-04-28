@@ -74,9 +74,6 @@ abstract class GameViewModel(
     private var timeServerDelta = 0L
     private var myStartTime = 0L
 
-    private var havePermission = false
-
-
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |

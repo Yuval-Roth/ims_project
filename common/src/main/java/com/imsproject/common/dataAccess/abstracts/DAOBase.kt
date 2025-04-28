@@ -65,8 +65,26 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         if (resultSet.next()) {
             return buildObjectFromResultSet(resultSet)
         } else {
-            throw DaoException("Failed to select from table $tableName")
+            throw DaoException("Requested item might not exist in table $tableName")
         }
+    }
+
+    @Throws(DaoException::class)
+    override fun selectAggregate(columns : Array<String>, values : Array<out Any>, transactionId: String?): List<T> {
+        val query = "SELECT * FROM $tableName ${buildWhereClause(columns)};"
+
+        val resultSet: OfflineResultSet
+        try {
+            resultSet = cursor.executeRead(query,values, transactionId = transactionId)
+        } catch (e: SQLException) {
+            throw DaoException("Failed to select aggregate from table $tableName", e)
+        }
+        val objects: MutableList<T> = LinkedList()
+        while (resultSet.next()) {
+            objects.add(buildObjectFromResultSet(resultSet))
+        }
+        return objects
+
     }
 
     @Throws(DaoException::class)
