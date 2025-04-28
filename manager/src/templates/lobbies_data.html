@@ -25,18 +25,17 @@
       </tr>
     </thead>
     <tbody>
-    {# ↓ sort by expId, reverse = descending #}
-    {% for lobby in lobbies | sort(attribute='expId', reverse=True) %}
-      <tr onclick="location.href='{{ url_for('session_data_menu') }}?lobby_id={{ lobby.expId }}'">
-        <td>{{ lobby.expId }}</td>
-        <td>
-          {{ lobby.participant1Name }}
-          {% if lobby.participant2Name %}, {{ lobby.participant2Name }}{% endif %}
-        </td>
-        <td>{{ lobby.created_at if lobby.created_at is defined else '' }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
+      {% for lobby in lobbies | sort(attribute='expId', reverse=True) %}
+        <tr onclick="location.href='{{ url_for('session_data_menu') }}?lobby_id={{ lobby.expId }}&participants={{ lobby.participant1Name }},{{ lobby.participant2Name }}'">
+          <td>{{ lobby.expId }}</td>
+          <td>
+            {{ lobby.participant1Name }}
+            {% if lobby.participant2Name %}, {{ lobby.participant2Name }}{% endif %}
+          </td>
+          <td>{{ lobby.created_at if lobby.created_at is defined else '' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
   </table>
 </div>
 

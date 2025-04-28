@@ -398,9 +398,11 @@ def session_data_menu():
 
     lobby_id = request.args.get('lobby_id')
     if lobby_id:
+        participants = request.args.get('participants')
         sessions = get_sessions_for_lobby(lobby_id)
         return render_template('session_data.html',
                                sessions=sessions,
+                                 participants=participants,
                                lobby_id=lobby_id)
     else:
         lobbies = get_lobbies_data()
@@ -412,13 +414,31 @@ def single_session_data():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    sid = request.args.get('session_id')
-    metadata, sync_data, intensity_data = get_single_session(sid)
+    sid          = request.args.get('session_id')
+    game_type    = request.args.get('game_type', '')
+    participants = request.args.get('participants', '')      # "Alice,Bob"
+    dueation     = request.args.get('duration', '')
 
-    return render_template('single_session_data.html',
-                           metadata=metadata,
-                           sync_data=sync_data,
-                           intensity_data=intensity_data)
+    sync_data, intensity_data = get_single_session(sid)
+
+    metadata = {
+        "gameType": game_type,
+        "participants": [p.strip() for p in participants.split(',') if p],
+        "sessionId": sid,
+        "duration": dueation
+    }
+    # # enrich metadata with the args we just received
+    # metadata["gameType"]     = game_type
+    # metadata["participants"] = [p.strip() for p in participants.split(',') if p]
+    # metadata["sessionId"]    = sid
+    # metadata["duration"]     = dueation
+
+    return render_template(
+        'single_session_data.html',
+        metadata=metadata,
+        sync_data=sync_data,
+        intensity_data=intensity_data
+    )
 
 # ───────────────────────────────────────── (optional) JSON API
 @app.route('/get_all_sessions', methods=['GET'])

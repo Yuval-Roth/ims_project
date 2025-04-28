@@ -29,11 +29,13 @@
 
   <div class="session-container">
     <h1>Session ID: #{{ metadata.sessionId }}</h1>
-    <p style="text-align: center;">
-      <strong>Game Type:</strong> {{ metadata.gameType }} &nbsp;|&nbsp;
-      <strong>Duration:</strong> {{ metadata.duration }}s &nbsp;|&nbsp;
+    <p style="text-align:center;">
+      <strong>Game&nbsp;Type:</strong>
+      {{ metadata.gameType.replace('_', ' ').title() }}   |  
+      <strong>Duration:</strong> {{ metadata.duration }} s   |  
       <strong>Participants:</strong> {{ metadata.participants | join(' & ') }}
     </p>
+    
 
     <div class="charts-grid">
       <div class="chart-container">
