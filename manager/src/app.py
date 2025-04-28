@@ -67,7 +67,7 @@ def get_parts():
 def lobbies_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
-    lobbies = get_lobbies()  # list of dict : {lobbyId, players}
+    lobbies = get_lobbies_data()  # list of dict : {lobbyId, players}
     # lobbies = None
     if lobbies:
         lobbies = lobbies.lobbies
@@ -391,16 +391,6 @@ def remove_oper():
 
 
 ###################### SESSION DATA ######################
-@app.route('/get_all_sessions', methods=['GET'])
-def get_all_sessions_route():
-    try:
-        sessions = get_all_sessions()
-        return jsonify({"status": "success", "sessions": sessions})
-    except Exception as e:
-        Logger.log_error(f"Error getting all sessions: {e}")
-        return jsonify({"status": "error", "message": "Internal server error"}), 500
-
-
 @app.route('/session_data', methods=['GET'])
 def session_data_menu():
     if 'username' not in session:
@@ -408,75 +398,38 @@ def session_data_menu():
 
     lobby_id = request.args.get('lobby_id')
     if lobby_id:
-        # — LEVEL 2: hard‑coded sessions for this lobby —
-        sessions = [
-            {
-                'sessionId': 'S1',
-                'participants': ['Alice', 'Bob'],
-                'gameType': 'Water Ripples',
-                'duration': 120,
-                'timestamp': '2025-04-15T10:05:00Z'
-            },
-            {
-                'sessionId': 'S2',
-                'participants': ['Alice', 'Bob'],
-                'gameType': 'Wine Glasses',
-                'duration': 90,
-                'timestamp': '2025-04-15T10:30:00Z'
-            },
-            {
-                'sessionId': 'S3',
-                'participants': ['Alice', 'Bob'],
-                'gameType': 'Flour Mill',
-                'duration': 60,
-                'timestamp': '2025-04-15T10:55:00Z'
-            }
-        ]
-        return render_template(
-            'session_data.html',
-            sessions=sessions,
-            lobby_id=lobby_id
-        )
+        sessions = get_sessions_for_lobby(lobby_id)
+        return render_template('session_data.html',
+                               sessions=sessions,
+                               lobby_id=lobby_id)
     else:
-        # — LEVEL 1: hard‑coded lobbies —
-        lobbies = [
-            {'lobbyId': 'L1', 'players': ['Alice','Bob'],   'created_at':'2025-04-15T10:00:00Z'},
-            {'lobbyId': 'L2', 'players': ['Carol','Dave'],  'created_at':'2025-04-15T11:30:00Z'},
-            {'lobbyId': 'L3', 'players': ['Eve','Frank'],   'created_at':'2025-04-15T12:45:00Z'}
-        ]
+        lobbies = get_lobbies_data()
         return render_template('lobbies_data.html', lobbies=lobbies)
 
-
+# ───────────────────────────────────────── single-session page
 @app.route('/session_data/single', methods=['GET'])
 def single_session_data():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    sid = request.args.get('session_id','')
-    # — LEVEL 3: hard‑coded metadata + chart data —
-    metadata = {
-        'sessionId': sid,
-        'gameType': 'Water Ripples',
-        'duration': 120,
-        'participants': ['Alice','Bob']
-    }
-    sync_data = {
-        'labels': [f't+{i}s' for i in range(10)],
-        'Alice': [0.2,0.4,0.3,0.5,0.45,0.6,0.55,0.7,0.65,0.75],
-        'Bob':   [0.3,0.35,0.4,0.6,0.5,0.55,0.6,0.7,0.7,0.8]
-    }
-    intensity_data = {
-        'labels': [f'Tap {i}' for i in range(1,6)],
-        'Alice': [5,7,6,9,8],
-        'Bob':   [6,6,7,8,7]
-    }
-    return render_template(
-        'single_session_data.html',
-        metadata=metadata,
-        sync_data=sync_data,
-        intensity_data=intensity_data
-    )
+    sid = request.args.get('session_id')
+    metadata, sync_data, intensity_data = get_single_session(sid)
 
+    return render_template('single_session_data.html',
+                           metadata=metadata,
+                           sync_data=sync_data,
+                           intensity_data=intensity_data)
+
+# ───────────────────────────────────────── (optional) JSON API
+@app.route('/get_all_sessions', methods=['GET'])
+def get_all_sessions_route():
+    try:
+        sessions = get_sessions_for_lobby("")      # empty ⇒ all
+        return jsonify({"status": "success", "sessions": sessions})
+    except Exception as e:
+        Logger.log_error(f"Error getting all sessions: {e}")
+        return jsonify({"status": "error",
+                        "message": "Internal server error"}), 500
 
 
 if __name__ == '__main__':
