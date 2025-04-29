@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +40,8 @@ import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
+import com.imsproject.watch.DARK_BEIGE_COLOR
+import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.RIPPLE_MAX_SIZE
@@ -52,6 +56,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
+import kotlin.math.sin
 
 class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
@@ -84,11 +89,14 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         // this is used only to to trigger recomposition when new ripples are added
         viewModel.counter.collectAsState().value
 
+        val dropletYOffsets = remember { List(5) { mutableFloatStateOf(0f) } }
+
+
         // Box to draw the background
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = DARK_BACKGROUND_COLOR)
+                .background(color = LIGHT_BACKGROUND_COLOR)
                 .shadow(
                     elevation = (SCREEN_RADIUS * 0.35f).dp,
                     CircleShape,
@@ -102,7 +110,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             Button(
                 modifier = Modifier
                     .border(
-                        BorderStroke(2.dp, DARK_BACKGROUND_COLOR.copy(alpha = 0.5f)),
+                        BorderStroke(2.dp, DARK_BEIGE_COLOR),
                         CircleShape
                     )
                     .size(WATER_RIPPLES_BUTTON_SIZE.dp)
@@ -123,7 +131,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                               // We want the action to be on-touch and not on-release
                               // and the onClick callback is called on-release
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = LIGHT_GRAY_COLOR,
+                    backgroundColor = DARK_BEIGE_COLOR,
                     contentColor = Color.Black
                 )
             ){
@@ -139,11 +147,46 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 val centerY = h/2f
 
                 if (viewModel.waterDroplet.visible) {
-                    drawCircle(
+                    val radius = h/15f
+                    val xcoef = 2*w/7f
+                    val ycoef = 3*h/7f
+                    val rightBottomCoef = 1
+                    val topLeftCoef = -1
+                    drawCircle( //bottom middle
                         viewModel.waterDroplet.color,
-                        radius = h / 5f,
+                        radius = radius,
                         style = Fill,
-                        center = Offset(x = centerX, y = centerY - 4*h/7)
+                        center = Offset(x = centerX + 0*xcoef*rightBottomCoef, y = centerY + 1*ycoef*topLeftCoef + dropletYOffsets[0].floatValue )
+
+                    )
+
+                    drawCircle( //bottom left
+                        viewModel.waterDroplet.color,
+                        radius = radius,
+                        style = Fill,
+                        center = Offset(x = centerX + 2*xcoef*topLeftCoef, y = centerY + 1*ycoef*topLeftCoef + dropletYOffsets[1].floatValue
+                        )
+                    )
+
+                    drawCircle( //bottom right
+                        viewModel.waterDroplet.color,
+                        radius = radius,
+                        style = Fill,
+                        center = Offset(x = centerX + 2*xcoef*rightBottomCoef, y = centerY + 1*ycoef*topLeftCoef + dropletYOffsets[2].floatValue)
+                    )
+
+                    drawCircle( //top right
+                        viewModel.waterDroplet.color,
+                        radius = radius,
+                        style = Fill,
+                        center = Offset(x = centerX + 1*xcoef*rightBottomCoef, y = centerY + (5/3f)*ycoef*topLeftCoef + dropletYOffsets[3].floatValue)
+                    )
+
+                    drawCircle( //top left
+                        viewModel.waterDroplet.color,
+                        radius = radius,
+                        style = Fill,
+                        center = Offset(x = centerX + 1*xcoef*topLeftCoef, y = centerY + (5/3f)*ycoef*topLeftCoef + dropletYOffsets[4].floatValue)
                     )
                 }
 
@@ -171,12 +214,19 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         // We set the parameter to Unit because we continuously iterate over the ripples
         // and we don't need to cancel the LaunchedEffect ever
         LaunchedEffect(Unit){
+            val startTime = System.currentTimeMillis()
             while(true) {
+                val elapsed = (System.currentTimeMillis() - startTime) / 1000f
+                for (i in 0..4) {
+                    dropletYOffsets[i].value = sin(elapsed * 2 + i) * 30f // e.g. amplitude = 10f
+                }
+
                 if(viewModel.waterDroplet.visible) {
                     val nextAlpha = max(viewModel.waterDroplet.color.alpha - 0.01f, 0f)
                     viewModel.waterDroplet.color = viewModel.waterDroplet.color.copy(nextAlpha)
                     if(nextAlpha <= 0)
                         viewModel.waterDroplet.visible = false
+
                 }
 
                 if(viewModel.plant.visible) {

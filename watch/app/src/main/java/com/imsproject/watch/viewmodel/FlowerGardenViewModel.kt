@@ -17,7 +17,9 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
+import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
+import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RIPPLE_MAX_SIZE
@@ -57,11 +59,11 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var timestamp: Long = 0,
     ) {
         var visible = false
-        var color by mutableStateOf(Color.Cyan)
+        var color by mutableStateOf(BLUE_COLOR)
         fun visibleNow(timestamp: Long) {
             visible = true
             this.timestamp = timestamp
-            color = Color.Cyan
+            color = color.copy(alpha = 1f)
         }
     }
 
@@ -69,20 +71,20 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var timestamp: Long = 0,
     ) {
         var visible = false
-        var color by mutableStateOf(Color.Green)
+        var color by mutableStateOf(GRASS_GREEN_COLOR)
         fun visibleNow(timestamp: Long) {
             visible = true
             this.timestamp = timestamp
-            color = Color.Green
+            color = color.copy(alpha = 1f)
         }
     }
 
     class Flower() {
         var visible = false
-        var color by mutableStateOf(Color.Magenta)
+        var color by mutableStateOf(BUBBLE_PINK_COLOR)
         fun visibleNow() {
             visible = true
-            color = Color.Magenta
+            color = color.copy(alpha = 1f)
         }
     }
 
@@ -104,6 +106,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     private var _counter = MutableStateFlow(0)
     val counter: StateFlow<Int> = _counter
+
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
