@@ -1,5 +1,6 @@
 package com.imsproject.watch.viewmodel
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.VibrationEffect
@@ -15,6 +16,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
+import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RIPPLE_MAX_SIZE
@@ -23,6 +25,8 @@ import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.view.contracts.Result
+import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
+import com.imsproject.watch.viewmodel.WaterRipplesViewModel.Ripple
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +38,45 @@ import kotlin.math.absoluteValue
 
 class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
+    enum class ItemType(){
+        WATER,
+        PLANT;
 
+        fun otherSide() = when(this){
+            WATER -> PLANT
+            PLANT -> WATER
+        }
+
+        companion object {
+            fun fromString(string: String) = when(string.lowercase()){
+                "plant" -> PLANT
+                "water" -> WATER
+                else -> throw IllegalArgumentException("invalid string")
+            }
+        }
+    }
+
+    class WaterDroplet(
+        var color: Color,
+        val timestamp: Long,
+        val actor: String
+    ) {
+
+    }
+
+    class Plant(
+        var color: Color,
+        val timestamp: Long,
+        val actor: String
+    ) {
+
+    }
+
+    val waterDroplets = ConcurrentLinkedDeque<WaterDroplet>()
+    val plants = ConcurrentLinkedDeque<Plant>()
+
+    lateinit var myItemType: ItemType
+        private set
 
     private lateinit var clickVibration : VibrationEffect
 
@@ -53,6 +95,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     fun click() {
         if(ACTIVITY_DEBUG_MODE){
 //            showRipple(playerId, System.currentTimeMillis())
+            Log.d("", "pressing")
+            showItem(playerId, System.currentTimeMillis())
             return
         }
 
@@ -69,21 +113,26 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
+            myItemType = ItemType.WATER
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
+                    val otherPlayerId = "-1"
                     delay(1000)
-//                    showRipple("player1", System.currentTimeMillis())
+                    showItem(otherPlayerId, System.currentTimeMillis())
                 }
             }
             return
         }
 
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
+//        val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData", "") //todo: for 2 distinguished players...
+        myItemType = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { ItemType.fromString(it) }!!
+
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
             return
         }
-        WATER_RIPPLES_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
+        FLOWER_GARDEN_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
         Log.d(TAG, "syncTolerance: $syncTolerance")
     }
 
@@ -112,6 +161,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
                 val arrivedTimestamp = getCurrentGameTime()
 //                showRipple(actor, timestamp)
+                showItem(actor, timestamp)
                 
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
@@ -124,6 +174,76 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
+
+    private fun showItem(actor: String, timestamp : Long) {
+        Log.d("", "$actor has pressed")
+        // find the latest ripple that is not by the same actor
+//        val rippleToCheck = if (actor == playerId) {
+//            ripples.find { it.actor != playerId }
+//        } else {
+//            ripples.find { it.actor == playerId }
+//        }
+
+        // check the delta between the last taps of both sides
+        var latestTimestamp = 0L
+        if((actor == playerId) == (myItemType == ItemType.WATER)) {
+            if(!plants.isEmpty())
+                latestTimestamp = plants.first().timestamp
+
+        } else {
+            if(!waterDroplets.isEmpty())
+                latestTimestamp = waterDroplets.first().timestamp
+        }
+
+
+//
+//        // Synced click
+//        if (rippleToCheck != null && (rippleToCheck.timestamp - timestamp)
+//                .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
+//            rippleToCheck.color = VIVID_ORANGE_COLOR
+//            if (rippleToCheck.actor != playerId) {
+//                // update the ripple's alpha to make it seem like it started from 1.0f and not from 0.5f
+//                val newAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
+//                rippleToCheck.currentAlpha = newAlpha
+//                rippleToCheck.alphaStep = newAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+//            }
+//            addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
+//        }
+
+        // synced click
+        if((latestTimestamp - timestamp)
+                .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
+            Log.d("", "Synced!")
+        } else {
+            Log.d("", "Not synced :(")
+
+            if((actor == playerId) == (myItemType == ItemType.WATER)) // if thats me and water, or not me and im not water
+                waterDroplets.addFirst(WaterDroplet(Color.Cyan, timestamp = timestamp, actor = actor))
+            else
+                plants.addFirst(Plant(Color.Green, timestamp = timestamp, actor = actor))
+
+        }
+//        // not synced click
+//        else {
+//            val ripple = if (actor == playerId) {
+//                // My click
+//                Ripple(BLUE_COLOR, timestamp = timestamp, actor = actor)
+//            } else {
+//                // Other player's click
+//                Ripple(GRAY_COLOR, 0.5f, timestamp, actor)
+//            }
+//            ripples.addFirst(ripple)
+//        }
+//
+//        // add a vibration effect to clicks that are not mine
+//        if (actor != playerId) {
+//            viewModelScope.launch(Dispatchers.IO) {
+//                delay(100)
+//                vibrator.vibrate(clickVibration)
+//            }
+//        }
+//        _counter.value++ // used to trigger recomposition
+    }
 
     companion object {
         private const val TAG = "WaterRipplesViewModel"

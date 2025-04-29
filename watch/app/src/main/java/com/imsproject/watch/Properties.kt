@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -98,6 +98,10 @@ var CONTROL_POINT_DISTANCE = 0f
 var STRETCH_POINT_DISTANCE = 0f
 var AXLE_WIDTH = 0f
 var AXLE_HANDLE_LENGTH = 0f
+
+// ================= Flower Garden ===================== |
+var FLOWER_GARDEN_SYNC_TIME_THRESHOLD = 50
+
 
 // =================== initProperties =================== |
 

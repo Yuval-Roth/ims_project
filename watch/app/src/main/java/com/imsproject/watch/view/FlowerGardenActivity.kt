@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -47,7 +49,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class FlowerGardenActivity : GameActivity(GameType.WATER_RIPPLES) {
+class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
     private val viewModel : FlowerGardenViewModel by viewModels<FlowerGardenViewModel>()
 //    private lateinit var soundPool: SoundPool
@@ -111,9 +113,6 @@ class FlowerGardenActivity : GameActivity(GameType.WATER_RIPPLES) {
                                 if (event.type == PointerEventType.Press) {
                                     event.changes[0].consume()
                                     viewModel.click()
-//                                    viewModel.viewModelScope.launch(Dispatchers.Default) {
-////                                        soundPool.play(clickSoundId, 1f, 1f, 0, 0, 1f)
-//                                    }
                                 }
                             }
                         }
@@ -130,21 +129,24 @@ class FlowerGardenActivity : GameActivity(GameType.WATER_RIPPLES) {
             }
 
             // Draw the ripples
-            Canvas(
-                modifier = Modifier.fillMaxSize()
-            ) {
-
-            }
+//            Canvas(
+//                modifier = Modifier.size(100.dp)
+//            ) {
+//                val w = size.width
+//                val h = size.height
+//
+//                drawCircle(color = Color.Cyan, radius = h/5f,  style = Fill)
+//            }
         }
 
         // Ripple animation loop
         // We set the parameter to Unit because we continuously iterate over the ripples
         // and we don't need to cancel the LaunchedEffect ever
-        LaunchedEffect(Unit){
-            while(true) {
-                delay(16)
-            }
-        }
+//        LaunchedEffect(Unit){
+//            while(true) {
+//                delay(16)
+//            }
+//        }
     }
 
     companion object {
