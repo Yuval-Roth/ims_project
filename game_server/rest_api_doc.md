@@ -389,27 +389,55 @@ This request type is used to change the order of sessions in a lobby.
 
 ---
 
-### 3. **POST** `/data`
+### 3. **POST** `/data/sessiondata/{action}`
 
 #### Description
 This endpoint is used to send session events after a session is finished
 
-#### Request
+#### Action - 'set'
 - **Body**:
 ```json
 {
-  "sessionId": "id"
+  "sessionId": "id",
   "events": ["serializedEventsList"]
 }
 ```
         
-#### **Response**
+**Response**
 
   ```json
   {
-    "success": true,
+    "success": true
   }
   ```
+
+### Action - 'get'
+
+TODO - ola
+
+---
+
+### 4. **POST** `/data/sessionfeedback/{action}`
+
+#### Action - 'get'
+  
+TODO - ola
+
+#### Action - 'set'
+
+TODO - ola
+
+---
+
+### 4. **POST** `/data/experimentfeedback/{action}`
+
+#### Action - 'get'
+TODO - ola
+
+#### Action - 'set'
+TODO - ola
+
+---
 
 ### 4. POST `/operators/{action}`
 
