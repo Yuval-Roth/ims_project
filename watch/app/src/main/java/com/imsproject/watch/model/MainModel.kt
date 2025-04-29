@@ -284,7 +284,7 @@ class MainModel (private val scope : CoroutineScope) {
         }
 
         val returned = RestApiClient()
-            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/sessiondata/set")
             .withBody(body.toJson())
             .withPost()
             .send()
