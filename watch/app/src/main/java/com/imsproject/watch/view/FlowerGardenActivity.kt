@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -35,6 +36,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.R
@@ -42,12 +44,14 @@ import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.initProperties
+import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
@@ -77,8 +81,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     @SuppressLint("ReturnFromAwaitPointerEventScope")
     @Composable
     fun FlowerGarden() {
-
-
         // this is used only to to trigger recomposition when new ripples are added
         viewModel.counter.collectAsState().value
 
@@ -128,25 +130,72 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 // empty button content
             }
 
-            // Draw the ripples
-//            Canvas(
-//                modifier = Modifier.size(100.dp)
-//            ) {
-//                val w = size.width
-//                val h = size.height
-//
-//                drawCircle(color = Color.Cyan, radius = h/5f,  style = Fill)
-//            }
+            Canvas(
+                modifier = Modifier.size(100.dp)
+            ) {
+                val w = size.width
+                val h = size.height
+                val centerX = w/2f
+                val centerY = h/2f
+
+                if (viewModel.waterDroplet.visible) {
+                    drawCircle(
+                        viewModel.waterDroplet.color,
+                        radius = h / 5f,
+                        style = Fill,
+                        center = Offset(x = centerX, y = centerY - 4*h/7)
+                    )
+                }
+
+                if (viewModel.plant.visible) {
+                    drawCircle(
+                        viewModel.plant.color,
+                        radius = h / 5f,
+                        style = Fill,
+                        center = Offset(x = centerX , y = centerY + 4*h/7)
+                    )
+                }
+
+                if (viewModel.flower.visible) {
+                    drawCircle(
+                        viewModel.flower.color,
+                        radius = h / 5f,
+                        style = Fill,
+                        center = Offset(x = centerX - 4*w/7, y = centerY)
+                    )
+                }
+            }
         }
 
         // Ripple animation loop
         // We set the parameter to Unit because we continuously iterate over the ripples
         // and we don't need to cancel the LaunchedEffect ever
-//        LaunchedEffect(Unit){
-//            while(true) {
-//                delay(16)
-//            }
-//        }
+        LaunchedEffect(Unit){
+            while(true) {
+                if(viewModel.waterDroplet.visible) {
+                    val nextAlpha = max(viewModel.waterDroplet.color.alpha - 0.01f, 0f)
+                    viewModel.waterDroplet.color = viewModel.waterDroplet.color.copy(nextAlpha)
+                    if(nextAlpha <= 0)
+                        viewModel.waterDroplet.visible = false
+                }
+
+                if(viewModel.plant.visible) {
+                    val nextAlpha = max(viewModel.plant.color.alpha - 0.01f, 0f)
+                    viewModel.plant.color = viewModel.plant.color.copy(nextAlpha)
+                    if(nextAlpha <= 0)
+                        viewModel.plant.visible = false
+                }
+
+                if(viewModel.flower.visible) {
+                    val nextAlpha = max(viewModel.flower.color.alpha - 0.01f, 0f)
+                    viewModel.flower.color = viewModel.flower.color.copy(nextAlpha)
+                    if(nextAlpha <= 0)
+                        viewModel.flower.visible = false
+                }
+
+                delay(16)
+            }
+        }
     }
 
     companion object {

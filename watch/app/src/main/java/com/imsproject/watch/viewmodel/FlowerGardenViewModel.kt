@@ -7,6 +7,7 @@ import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastCoerceAtMost
@@ -40,12 +41,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     enum class ItemType(){
         WATER,
-        PLANT;
-
-        fun otherSide() = when(this){
-            WATER -> PLANT
-            PLANT -> WATER
-        }
+        PLANT,
+        FLOWER;
 
         companion object {
             fun fromString(string: String) = when(string.lowercase()){
@@ -57,23 +54,43 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     }
 
     class WaterDroplet(
-        var color: Color,
-        val timestamp: Long,
-        val actor: String
+        var timestamp: Long = 0,
     ) {
-
+        var visible = false
+        var color by mutableStateOf(Color.Cyan)
+        fun visibleNow(timestamp: Long) {
+            visible = true
+            this.timestamp = timestamp
+            color = Color.Cyan
+        }
     }
 
     class Plant(
-        var color: Color,
-        val timestamp: Long,
-        val actor: String
+        var timestamp: Long = 0,
     ) {
+        var visible = false
+        var color by mutableStateOf(Color.Green)
+        fun visibleNow(timestamp: Long) {
+            visible = true
+            this.timestamp = timestamp
+            color = Color.Green
+        }
+    }
 
+    class Flower() {
+        var visible = false
+        var color by mutableStateOf(Color.Magenta)
+        fun visibleNow() {
+            visible = true
+            color = Color.Magenta
+        }
     }
 
     val waterDroplets = ConcurrentLinkedDeque<WaterDroplet>()
+    var waterDroplet : WaterDroplet = WaterDroplet()
     val plants = ConcurrentLinkedDeque<Plant>()
+    var plant : Plant = Plant()
+    var flower : Flower = Flower()
 
     lateinit var myItemType: ItemType
         private set
@@ -114,9 +131,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
         if(ACTIVITY_DEBUG_MODE){
             myItemType = ItemType.WATER
+
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
-                    val otherPlayerId = "-1"
+                    val otherPlayerId = "other player"
                     delay(1000)
                     showItem(otherPlayerId, System.currentTimeMillis())
                 }
@@ -127,6 +145,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
 //        val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData", "") //todo: for 2 distinguished players...
         myItemType = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { ItemType.fromString(it) }!!
+
 
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
@@ -160,7 +179,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                 }
 
                 val arrivedTimestamp = getCurrentGameTime()
-//                showRipple(actor, timestamp)
                 showItem(actor, timestamp)
                 
                 if(actor == playerId){
@@ -177,72 +195,40 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     private fun showItem(actor: String, timestamp : Long) {
         Log.d("", "$actor has pressed")
-        // find the latest ripple that is not by the same actor
-//        val rippleToCheck = if (actor == playerId) {
-//            ripples.find { it.actor != playerId }
-//        } else {
-//            ripples.find { it.actor == playerId }
-//        }
 
-        // check the delta between the last taps of both sides
-        var latestTimestamp = 0L
-        if((actor == playerId) == (myItemType == ItemType.WATER)) {
-            if(!plants.isEmpty())
-                latestTimestamp = plants.first().timestamp
-
-        } else {
-            if(!waterDroplets.isEmpty())
-                latestTimestamp = waterDroplets.first().timestamp
-        }
+        // check the delta between the last taps of opponent and me
+        var opponentsLatestTimestamp =
+            if((actor == playerId) == (myItemType == ItemType.WATER))
+                plant.timestamp
+            else
+               waterDroplet.timestamp
 
 
-//
-//        // Synced click
-//        if (rippleToCheck != null && (rippleToCheck.timestamp - timestamp)
-//                .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
-//            rippleToCheck.color = VIVID_ORANGE_COLOR
-//            if (rippleToCheck.actor != playerId) {
-//                // update the ripple's alpha to make it seem like it started from 1.0f and not from 0.5f
-//                val newAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
-//                rippleToCheck.currentAlpha = newAlpha
-//                rippleToCheck.alphaStep = newAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-//            }
-//            addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
-//        }
-
-        // synced click
-        if((latestTimestamp - timestamp)
+        if((opponentsLatestTimestamp - timestamp)  // synced click
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
             Log.d("", "Synced!")
+            waterDroplet.visibleNow(timestamp)
+            plant.visibleNow(timestamp)
+            flower.visibleNow()
+
         } else {
             Log.d("", "Not synced :(")
 
             if((actor == playerId) == (myItemType == ItemType.WATER)) // if thats me and water, or not me and im not water
-                waterDroplets.addFirst(WaterDroplet(Color.Cyan, timestamp = timestamp, actor = actor))
+                waterDroplet.visibleNow(timestamp)
             else
-                plants.addFirst(Plant(Color.Green, timestamp = timestamp, actor = actor))
+                plant.visibleNow(timestamp)
 
         }
-//        // not synced click
-//        else {
-//            val ripple = if (actor == playerId) {
-//                // My click
-//                Ripple(BLUE_COLOR, timestamp = timestamp, actor = actor)
-//            } else {
-//                // Other player's click
-//                Ripple(GRAY_COLOR, 0.5f, timestamp, actor)
-//            }
-//            ripples.addFirst(ripple)
-//        }
-//
-//        // add a vibration effect to clicks that are not mine
-//        if (actor != playerId) {
-//            viewModelScope.launch(Dispatchers.IO) {
-//                delay(100)
-//                vibrator.vibrate(clickVibration)
-//            }
-//        }
-//        _counter.value++ // used to trigger recomposition
+
+       // add a vibration effect to clicks that are not mine
+        if (actor != playerId) {
+            viewModelScope.launch(Dispatchers.IO) {
+                delay(100)
+                vibrator.vibrate(clickVibration)
+            }
+        }
+        _counter.value++ // used to trigger recomposition
     }
 
     companion object {

@@ -100,7 +100,7 @@ var AXLE_WIDTH = 0f
 var AXLE_HANDLE_LENGTH = 0f
 
 // ================= Flower Garden ===================== |
-var FLOWER_GARDEN_SYNC_TIME_THRESHOLD = 50
+var FLOWER_GARDEN_SYNC_TIME_THRESHOLD = 200
 
 
 // =================== initProperties =================== |
