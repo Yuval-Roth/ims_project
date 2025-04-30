@@ -138,7 +138,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
                     val otherPlayerId = "other player"
-                    delay(1000)
+                    delay(2000)
                     showItem(otherPlayerId, System.currentTimeMillis())
                 }
             }
@@ -209,14 +209,11 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
         if((opponentsLatestTimestamp - timestamp)  // synced click
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
-            Log.d("", "Synced!")
             waterDroplet.visibleNow(timestamp)
             plant.visibleNow(timestamp)
             flower.visibleNow()
 
-        } else {
-            Log.d("", "Not synced :(")
-
+        } else { //not synced
             if((actor == playerId) == (myItemType == ItemType.WATER)) // if thats me and water, or not me and im not water
                 waterDroplet.visibleNow(timestamp)
             else

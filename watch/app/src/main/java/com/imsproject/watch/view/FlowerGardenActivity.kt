@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -20,12 +21,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -57,6 +60,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.sin
+import kotlin.random.Random
 
 class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
@@ -89,8 +93,12 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         // this is used only to to trigger recomposition when new ripples are added
         viewModel.counter.collectAsState().value
 
-        val dropletYOffsets = remember { List(5) { mutableFloatStateOf(0f) } }
+//        val dropletYOffsets = remember { List(5) { mutableFloatStateOf(0f) } }
+        var drop = remember { mutableFloatStateOf(0f) }
+        val step = 0.1f
 
+        var amplitude = remember { List(5) { mutableFloatStateOf(1f) } }
+        val rng = remember { Random.Default }
 
         // Box to draw the background
         Box(
@@ -147,46 +155,79 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 val centerY = h/2f
 
                 if (viewModel.waterDroplet.visible) {
-                    val radius = h/15f
+                    val radius = h/30f
                     val xcoef = 2*w/7f
                     val ycoef = 3*h/7f
                     val rightBottomCoef = 1
                     val topLeftCoef = -1
-                    drawCircle( //bottom middle
-                        viewModel.waterDroplet.color,
-                        radius = radius,
-                        style = Fill,
-                        center = Offset(x = centerX + 0*xcoef*rightBottomCoef, y = centerY + 1*ycoef*topLeftCoef + dropletYOffsets[0].floatValue )
 
+                    var motion = if(viewModel.freshClick) 0 else 1
+
+
+//                    drawCircle( //bottom middle
+//                        viewModel.waterDroplet.color,
+//                        radius = radius,
+//                        style = Fill,
+//                        center = Offset(x = centerX + 0*xcoef*rightBottomCoef, y = centerY + 1*ycoef*topLeftCoef + drop.floatValue*amplitude[0].floatValue)
+//
+//                    )
+
+//                    val center = Offset(
+//                        x = centerX + 0 * xcoef * rightBottomCoef,
+//                        y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[0].floatValue
+//                    )
+
+                    val ovalWidth = radius * 2.5f
+                    val ovalHeight = radius * 3f // makes it droplet-shaped
+
+                    drawOval(
+                        color = viewModel.waterDroplet.color,
+                        topLeft = Offset(
+                            x = centerX + 0 * xcoef * rightBottomCoef - ovalWidth / 2f,
+                            y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[0].floatValue - ovalHeight / 2f
+                        ),
+                        size = Size(ovalWidth, ovalHeight),
+                        style = Fill
                     )
 
-                    drawCircle( //bottom left
-                        viewModel.waterDroplet.color,
-                        radius = radius,
-                        style = Fill,
-                        center = Offset(x = centerX + 2*xcoef*topLeftCoef, y = centerY + 1*ycoef*topLeftCoef + dropletYOffsets[1].floatValue
-                        )
+                    drawOval( // bottom left
+                        color = viewModel.waterDroplet.color,
+                        topLeft = Offset(
+                            x = centerX + 2 * xcoef * topLeftCoef - ovalWidth / 2f,
+                            y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[1].floatValue - ovalHeight / 2f
+                        ),
+                        size = Size(ovalWidth, ovalHeight),
+                        style = Fill
                     )
 
-                    drawCircle( //bottom right
-                        viewModel.waterDroplet.color,
-                        radius = radius,
-                        style = Fill,
-                        center = Offset(x = centerX + 2*xcoef*rightBottomCoef, y = centerY + 1*ycoef*topLeftCoef + dropletYOffsets[2].floatValue)
+                    drawOval( // bottom right
+                        color = viewModel.waterDroplet.color,
+                        topLeft = Offset(
+                            x = centerX + 2 * xcoef * rightBottomCoef - ovalWidth / 2f,
+                            y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[2].floatValue - ovalHeight / 2f
+                        ),
+                        size = Size(ovalWidth, ovalHeight),
+                        style = Fill
                     )
 
-                    drawCircle( //top right
-                        viewModel.waterDroplet.color,
-                        radius = radius,
-                        style = Fill,
-                        center = Offset(x = centerX + 1*xcoef*rightBottomCoef, y = centerY + (5/3f)*ycoef*topLeftCoef + dropletYOffsets[3].floatValue)
+                    drawOval( // top right
+                        color = viewModel.waterDroplet.color,
+                        topLeft = Offset(
+                            x = centerX + 1 * xcoef * rightBottomCoef - ovalWidth / 2f,
+                            y = centerY + (5 / 3f) * ycoef * topLeftCoef + drop.floatValue * amplitude[3].floatValue - ovalHeight / 2f
+                        ),
+                        size = Size(ovalWidth, ovalHeight),
+                        style = Fill
                     )
 
-                    drawCircle( //top left
-                        viewModel.waterDroplet.color,
-                        radius = radius,
-                        style = Fill,
-                        center = Offset(x = centerX + 1*xcoef*topLeftCoef, y = centerY + (5/3f)*ycoef*topLeftCoef + dropletYOffsets[4].floatValue)
+                    drawOval( // top left
+                        color = viewModel.waterDroplet.color,
+                        topLeft = Offset(
+                            x = centerX + 1 * xcoef * topLeftCoef - ovalWidth / 2f,
+                            y = centerY + (5 / 3f) * ycoef * topLeftCoef + drop.floatValue * amplitude[4].floatValue - ovalHeight / 2f
+                        ),
+                        size = Size(ovalWidth, ovalHeight),
+                        style = Fill
                     )
                 }
 
@@ -210,23 +251,33 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             }
         }
 
-        // Ripple animation loop
-        // We set the parameter to Unit because we continuously iterate over the ripples
-        // and we don't need to cancel the LaunchedEffect ever
         LaunchedEffect(Unit){
-            val startTime = System.currentTimeMillis()
+            val a = 1f
+            val b = 3f
             while(true) {
-                val elapsed = (System.currentTimeMillis() - startTime) / 1000f
-                for (i in 0..4) {
-                    dropletYOffsets[i].value = sin(elapsed * 2 + i) * 30f // e.g. amplitude = 10f
-                }
-
                 if(viewModel.waterDroplet.visible) {
-                    val nextAlpha = max(viewModel.waterDroplet.color.alpha - 0.01f, 0f)
-                    viewModel.waterDroplet.color = viewModel.waterDroplet.color.copy(nextAlpha)
-                    if(nextAlpha <= 0)
-                        viewModel.waterDroplet.visible = false
+                    val currDropletColor = viewModel.waterDroplet.color
 
+                    // if click was reset, reset the drop value as well
+                    if(currDropletColor.alpha == 1f) {
+                        drop.floatValue = 0f
+                        //randomize the extent of the drop for each one
+                        for(i in 0..4) {
+                            amplitude[i].floatValue = a + rng.nextFloat() * (b - a)
+                        }
+                    }
+                    // increase the drop
+                    drop.floatValue += step
+
+                    // decrease the opacity
+                    val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
+                    viewModel.waterDroplet.color = currDropletColor.copy(nextAlpha)
+
+                    // hide from the screen and reset position
+                    if(nextAlpha <= 0f) {
+                        viewModel.waterDroplet.visible = false
+                        drop.floatValue = 0f
+                    }
                 }
 
                 if(viewModel.plant.visible) {
