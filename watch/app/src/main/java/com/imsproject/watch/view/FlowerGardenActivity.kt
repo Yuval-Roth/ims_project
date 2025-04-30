@@ -161,22 +161,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     val rightBottomCoef = 1
                     val topLeftCoef = -1
 
-                    var motion = if(viewModel.freshClick) 0 else 1
-
-
-//                    drawCircle( //bottom middle
-//                        viewModel.waterDroplet.color,
-//                        radius = radius,
-//                        style = Fill,
-//                        center = Offset(x = centerX + 0*xcoef*rightBottomCoef, y = centerY + 1*ycoef*topLeftCoef + drop.floatValue*amplitude[0].floatValue)
-//
-//                    )
-
-//                    val center = Offset(
-//                        x = centerX + 0 * xcoef * rightBottomCoef,
-//                        y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[0].floatValue
-//                    )
-
                     val ovalWidth = radius * 2.5f
                     val ovalHeight = radius * 3f // makes it droplet-shaped
 
