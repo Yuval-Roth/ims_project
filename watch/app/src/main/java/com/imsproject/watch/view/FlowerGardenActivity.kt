@@ -254,11 +254,11 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                     // decrease the opacity
                     val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
-                    viewModel.waterDroplet.color = currDropletColor.copy(nextAlpha)
+                    viewModel.plant.color = currDropletColor.copy(nextAlpha)
 
                     // hide from the screen and reset position
                     if(nextAlpha <= 0f) {
-                        viewModel.waterDroplet.visible = false
+                        viewModel.plant.visible = false
                         drop.floatValue = 0f
                     }
                 }
