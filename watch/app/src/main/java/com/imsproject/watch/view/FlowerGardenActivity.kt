@@ -1,15 +1,9 @@
 package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
-import android.media.AudioAttributes
-import android.media.SoundPool
 import android.os.Bundle
-import android.util.Log
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -23,48 +17,36 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastCoerceAtLeast
-import androidx.lifecycle.viewModelScope
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.utils.Angle
 import com.imsproject.watch.BUBBLE_PINK_COLOR
-import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.DARK_BEIGE_COLOR
 import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
-import com.imsproject.watch.LIGHT_GRAY_COLOR
-import com.imsproject.watch.R
-import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
-import com.imsproject.watch.initProperties
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
-import com.imsproject.watch.viewmodel.WaterRipplesViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.math.max
-import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
@@ -104,11 +86,12 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             Pair(2*SCREEN_HEIGHT/5f, -22.5))
         }
 
-        var amplitude = remember { List(5) { mutableFloatStateOf(1f) } }
+        var dropletAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
+        var plantAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
+
         val rng = remember { Random.Default }
 
-        val animatedRadius = remember { mutableFloatStateOf(0f) }
-        val flowerAnimationIndex = remember {mutableIntStateOf(0)}
+        val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
 
         // Box to draw the background
         Box(
@@ -161,14 +144,12 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             ) {
                 val w = SCREEN_WIDTH
                 val h = SCREEN_HEIGHT
-                val centerX = w/2f
-                val centerY = h/2f
 
                 // draw active flowers with animation to the latest
                 for ((i, pair) in viewModel.activeFlowerPoints.withIndex()) {
                     val coor = polarToCartesian(pair.first, pair.second)
                     val isLatest = i == viewModel.activeFlowerPoints.lastIndex
-                    val radius = if (isLatest) h / 55f + animatedRadius.floatValue else h / 55f
+                    val radius = if (isLatest) h / 55f + flowerAnimationRadius.floatValue else h / 55f
 
                     drawCircle(
                         BUBBLE_PINK_COLOR.copy(alpha = 0.8f),
@@ -178,33 +159,29 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     )
                 }
 
-                // draw water droplets
+                // draw water droplets - actual water droplets
                 if (viewModel.waterDroplet.visible) {
-                    val radius = h/30f
-                    val ovalWidth = radius * 1.3f
-                    val ovalHeight = radius * 1.8f // makes it droplet-shaped
-
                     for(i in 0..4) {
                         val coor = polarToCartesian(waterDropletsCenters[i].first, -90 + waterDropletsCenters[i].second)
-                        drawOval(
-                            color = viewModel.waterDroplet.color,
-                            topLeft = Offset(
-                                x = coor.first - ovalWidth / 2f,
-                                y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[i].floatValue
-                            ),
-                            size = Size(ovalWidth, ovalHeight),
-                            style = Fill
-                        )
+                        val centerX = coor.first
+                        val centerY = coor.second + drop.floatValue * dropletAmplitude[i].floatValue
+
+                        waterDropletShape(centerX, centerY, viewModel.waterDroplet.color)
                     }
                 }
 
+                // draw plant - shaped like grass
                 if (viewModel.plant.visible) {
-                    drawCircle(
-                        viewModel.plant.color,
-                        radius = h / 5f,
-                        style = Fill,
-                        center = Offset(x = centerX , y = centerY + 4*h/7)
-                    )
+                    for(i in 0..4) {
+                        val coor = polarToCartesian(waterDropletsCenters[i].first, 90 + waterDropletsCenters[i].second)
+                        val centerX = coor.first
+                        val centerY = coor.second
+
+                        drawGrassStroke(centerX = centerX, centerY = centerY, height = 30f, width = 15f, color = viewModel.plant.color)
+                    }
+
+                    // todo: 2. create "amplitude" for small and big to be random between (0.9, 1.3) to be the grass sway animation.
+                    //  small to big for wind to the left, big to small for wind to the right
                 }
             }
         }
@@ -216,35 +193,38 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             latestFlower?.let {
                 // pulse size up
                 repeat(10) {
-                    animatedRadius.floatValue += 1f
+                    flowerAnimationRadius.floatValue += 1f
                     delay(16)
                 }
                 // pulse size down
                 repeat(10) {
-                    animatedRadius.floatValue -= 1f
+                    flowerAnimationRadius.floatValue -= 1f
                     delay(16)
                 }
-                animatedRadius.floatValue = 0f
+                flowerAnimationRadius.floatValue = 0f
             }
         }
 
         LaunchedEffect(Unit){
-            val a = 1f
-            val b = 3f
+            val dropletRngLowerRange = 1f
+            val dropletRngUpperRange = 3f
+            val grassRngLowerRange = 0.9f
+            val grassRngUpperRange = 1.3f
 
             while(true) {
+                // animate water droplets
                 if(viewModel.waterDroplet.visible) {
                     val currDropletColor = viewModel.waterDroplet.color
 
-                    // if click was reset, reset the drop value as well
+                    // a new click resets the drop animation
                     if(currDropletColor.alpha == 1f) {
                         drop.floatValue = 0f
                         //randomize the extent of the drop for each one
                         for(i in 0..4) {
-                            amplitude[i].floatValue = a + rng.nextFloat() * (b - a)
+                            dropletAmplitude[i].floatValue = dropletRngLowerRange + rng.nextFloat() * (dropletRngUpperRange - dropletRngLowerRange)
                         }
                     }
-                    // increase the drop
+                    // increase the water drop
                     drop.floatValue += step
 
                     // decrease the opacity
@@ -258,17 +238,125 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     }
                 }
 
+                // animate plant grass
                 if(viewModel.plant.visible) {
-                    val nextAlpha = max(viewModel.plant.color.alpha - 0.01f, 0f)
-                    viewModel.plant.color = viewModel.plant.color.copy(nextAlpha)
-                    if(nextAlpha <= 0)
-                        viewModel.plant.visible = false
-                }
+                    val currDropletColor = viewModel.plant.color
 
+                    // a new click resets the drop animation
+                    if(currDropletColor.alpha == 1f) {
+                        drop.floatValue = 0f
+                        //randomize the extent of the drop for each one
+                        for(i in 0..4) {
+                            plantAmplitude[i].floatValue = grassRngLowerRange + rng.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
+                            //todo: use the amplitude for the animation!! (20:04)
+                        }
+                    }
+
+                    // decrease the opacity
+                    val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
+                    viewModel.waterDroplet.color = currDropletColor.copy(nextAlpha)
+
+                    // hide from the screen and reset position
+                    if(nextAlpha <= 0f) {
+                        viewModel.waterDroplet.visible = false
+                        drop.floatValue = 0f
+                    }
+                }
                 delay(16)
             }
         }
     }
+
+
+    fun DrawScope.waterDropletShape(
+                          baseX: Float,
+                          baseY: Float,
+                          color : Color,
+                          size: Float = 0.2f,
+                          ) {
+            val stemHeight = 100f * size
+
+            // Left Part Path
+            val leftPart = Path().apply {
+                moveTo(baseX, baseY - stemHeight)
+                cubicTo(
+                    baseX - 80f * size,
+                    baseY - stemHeight - 100f * size,
+                    baseX - 50f * size,
+                    baseY - stemHeight - 150f * size,
+                    baseX,
+                    baseY - stemHeight - 150f * size
+                )
+            }
+
+            leftPart.transform(Matrix().apply {
+                translate(baseX, baseY - stemHeight)
+                scale(1f, -1f)
+                translate(-baseX, -(baseY - stemHeight))
+            })
+
+            drawPath(leftPart, color, style = Fill)
+
+            // Right Part Path
+            val rightPart = Path().apply {
+                moveTo(baseX, baseY - stemHeight)
+                cubicTo(
+                    baseX + 80f * size,
+                    baseY - stemHeight - 100f * size,
+                    baseX + 50f * size,
+                    baseY - stemHeight - 150f * size,
+                    baseX,
+                    baseY - stemHeight - 150f * size
+                )
+            }
+
+            rightPart.transform(Matrix().apply {
+                translate(baseX, baseY - stemHeight)
+                scale(1f, -1f)
+                translate(-baseX, -(baseY - stemHeight))
+            })
+
+            drawPath(rightPart, color, style = Fill)
+    }
+
+    fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, a : Float = 1f, b : Float = 1f, strokeWidth: Float = 3f) {
+        val halfWidth = width / 2f
+        val steps = 30
+
+        // Right curve: y = sqrt(x)
+        val rightPath = Path()
+        for (i in 0..steps) {
+            val t = i / steps.toFloat()
+            val x = t * halfWidth
+            val y = sqrt(t) * height * a
+            val screenX = centerX + x
+            val screenY = centerY - y
+            if (i == 0) {
+                rightPath.moveTo(screenX, screenY)
+            } else {
+                rightPath.lineTo(screenX, screenY)
+            }
+        }
+
+        // Left curve: y = sqrt(-x)
+        val leftPath = Path()
+        for (i in 0..steps) {
+            val t = i / steps.toFloat()
+            val x = -t * halfWidth
+            val y = sqrt(t) * height * b
+            val screenX = centerX + x
+            val screenY = centerY - y
+            if (i == 0) {
+                leftPath.moveTo(screenX, screenY)
+            } else {
+                leftPath.lineTo(screenX, screenY)
+            }
+        }
+
+        drawPath(rightPath, color, style = Stroke(width = strokeWidth))
+        drawPath(leftPath, color, style = Stroke(width = strokeWidth))
+    }
+
 
     companion object {
         private const val TAG = "WaterRipplesActivity"
