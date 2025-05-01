@@ -8,6 +8,8 @@ import android.util.Log
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -105,6 +107,9 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         var amplitude = remember { List(5) { mutableFloatStateOf(1f) } }
         val rng = remember { Random.Default }
 
+        val animatedRadius = remember { mutableFloatStateOf(0f) }
+        val flowerAnimationIndex = remember {mutableIntStateOf(0)}
+
         // Box to draw the background
         Box(
             modifier = Modifier
@@ -159,12 +164,15 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 val centerX = w/2f
                 val centerY = h/2f
 
-                // draw active flowers
-                for(pair in viewModel.activeFlowerPoints) {
+                // draw active flowers with animation to the latest
+                for ((i, pair) in viewModel.activeFlowerPoints.withIndex()) {
                     val coor = polarToCartesian(pair.first, pair.second)
+                    val isLatest = i == viewModel.activeFlowerPoints.lastIndex
+                    val radius = if (isLatest) h / 55f + animatedRadius.floatValue else h / 55f
+
                     drawCircle(
-                        BUBBLE_PINK_COLOR.copy(alpha = 0.5f),
-                        radius = h / 55f,
+                        BUBBLE_PINK_COLOR.copy(alpha = 0.8f),
+                        radius = radius,
                         style = Fill,
                         center = Offset(x = coor.first, y = coor.second)
                     )
@@ -176,12 +184,9 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     val ovalWidth = radius * 1.3f
                     val ovalHeight = radius * 1.8f // makes it droplet-shaped
 
-                    var r = h/4f
-                    var a = 0.0
-
                     for(i in 0..4) {
                         val coor = polarToCartesian(waterDropletsCenters[i].first, -90 + waterDropletsCenters[i].second)
-                        drawOval( // bottom middle
+                        drawOval(
                             color = viewModel.waterDroplet.color,
                             topLeft = Offset(
                                 x = coor.first - ovalWidth / 2f,
@@ -191,68 +196,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                             style = Fill
                         )
                     }
-
-//                    drawOval( // bottom middle
-//                        color = viewModel.waterDroplet.color,
-//                        topLeft = Offset(
-//                            x = coor.first - ovalWidth / 2f,
-//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[0].floatValue
-//                        ),
-//                        size = Size(ovalWidth, ovalHeight),
-//                        style = Fill
-//                    )
-//
-//                    r = 1*h/3f
-//                    a = 50.0
-//                    coor = polarToCartesian(r, -90.0 - a)
-//
-//                    drawOval( // bottom left
-//                        color = viewModel.waterDroplet.color,
-//                        topLeft = Offset(
-//                            x = coor.first - ovalWidth / 2f,
-//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[1].floatValue
-//                        ),
-//                        size = Size(ovalWidth, ovalHeight),
-//                        style = Fill
-//                    )
-//
-//                    coor = polarToCartesian(r, -90.0 + a)
-//
-//                    drawOval( // bottom right
-//                        color = viewModel.waterDroplet.color,
-//                        topLeft = Offset(
-//                            x = coor.first - ovalWidth / 2f,
-//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[2].floatValue
-//                        ),
-//                        size = Size(ovalWidth, ovalHeight),
-//                        style = Fill
-//                    )
-//
-//                    r = 2*h/5f
-//                    a = 22.5
-//                    coor = polarToCartesian(r, -90.0 + a)
-//
-//                    drawOval( // top right
-//                        color = viewModel.waterDroplet.color,
-//                        topLeft = Offset(
-//                            x = coor.first - ovalWidth / 2f,
-//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[3].floatValue
-//                        ),
-//                        size = Size(ovalWidth, ovalHeight),
-//                        style = Fill
-//                    )
-//
-//                    coor = polarToCartesian(r, -90.0 - a)
-//
-//                    drawOval( // top left
-//                        color = viewModel.waterDroplet.color,
-//                        topLeft = Offset(
-//                            x = coor.first - ovalWidth / 2f,
-//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[4].floatValue
-//                        ),
-//                        size = Size(ovalWidth, ovalHeight),
-//                        style = Fill
-//                    )
                 }
 
                 if (viewModel.plant.visible) {
@@ -263,23 +206,32 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         center = Offset(x = centerX , y = centerY + 4*h/7)
                     )
                 }
-
-                if (viewModel.flower.visible) {
-                    drawCircle(
-                        viewModel.flower.color,
-                        radius = h / 5f,
-                        style = Fill,
-                        center = Offset(x = centerX - 4*w/7, y = centerY)
-                    )
-                }
             }
         }
 
+        val latestFlower = viewModel.activeFlowerPoints.lastOrNull()
 
+        // Only trigger animation when a new flower is added
+        LaunchedEffect(latestFlower) {
+            latestFlower?.let {
+                // pulse size up
+                repeat(10) {
+                    animatedRadius.floatValue += 1f
+                    delay(16)
+                }
+                // pulse size down
+                repeat(10) {
+                    animatedRadius.floatValue -= 1f
+                    delay(16)
+                }
+                animatedRadius.floatValue = 0f
+            }
+        }
 
         LaunchedEffect(Unit){
             val a = 1f
             val b = 3f
+
             while(true) {
                 if(viewModel.waterDroplet.visible) {
                     val currDropletColor = viewModel.waterDroplet.color
@@ -311,13 +263,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     viewModel.plant.color = viewModel.plant.color.copy(nextAlpha)
                     if(nextAlpha <= 0)
                         viewModel.plant.visible = false
-                }
-
-                if(viewModel.flower.visible) {
-                    val nextAlpha = max(viewModel.flower.color.alpha - 0.01f, 0f)
-                    viewModel.flower.color = viewModel.flower.color.copy(nextAlpha)
-                    if(nextAlpha <= 0)
-                        viewModel.flower.visible = false
                 }
 
                 delay(16)
