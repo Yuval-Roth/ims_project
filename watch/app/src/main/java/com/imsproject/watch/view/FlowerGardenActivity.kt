@@ -80,6 +80,9 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         var drop = remember { mutableFloatStateOf(0f) }
         val step = 0.1f
 
+        var sway = remember { mutableFloatStateOf(0f) }
+        val swayStep = 0.01f
+
         val waterDropletsCenters = remember {
             listOf(Pair(SCREEN_HEIGHT/4f, 0.0), Pair(SCREEN_HEIGHT/3f, -50.0),
                 Pair(SCREEN_HEIGHT/3f, 50.0), Pair(2*SCREEN_HEIGHT/5f, 22.5),
@@ -90,6 +93,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         var plantAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
 
         val rng = remember { Random.Default }
+        val rng2 = remember { Random.Default }
 
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
 
@@ -177,11 +181,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         val centerX = coor.first
                         val centerY = coor.second
 
-                        drawGrassStroke(centerX = centerX, centerY = centerY, height = 30f, width = 15f, color = viewModel.plant.color)
+                        drawGrassStroke(centerX = centerX, centerY = centerY, height = 30f, width = 15f, color = viewModel.plant.color, amplitude = plantAmplitude[i].floatValue * sway.floatValue)
                     }
-
-                    // todo: 2. create "amplitude" for small and big to be random between (0.9, 1.3) to be the grass sway animation.
-                    //  small to big for wind to the left, big to small for wind to the right
                 }
             }
         }
@@ -209,7 +210,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             val dropletRngLowerRange = 1f
             val dropletRngUpperRange = 3f
             val grassRngLowerRange = 0.9f
-            val grassRngUpperRange = 1.3f
+            val grassRngUpperRange = 1.1f
 
             while(true) {
                 // animate water droplets
@@ -217,7 +218,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     val currDropletColor = viewModel.waterDroplet.color
 
                     // a new click resets the drop animation
-                    if(currDropletColor.alpha == 1f) {
+                    if(viewModel.freshDropletClick) {
+                        viewModel.freshDropletClick = false
                         drop.floatValue = 0f
                         //randomize the extent of the drop for each one
                         for(i in 0..4) {
@@ -240,26 +242,28 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // animate plant grass
                 if(viewModel.plant.visible) {
-                    val currDropletColor = viewModel.plant.color
+                    val currPlantColor = viewModel.plant.color
 
-                    // a new click resets the drop animation
-                    if(currDropletColor.alpha == 1f) {
-                        drop.floatValue = 0f
-                        //randomize the extent of the drop for each one
+                    // a new click resets the
+                    if(viewModel.freshPlantClick) {
+                        viewModel.freshPlantClick = false
+                        sway.floatValue = 0f
+                        //randomize the extent
                         for(i in 0..4) {
-                            plantAmplitude[i].floatValue = grassRngLowerRange + rng.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
-                            //todo: use the amplitude for the animation!! (20:04)
+                            plantAmplitude[i].floatValue = grassRngLowerRange + rng2.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
                         }
                     }
+                    // increase
+                    sway.floatValue += swayStep
 
                     // decrease the opacity
-                    val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
-                    viewModel.plant.color = currDropletColor.copy(nextAlpha)
+                    val nextAlpha = max(currPlantColor.alpha - 0.01f, 0f)
+                    viewModel.plant.color = currPlantColor.copy(nextAlpha)
 
                     // hide from the screen and reset position
                     if(nextAlpha <= 0f) {
                         viewModel.plant.visible = false
-                        drop.floatValue = 0f
+                        sway.floatValue = 0f
                     }
                 }
                 delay(16)
@@ -319,7 +323,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             drawPath(rightPart, color, style = Fill)
     }
 
-    fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, a : Float = 1f, b : Float = 1f, strokeWidth: Float = 3f) {
+    fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, strokeWidth: Float = 3f, amplitude : Float = 1f) {
         val halfWidth = width / 2f
         val steps = 30
 
@@ -328,7 +332,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         for (i in 0..steps) {
             val t = i / steps.toFloat()
             val x = t * halfWidth
-            val y = sqrt(t) * height * a
+            val y = sqrt(t) * height * (1 + amplitude)
             val screenX = centerX + x
             val screenY = centerY - y
             if (i == 0) {
@@ -343,7 +347,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         for (i in 0..steps) {
             val t = i / steps.toFloat()
             val x = -t * halfWidth
-            val y = sqrt(t) * height * b
+            val y = sqrt(t) * height * (1 + amplitude - 0.1f)
             val screenX = centerX + x
             val screenY = centerY - y
             if (i == 0) {

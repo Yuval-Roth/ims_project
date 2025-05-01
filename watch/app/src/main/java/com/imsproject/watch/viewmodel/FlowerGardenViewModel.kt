@@ -1,16 +1,12 @@
 package com.imsproject.watch.viewmodel
 
-import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -20,17 +16,9 @@ import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GRASS_GREEN_COLOR
-import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_HEIGHT
-import com.imsproject.watch.VIVID_ORANGE_COLOR
-import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
-import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
-import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.view.contracts.Result
-import com.imsproject.watch.viewmodel.FlourMillViewModel.AxleSide
-import com.imsproject.watch.viewmodel.WaterRipplesViewModel.Ripple
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +26,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.LinkedList
 import java.util.Queue
-import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
 
@@ -46,8 +33,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     enum class ItemType(){
         WATER,
-        PLANT,
-        FLOWER;
+        PLANT;
 
         companion object {
             fun fromString(string: String) = when(string.lowercase()){
@@ -92,8 +78,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     }
 
     var waterDroplet : WaterDroplet = WaterDroplet()
+    var freshDropletClick : Boolean = false
     var plant : Plant = Plant()
-    var flower : Flower = Flower()
+    var freshPlantClick : Boolean = false
+//    var flower : Flower = Flower() // todo: maybe delete
 
     var activeFlowerPoints : MutableList<Pair<Float, Double>> = mutableListOf()
     lateinit var flowerPoints : List<Pair<Float, Double>>
@@ -207,27 +195,36 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     private fun showItem(actor: String, timestamp : Long) {
         Log.d("", "$actor has pressed")
+        var isWater = false
 
         // check the delta between the last taps of opponent and me
         var opponentsLatestTimestamp =
-            if((actor == playerId) == (myItemType == ItemType.WATER))
+            if((actor == playerId) == (myItemType == ItemType.WATER)) {
+                isWater = true
+                freshDropletClick = true
                 plant.timestamp
-            else
-               waterDroplet.timestamp
-
-
+            } else {
+                isWater = false
+                freshPlantClick = true
+                waterDroplet.timestamp
+            }
+        //todo: fix, find which one is the current one exactly! and not pass the other the new timestamp!!
         if((opponentsLatestTimestamp - timestamp)  // synced click
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
-            waterDroplet.visibleNow(timestamp)
-            plant.visibleNow(timestamp)
-            flower.visibleNow()
+            if(isWater) {
+                waterDroplet.visibleNow(timestamp)
+                plant.visibleNow(opponentsLatestTimestamp)
+            } else {
+                waterDroplet.visibleNow(opponentsLatestTimestamp)
+                plant.visibleNow(timestamp)
+            }
             if(!flowerOrder.isEmpty()) {
                 activeFlowerPoints.add(flowerPoints[flowerOrder.poll()!!])
             } else {
                 Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
             }
         } else { //not synced
-            if((actor == playerId) == (myItemType == ItemType.WATER)) // if thats me and water, or not me and im not water
+            if(isWater)
                 waterDroplet.visibleNow(timestamp)
             else
                 plant.visibleNow(timestamp)
