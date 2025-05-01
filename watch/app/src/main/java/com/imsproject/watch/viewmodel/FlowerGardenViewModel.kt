@@ -112,7 +112,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     fun click() {
         if(ACTIVITY_DEBUG_MODE){
-//            showRipple(playerId, System.currentTimeMillis())
             Log.d("", "pressing")
             showItem(playerId, System.currentTimeMillis())
             return
@@ -196,7 +195,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             else -> super.handleGameAction(action)
         }
     }
-
 
     private fun showItem(actor: String, timestamp : Long) {
         // check the delta between taps and show new tap

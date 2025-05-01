@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.watch.BANANA_YELLOW_COLOR
 import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.DARK_BEIGE_COLOR
 import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
@@ -74,28 +75,29 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     @SuppressLint("ReturnFromAwaitPointerEventScope")
     @Composable
     fun FlowerGarden() {
-        // this is used only to to trigger recomposition when new ripples are added
+        // this is used only to to trigger recomposition when new ripples are added //todo: can i remove it?
         viewModel.counter.collectAsState().value
 
+        // water droplets
         var drop = remember { mutableFloatStateOf(0f) }
-        val step = 0.1f
+        val dropStep = 0.1f
+        var dropletAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
 
+        // plants (grass)
         var sway = remember { mutableFloatStateOf(0f) }
         val swayStep = 0.01f
-
-        val waterDropletsCenters = remember {
-            listOf(Pair(SCREEN_HEIGHT/4f, 0.0), Pair(SCREEN_HEIGHT/3f, -50.0),
-                Pair(SCREEN_HEIGHT/3f, 50.0), Pair(2*SCREEN_HEIGHT/5f, 22.5),
-            Pair(2*SCREEN_HEIGHT/5f, -22.5))
-        }
-
-        var dropletAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
         var plantAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
 
-        val rng = remember { Random.Default }
-        val rng2 = remember { Random.Default }
-
+        // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
+
+        //shared
+        val waterAndPlantCenters = remember {
+            listOf(Pair(SCREEN_HEIGHT/4f, 0.0), Pair(SCREEN_HEIGHT/3f, -50.0),
+                Pair(SCREEN_HEIGHT/3f, 50.0), Pair(2*SCREEN_HEIGHT/5f, 22.5),
+                Pair(2*SCREEN_HEIGHT/5f, -22.5))
+        }
+        val rng = remember { Random.Default }
 
         // Box to draw the background
         Box(
@@ -153,20 +155,20 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 for ((i, pair) in viewModel.activeFlowerPoints.withIndex()) {
                     val coor = polarToCartesian(pair.first, pair.second)
                     val isLatest = i == viewModel.activeFlowerPoints.lastIndex
-                    val radius = if (isLatest) h / 55f + flowerAnimationRadius.floatValue else h / 55f
+                    val radius = if (isLatest) h / 50f + flowerAnimationRadius.floatValue else h / 50f
 
-                    drawCircle(
-                        BUBBLE_PINK_COLOR.copy(alpha = 0.8f),
+                    drawFlower(
+                        centerX = coor.first,
+                        centerY = coor.second,
                         radius = radius,
-                        style = Fill,
-                        center = Offset(x = coor.first, y = coor.second)
                     )
+
                 }
 
                 // draw water droplets - actual water droplets
                 if (viewModel.waterDroplet.visible) {
                     for(i in 0..4) {
-                        val coor = polarToCartesian(waterDropletsCenters[i].first, -90 + waterDropletsCenters[i].second)
+                        val coor = polarToCartesian(waterAndPlantCenters[i].first, -90 + waterAndPlantCenters[i].second)
                         val centerX = coor.first
                         val centerY = coor.second + drop.floatValue * dropletAmplitude[i].floatValue
 
@@ -177,7 +179,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 // draw plant - shaped like grass
                 if (viewModel.plant.visible) {
                     for(i in 0..4) {
-                        val coor = polarToCartesian(waterDropletsCenters[i].first, 90 + waterDropletsCenters[i].second)
+                        val coor = polarToCartesian(waterAndPlantCenters[i].first, 90 + waterAndPlantCenters[i].second)
                         val centerX = coor.first
                         val centerY = coor.second
 
@@ -227,7 +229,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         }
                     }
                     // increase the water drop
-                    drop.floatValue += step
+                    drop.floatValue += dropStep
 
                     // decrease the opacity
                     val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
@@ -250,7 +252,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         sway.floatValue = 0f
                         //randomize the extent
                         for(i in 0..4) {
-                            plantAmplitude[i].floatValue = grassRngLowerRange + rng2.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
+                            plantAmplitude[i].floatValue = grassRngLowerRange + rng.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
                         }
                     }
                     // increase
@@ -346,6 +348,29 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         drawPath(leftPath, color, style = Stroke(width = strokeWidth))
     }
 
+    fun DrawScope.drawFlower(centerX: Float, centerY: Float, radius: Float, petalCount: Int = 5) {
+        val angleStep = 360f / petalCount
+        val petalRadius = radius * 0.6f
+
+        for (i in 0 until petalCount) {
+            val angle = Math.toRadians((angleStep * i).toDouble())
+            val x = centerX + (radius * 0.6f * kotlin.math.cos(angle)).toFloat()
+            val y = centerY + (radius * 0.6f * kotlin.math.sin(angle)).toFloat()
+
+            drawCircle(
+                color = BUBBLE_PINK_COLOR,
+                radius = petalRadius,
+                center = Offset(x, y)
+            )
+        }
+
+        // center of the flower
+        drawCircle(
+            color = BANANA_YELLOW_COLOR,
+            radius = petalRadius * 0.8f,
+            center = Offset(centerX, centerY)
+        )
+    }
 
     companion object {
         private const val TAG = "WaterRipplesActivity"
