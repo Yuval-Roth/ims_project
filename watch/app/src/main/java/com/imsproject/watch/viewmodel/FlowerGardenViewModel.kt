@@ -44,6 +44,14 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
+    lateinit var myItemType: ItemType
+        private set
+
+
+    // ======================================
+    // =========== water droplet ============
+    // ======================================
+
     class WaterDroplet(
         var timestamp: Long = 0,
     ) {
@@ -55,6 +63,13 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             color = color.copy(alpha = 1f)
         }
     }
+
+    var waterDroplet : WaterDroplet = WaterDroplet()
+    var freshDropletClick : Boolean = false
+
+    // ======================================
+    // ============ grass plant =============
+    // ======================================
 
     class Plant(
         var timestamp: Long = 0,
@@ -68,27 +83,17 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
-    class Flower() {
-        var visible = false
-        var color by mutableStateOf(BUBBLE_PINK_COLOR)
-        fun visibleNow() {
-            visible = true
-            color = color.copy(alpha = 1f)
-        }
-    }
-
-    var waterDroplet : WaterDroplet = WaterDroplet()
-    var freshDropletClick : Boolean = false
     var plant : Plant = Plant()
     var freshPlantClick : Boolean = false
-//    var flower : Flower = Flower() // todo: maybe delete
+
+    // ======================================
+    // ============== flowers ===============
+    // ======================================
 
     var activeFlowerPoints : MutableList<Pair<Float, Double>> = mutableListOf()
     lateinit var flowerPoints : List<Pair<Float, Double>>
     lateinit var flowerOrder : Queue<Int>
 
-    lateinit var myItemType: ItemType
-        private set
 
     private lateinit var clickVibration : VibrationEffect
 
@@ -194,44 +199,29 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
 
     private fun showItem(actor: String, timestamp : Long) {
-        Log.d("", "$actor has pressed")
-        var isWater = false
-
-        // check the delta between the last taps of opponent and me
+        // check the delta between taps and show new tap
         var opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
-                isWater = true
+                waterDroplet.visibleNow(timestamp)
                 freshDropletClick = true
                 plant.timestamp
             } else {
-                isWater = false
                 freshPlantClick = true
+                plant.visibleNow(timestamp)
                 waterDroplet.timestamp
             }
-        //todo: fix, find which one is the current one exactly! and not pass the other the new timestamp!!
-        if((opponentsLatestTimestamp - timestamp)  // synced click
+
+        // add new flower if synced click
+        if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
-            if(isWater) {
-                waterDroplet.visibleNow(timestamp)
-                plant.visibleNow(opponentsLatestTimestamp)
-            } else {
-                waterDroplet.visibleNow(opponentsLatestTimestamp)
-                plant.visibleNow(timestamp)
-            }
             if(!flowerOrder.isEmpty()) {
                 activeFlowerPoints.add(flowerPoints[flowerOrder.poll()!!])
             } else {
                 Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
             }
-        } else { //not synced
-            if(isWater)
-                waterDroplet.visibleNow(timestamp)
-            else
-                plant.visibleNow(timestamp)
-
         }
 
-       // add a vibration effect to clicks that are not mine
+        // add a vibration effect to clicks that are not mine
         if (actor != playerId) {
             viewModelScope.launch(Dispatchers.IO) {
                 delay(100)

@@ -170,7 +170,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         val centerX = coor.first
                         val centerY = coor.second + drop.floatValue * dropletAmplitude[i].floatValue
 
-                        waterDropletShape(centerX, centerY, viewModel.waterDroplet.color)
+                        drawWaterDroplet(centerX, centerY, viewModel.waterDroplet.color)
                     }
                 }
 
@@ -272,52 +272,37 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     }
 
 
-    fun DrawScope.waterDropletShape(
-                          baseX: Float,
-                          baseY: Float,
-                          color : Color,
-                          size: Float = 0.2f,
-                          ) {
-            val stemHeight = 100f * size
+    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color : Color, size: Float = 0.2f) {
+            val diameter = 100f * size
 
             // Left Part Path
             val leftPart = Path().apply {
-                moveTo(baseX, baseY - stemHeight)
-                cubicTo(
-                    baseX - 80f * size,
-                    baseY - stemHeight - 100f * size,
-                    baseX - 50f * size,
-                    baseY - stemHeight - 150f * size,
-                    baseX,
-                    baseY - stemHeight - 150f * size
-                )
+                moveTo(baseX, baseY - diameter)
+                cubicTo(baseX - 80f * size, baseY - diameter - 100f * size, baseX - 50f * size,
+                    baseY - diameter - 150f * size, baseX, baseY - diameter - 150f * size)
             }
 
             leftPart.transform(Matrix().apply {
-                translate(baseX, baseY - stemHeight)
+                translate(baseX, baseY - diameter)
                 scale(1f, -1f)
-                translate(-baseX, -(baseY - stemHeight))
+                translate(-baseX, -(baseY - diameter))
             })
 
             drawPath(leftPart, color, style = Fill)
 
             // Right Part Path
             val rightPart = Path().apply {
-                moveTo(baseX, baseY - stemHeight)
+                moveTo(baseX, baseY - diameter)
                 cubicTo(
-                    baseX + 80f * size,
-                    baseY - stemHeight - 100f * size,
-                    baseX + 50f * size,
-                    baseY - stemHeight - 150f * size,
-                    baseX,
-                    baseY - stemHeight - 150f * size
+                    baseX + 80f * size, baseY - diameter - 100f * size, baseX + 50f * size,
+                    baseY - diameter - 150f * size, baseX, baseY - diameter - 150f * size
                 )
             }
 
             rightPart.transform(Matrix().apply {
-                translate(baseX, baseY - stemHeight)
+                translate(baseX, baseY - diameter)
                 scale(1f, -1f)
-                translate(-baseX, -(baseY - stemHeight))
+                translate(-baseX, -(baseY - diameter))
             })
 
             drawPath(rightPart, color, style = Fill)
