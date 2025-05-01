@@ -120,16 +120,26 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     )
             )
             Image(
+                painter = painterResource(id = R.drawable.mill),
+                contentDescription = null,
+                modifier = Modifier
+                    .size((SCREEN_RADIUS * 0.7f).dp)
+//                    .graphicsLayer(rotationZ = rotationAngle.floatValue)
+                ,
+                contentScale = ContentScale.FillBounds
+            )
+            Image(
                 painter = painterResource(id = R.drawable.wheel),
                 contentDescription = null,
                 modifier = Modifier
-                    .size((SCREEN_RADIUS * 0.5f).dp)
+                    .size((SCREEN_RADIUS * 0.4f).dp)
                     .graphicsLayer(rotationZ = rotationAngle.floatValue)
                     ,
                 contentScale = ContentScale.FillBounds
             )
 
             Canvas(modifier = Modifier.Companion.fillMaxSize()){
+
 
             }
         }
