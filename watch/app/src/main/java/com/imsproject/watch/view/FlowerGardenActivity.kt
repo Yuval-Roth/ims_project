@@ -42,13 +42,16 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Angle
+import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.DARK_BEIGE_COLOR
 import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.RIPPLE_MAX_SIZE
+import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.utils.polarToCartesian
@@ -65,14 +68,11 @@ import kotlin.random.Random
 class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
     private val viewModel : FlowerGardenViewModel by viewModels<FlowerGardenViewModel>()
-//    private lateinit var soundPool: SoundPool
     private var clickSoundId : Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         super.onCreate(viewModel)
-//        soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
-//        clickSoundId = soundPool.load(applicationContext, R.raw.ripple_click_sound, 1)
         setContent {
             Main()
         }
@@ -93,9 +93,14 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         // this is used only to to trigger recomposition when new ripples are added
         viewModel.counter.collectAsState().value
 
-//        val dropletYOffsets = remember { List(5) { mutableFloatStateOf(0f) } }
         var drop = remember { mutableFloatStateOf(0f) }
         val step = 0.1f
+
+        val waterDropletsCenters = remember {
+            listOf(Pair(SCREEN_HEIGHT/4f, 0.0), Pair(SCREEN_HEIGHT/3f, -50.0),
+                Pair(SCREEN_HEIGHT/3f, 50.0), Pair(2*SCREEN_HEIGHT/5f, 22.5),
+            Pair(2*SCREEN_HEIGHT/5f, -22.5))
+        }
 
         var amplitude = remember { List(5) { mutableFloatStateOf(1f) } }
         val rng = remember { Random.Default }
@@ -149,11 +154,23 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
-                val w = size.width
-                val h = size.height
+                val w = SCREEN_WIDTH
+                val h = SCREEN_HEIGHT
                 val centerX = w/2f
                 val centerY = h/2f
 
+                // draw active flowers
+                for(pair in viewModel.activeFlowerPoints) {
+                    val coor = polarToCartesian(pair.first, pair.second)
+                    drawCircle(
+                        BUBBLE_PINK_COLOR.copy(alpha = 0.5f),
+                        radius = h / 55f,
+                        style = Fill,
+                        center = Offset(x = coor.first, y = coor.second)
+                    )
+                }
+
+                // draw water droplets
                 if (viewModel.waterDroplet.visible) {
                     val radius = h/30f
                     val ovalWidth = radius * 1.3f
@@ -161,69 +178,81 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                     var r = h/4f
                     var a = 0.0
-                    var coor = polarToCartesian(r, -90.0 + a)
 
-                    drawOval( // bottom middle
-                        color = viewModel.waterDroplet.color,
-                        topLeft = Offset(
-                            x = coor.first - ovalWidth / 2f,
-                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[0].floatValue
-                        ),
-                        size = Size(ovalWidth, ovalHeight),
-                        style = Fill
-                    )
+                    for(i in 0..4) {
+                        val coor = polarToCartesian(waterDropletsCenters[i].first, -90 + waterDropletsCenters[i].second)
+                        drawOval( // bottom middle
+                            color = viewModel.waterDroplet.color,
+                            topLeft = Offset(
+                                x = coor.first - ovalWidth / 2f,
+                                y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[i].floatValue
+                            ),
+                            size = Size(ovalWidth, ovalHeight),
+                            style = Fill
+                        )
+                    }
 
-                    r = 1*h/3f
-                    a = 50.0
-                    coor = polarToCartesian(r, -90.0 - a)
-
-                    drawOval( // bottom left
-                        color = viewModel.waterDroplet.color,
-                        topLeft = Offset(
-                            x = coor.first - ovalWidth / 2f,
-                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[1].floatValue
-                        ),
-                        size = Size(ovalWidth, ovalHeight),
-                        style = Fill
-                    )
-
-                    coor = polarToCartesian(r, -90.0 + a)
-
-                    drawOval( // bottom right
-                        color = viewModel.waterDroplet.color,
-                        topLeft = Offset(
-                            x = coor.first - ovalWidth / 2f,
-                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[2].floatValue
-                        ),
-                        size = Size(ovalWidth, ovalHeight),
-                        style = Fill
-                    )
-
-                    r = 2*h/5f
-                    a = 22.5
-                    coor = polarToCartesian(r, -90.0 + a)
-
-                    drawOval( // top right
-                        color = viewModel.waterDroplet.color,
-                        topLeft = Offset(
-                            x = coor.first - ovalWidth / 2f,
-                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[3].floatValue
-                        ),
-                        size = Size(ovalWidth, ovalHeight),
-                        style = Fill
-                    )
-
-                    coor = polarToCartesian(r, -90.0 - a)
-
-                    drawOval( // top left
-                        color = viewModel.waterDroplet.color,
-                        topLeft = Offset(
-                            x = coor.first - ovalWidth / 2f,
-                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[4].floatValue
-                        ),
-                        size = Size(ovalWidth, ovalHeight),
-                        style = Fill
-                    )
+//                    drawOval( // bottom middle
+//                        color = viewModel.waterDroplet.color,
+//                        topLeft = Offset(
+//                            x = coor.first - ovalWidth / 2f,
+//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[0].floatValue
+//                        ),
+//                        size = Size(ovalWidth, ovalHeight),
+//                        style = Fill
+//                    )
+//
+//                    r = 1*h/3f
+//                    a = 50.0
+//                    coor = polarToCartesian(r, -90.0 - a)
+//
+//                    drawOval( // bottom left
+//                        color = viewModel.waterDroplet.color,
+//                        topLeft = Offset(
+//                            x = coor.first - ovalWidth / 2f,
+//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[1].floatValue
+//                        ),
+//                        size = Size(ovalWidth, ovalHeight),
+//                        style = Fill
+//                    )
+//
+//                    coor = polarToCartesian(r, -90.0 + a)
+//
+//                    drawOval( // bottom right
+//                        color = viewModel.waterDroplet.color,
+//                        topLeft = Offset(
+//                            x = coor.first - ovalWidth / 2f,
+//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[2].floatValue
+//                        ),
+//                        size = Size(ovalWidth, ovalHeight),
+//                        style = Fill
+//                    )
+//
+//                    r = 2*h/5f
+//                    a = 22.5
+//                    coor = polarToCartesian(r, -90.0 + a)
+//
+//                    drawOval( // top right
+//                        color = viewModel.waterDroplet.color,
+//                        topLeft = Offset(
+//                            x = coor.first - ovalWidth / 2f,
+//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[3].floatValue
+//                        ),
+//                        size = Size(ovalWidth, ovalHeight),
+//                        style = Fill
+//                    )
+//
+//                    coor = polarToCartesian(r, -90.0 - a)
+//
+//                    drawOval( // top left
+//                        color = viewModel.waterDroplet.color,
+//                        topLeft = Offset(
+//                            x = coor.first - ovalWidth / 2f,
+//                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[4].floatValue
+//                        ),
+//                        size = Size(ovalWidth, ovalHeight),
+//                        style = Fill
+//                    )
                 }
 
                 if (viewModel.plant.visible) {
@@ -245,6 +274,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 }
             }
         }
+
+
 
         LaunchedEffect(Unit){
             val a = 1f

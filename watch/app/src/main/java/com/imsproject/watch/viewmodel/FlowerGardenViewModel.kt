@@ -23,6 +23,7 @@ import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.RIPPLE_MAX_SIZE
+import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.VIVID_ORANGE_COLOR
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
@@ -35,6 +36,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.LinkedList
+import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
@@ -88,11 +91,13 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
-    val waterDroplets = ConcurrentLinkedDeque<WaterDroplet>()
     var waterDroplet : WaterDroplet = WaterDroplet()
-    val plants = ConcurrentLinkedDeque<Plant>()
     var plant : Plant = Plant()
     var flower : Flower = Flower()
+
+    var activeFlowerPoints : MutableList<Pair<Float, Double>> = mutableListOf()
+    lateinit var flowerPoints : List<Pair<Float, Double>>
+    lateinit var flowerOrder : Queue<Int>
 
     lateinit var myItemType: ItemType
         private set
@@ -128,12 +133,15 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     }
 
     override fun onCreate(intent: Intent, context: Context) {
+//        Log.d("FlowerViewModel", "OnCreate() called")
         super.onCreate(intent, context)
+        flowerPoints = buildFlowerPoints()
 
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
             myItemType = ItemType.WATER
+            flowerOrder = LinkedList((0..17).toList())
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
@@ -145,10 +153,11 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             return
         }
 
+        //decode the sent configuration data
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
-//        val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData", "") //todo: for 2 distinguished players...
-        myItemType = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { ItemType.fromString(it) }!!
-
+        val additionalData = intent.getStringArrayExtra("$PACKAGE_PREFIX.additionalData")!!
+        myItemType = ItemType.fromString(additionalData[0])
+        flowerOrder = LinkedList(additionalData[1].split(",").map { it.toInt() })
 
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
@@ -212,7 +221,11 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             waterDroplet.visibleNow(timestamp)
             plant.visibleNow(timestamp)
             flower.visibleNow()
-
+            if(!flowerOrder.isEmpty()) {
+                activeFlowerPoints.add(flowerPoints[flowerOrder.poll()!!])
+            } else {
+                Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
+            }
         } else { //not synced
             if((actor == playerId) == (myItemType == ItemType.WATER)) // if thats me and water, or not me and im not water
                 waterDroplet.visibleNow(timestamp)
@@ -229,6 +242,27 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             }
         }
         _counter.value++ // used to trigger recomposition
+    }
+
+    private fun buildFlowerPoints() : List<Pair<Float, Double>>{
+        val innerRadius = SCREEN_HEIGHT * 0.27f
+        val outerRadius = SCREEN_HEIGHT * 0.42f
+
+        val innerCount = 6
+        val outerCount = 12
+
+        val innerPoints = List(innerCount) { i ->
+            val angle = -90.0 + i * (360.0 / innerCount)
+            Pair(innerRadius, angle)
+        }
+
+        val outerPoints = List(outerCount) { i ->
+            val angle = -90.0 + (360.0 / outerCount) * i + (360.0 / outerCount) / 2  // offset to fall between inner points
+            Pair(outerRadius, angle)
+        }
+
+        val polarPoints = innerPoints + outerPoints
+        return polarPoints
     }
 
     companion object {
