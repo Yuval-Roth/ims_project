@@ -155,7 +155,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
         //decode the sent configuration data
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
-        val additionalData = intent.getStringArrayExtra("$PACKAGE_PREFIX.additionalData")!!
+        val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")!!.split(";")
         myItemType = ItemType.fromString(additionalData[0])
         flowerOrder = LinkedList(additionalData[1].split(",").map { it.toInt() })
 
