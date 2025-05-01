@@ -147,7 +147,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             }
 
             Canvas(
-                modifier = Modifier.size(100.dp)
+                modifier = Modifier.fillMaxSize()
             ) {
                 val w = size.width
                 val h = size.height
@@ -156,59 +156,70 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 if (viewModel.waterDroplet.visible) {
                     val radius = h/30f
-                    val xcoef = 2*w/7f
-                    val ycoef = 3*h/7f
-                    val rightBottomCoef = 1
-                    val topLeftCoef = -1
+                    val ovalWidth = radius * 1.3f
+                    val ovalHeight = radius * 1.8f // makes it droplet-shaped
 
-                    val ovalWidth = radius * 2.5f
-                    val ovalHeight = radius * 3f // makes it droplet-shaped
+                    var r = h/4f
+                    var a = 0.0
+                    var coor = polarToCartesian(r, -90.0 + a)
 
-                    drawOval(
+                    drawOval( // bottom middle
                         color = viewModel.waterDroplet.color,
                         topLeft = Offset(
-                            x = centerX + 0 * xcoef * rightBottomCoef - ovalWidth / 2f,
-                            y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[0].floatValue - ovalHeight / 2f
+                            x = coor.first - ovalWidth / 2f,
+                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[0].floatValue
                         ),
                         size = Size(ovalWidth, ovalHeight),
                         style = Fill
                     )
+
+                    r = 1*h/3f
+                    a = 50.0
+                    coor = polarToCartesian(r, -90.0 - a)
 
                     drawOval( // bottom left
                         color = viewModel.waterDroplet.color,
                         topLeft = Offset(
-                            x = centerX + 2 * xcoef * topLeftCoef - ovalWidth / 2f,
-                            y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[1].floatValue - ovalHeight / 2f
+                            x = coor.first - ovalWidth / 2f,
+                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[1].floatValue
                         ),
                         size = Size(ovalWidth, ovalHeight),
                         style = Fill
                     )
+
+                    coor = polarToCartesian(r, -90.0 + a)
 
                     drawOval( // bottom right
                         color = viewModel.waterDroplet.color,
                         topLeft = Offset(
-                            x = centerX + 2 * xcoef * rightBottomCoef - ovalWidth / 2f,
-                            y = centerY + 1 * ycoef * topLeftCoef + drop.floatValue * amplitude[2].floatValue - ovalHeight / 2f
+                            x = coor.first - ovalWidth / 2f,
+                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[2].floatValue
                         ),
                         size = Size(ovalWidth, ovalHeight),
                         style = Fill
                     )
+
+                    r = 2*h/5f
+                    a = 22.5
+                    coor = polarToCartesian(r, -90.0 + a)
 
                     drawOval( // top right
                         color = viewModel.waterDroplet.color,
                         topLeft = Offset(
-                            x = centerX + 1 * xcoef * rightBottomCoef - ovalWidth / 2f,
-                            y = centerY + (5 / 3f) * ycoef * topLeftCoef + drop.floatValue * amplitude[3].floatValue - ovalHeight / 2f
+                            x = coor.first - ovalWidth / 2f,
+                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[3].floatValue
                         ),
                         size = Size(ovalWidth, ovalHeight),
                         style = Fill
                     )
 
+                    coor = polarToCartesian(r, -90.0 - a)
+
                     drawOval( // top left
                         color = viewModel.waterDroplet.color,
                         topLeft = Offset(
-                            x = centerX + 1 * xcoef * topLeftCoef - ovalWidth / 2f,
-                            y = centerY + (5 / 3f) * ycoef * topLeftCoef + drop.floatValue * amplitude[4].floatValue - ovalHeight / 2f
+                            x = coor.first - ovalWidth / 2f,
+                            y = coor.second - ovalHeight / 2f + drop.floatValue * amplitude[4].floatValue
                         ),
                         size = Size(ovalWidth, ovalHeight),
                         style = Fill

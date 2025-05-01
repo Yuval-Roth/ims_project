@@ -32,7 +32,7 @@ class FlowerGardenGame(
         val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
             .sessionId(sessionId.toString())
             .timestamp(timeServerCurr)
-        player1.sendTcp(toSend.data(listOf("water")).build().toJson())
+        player1.sendTcp(toSend.data(listOf("water")).build().toJson()) // todo: here list  the random order of flower appearance
         player2.sendTcp(toSend.data(listOf("plant")).build().toJson())
     }
 
