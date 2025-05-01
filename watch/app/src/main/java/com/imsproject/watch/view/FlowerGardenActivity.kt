@@ -157,12 +157,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     val isLatest = i == viewModel.activeFlowerPoints.lastIndex
                     val radius = if (isLatest) h / 50f + flowerAnimationRadius.floatValue else h / 50f
 
-                    drawFlower(
-                        centerX = coor.first,
-                        centerY = coor.second,
-                        radius = radius,
-                    )
-
+                    drawFlower(centerX = coor.first, centerY = coor.second, radius = radius)
                 }
 
                 // draw water droplets - actual water droplets
@@ -246,7 +241,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 if(viewModel.plant.visible) {
                     val currPlantColor = viewModel.plant.color
 
-                    // a new click resets the
+                    // a new click resets the sway
                     if(viewModel.freshPlantClick) {
                         viewModel.freshPlantClick = false
                         sway.floatValue = 0f
@@ -255,7 +250,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                             plantAmplitude[i].floatValue = grassRngLowerRange + rng.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
                         }
                     }
-                    // increase
+                    // increase sway
                     sway.floatValue += swayStep
 
                     // decrease the opacity
