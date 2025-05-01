@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -33,9 +34,14 @@ import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.R
+import com.imsproject.watch.SILVER_COLOR
+import com.imsproject.watch.utils.polarToCartesian
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
@@ -60,8 +66,16 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     @Composable
     fun FlourMill() {
+        var flourImageBitmap = remember<ImageBitmap?> { null }
         var rotationAngle by remember { mutableStateOf(Angle(0f)) }
         var lastAngle = remember<Angle?> { null }
+
+        if(flourImageBitmap == null) {
+            flourImageBitmap = ImageBitmap.imageResource(id = R.drawable.flour)
+        }
+
+        val scaledFlourWidth = remember { (flourImageBitmap.width * 0.2f).toInt() }
+        val scaledFlourHeight = remember { (flourImageBitmap.height * 0.2f).toInt() }
 
         Box(
             modifier = Modifier
@@ -101,31 +115,29 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
             Box(
                 modifier = Modifier.Companion
                     .fillMaxSize()
-                    .background(color = BROWN_COLOR)
+                    .background(color = SILVER_COLOR)
             )
             Box( // ground
                 modifier = Modifier.Companion
                     .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
                     .background(color = LIGHT_BROWN_COLOR)
-                    .shadow(
-                        elevation = (SCREEN_RADIUS * 0.5).dp,
-                        CircleShape,
-                        spotColor = Color.Green
-                    )
-                    .shadow(
-                        elevation = (SCREEN_RADIUS * 0.5).dp,
-                        CircleShape,
-                        spotColor = Color.Green
-                    )
+//                    .shadow(
+//                        elevation = (SCREEN_RADIUS * 0.5).dp,
+//                        CircleShape,
+//                        spotColor = Color.Green
+//                    )
+//                    .shadow(
+//                        elevation = (SCREEN_RADIUS * 0.5).dp,
+//                        CircleShape,
+//                        spotColor = Color.Green
+//                    )
             )
             Image(
                 painter = painterResource(id = R.drawable.mill),
                 contentDescription = null,
                 modifier = Modifier
-                    .size((SCREEN_RADIUS * 0.7f).dp)
-//                    .graphicsLayer(rotationZ = rotationAngle.floatValue)
-                ,
+                    .size((SCREEN_RADIUS * 0.7f).dp),
                 contentScale = ContentScale.FillBounds
             )
             Image(
@@ -138,9 +150,30 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 contentScale = ContentScale.FillBounds
             )
 
+            val (x,y) = polarToCartesian(SCREEN_RADIUS*0.7f,90.0)
             Canvas(modifier = Modifier.Companion.fillMaxSize()){
+                for(i in -50 .. 50 step 10){
+                    drawImage(
+                        image = flourImageBitmap,
+                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2),
+                    )
+                }
 
-
+                for(i in -40 .. 40 step 10){
+                    drawImage(
+                        image = flourImageBitmap,
+                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 5),
+                    )
+                }
+                for(i in -30 .. 30 step 10){
+                    drawImage(
+                        image = flourImageBitmap,
+                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 10),
+                    )
+                }
             }
         }
     }
