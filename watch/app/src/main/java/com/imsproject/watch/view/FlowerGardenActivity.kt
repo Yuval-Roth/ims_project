@@ -78,6 +78,17 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         // this is used only to to trigger recomposition when new ripples are added //todo: can i remove it?
         viewModel.counter.collectAsState().value
 
+        //shared
+//        val waterAndPlantCenters = remember {
+//            listOf(Pair(SCREEN_HEIGHT/4f, 0.0), Pair(SCREEN_HEIGHT/3f, -50.0),
+//                Pair(SCREEN_HEIGHT/3f, 50.0), Pair(2*SCREEN_HEIGHT/5f, 22.5),
+//                Pair(2*SCREEN_HEIGHT/5f, -22.5)) }
+        val waterAndPlantCenters = remember {
+            listOf(Pair(SCREEN_HEIGHT/5f, 30.0), Pair(SCREEN_HEIGHT/4f, -30.0),
+                Pair(SCREEN_HEIGHT/4f, 60.0), Pair(SCREEN_HEIGHT/4f, -60.0), Pair(SCREEN_HEIGHT/5f, 0.0))
+                }
+        val numOfUnits = waterAndPlantCenters.size
+
         // water droplets
         var drop = remember { mutableFloatStateOf(0f) }
         val dropStep = 0.1f
@@ -91,12 +102,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
 
-        //shared
-        val waterAndPlantCenters = remember {
-            listOf(Pair(SCREEN_HEIGHT/4f, 0.0), Pair(SCREEN_HEIGHT/3f, -50.0),
-                Pair(SCREEN_HEIGHT/3f, 50.0), Pair(2*SCREEN_HEIGHT/5f, 22.5),
-                Pair(2*SCREEN_HEIGHT/5f, -22.5))
-        }
+
+
         val rng = remember { Random.Default }
 
         // Box to draw the background
@@ -162,7 +169,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // draw water droplets - actual water droplets
                 if (viewModel.waterDroplet.visible) {
-                    for(i in 0..4) {
+                    for(i in 0..numOfUnits-1) {
                         val coor = polarToCartesian(waterAndPlantCenters[i].first, -90 + waterAndPlantCenters[i].second)
                         val centerX = coor.first
                         val centerY = coor.second + drop.floatValue * dropletAmplitude[i].floatValue
@@ -173,7 +180,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // draw plant - shaped like grass
                 if (viewModel.plant.visible) {
-                    for(i in 0..4) {
+                    for(i in 0..numOfUnits-1) {
                         val coor = polarToCartesian(waterAndPlantCenters[i].first, 90 + waterAndPlantCenters[i].second)
                         val centerX = coor.first
                         val centerY = coor.second
@@ -219,7 +226,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         viewModel.freshDropletClick = false
                         drop.floatValue = 0f
                         //randomize the extent of the drop for each one
-                        for(i in 0..4) {
+                        for(i in 0..numOfUnits-1) {
                             dropletAmplitude[i].floatValue = dropletRngLowerRange + rng.nextFloat() * (dropletRngUpperRange - dropletRngLowerRange)
                         }
                     }
@@ -246,7 +253,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         viewModel.freshPlantClick = false
                         sway.floatValue = 0f
                         //randomize the extent
-                        for(i in 0..4) {
+                        for(i in 0..numOfUnits-1) {
                             plantAmplitude[i].floatValue = grassRngLowerRange + rng.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
                         }
                     }
