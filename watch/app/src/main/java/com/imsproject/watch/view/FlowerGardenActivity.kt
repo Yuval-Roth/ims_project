@@ -33,19 +33,14 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BEIGE_COLOR
 import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
-import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_RADIUS
-import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
-import com.imsproject.watch.WHITE_ANTIQUE_COLOR
-import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
 import com.imsproject.watch.viewmodel.GameViewModel
@@ -54,7 +49,6 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.random.Random
 
 class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
@@ -88,16 +82,12 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         val waterAndPlantCenters = remember {
             listOf(Pair(SCREEN_HEIGHT/3.5f, 30.0), Pair(SCREEN_HEIGHT/3.5f, -30.0),
                 Pair(SCREEN_HEIGHT/3.5f, 60.0), Pair(SCREEN_HEIGHT/3.5f, -60.0), Pair(SCREEN_HEIGHT/3.5f, 0.0)) }
-        val numOfUnits = waterAndPlantCenters.size
-        val rng = remember { Random.Default }
 
         // water droplets
         val dropStep = 0.8f
 
         // plants (grass)
-        var sway = remember { mutableFloatStateOf(0f) }
         val swayStep = 0.01f
-        var plantAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
 
         // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
@@ -226,7 +216,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     // decrease the opacity
 
                     val currPlantColor = grassPlantSet.color
-                    val nextAlpha = max(currPlantColor.alpha - 0.02f, 0f)
+                    val nextAlpha = max(currPlantColor.alpha - 0.015f, 0f)
                     grassPlantSet.color = currPlantColor.copy(nextAlpha)
 
                     //remove done water droplets
@@ -278,7 +268,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     }
 
     fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, amplitude : Float = 1f) {
-        val strokeWidth: Float = 2.5f - amplitude
+        val strokeWidth: Float = 3f
         val halfWidth = width / 2f
         val steps = 30
 

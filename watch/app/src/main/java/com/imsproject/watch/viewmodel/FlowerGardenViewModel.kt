@@ -73,7 +73,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                     polarToCartesian(SCREEN_HEIGHT/3.5f,-150.0),
                     polarToCartesian(SCREEN_HEIGHT/3.5f, -30.0),
                     polarToCartesian(SCREEN_HEIGHT/3.5f, -90.0))
-        var drop : Float = 0f
+        var drop = 0f
     }
     val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
 
@@ -92,7 +92,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                 polarToCartesian(SCREEN_HEIGHT/3.5f, 90.0))
         var color by mutableStateOf(GRASS_GREEN_COLOR)
         var sway : Float = 0f
-
     }
 
     val grassPlantSets = ConcurrentLinkedDeque<Plant>()
@@ -259,9 +258,9 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             val petalCount: Int = listOf(5, 6, 7).random()
             val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
             val petalWidth: Float = listOf(0.4f, 0.5f, 0.6f, 0.7f).random()
-            val petalColor: Color = listOf(BUBBLE_PINK_COLOR, ORANGE_COLOR, BLUE_COLOR, INDIAN_RED_COLOR).random()
+            val petalColor: Color = listOf(BUBBLE_PINK_COLOR, ORANGE_COLOR, BLUE_COLOR, INDIAN_RED_COLOR, PURPLE_WISTERIA_COLOR, BANANA_YELLOW_COLOR, ALMOST_WHITE_COLOR).random()
             val centerColor: Color = listOf(BANANA_YELLOW_COLOR, PURPLE_WISTERIA_COLOR, ALMOST_WHITE_COLOR,
-                BROWN_COLOR
+                BROWN_COLOR, ORANGE_COLOR, BLUE_COLOR
             ).random()
 
             val angle = -90.0 + i * (360.0 / clockPoints)  // Start at 12 o'clock (−90°) and go clockwise
