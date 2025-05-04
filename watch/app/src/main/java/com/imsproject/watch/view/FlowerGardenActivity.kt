@@ -22,20 +22,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.BANANA_YELLOW_COLOR
-import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.DARK_BEIGE_COLOR
 import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
 import com.imsproject.watch.SCREEN_HEIGHT
@@ -44,9 +44,12 @@ import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
+import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
+import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -152,17 +155,16 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 val h = SCREEN_HEIGHT
 
                 // draw active flowers with animation to the latest
-                for ((i, pair) in viewModel.activeFlowerPoints.withIndex()) {
-                    val coor = polarToCartesian(pair.first, pair.second)
+                for ((i, flower) in viewModel.activeFlowerPoints.withIndex()) {
                     val isLatest = i == viewModel.activeFlowerPoints.lastIndex
-                    val radius = if (isLatest) h / 45f + flowerAnimationRadius.floatValue else h / 45f
+                    val radius = if (isLatest) h / 30f + flowerAnimationRadius.floatValue else h / 30f
 
-                    drawFlower(centerX = coor.first, centerY = coor.second, radius = radius)
+                    drawFlower(flower, radius = radius)
                 }
 
                 // draw water droplets - actual water droplets
                 if (viewModel.waterDroplet.visible) {
-                    for(i in 0..numOfUnits-1) {
+                    for(i in 0 until numOfUnits) {
                         val coor = polarToCartesian(waterAndPlantCenters[i].first, -90 + waterAndPlantCenters[i].second)
                         val centerX = coor.first
                         val centerY = coor.second + drop.floatValue * dropletAmplitude[i].floatValue
@@ -173,7 +175,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // draw plant - shaped like grass
                 if (viewModel.plant.visible) {
-                    for(i in 0..numOfUnits-1) {
+                    for(i in 0 until numOfUnits) {
                         val coor = polarToCartesian(waterAndPlantCenters[i].first, 90 + waterAndPlantCenters[i].second)
                         val centerX = coor.first
                         val centerY = coor.second
@@ -219,7 +221,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         viewModel.freshDropletClick = false
                         drop.floatValue = 0f
                         //randomize the extent of the drop for each one
-                        for(i in 0..numOfUnits-1) {
+                        for(i in 0 until numOfUnits) {
                             dropletAmplitude[i].floatValue = dropletRngLowerRange + rng.nextFloat() * (dropletRngUpperRange - dropletRngLowerRange)
                         }
                     }
@@ -246,7 +248,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         viewModel.freshPlantClick = false
                         sway.floatValue = 0f
                         //randomize the extent
-                        for(i in 0..numOfUnits-1) {
+                        for(i in 0 until numOfUnits) {
                             plantAmplitude[i].floatValue = grassRngLowerRange + rng.nextFloat() * (grassRngUpperRange - grassRngLowerRange)
                         }
                     }
@@ -343,27 +345,40 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         drawPath(leftPath, color, style = Stroke(width = strokeWidth))
     }
 
-    fun DrawScope.drawFlower(centerX: Float, centerY: Float, radius: Float, petalCount: Int = 5) {
-        val angleStep = 360f / petalCount
-        val petalRadius = radius * 0.6f
+    fun DrawScope.drawFlower(
+        flower : Flower,
+        radius: Float,
+    ) {
+        val petalLength: Float = flower.petalHeightCoef * radius
+        val petalWidth: Float = flower.petalWidthCoef * radius
+        val angleStep = 360f / flower.numOfPetals
 
-        for (i in 0 until petalCount) {
-            val angle = Math.toRadians((angleStep * i).toDouble())
-            val x = centerX + (radius * 0.6f * kotlin.math.cos(angle)).toFloat()
-            val y = centerY + (radius * 0.6f * kotlin.math.sin(angle)).toFloat()
+        for (i in 0 until flower.numOfPetals) {
+            val angleDeg = angleStep * i
+            val angleRad = Math.toRadians(angleDeg.toDouble())
 
-            drawCircle(
-                color = BUBBLE_PINK_COLOR,
-                radius = petalRadius,
-                center = Offset(x, y)
-            )
+            val petalCenterX = flower.centerX + (radius * 0.6f * cos(angleRad)).toFloat()
+            val petalCenterY = flower.centerY + (radius * 0.6f * sin(angleRad)).toFloat()
+
+            val petalCenter = Offset(petalCenterX, petalCenterY)
+
+            rotate(angleDeg, pivot = petalCenter) {
+                drawOval(
+                    color = flower.petalColor,
+                    topLeft = Offset(
+                        x = petalCenter.x - petalLength / 2,
+                        y = petalCenter.y - petalWidth / 2
+                    ),
+                    size = Size(width = petalLength, height = petalWidth)
+                )
+            }
         }
 
-        // center of the flower
+        // Center of the flower
         drawCircle(
-            color = BANANA_YELLOW_COLOR,
-            radius = petalRadius * 0.8f,
-            center = Offset(centerX, centerY)
+            color = flower.centerColor,
+            radius = radius * 0.3f,
+            center = Offset(flower.centerX, flower.centerY)
         )
     }
 

@@ -7,18 +7,26 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.ALMOST_WHITE_COLOR
+import com.imsproject.watch.BANANA_YELLOW_COLOR
+import com.imsproject.watch.INDIAN_RED_COLOR
 import com.imsproject.watch.BLUE_COLOR
+import com.imsproject.watch.BROWN_COLOR
 import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GRASS_GREEN_COLOR
+import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.PURPLE_WISTERIA_COLOR
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.WATER_BLUE_COLOR
+import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -91,8 +99,24 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     // ============== flowers ===============
     // ======================================
 
-    var activeFlowerPoints : MutableList<Pair<Float, Double>> = mutableListOf()
-    lateinit var flowerPoints : List<Pair<Float, Double>>
+    class Flower(
+        var distanceFromCenter : Float,
+        var angle : Double,
+        var centerX : Float,
+        var centerY : Float,
+        var numOfPetals : Int,
+        var petalWidthCoef : Float,
+        var petalHeightCoef : Float,
+        var centerColor : Color,
+        var petalColor : Color,
+    ) {}
+
+//    var activeFlowerPoints : MutableList<Pair<Float, Double>> = mutableListOf()
+//    lateinit var flowerPoints : List<Pair<Float, Double>>
+//    lateinit var flowerOrder : Queue<Int>
+
+    var activeFlowerPoints : MutableList<Flower> = mutableListOf()
+    lateinit var flowerPoints : List<Flower>
     lateinit var flowerOrder : Queue<Int>
 
 
@@ -128,14 +152,14 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     override fun onCreate(intent: Intent, context: Context) {
 //        Log.d("FlowerViewModel", "OnCreate() called")
         super.onCreate(intent, context)
-        flowerPoints = buildFlowerPoints()
+        flowerPoints = buildFlowers()
         val amountOfFlowers = flowerPoints.size
 
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
             myItemType = ItemType.WATER
-            flowerOrder = LinkedList((0..amountOfFlowers-1).toList())
+            flowerOrder = LinkedList((0 until amountOfFlowers).toList())
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
@@ -231,33 +255,21 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         _counter.value++ // used to trigger recomposition
     }
 
-//    private fun buildFlowerPoints() : List<Pair<Float, Double>>{
-//        val innerRadius = SCREEN_HEIGHT * 0.27f
-//        val outerRadius = SCREEN_HEIGHT * 0.42f
-//
-//        val innerCount = 6
-//        val outerCount = 12
-//
-//        val innerPoints = List(innerCount) { i ->
-//            val angle = -90.0 + i * (360.0 / innerCount)
-//            Pair(innerRadius, angle)
-//        }
-//
-//        val outerPoints = List(outerCount) { i ->
-//            val angle = -90.0 + (360.0 / outerCount) * i + (360.0 / outerCount) / 2  // offset to fall between inner points
-//            Pair(outerRadius, angle)
-//        }
-//
-//        val polarPoints = innerPoints + outerPoints
-//        return polarPoints
-//    }
+    private fun buildFlowers(clockPoints: Int = 12): List<Flower> {
 
-    private fun buildFlowerPoints(hours: Int = 12): List<Pair<Float, Double>> {
-        val radius = SCREEN_HEIGHT * 0.4f  // Adjust radius as needed for your layout
+        return List(clockPoints) { i ->
+            val distanceFromCenter = SCREEN_HEIGHT / 2.5f
+            val petalCount: Int = listOf(5, 6, 7).random()
+            val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
+            val petalWidth: Float = listOf(0.4f, 0.5f, 0.6f, 0.7f).random()
+            val petalColor: Color = listOf(BUBBLE_PINK_COLOR, ORANGE_COLOR, BLUE_COLOR, INDIAN_RED_COLOR).random()
+            val centerColor: Color = listOf(BANANA_YELLOW_COLOR, PURPLE_WISTERIA_COLOR, ALMOST_WHITE_COLOR,
+                BROWN_COLOR
+            ).random()
 
-        return List(hours) { i ->
-            val angle = -90.0 + i * (360.0 / hours)  // Start at 12 o'clock (−90°) and go clockwise
-            Pair(radius, angle)
+            val angle = -90.0 + i * (360.0 / clockPoints)  // Start at 12 o'clock (−90°) and go clockwise
+            val coor = polarToCartesian(distanceFromCenter, angle)
+            Flower(distanceFromCenter, angle, centerX =  coor.first, centerY = coor.second, petalCount, petalWidth, petalLength, centerColor, petalColor)
         }
     }
 
