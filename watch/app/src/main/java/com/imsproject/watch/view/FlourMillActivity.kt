@@ -6,13 +6,16 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -20,8 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -33,15 +39,35 @@ import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.fastCoerceAtLeast
+import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.utils.Angle
+import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.ARC_DEFAULT_ALPHA
+import com.imsproject.watch.CYAN_COLOR
+import com.imsproject.watch.GLOWING_YELLOW_COLOR
+import com.imsproject.watch.LOW_LOOP_TRACK
+import com.imsproject.watch.MARKER_FADE_DURATION
+import com.imsproject.watch.MIN_ANGLE_SKEW
+import com.imsproject.watch.MY_ARC_SIZE
+import com.imsproject.watch.MY_ARC_TOP_LEFT
+import com.imsproject.watch.MY_STROKE_WIDTH
+import com.imsproject.watch.MY_SWEEP_ANGLE
+import com.imsproject.watch.OPPONENT_ARC_SIZE
+import com.imsproject.watch.OPPONENT_ARC_TOP_LEFT
+import com.imsproject.watch.OPPONENT_STROKE_WIDTH
+import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.R
+import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.utils.polarToCartesian
+import kotlinx.coroutines.delay
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
@@ -66,6 +92,14 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     @Composable
     fun FlourMill() {
+        val myArc = remember { viewModel.myArc }
+        val opponentArc = remember { viewModel.opponentArc }
+        val focusRequester = remember { FocusRequester() }
+        var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
+        var touchingBezel by remember { mutableStateOf(false) }
+        val myReleased by viewModel.released.collectAsState()
+        val opponentReleased by viewModel.opponentReleased.collectAsState()
+
         var flourImageBitmap = remember<ImageBitmap?> { null }
         var rotationAngle by remember { mutableStateOf(Angle(0f)) }
         var lastAngle = remember<Angle?> { null }
@@ -80,15 +114,23 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .onRotaryScrollEvent {
+                    touchingBezel = true
+                    true
+                }
+                .focusRequester(focusRequester)
+                .focusable()
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
                             val pointerEvent = awaitPointerEvent()
+                            touchingBezel = false
                             val inputChange = pointerEvent.changes.first()
                             inputChange.consume()
                             when (pointerEvent.type) {
                                 PointerEventType.Press, PointerEventType.Move -> {
                                     val position = inputChange.position
+                                    viewModel.setTouchPoint(position.x, position.y)
                                     val (_, angle) = cartesianToPolar(position.x, position.y)
                                     val _lastAngle = lastAngle
                                     if(_lastAngle == null) {
@@ -103,6 +145,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
                                 PointerEventType.Release -> {
                                     lastAngle = null
+                                    viewModel.setTouchPoint(-1.0f, -1.0f)
                                 }
                             }
                         }
@@ -112,6 +155,58 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
             contentAlignment = Alignment.Center
 
         ){
+
+            // ================== Scrolling bezel warning ================== |
+
+            LaunchedEffect(Unit){
+                focusRequester.requestFocus()
+            }
+
+            LaunchedEffect(touchingBezel) {
+                if(touchingBezel){
+                    bezelWarningAlpha = 0.0f
+                    while(touchingBezel){
+                        while(bezelWarningAlpha < 0.5f){
+                            bezelWarningAlpha = (bezelWarningAlpha + 0.01f).fastCoerceAtMost(0.5f)
+                            delay(16)
+                        }
+                        while(bezelWarningAlpha > 0.0f){
+                            bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
+                            delay(16)
+                        }
+                    }
+                } else {
+                    while(bezelWarningAlpha > 0.0f){
+                        bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
+                        delay(16)
+                    }
+                }
+            }
+
+            //=============== Arc fade animation =============== |
+
+            // arc fade animation - my arc
+
+            LaunchedEffect(myReleased) {
+                if(myReleased){
+                    myArc.fadeOut()
+                    myArc.reset()
+                } else {
+                    myArc.show()
+                }
+            }
+
+            // arc fade animation - opponent's arc
+            LaunchedEffect(opponentReleased) {
+                if(opponentReleased){
+                    opponentArc.fadeOut()
+                } else {
+                    opponentArc.show()
+                }
+            }
+
+            // ================== Draw the screen ================== |
+
             Box(
                 modifier = Modifier.Companion
                     .fillMaxSize()
@@ -150,8 +245,52 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 contentScale = ContentScale.FillBounds
             )
 
-            val (x,y) = polarToCartesian(SCREEN_RADIUS*0.7f,90.0)
-            Canvas(modifier = Modifier.Companion.fillMaxSize()){
+            Canvas(modifier = Modifier.fillMaxSize()){
+
+                // draw only if the touch point is within the defined borders
+                if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                    drawArc(
+                        color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha),
+                        startAngle = myArc.startAngle.floatValue,
+                        sweepAngle = MY_SWEEP_ANGLE,
+                        useCenter = false,
+                        topLeft = MY_ARC_TOP_LEFT,
+                        size = MY_ARC_SIZE,
+                        style = Stroke(width = MY_STROKE_WIDTH.dp.toPx())
+                    )
+                }
+
+                // draw opponent's arc
+                if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                    drawArc(
+                        color = CYAN_COLOR.copy(alpha = opponentArc.currentAlpha),
+                        startAngle = opponentArc.startAngle.floatValue,
+                        sweepAngle = OPPONENT_SWEEP_ANGLE,
+                        useCenter = false,
+                        topLeft = OPPONENT_ARC_TOP_LEFT,
+                        size = OPPONENT_ARC_SIZE,
+                        style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
+                    )
+                }
+
+                // draw the bezel warning
+                if(touchingBezel){
+                    drawCircle(
+                        color = Color.Red.copy(alpha = bezelWarningAlpha),
+                        radius = SCREEN_RADIUS,
+                        center = SCREEN_CENTER,
+                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
+                    )
+                    drawCircle(
+                        color = Color.Green.copy(alpha = bezelWarningAlpha),
+                        radius = SCREEN_RADIUS - (SCREEN_RADIUS * 0.3f),
+                        center = SCREEN_CENTER,
+                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
+                    )
+                }
+
+                // draw the flour
+                val (x,y) = polarToCartesian(SCREEN_RADIUS*0.7f,90.0)
                 for(i in -50 .. 50 step 10){
                     drawImage(
                         image = flourImageBitmap,

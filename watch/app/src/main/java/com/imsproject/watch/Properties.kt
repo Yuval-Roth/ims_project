@@ -52,7 +52,7 @@ const val MARKER_FADE_DURATION = 500
 const val ARC_DEFAULT_ALPHA = 0.8f
 const val MAX_ANGLE_SKEW = 60f
 const val MIN_ANGLE_SKEW = 15f
-var WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = 0.5f
+var WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = 0.1f
 var OUTER_TOUCH_POINT = 0f
 var INNER_TOUCH_POINT = 0f
 
@@ -78,7 +78,7 @@ const val HIGH_LOOP_TRACK = 4
 
 // ================= Flour Mill ===================== |
 
-var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.5f
+var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.1f
 
 // =================== General ====================== |
 

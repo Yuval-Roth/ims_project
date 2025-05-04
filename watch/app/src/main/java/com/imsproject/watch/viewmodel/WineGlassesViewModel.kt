@@ -32,6 +32,7 @@ import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.utils.Arc
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.isBetweenInclusive
@@ -44,19 +45,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
-
-private const val DIRECTION_MAX_OFFSET = 1.0f
-
 class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
-
-    class Arc{
-        var startAngle by mutableStateOf(Angle.undefined)
-        var angleSkew = 0f
-        var direction = 0f
-        var previousAngle by mutableStateOf(Angle.undefined)
-        var previousAngleDiff = 0f
-        var currentAlpha by mutableFloatStateOf(ARC_DEFAULT_ALPHA)
-    }
 
     lateinit var sound: WavPlayer
 
@@ -110,7 +99,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                         if(angle > 180) angle -= 360
                         opponentFrequencyTracker.addSample(angle.toAngle())
                         opponentFrequency = opponentFrequencyTracker.frequency
-                        updateArc(angle.toAngle(),opponentArc)
+                        opponentArc.updateArc(angle.toAngle())
                         rawAngle += 4
                         delay(16)
                     }
@@ -160,7 +149,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
 
         if(inBounds){
-            updateArc(rawAngle,myArc)
+            myArc.updateArc(rawAngle)
             _released.value = false
             myFrequencyTracker.addSample(rawAngle)
         } else {
@@ -229,65 +218,13 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                 } else {
                     _opponentReleased.value = false
                     opponentFrequency = frequency
-                    updateArc(rawAngle.toAngle(),opponentArc)
+                    opponentArc.updateArc(rawAngle.toAngle())
                 }
 
                 addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,rawAngle.toString()))
             }
             else -> super.handleGameAction(action)
         }
-    }
-
-    private fun updateArc(angle: Angle, arc: Arc){
-
-        // =========== for current iteration =============== |
-
-        // calculate the skew angle to show the arc ahead of the finger
-        // based on the calculations of the previous iteration
-        val angleSkew = arc.angleSkew
-        arc.startAngle =
-            angle + (arc.direction.fastCoerceIn(-DIRECTION_MAX_OFFSET, DIRECTION_MAX_OFFSET)
-                                * angleSkew - MY_SWEEP_ANGLE / 2)
-
-
-        // ============== for next iteration =============== |
-
-        // prepare the skew angle for the next iteration
-        val previousAngle = arc.previousAngle
-        var angleDiff = 0f
-        if(previousAngle.floatValue != UNDEFINED_ANGLE){
-            angleDiff = previousAngle - angle
-            val previousAngleDiff = arc.previousAngleDiff
-            val angleDiffDiff = angleDiff - previousAngleDiff
-            arc.angleSkew = if (angleDiffDiff > 1 && angleDiff > 3){
-                (angleSkew + angleDiff * 0.75f).fastCoerceAtMost(MAX_ANGLE_SKEW)
-            } else if (angleDiffDiff < 1){
-                (angleSkew - angleDiff * 0.375f).fastCoerceAtLeast(MIN_ANGLE_SKEW)
-            } else {
-                angleSkew
-            }
-        }
-
-        // prepare the direction for the next iteration
-        // we add a bit to the max offset to prevent random jitter in the direction
-        // we clamp the direction to the max offset when calculating the skewed angle
-        if (previousAngle.floatValue != UNDEFINED_ANGLE){
-            val direction = arc.direction
-            arc.direction = if(Angle.isClockwise(previousAngle, angle)){
-                (direction + angleDiff * 0.2f).fastCoerceAtMost(DIRECTION_MAX_OFFSET + 0.5f)
-            } else if (! Angle.isClockwise(previousAngle, angle)){
-                (direction - angleDiff * 0.2f).fastCoerceAtLeast(-(DIRECTION_MAX_OFFSET + 0.5f))
-            } else {
-                direction
-            }
-            if(arc.direction.isBetweenInclusive(-WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD,
-                    WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
-                )) arc.angleSkew = MIN_ANGLE_SKEW
-        }
-
-        // current angle becomes previous angle for the next iteration
-        arc.previousAngle = angle
-        arc.previousAngleDiff = angleDiff
     }
 
     private fun setupWavPlayer(context: Context){

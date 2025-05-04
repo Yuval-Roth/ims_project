@@ -158,31 +158,10 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
             // ================== Sound effects ================== |
 
-            // play sound when the user touches the screen
-//            LaunchedEffect(myReleased){
-//                if(playSound){
-//                    val sound = viewModel.sound
-//                    if(myReleased){
-//                        val currentlyPlaying = if(sound.isPlaying(LOW_LOOP_TRACK)){
-//                            LOW_LOOP_TRACK
-//                        } else {
-//                            LOW_BUILD_IN_TRACK
-//                        }
-//                        sound.stopFadeOut(currentlyPlaying,20)
-//                        sound.play(LOW_BUILD_OUT_TRACK)
-//                        playSound = false
-//                    } else {
-//                        sound.play(LOW_BUILD_IN_TRACK) {
-//                            sound.playLooped(LOW_LOOP_TRACK)
-//                        }
-//                    }
-//                }
-//            }
-
             // play high sound when in sync
             LaunchedEffect(myReleased){
                 val sound = viewModel.sound
-                if(!myReleased) {
+                if(! myReleased) {
                     var playing = false
                     var inSync: Boolean
                     while (true) {
@@ -206,38 +185,20 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             // arc fade animation - my arc
 
             LaunchedEffect(myReleased) {
-                if(viewModel.released.value){
-                    val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
-                    while(viewModel.released.value && myArc.currentAlpha > 0.0f){
-                        myArc.currentAlpha =
-                            (myArc.currentAlpha - alphaAnimStep)
-                                .fastCoerceAtLeast(0.0f)
-                        delay(16)
-                    }
-                    myArc.previousAngle = Angle.undefined
-                    myArc.previousAngleDiff = 0f
-                    myArc.startAngle = Angle.undefined
-                    myArc.direction = 0f
-                    myArc.angleSkew = MIN_ANGLE_SKEW
-                    viewModel.setTouchPoint(-1.0f,-1.0f)
+                if(myReleased){
+                    myArc.fadeOut()
+                    myArc.reset()
                 } else {
-                    myArc.currentAlpha = ARC_DEFAULT_ALPHA
+                    myArc.show()
                 }
             }
 
             // arc fade animation - opponent's arc
             LaunchedEffect(opponentReleased) {
-                if(viewModel.opponentReleased.value){
-                    val alphaAnimStep =  ARC_DEFAULT_ALPHA / (MARKER_FADE_DURATION / 16f)
-                    while(viewModel.opponentReleased.value && opponentArc.currentAlpha > 0.0f){
-                        opponentArc.currentAlpha =
-                            (opponentArc.currentAlpha - alphaAnimStep)
-                                .fastCoerceAtLeast(0.0f)
-                        delay(16)
-                    }
-                    opponentArc.startAngle = Angle.undefined
+                if(opponentReleased){
+                    opponentArc.fadeOut()
                 } else {
-                    opponentArc.currentAlpha = ARC_DEFAULT_ALPHA
+                    opponentArc.show()
                 }
             }
 
