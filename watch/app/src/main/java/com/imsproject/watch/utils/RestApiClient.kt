@@ -28,10 +28,10 @@ class RestApiClient {
         }
 
         // Build OkHttp request
-        val requestBuilder = Request.Builder()
-            .url(fullUri)
-            .header("Content-Type", "application/json")
-
+        val requestBuilder = Request.Builder().url(fullUri)
+        if(! headers.contains("Content-Type")){
+            headers.put("Content-Type", "application/json")
+        }
         headers.forEach { (name, value) -> requestBuilder.addHeader(name, value) }
 
         if (isPost) {
