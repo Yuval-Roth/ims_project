@@ -68,10 +68,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     ) {
         var color by mutableStateOf(WATER_BLUE_COLOR)
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian(SCREEN_HEIGHT/3.5f, -90 + 30.0),
-                    polarToCartesian(SCREEN_HEIGHT/3.5f, -90 -30.0),
-                    polarToCartesian(SCREEN_HEIGHT/3.5f,-90 -  60.0),
-                    polarToCartesian(SCREEN_HEIGHT/3.5f, -90 + 60.0),
+            listOf(polarToCartesian(SCREEN_HEIGHT/3.5f, -60.0),
+                    polarToCartesian(SCREEN_HEIGHT/3.5f, -120.0),
+                    polarToCartesian(SCREEN_HEIGHT/3.5f,-150.0),
+                    polarToCartesian(SCREEN_HEIGHT/3.5f, -30.0),
                     polarToCartesian(SCREEN_HEIGHT/3.5f, -90.0))
         var drop : Float = 0f
     }
@@ -84,17 +84,18 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     class Plant(
         var timestamp: Long = 0,
     ) {
-        var visible = false
+        val centers : List<Pair<Float, Float>> =
+            listOf(polarToCartesian(SCREEN_HEIGHT/3.5f, 120.0),
+                polarToCartesian(SCREEN_HEIGHT/3.5f, 60.0),
+                polarToCartesian(SCREEN_HEIGHT/3.5f, 30.0),
+                polarToCartesian(SCREEN_HEIGHT/3.5f, 150.0),
+                polarToCartesian(SCREEN_HEIGHT/3.5f, 90.0))
         var color by mutableStateOf(GRASS_GREEN_COLOR)
-        fun visibleNow(timestamp: Long) {
-            visible = true
-            this.timestamp = timestamp
-            color = color.copy(alpha = 1f)
-        }
+        var sway : Float = 0f
+
     }
 
-    var plant : Plant = Plant()
-    var freshPlantClick : Boolean = false
+    val grassPlantSets = ConcurrentLinkedDeque<Plant>()
 
     // ======================================
     // ============== flowers ===============
@@ -156,7 +157,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
-            myItemType = ItemType.WATER
+//            myItemType = ItemType.WATER
+            myItemType = ItemType.PLANT
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
@@ -224,17 +226,16 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
                 waterDropletSets.addLast(WaterDroplet(timestamp))
-                plant.timestamp
+                if(grassPlantSets.isEmpty()) 0 else grassPlantSets.first().timestamp
             } else {
-                freshPlantClick = true
-                plant.visibleNow(timestamp)
+                grassPlantSets.addLast(Plant(timestamp))
                 if(waterDropletSets.isEmpty()) 0 else waterDropletSets.first().timestamp
             }
 
         // add new flower if synced click
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
-            if(!flowerOrder.isEmpty()) { //todo: delete later, after removing
+            if(!flowerOrder.isEmpty()) { //todo: delete the order later, after removing
                 activeFlowerPoints.add(flowerPoints[flowerOrder.poll()!!])
             } else {
                 Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
