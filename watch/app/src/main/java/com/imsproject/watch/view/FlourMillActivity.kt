@@ -22,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -32,10 +31,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.BROWN_COLOR
 import com.imsproject.watch.LIGHT_BROWN_COLOR
 import com.imsproject.watch.SCREEN_RADIUS
-import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -49,12 +46,8 @@ import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.utils.Angle
 import com.imsproject.common.utils.UNDEFINED_ANGLE
-import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
-import com.imsproject.watch.LOW_LOOP_TRACK
-import com.imsproject.watch.MARKER_FADE_DURATION
-import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
 import com.imsproject.watch.MY_STROKE_WIDTH
@@ -92,24 +85,25 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     @Composable
     fun FlourMill() {
+        // flour image related
+        var flourImageBitmap = remember<ImageBitmap?> { null }
+        if(flourImageBitmap == null) { flourImageBitmap = ImageBitmap.imageResource(id = R.drawable.flour) }
+        val scaledFlourWidth = remember { (flourImageBitmap.width * 0.2f).toInt() }
+        val scaledFlourHeight = remember { (flourImageBitmap.height * 0.2f).toInt() }
+
+        // arc related
         val myArc = remember { viewModel.myArc }
         val opponentArc = remember { viewModel.opponentArc }
-        val focusRequester = remember { FocusRequester() }
-        var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
-        var touchingBezel by remember { mutableStateOf(false) }
         val myReleased by viewModel.released.collectAsState()
         val opponentReleased by viewModel.opponentReleased.collectAsState()
 
-        var flourImageBitmap = remember<ImageBitmap?> { null }
-        var rotationAngle by remember { mutableStateOf(Angle(0f)) }
-        var lastAngle = remember<Angle?> { null }
+        // wheel related
+        var currentWheelAngle by remember { mutableStateOf(viewModel.targetWheelAngle.value) }
 
-        if(flourImageBitmap == null) {
-            flourImageBitmap = ImageBitmap.imageResource(id = R.drawable.flour)
-        }
-
-        val scaledFlourWidth = remember { (flourImageBitmap.width * 0.2f).toInt() }
-        val scaledFlourHeight = remember { (flourImageBitmap.height * 0.2f).toInt() }
+        // bezel warning related
+        val focusRequester = remember { FocusRequester() }
+        var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
+        var touchingBezel by remember { mutableStateOf(false) }
 
         Box(
             modifier = Modifier
@@ -124,27 +118,16 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     awaitPointerEventScope {
                         while (true) {
                             val pointerEvent = awaitPointerEvent()
-                            touchingBezel = false
                             val inputChange = pointerEvent.changes.first()
                             inputChange.consume()
+                            touchingBezel = false
                             when (pointerEvent.type) {
                                 PointerEventType.Press, PointerEventType.Move -> {
                                     val position = inputChange.position
                                     viewModel.setTouchPoint(position.x, position.y)
-                                    val (_, angle) = cartesianToPolar(position.x, position.y)
-                                    val _lastAngle = lastAngle
-                                    if(_lastAngle == null) {
-                                        lastAngle = angle
-                                        continue
-                                    }
-                                    val direction = if (Angle.isClockwise(_lastAngle,angle)) 1 else -1
-                                    val angleDiff = angle - _lastAngle
-                                    rotationAngle += (angleDiff / 8) * direction
-                                    lastAngle = angle
                                 }
 
                                 PointerEventType.Release -> {
-                                    lastAngle = null
                                     viewModel.setTouchPoint(-1.0f, -1.0f)
                                 }
                             }
@@ -205,6 +188,30 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 }
             }
 
+            // =============== Wheel rotation ================= |
+
+            LaunchedEffect(Unit) {
+                while(true){
+                    val targetAngle = viewModel.targetWheelAngle.value
+                    if(targetAngle != currentWheelAngle){
+                        val direction = if(Angle.isClockwise(currentWheelAngle,targetAngle)) 1 else -1
+                        val diff = targetAngle - currentWheelAngle
+                        if(diff < 1f) {
+                            currentWheelAngle = targetAngle
+                        } else if (1f <= diff && diff < 4f) {
+                            currentWheelAngle += 1f * direction
+                        } else if(4f <= diff && diff < 8f) {
+                            currentWheelAngle += 2f * direction
+                        } else if(8f <= diff && diff < 16f) {
+                            currentWheelAngle += 4f * direction
+                        } else {
+                            currentWheelAngle += 8f * direction
+                        }
+                    }
+                    delay(16)
+                }
+            }
+
             // ================== Draw the screen ================== |
 
             Box(
@@ -240,7 +247,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 contentDescription = null,
                 modifier = Modifier
                     .size((SCREEN_RADIUS * 0.4f).dp)
-                    .graphicsLayer(rotationZ = rotationAngle.floatValue)
+                    .graphicsLayer(rotationZ = currentWheelAngle.floatValue)
                     ,
                 contentScale = ContentScale.FillBounds
             )

@@ -44,6 +44,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 
+private const val RADIANS_IN_CIRCLE = 6.283f
+
 class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
     // ================================================================================ |
@@ -62,19 +64,8 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     private var _opponentReleased = MutableStateFlow(false)
     val opponentReleased : StateFlow<Boolean> = _opponentReleased
 
-    private var inSync = false
-        set(value) {
-            if(field != value){
-                val timestamp = getCurrentGameTime()
-                viewModelScope.launch(Dispatchers.Default) {
-                    when (value) {
-                        true -> addEvent(SessionEvent.syncStartTime(playerId, timestamp))
-                        false -> addEvent(SessionEvent.syncEndTime(playerId, timestamp))
-                    }
-                }
-                field = value
-            }
-        }
+    private val _targetWheelAngle = MutableStateFlow(Angle(0f))
+    val targetWheelAngle: StateFlow<Angle> = _targetWheelAngle
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -84,6 +75,33 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         super.onCreate(intent,context)
         
         myFrequencyTracker = FrequencyTracker()
+
+        // sync checking loop
+        viewModelScope.launch(Dispatchers.Default){
+            var inSync = false
+            while(true){
+                delay(16)
+                val timestamp = getCurrentGameTime()
+                val myFrequency = myFrequencyTracker.frequency
+                val opponentFrequency = opponentFrequency
+                if(!released.value && !opponentReleased.value
+                    && (myFrequency - opponentFrequency).absoluteValue < FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD) {
+                    val avgFrequency = (myFrequency + opponentFrequency) / 2f
+                    val angleChange = RADIANS_IN_CIRCLE * avgFrequency
+                    val direction = if(myArc.direction < 0 && opponentArc.direction < 0) -1 else 1
+                    _targetWheelAngle.value += angleChange * direction
+                    if(!inSync){
+                        inSync = true
+                        addEvent(SessionEvent.syncStartTime(playerId, timestamp))
+                    }
+                } else {
+                    if(inSync){
+                        inSync = false
+                        addEvent(SessionEvent.syncEndTime(playerId, timestamp))
+                    }
+                }
+            }
+        }
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -124,16 +142,6 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
-
-        // start the frequency tracking loop
-        viewModelScope.launch(Dispatchers.Default){
-            while(true){
-                delay(100) // run this loop roughly 10 times per second
-                val timestamp = getCurrentGameTime()
-                addEvent(SessionEvent.frequency(playerId, timestamp, myFrequencyTracker.frequency.toString()))
-                addEvent(SessionEvent.opponentFrequency(playerId,timestamp,opponentFrequency.toString()))
-            }
-        }
     }
 
     fun setTouchPoint(x: Float, y: Float) {
@@ -162,15 +170,10 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             val frequency = myFrequencyTracker.frequency
             val data = "$angle,$frequency"
             model.sendUserInput(timestamp, packetTracker.newPacket(),data)
-            addEvent(SessionEvent.angle(playerId,timestamp,data))
+            addEvent(SessionEvent.angle(playerId,timestamp,angle.toString()))
+            addEvent(SessionEvent.frequency(playerId,timestamp,frequency.toString()))
         }
     }
-
-    fun inSync() = (
-            !released.value && !opponentReleased.value
-                    && (myFrequencyTracker.frequency - opponentFrequency)
-                .absoluteValue < FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD
-            ).also { inSync = it }
 
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
@@ -217,6 +220,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 }
 
                 addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,rawAngle.toString()))
+                addEvent(SessionEvent.opponentFrequency(playerId,arrivedTimestamp,frequency.toString()))
             }
             else -> super.handleGameAction(action)
         }

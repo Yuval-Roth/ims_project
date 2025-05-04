@@ -90,7 +90,6 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
         val focusRequester = remember { FocusRequester() }
         var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
         var touchingBezel by remember { mutableStateOf(false) }
-        var playSound by remember { mutableStateOf(false) }
         val myReleased by viewModel.released.collectAsState()
         val opponentReleased by viewModel.opponentReleased.collectAsState()
 
@@ -108,20 +107,18 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                     awaitPointerEventScope {
                         while (true) {
                             val pointerEvent = awaitPointerEvent()
+                            val inputChange = pointerEvent.changes.first()
+                            inputChange.consume()
                             touchingBezel = false
                             when (pointerEvent.type) {
                                 PointerEventType.Move, PointerEventType.Press -> {
-                                    val inputChange = pointerEvent.changes.first()
-                                    inputChange.consume()
                                     val position = inputChange.position
                                     viewModel.setTouchPoint(position.x, position.y)
                                 }
-
                                 PointerEventType.Release -> {
                                     viewModel.setTouchPoint(-1.0f, -1.0f)
                                 }
                             }
-                            playSound = true
                         }
                     }
                 }

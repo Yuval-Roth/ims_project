@@ -128,16 +128,6 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
-
-        // start the frequency tracking loop
-        viewModelScope.launch(Dispatchers.Default){
-            while(true){
-                delay(100) // run this loop roughly 10 times per second
-                val timestamp = getCurrentGameTime()
-                addEvent(SessionEvent.frequency(playerId, timestamp, myFrequencyTracker.frequency.toString()))
-                addEvent(SessionEvent.opponentFrequency(playerId,timestamp,opponentFrequency.toString()))
-            }
-        }
     }
 
     fun setTouchPoint(x: Float, y: Float) {
@@ -166,7 +156,8 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
             val frequency = myFrequencyTracker.frequency
             val data = "$angle,$frequency"
             model.sendUserInput(timestamp, packetTracker.newPacket(),data)
-            addEvent(SessionEvent.angle(playerId,timestamp,data))
+            addEvent(SessionEvent.angle(playerId,timestamp,angle.toString()))
+            addEvent(SessionEvent.frequency(playerId, timestamp, frequency.toString()))
         }
     }
 
@@ -222,6 +213,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
                 }
 
                 addEvent(SessionEvent.opponentAngle(playerId,arrivedTimestamp,rawAngle.toString()))
+                addEvent(SessionEvent.opponentFrequency(playerId,arrivedTimestamp,frequency.toString()))
             }
             else -> super.handleGameAction(action)
         }
