@@ -79,15 +79,12 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         viewModel.counter.collectAsState().value
 
         //shared
-//        val waterAndPlantCenters = remember {
-//            listOf(Pair(SCREEN_HEIGHT/4f, 0.0), Pair(SCREEN_HEIGHT/3f, -50.0),
-//                Pair(SCREEN_HEIGHT/3f, 50.0), Pair(2*SCREEN_HEIGHT/5f, 22.5),
-//                Pair(2*SCREEN_HEIGHT/5f, -22.5)) }
         val waterAndPlantCenters = remember {
-            listOf(Pair(SCREEN_HEIGHT/5f, 30.0), Pair(SCREEN_HEIGHT/4f, -30.0),
-                Pair(SCREEN_HEIGHT/4f, 60.0), Pair(SCREEN_HEIGHT/4f, -60.0), Pair(SCREEN_HEIGHT/5f, 0.0))
+            listOf(Pair(SCREEN_HEIGHT/3.5f, 30.0), Pair(SCREEN_HEIGHT/3.5f, -30.0),
+                Pair(SCREEN_HEIGHT/3.5f, 60.0), Pair(SCREEN_HEIGHT/3.5f, -60.0), Pair(SCREEN_HEIGHT/4f, 0.0))
                 }
         val numOfUnits = waterAndPlantCenters.size
+        val rng = remember { Random.Default }
 
         // water droplets
         var drop = remember { mutableFloatStateOf(0f) }
@@ -101,10 +98,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
         // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
-
-
-
-        val rng = remember { Random.Default }
 
         // Box to draw the background
         Box(
@@ -162,7 +155,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 for ((i, pair) in viewModel.activeFlowerPoints.withIndex()) {
                     val coor = polarToCartesian(pair.first, pair.second)
                     val isLatest = i == viewModel.activeFlowerPoints.lastIndex
-                    val radius = if (isLatest) h / 50f + flowerAnimationRadius.floatValue else h / 50f
+                    val radius = if (isLatest) h / 45f + flowerAnimationRadius.floatValue else h / 45f
 
                     drawFlower(centerX = coor.first, centerY = coor.second, radius = radius)
                 }
@@ -185,7 +178,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         val centerX = coor.first
                         val centerY = coor.second
 
-                        drawGrassStroke(centerX = centerX, centerY = centerY, height = 30f, width = 15f, color = viewModel.plant.color, amplitude = plantAmplitude[i].floatValue * sway.floatValue)
+                        drawGrassStroke(centerX = centerX, centerY = centerY, height = 20f, width = 10f, color = viewModel.plant.color, amplitude = plantAmplitude[i].floatValue * sway.floatValue)
                     }
                 }
             }
@@ -276,7 +269,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     }
 
 
-    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color : Color, size: Float = 0.2f) {
+    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color : Color, size: Float = 0.15f) {
             val diameter = 100f * size
 
             // Left Part Path

@@ -18,6 +18,7 @@ import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_HEIGHT
+import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -56,7 +57,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var timestamp: Long = 0,
     ) {
         var visible = false
-        var color by mutableStateOf(BLUE_COLOR)
+        var color by mutableStateOf(WATER_BLUE_COLOR)
         fun visibleNow(timestamp: Long) {
             visible = true
             this.timestamp = timestamp
@@ -128,12 +129,13 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 //        Log.d("FlowerViewModel", "OnCreate() called")
         super.onCreate(intent, context)
         flowerPoints = buildFlowerPoints()
+        val amountOfFlowers = flowerPoints.size
 
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
             myItemType = ItemType.WATER
-            flowerOrder = LinkedList((0..17).toList())
+            flowerOrder = LinkedList((0..amountOfFlowers-1).toList())
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
@@ -229,29 +231,39 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         _counter.value++ // used to trigger recomposition
     }
 
-    private fun buildFlowerPoints() : List<Pair<Float, Double>>{
-        val innerRadius = SCREEN_HEIGHT * 0.27f
-        val outerRadius = SCREEN_HEIGHT * 0.42f
+//    private fun buildFlowerPoints() : List<Pair<Float, Double>>{
+//        val innerRadius = SCREEN_HEIGHT * 0.27f
+//        val outerRadius = SCREEN_HEIGHT * 0.42f
+//
+//        val innerCount = 6
+//        val outerCount = 12
+//
+//        val innerPoints = List(innerCount) { i ->
+//            val angle = -90.0 + i * (360.0 / innerCount)
+//            Pair(innerRadius, angle)
+//        }
+//
+//        val outerPoints = List(outerCount) { i ->
+//            val angle = -90.0 + (360.0 / outerCount) * i + (360.0 / outerCount) / 2  // offset to fall between inner points
+//            Pair(outerRadius, angle)
+//        }
+//
+//        val polarPoints = innerPoints + outerPoints
+//        return polarPoints
+//    }
 
-        val innerCount = 6
-        val outerCount = 12
+    private fun buildFlowerPoints(hours: Int = 12): List<Pair<Float, Double>> {
+        val radius = SCREEN_HEIGHT * 0.4f  // Adjust radius as needed for your layout
 
-        val innerPoints = List(innerCount) { i ->
-            val angle = -90.0 + i * (360.0 / innerCount)
-            Pair(innerRadius, angle)
+        return List(hours) { i ->
+            val angle = -90.0 + i * (360.0 / hours)  // Start at 12 o'clock (−90°) and go clockwise
+            Pair(radius, angle)
         }
-
-        val outerPoints = List(outerCount) { i ->
-            val angle = -90.0 + (360.0 / outerCount) * i + (360.0 / outerCount) / 2  // offset to fall between inner points
-            Pair(outerRadius, angle)
-        }
-
-        val polarPoints = innerPoints + outerPoints
-        return polarPoints
     }
 
     companion object {
         private const val TAG = "WaterRipplesViewModel"
     }
 }
+
 

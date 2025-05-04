@@ -26,7 +26,8 @@ var textStyle : TextStyle = TextStyle()
 // ===================== Colors ===================== |
 
 val DARK_BACKGROUND_COLOR = Color(0xFF333842)
-val LIGHT_BACKGROUND_COLOR = Color(0xFFE2DFD1)
+//val LIGHT_BACKGROUND_COLOR = Color(0xFFE2DFD1)
+val LIGHT_BACKGROUND_COLOR = Color(0xFFFFFDF3) //ivory
 val LIGHT_BLUE_COLOR = Color(0xFFACC7F6)
 val BLUE_COLOR = Color(0xFF87B0F3)
 val WATER_BLUE_COLOR = Color(0xFF7CC1D6)
@@ -46,6 +47,13 @@ val DARK_BEIGE_COLOR = Color(0xFFA59E7E)
 val BUBBLE_PINK_COLOR = Color(0xFFF1A5BB)
 val ALMOST_WHITE_COLOR = Color(0xFFECECEC)
 val SILVER_COLOR = Color(0xFFC0C0C0)
+val ORANGE_SUNSET_COLOR = Color(0xFFFCC884)
+val YELLOW_LEMON_COLOR = Color(0XFFF6EFBA)
+val GREEN_CELADON_COLOR = Color(0xFFBDE1BB)
+val LIGHT_BLUE_COLOR2 = Color(0xFFBDDFE5)
+val PURPLE_THISTLE_COLOR = Color(0xFFDECFE5)
+val PINK_MIMI_COLOR = Color(0XFFF7D1D7)
+val LIGHT_RED_COLOR = Color(0xFFFF7671)
 
 // ================= Water Ripples ================== |
 var WATER_RIPPLES_SYNC_TIME_THRESHOLD = 50
