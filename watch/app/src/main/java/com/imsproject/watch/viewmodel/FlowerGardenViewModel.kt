@@ -66,7 +66,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     class WaterDroplet(
         var timestamp: Long = 0,
     ) {
-        var visible = false
         var color by mutableStateOf(WATER_BLUE_COLOR)
         val centers : List<Pair<Float, Float>> =
             listOf(polarToCartesian(SCREEN_HEIGHT/3.5f, -90 + 30.0),
@@ -75,16 +74,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                     polarToCartesian(SCREEN_HEIGHT/3.5f, -90 + 60.0),
                     polarToCartesian(SCREEN_HEIGHT/3.5f, -90.0))
         var drop : Float = 0f
-        fun visibleNow(timestamp: Long) {
-            visible = true
-            this.timestamp = timestamp
-            color = color.copy(alpha = 1f)
-        }
     }
-
     val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
-
-    var freshDropletClick : Boolean = false
 
     // ======================================
     // ============ grass plant =============
@@ -120,10 +111,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var centerColor : Color,
         var petalColor : Color,
     ) {}
-
-//    var activeFlowerPoints : MutableList<Pair<Float, Double>> = mutableListOf()
-//    lateinit var flowerPoints : List<Pair<Float, Double>>
-//    lateinit var flowerOrder : Queue<Int>
 
     var activeFlowerPoints : MutableList<Flower> = mutableListOf()
     lateinit var flowerPoints : List<Flower>
@@ -237,13 +224,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
                 waterDropletSets.addLast(WaterDroplet(timestamp))
-//                waterDroplet.visibleNow(timestamp)
-                freshDropletClick = true
                 plant.timestamp
             } else {
                 freshPlantClick = true
                 plant.visibleNow(timestamp)
-//                waterDroplet.timestamp
                 if(waterDropletSets.isEmpty()) 0 else waterDropletSets.first().timestamp
             }
 

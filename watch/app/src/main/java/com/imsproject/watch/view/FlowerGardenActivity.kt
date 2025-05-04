@@ -93,7 +93,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
         // water droplets
         val dropStep = 0.8f
-        var dropletAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
 
         // plants (grass)
         var sway = remember { mutableFloatStateOf(0f) }
@@ -138,21 +137,14 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                             }
                         }
                     },
-                onClick = {}, // no-op, handled by pointerInput.
-                              // We want the action to be on-touch and not on-release
-                              // and the onClick callback is called on-release
+                onClick = {},
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = DARK_BEIGE_COLOR,
                     contentColor = Color.Black
                 )
-            ){
-                // empty button content
-            }
+            ){}
 
-            Canvas(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                val w = SCREEN_WIDTH
+            Canvas(modifier = Modifier.fillMaxSize()) {
                 val h = SCREEN_HEIGHT
 
                 // draw active flowers with animation to the latest
@@ -215,12 +207,10 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 while (it.hasNext()) {
                     val waterDropletSet = it.next()
 
-                    val currDropletColor = waterDropletSet.color
-
-                    // increase the water drop
-                    waterDropletSet.drop += dropStep
-
+                    waterDropletSet.drop += dropStep // increase the water drop
                     // decrease the opacity
+
+                    val currDropletColor = waterDropletSet.color
                     val nextAlpha = max(currDropletColor.alpha - 0.03f, 0f)
                     waterDropletSet.color = currDropletColor.copy(nextAlpha)
 
