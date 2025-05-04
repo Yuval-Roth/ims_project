@@ -143,7 +143,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     val radius = if (isLatest) h / 30f + flowerAnimationRadius.floatValue else h / 30f
 
                     drawFlower(flower, radius = radius)
-                }
+                } //todo: after flower slots are full, enlarge existing ones by order as if "picking" themg
 
                 // draw water droplets - actual water droplets
                 for(waterDropletSet in viewModel.waterDropletSets) {

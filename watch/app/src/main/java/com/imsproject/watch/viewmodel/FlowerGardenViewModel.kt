@@ -173,7 +173,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
         val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")!!.split(";")
         myItemType = ItemType.fromString(additionalData[0]) //todo: change after order removed from server
-//        flowerOrder = LinkedList(additionalData[1].split(",").map { it.toInt() })
 
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
