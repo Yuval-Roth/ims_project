@@ -31,8 +31,7 @@ import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
-import com.imsproject.watch.SCREEN_HEIGHT
-import com.imsproject.watch.SCREEN_WIDTH
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.textStyle
 
 @Composable
@@ -49,7 +48,7 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ){
-                Spacer(modifier = Modifier.height((SCREEN_HEIGHT *0.025f).dp))
+                Spacer(modifier = Modifier.height((SCREEN_RADIUS *0.05f).dp))
                 val red = remember { Color(0xFFF14141) }
                 Box(
                     modifier = Modifier
@@ -64,14 +63,14 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                         style = textStyle.copy(color = Color.Black),
                     )
                 }
-                Spacer(modifier = Modifier.height((SCREEN_HEIGHT *0.02f).dp))
+                Spacer(modifier = Modifier.height((SCREEN_RADIUS *0.04f).dp))
                 val scrollState = rememberScrollState()
                 Column(
                     modifier = Modifier
                         .padding(start= COLUMN_PADDING,end= COLUMN_PADDING)
                         .fillMaxWidth()
                         .fillMaxHeight(0.65f)
-                        .verticalColumnScrollbar(scrollState, endPadding = -SCREEN_WIDTH *0.02f)
+                        .verticalColumnScrollbar(scrollState, endPadding = -SCREEN_RADIUS *0.04f)
                         .verticalScroll(scrollState),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -83,7 +82,7 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                             .align(Alignment.CenterHorizontally)
                     )
                 }
-                Spacer(modifier = Modifier.height((SCREEN_HEIGHT *0.02f).dp))
+                Spacer(modifier = Modifier.height((SCREEN_RADIUS *0.04f).dp))
                 Button(
                     onClick = { onDismiss() },
                     modifier = Modifier

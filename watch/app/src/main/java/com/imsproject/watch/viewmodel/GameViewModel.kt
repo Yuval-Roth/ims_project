@@ -62,13 +62,13 @@ abstract class GameViewModel(
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    private var _state = MutableStateFlow(State.LOADING)
+    private val _state = MutableStateFlow(State.LOADING)
     val state : StateFlow<State> = _state
 
-    private var _error = MutableStateFlow<String?>(null)
+    private val _error = MutableStateFlow<String?>(null)
     val error : StateFlow<String?> = _error
 
-    private var _resultCode = MutableStateFlow(Result.Code.OK)
+    private val _resultCode = MutableStateFlow(Result.Code.OK)
     val resultCode : StateFlow<Result.Code> = _resultCode
 
     private var timeServerDelta = 0L

@@ -15,8 +15,6 @@ const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity dir
 
 // ============== Screen size related =============== |
 
-var SCREEN_WIDTH : Int = 0
-var SCREEN_HEIGHT : Int = 0
 var SCREEN_RADIUS : Float = 0f
 var SCREEN_CENTER = Offset(0f,0f)
 var TEXT_SIZE = 0.sp
@@ -55,7 +53,6 @@ const val ARC_DEFAULT_ALPHA = 0.8f
 const val MAX_ANGLE_SKEW = 60f
 const val MIN_ANGLE_SKEW = 15f
 var WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = 0.5f
-var FREQUENCY_HISTORY_MILLISECONDS = 1000L
 var OUTER_TOUCH_POINT = 0f
 var INNER_TOUCH_POINT = 0f
 
@@ -81,35 +78,21 @@ const val HIGH_LOOP_TRACK = 4
 
 // ================= Flour Mill ===================== |
 
-const val AXLE_STARTING_ANGLE = -90f
-var FLOUR_MILL_SYNC_TIME_THRESHOLD = 100L
-const val RESET_COOLDOWN_WAIT_TIME = 16
-const val STRETCH_PEAK = 12.0f
-const val TOUCH_CIRCLE_RADIUS = 40f
-const val TURNING_BONUS_THRESHOLD = 40f
-// ============================================ |
-// these values must be a normal fraction of STRETCH_PEAK to ensure that we reach
-// the target angle exactly and not overshoot it
-const val STRETCH_PEAK_DECAY = STRETCH_PEAK / 4
-const val STRETCH_STEP = STRETCH_PEAK / 4
-// ============================================ |
-var BEZIER_START_DISTANCE = 0f
-var CONTROL_POINT_DISTANCE = 0f
-var STRETCH_POINT_DISTANCE = 0f
-var AXLE_WIDTH = 0f
-var AXLE_HANDLE_LENGTH = 0f
+var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.5f
+
+// =================== General ====================== |
+
+var FREQUENCY_HISTORY_MILLISECONDS = 1000L
 
 // =================== initProperties =================== |
 
 // called from MainActivity.kt in onCreate()
-fun initProperties(screenWidth : Int, screenHeight : Int){
-    SCREEN_WIDTH = screenWidth
-    SCREEN_HEIGHT = screenHeight
-    SCREEN_RADIUS = SCREEN_WIDTH / 2f
-    SCREEN_CENTER = Offset(SCREEN_WIDTH / 2f, SCREEN_WIDTH / 2f)
+fun initProperties(screenWidth: Int){
+    SCREEN_RADIUS = screenWidth / 2f
+    SCREEN_CENTER = Offset(SCREEN_RADIUS,SCREEN_RADIUS)
 
-    TEXT_SIZE = (SCREEN_WIDTH * 0.03f).sp
-    COLUMN_PADDING = (SCREEN_HEIGHT * 0.06f).dp
+    TEXT_SIZE = (SCREEN_RADIUS * 0.06f).sp
+    COLUMN_PADDING = (SCREEN_RADIUS * 0.12f).dp
     textStyle = TextStyle(
         color = Color.White,
         fontSize = TEXT_SIZE,
@@ -118,7 +101,7 @@ fun initProperties(screenWidth : Int, screenHeight : Int){
     )
 
     // Water Ripples
-    WATER_RIPPLES_BUTTON_SIZE = SCREEN_WIDTH / 6
+    WATER_RIPPLES_BUTTON_SIZE = (SCREEN_RADIUS / 3).toInt()
     RIPPLE_MAX_SIZE = SCREEN_RADIUS.toInt()
 
     // Wine Glasses
@@ -132,11 +115,7 @@ fun initProperties(screenWidth : Int, screenHeight : Int){
     OPPONENT_ARC_SIZE = Size(OPPONENT_RADIUS_OUTER_EDGE * 2, OPPONENT_RADIUS_OUTER_EDGE * 2)
 
     // Flour Mill
-    CONTROL_POINT_DISTANCE = SCREEN_RADIUS * 0.5f
-    BEZIER_START_DISTANCE = SCREEN_RADIUS * 0.2f
-    STRETCH_POINT_DISTANCE = SCREEN_RADIUS * 0.9f
-    AXLE_WIDTH = SCREEN_WIDTH * 0.05f
-    AXLE_HANDLE_LENGTH = AXLE_WIDTH * 4
+    // TODO: add properties
 }
 
 

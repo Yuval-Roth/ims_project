@@ -48,47 +48,6 @@ fun polarToCartesian(distanceFromCenter: Float, angle: Double) : Pair<Float, Flo
     return x.toFloat() to y.toFloat()
 }
 
-/**
- * this function calculates the third point of a triangle given two points and the distance from the second point
- *
- * the distance can be negative to get the point on the opposite side of the second point
- */
-fun calculateTriangleThirdPoint(
-    p1X: Float, p1Y: Float,
-    p2X: Float, p2Y: Float,
-    distance: Float
-) : Pair<Float, Float> {
-    // Direction vector from center to P2
-    val directionX = p2X - p1X
-    val directionY = p2Y - p1Y
-
-    // Perpendicular vector (-y, x)
-    val perpendicularX = -directionY
-    val perpendicularY = directionX
-
-    // Normalize the perpendicular vector
-    val magnitude = sqrt(perpendicularX * perpendicularX + perpendicularY * perpendicularY)
-    val normalizedX = perpendicularX / magnitude
-    val normalizedY = perpendicularY / magnitude
-
-    // Scale to the desired distance
-    val scaledX = normalizedX * distance
-    val scaledY = normalizedY * distance
-
-    // Calculate P3
-    val p3X = p2X + scaledX
-    val p3Y = p2Y + scaledY
-
-    return p3X to p3Y
-}
-
-fun polarDistance(radius1: Float, angle1: Angle, radius2: Float, angle2: Angle): Float {
-    val (x1, y1) = polarToCartesian(radius1, angle1)
-    val (x2, y2) = polarToCartesian(radius2, angle2)
-    return sqrt((x1 - x2).pow(2) + (y1 - y2).pow(2))
-}
-
-
 @Suppress("NOTHING_TO_INLINE")
 inline fun Float.isBetweenInclusive(min: Float, max: Float) = min <= this && this <= max
 

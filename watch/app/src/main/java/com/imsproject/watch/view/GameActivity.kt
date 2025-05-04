@@ -1,6 +1,5 @@
 package com.imsproject.watch.view
 
-import android.os.Bundle
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -25,7 +24,7 @@ import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.SCREEN_WIDTH
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
@@ -40,7 +39,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
     protected fun onCreate(viewModel: GameViewModel) {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initProperties(metrics.bounds.width(), metrics.bounds.height())
+        initProperties(metrics.bounds.width())
         viewModel.onCreate(intent,applicationContext)
         this.viewModel = viewModel
         setupUncaughtExceptionHandler()
@@ -108,8 +107,8 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
                     verticalArrangement = Arrangement.Center
                 ) {
                     CircularProgressIndicator(
-                        strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
-                        modifier = Modifier.size((SCREEN_WIDTH *0.2f).dp)
+                        strokeWidth = (SCREEN_RADIUS * 0.04f).dp,
+                        modifier = Modifier.size((SCREEN_RADIUS *0.4f).dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     BasicText(

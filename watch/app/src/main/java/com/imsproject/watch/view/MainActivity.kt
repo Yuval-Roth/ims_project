@@ -52,8 +52,7 @@ import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.R
-import com.imsproject.watch.SCREEN_HEIGHT
-import com.imsproject.watch.SCREEN_WIDTH
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
@@ -78,7 +77,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
-        initProperties(metrics.bounds.width(), metrics.bounds.height())
+        initProperties(metrics.bounds.width())
         registerActivities()
         setupSensorsPermission()
         setupWifi()
@@ -222,13 +221,13 @@ class MainActivity : ComponentActivity() {
                         text = "The ID you entered is already connected from another location.\n\nDo you want to force the connection?",
                         style = textStyle,
                     )
-                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
+                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.1f).dp))
                     Row(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Button(
                             modifier = Modifier
-                                .size((SCREEN_WIDTH*0.11f).dp),
+                                .size((SCREEN_RADIUS*0.22f).dp),
                             onClick = { onReject() },
                             shape = CircleShape,
                         ) {
@@ -237,10 +236,10 @@ class MainActivity : ComponentActivity() {
                                 contentDescription = "reject"
                             )
                         }
-                        Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.06f).dp))
+                        Spacer(modifier = Modifier.width((SCREEN_RADIUS*0.12f).dp))
                         Button(
                             modifier = Modifier
-                                .size((SCREEN_WIDTH*0.11f).dp),
+                                .size((SCREEN_RADIUS*0.22f).dp),
                             onClick = { onConfirm() },
                         ) {
                             Icon(
@@ -282,7 +281,7 @@ class MainActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.Center
                 ) {
                     CircularProgressIndicator(
-                        strokeWidth = (SCREEN_WIDTH.toFloat() * 0.02f).dp,
+                        strokeWidth = (SCREEN_RADIUS * 0.04f).dp,
                         modifier = Modifier.fillMaxSize(0.4f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -334,21 +333,21 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.04f).dp))
+                Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.08f).dp))
                 Row {
                     SimplePicker(state = leftNum, items = idsList)
-                    Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.07f).dp))
+                    Spacer(modifier = Modifier.width((SCREEN_RADIUS*0.14f).dp))
                     SimplePicker(state = middleNum, items = idsList)
-                    Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.07f).dp))
+                    Spacer(modifier = Modifier.width((SCREEN_RADIUS*0.14f).dp))
                     SimplePicker(state = rightNum, items = idsList)
                 }
-                Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.04f).dp))
+                Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.08f).dp))
                 Row(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Button(
                         modifier = Modifier
-                            .size((SCREEN_WIDTH*0.11f).dp),
+                            .size((SCREEN_RADIUS*0.22f).dp),
                         onClick = {
                             // reset to 000
                             scope.launch { leftNum.animateScrollToOption(0) }
@@ -363,10 +362,10 @@ class MainActivity : ComponentActivity() {
                             contentDescription = "reset"
                         )
                     }
-                    Spacer(modifier = Modifier.width((SCREEN_WIDTH*0.06f).dp))
+                    Spacer(modifier = Modifier.width((SCREEN_RADIUS*0.12f).dp))
                     Button(
                         modifier = Modifier
-                            .size((SCREEN_WIDTH*0.11f).dp),
+                            .size((SCREEN_RADIUS*0.22f).dp),
                         onClick = {
                             onClick(getId())
                         },
@@ -410,13 +409,13 @@ class MainActivity : ComponentActivity() {
                             text = "Your ID: $id",
                             style = textStyle,
                         )
-                        Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.05f).dp))
+                        Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.1f).dp))
                         BasicText(
                             text = "Waiting to be assigned\nto a lobby ...",
                             style = textStyle,
                         )
                     }
-                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.1f).dp))
+                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.2f).dp))
                     // return to picking id button
                     Button(
                         onClick = { viewModel.exit() },
@@ -456,7 +455,7 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ){
-                    Spacer(modifier = Modifier.height((SCREEN_HEIGHT*0.025f).dp))
+                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.05f).dp))
                     val red = remember { Color(0xFFF14141) }
                     val green = remember { Color(0xFF89F55C) }
                     Box(
