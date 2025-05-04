@@ -33,15 +33,18 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BEIGE_COLOR
 import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
+import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SCREEN_WIDTH
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
+import com.imsproject.watch.WHITE_ANTIQUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
@@ -84,14 +87,12 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         //shared
         val waterAndPlantCenters = remember {
             listOf(Pair(SCREEN_HEIGHT/3.5f, 30.0), Pair(SCREEN_HEIGHT/3.5f, -30.0),
-                Pair(SCREEN_HEIGHT/3.5f, 60.0), Pair(SCREEN_HEIGHT/3.5f, -60.0), Pair(SCREEN_HEIGHT/4f, 0.0))
-                }
+                Pair(SCREEN_HEIGHT/3.5f, 60.0), Pair(SCREEN_HEIGHT/3.5f, -60.0), Pair(SCREEN_HEIGHT/3.5f, 0.0)) }
         val numOfUnits = waterAndPlantCenters.size
         val rng = remember { Random.Default }
 
         // water droplets
-        var drop = remember { mutableFloatStateOf(0f) }
-        val dropStep = 0.1f
+        val dropStep = 0.8f
         var dropletAmplitude = remember { List(5) { mutableFloatStateOf(1f) } }
 
         // plants (grass)
@@ -163,14 +164,13 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 }
 
                 // draw water droplets - actual water droplets
-                if (viewModel.waterDroplet.visible) {
-                    for(i in 0 until numOfUnits) {
-                        val coor = polarToCartesian(waterAndPlantCenters[i].first, -90 + waterAndPlantCenters[i].second)
-                        val centerX = coor.first
-                        val centerY = coor.second + drop.floatValue * dropletAmplitude[i].floatValue
+                for(waterDropletSet in viewModel.waterDropletSets) {
+                    for(center in waterDropletSet.centers) {
+                        val centerX = center.first
+                        val centerY = center.second + waterDropletSet.drop
 
-                        drawWaterDroplet(centerX, centerY, viewModel.waterDroplet.color)
-                    }
+                        drawWaterDroplet(centerX, centerY, waterDropletSet.color)
+                   }
                 }
 
                 // draw plant - shaped like grass
@@ -206,36 +206,28 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         }
 
         LaunchedEffect(Unit){
-            val dropletRngLowerRange = 1f
-            val dropletRngUpperRange = 3f
             val grassRngLowerRange = 0.9f
             val grassRngUpperRange = 1.1f
 
             while(true) {
                 // animate water droplets
-                if(viewModel.waterDroplet.visible) {
-                    val currDropletColor = viewModel.waterDroplet.color
+                val it = viewModel.waterDropletSets.iterator()
+                while (it.hasNext()) {
+                    val waterDropletSet = it.next()
 
-                    // a new click resets the drop animation
-                    if(viewModel.freshDropletClick) {
-                        viewModel.freshDropletClick = false
-                        drop.floatValue = 0f
-                        //randomize the extent of the drop for each one
-                        for(i in 0 until numOfUnits) {
-                            dropletAmplitude[i].floatValue = dropletRngLowerRange + rng.nextFloat() * (dropletRngUpperRange - dropletRngLowerRange)
-                        }
-                    }
+                    val currDropletColor = waterDropletSet.color
+
                     // increase the water drop
-                    drop.floatValue += dropStep
+                    waterDropletSet.drop += dropStep
 
                     // decrease the opacity
-                    val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
-                    viewModel.waterDroplet.color = currDropletColor.copy(nextAlpha)
+                    val nextAlpha = max(currDropletColor.alpha - 0.03f, 0f)
+                    waterDropletSet.color = currDropletColor.copy(nextAlpha)
 
-                    // hide from the screen and reset position
-                    if(nextAlpha <= 0f) {
-                        viewModel.waterDroplet.visible = false
-                        drop.floatValue = 0f
+                    //remove done water droplets
+                    if(waterDropletSet.color.alpha <= 0f) {
+                        it.remove()
+                        continue
                     }
                 }
 

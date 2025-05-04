@@ -28,6 +28,7 @@ import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.view.contracts.Result
+import com.imsproject.watch.viewmodel.WaterRipplesViewModel.Ripple
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.LinkedList
 import java.util.Queue
+import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
 
@@ -66,6 +68,13 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     ) {
         var visible = false
         var color by mutableStateOf(WATER_BLUE_COLOR)
+        val centers : List<Pair<Float, Float>> =
+            listOf(polarToCartesian(SCREEN_HEIGHT/3.5f, -90 + 30.0),
+                    polarToCartesian(SCREEN_HEIGHT/3.5f, -90 -30.0),
+                    polarToCartesian(SCREEN_HEIGHT/3.5f,-90 -  60.0),
+                    polarToCartesian(SCREEN_HEIGHT/3.5f, -90 + 60.0),
+                    polarToCartesian(SCREEN_HEIGHT/3.5f, -90.0))
+        var drop : Float = 0f
         fun visibleNow(timestamp: Long) {
             visible = true
             this.timestamp = timestamp
@@ -73,7 +82,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
-    var waterDroplet : WaterDroplet = WaterDroplet()
+    val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
+
     var freshDropletClick : Boolean = false
 
     // ======================================
@@ -154,12 +164,12 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         super.onCreate(intent, context)
         flowerPoints = buildFlowers()
         val amountOfFlowers = flowerPoints.size
+        flowerOrder = LinkedList((0 until amountOfFlowers).toList())
 
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
             myItemType = ItemType.WATER
-            flowerOrder = LinkedList((0 until amountOfFlowers).toList())
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
@@ -174,8 +184,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         //decode the sent configuration data
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
         val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")!!.split(";")
-        myItemType = ItemType.fromString(additionalData[0])
-        flowerOrder = LinkedList(additionalData[1].split(",").map { it.toInt() })
+        myItemType = ItemType.fromString(additionalData[0]) //todo: change after order removed from server
+//        flowerOrder = LinkedList(additionalData[1].split(",").map { it.toInt() })
 
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
@@ -226,19 +236,21 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         // check the delta between taps and show new tap
         var opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
-                waterDroplet.visibleNow(timestamp)
+                waterDropletSets.addLast(WaterDroplet(timestamp))
+//                waterDroplet.visibleNow(timestamp)
                 freshDropletClick = true
                 plant.timestamp
             } else {
                 freshPlantClick = true
                 plant.visibleNow(timestamp)
-                waterDroplet.timestamp
+//                waterDroplet.timestamp
+                if(waterDropletSets.isEmpty()) 0 else waterDropletSets.first().timestamp
             }
 
         // add new flower if synced click
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
-            if(!flowerOrder.isEmpty()) {
+            if(!flowerOrder.isEmpty()) { //todo: delete later, after removing
                 activeFlowerPoints.add(flowerPoints[flowerOrder.poll()!!])
             } else {
                 Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
