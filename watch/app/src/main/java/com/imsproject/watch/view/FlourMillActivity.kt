@@ -1,6 +1,5 @@
 package com.imsproject.watch.view
 
-import androidx.compose.ui.graphics.Path
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -14,29 +13,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.imsproject.common.gameserver.GameType
@@ -71,6 +66,8 @@ import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SILVER_COLOR
+import com.imsproject.watch.utils.FlourPile
+import com.imsproject.watch.utils.fastCoerceAtMost
 import com.imsproject.watch.utils.polarToCartesian
 import kotlinx.coroutines.delay
 
@@ -97,11 +94,13 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
     @Composable
     fun FlourMill() {
-        // flour image related
+        // flour related
         var flourImageBitmap = remember<ImageBitmap?> { null }
         if(flourImageBitmap == null) { flourImageBitmap = ImageBitmap.imageResource(id = R.drawable.flour) }
-        val scaledFlourWidth = remember { (flourImageBitmap.width * 0.2f).toInt() }
-        val scaledFlourHeight = remember { (flourImageBitmap.height * 0.2f).toInt() }
+        val scaledFlourWidth = remember { (flourImageBitmap.width * 0.15f).toInt() }
+        val scaledFlourHeight = remember { (flourImageBitmap.height * 0.15f).toInt() }
+        val flourPile = remember { FlourPile() }
+        val fallingFlour = remember { mutableStateListOf<MutableFloatState>() }
 
         // arc related
         val myArc = remember { viewModel.myArc }
@@ -111,6 +110,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
 
         // wheel related
         var currentWheelAngle by remember { mutableStateOf(viewModel.targetWheelAngle.value) }
+        var angleChangeSum = remember { 0f }
 
         // bezel warning related
         val focusRequester = remember { FocusRequester() }
@@ -210,14 +210,40 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                         val diff = targetAngle - currentWheelAngle
                         if(diff < 1f) {
                             currentWheelAngle = targetAngle
+                            angleChangeSum += diff
                         } else if (1f <= diff && diff < 4f) {
                             currentWheelAngle += 1f * direction
+                            angleChangeSum += 1f
                         } else if(4f <= diff && diff < 8f) {
                             currentWheelAngle += 2f * direction
+                            angleChangeSum += 2f
                         } else if(8f <= diff && diff < 16f) {
                             currentWheelAngle += 4f * direction
+                            angleChangeSum += 4f
                         } else {
                             currentWheelAngle += 8f * direction
+                            angleChangeSum += 8f
+                        }
+                        if(angleChangeSum > 360f) {
+                            angleChangeSum -= 360f
+                            fallingFlour.add(mutableFloatStateOf(0.36f))
+                        }
+                    }
+                    delay(16)
+                }
+            }
+
+            // =============== Falling flour ================= |
+
+            LaunchedEffect(Unit) {
+                while(true){
+                    for(relativeRadius in fallingFlour){
+                        relativeRadius.floatValue += 0.015f
+                        if(relativeRadius.floatValue > 0.71f){
+                            fallingFlour.remove(relativeRadius)
+                            if(!flourPile.isFull()){
+                                flourPile.addNext()
+                            }
                         }
                     }
                     delay(16)
@@ -236,16 +262,6 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     .fillMaxSize(0.8f)
                     .clip(shape = CircleShape)
                     .background(color = LIGHT_BROWN_COLOR)
-//                    .shadow(
-//                        elevation = (SCREEN_RADIUS * 0.5).dp,
-//                        CircleShape,
-//                        spotColor = Color.Green
-//                    )
-//                    .shadow(
-//                        elevation = (SCREEN_RADIUS * 0.5).dp,
-//                        CircleShape,
-//                        spotColor = Color.Green
-//                    )
             )
             Image(
                 painter = painterResource(id = R.drawable.mill),
@@ -255,7 +271,33 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 contentScale = ContentScale.FillBounds
             )
 
+            val (x,y) = remember { polarToCartesian(SCREEN_RADIUS * 0.72f, 90.0) }
             Canvas(modifier = Modifier.fillMaxSize()){
+
+                // draw the falling flour
+                for(relativeRadius in fallingFlour){
+                    val (x,y) = polarToCartesian(SCREEN_RADIUS * relativeRadius.floatValue, 90.0)
+                    drawImage(
+                        image = flourImageBitmap,
+                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+                        dstOffset = IntOffset(x.toInt(), y.toInt()),
+                    )
+                }
+
+                // draw the flour pile
+                var rowSize = 13
+                for(i in 0 until 6){
+                    for (j in 0 until rowSize) {
+                        if (flourPile.get(i, j)) {
+                            drawImage(
+                                image = flourImageBitmap,
+                                dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+                                dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + (j - (rowSize / 2)) * 10, y.toInt() - scaledFlourHeight / 2 - i * 3),
+                            )
+                        }
+                    }
+                    rowSize -= 2
+                }
 
                 // draw the wheel
                 rotate(currentWheelAngle.floatValue, pivot = SCREEN_CENTER) {
@@ -303,32 +345,6 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                         style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
                     )
                 }
-
-
-//                // draw the flour
-//                val (x,y) = polarToCartesian(SCREEN_RADIUS*0.7f,90.0)
-//                for(i in -50 .. 50 step 10){
-//                    drawImage(
-//                        image = flourImageBitmap,
-//                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-//                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2),
-//                    )
-//                }
-//
-//                for(i in -40 .. 40 step 10){
-//                    drawImage(
-//                        image = flourImageBitmap,
-//                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-//                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 5),
-//                    )
-//                }
-//                for(i in -30 .. 30 step 10){
-//                    drawImage(
-//                        image = flourImageBitmap,
-//                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-//                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 10),
-//                    )
-//                }
             }
         }
     }
