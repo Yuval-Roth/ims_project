@@ -249,8 +249,12 @@ abstract class GameViewModel(
 
     protected open fun onExit(){
         clearListeners() // clear the listeners to prevent any further messages from being processed.
-        locationSensorsHandler.stop()
-        heartRateSensorHandler.disconnect()
+        if(::locationSensorsHandler.isInitialized){
+            locationSensorsHandler.stop()
+        }
+        if(::heartRateSensorHandler.isInitialized){
+            heartRateSensorHandler.disconnect()
+        }
         setState(State.TERMINATED)
     }
 

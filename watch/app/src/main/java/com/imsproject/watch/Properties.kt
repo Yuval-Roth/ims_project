@@ -38,6 +38,9 @@ val BROWN_COLOR = Color(0xFF4E342E)
 val LIGHT_BROWN_COLOR = Color(0xFFAF746C)
 val ALMOST_WHITE_COLOR = Color(0xFFECECEC)
 val SILVER_COLOR = Color(0xFFC0C0C0)
+val DEEP_BLUE_COLOR = Color(0xFF294168)
+val LIGHT_ORANGE_COLOR = Color(0xFFD9A978)
+val DARK_ORANGE_COLOR = Color(0xFFC0674F)
 
 // ================= Water Ripples ================== |
 var WATER_RIPPLES_SYNC_TIME_THRESHOLD = 50

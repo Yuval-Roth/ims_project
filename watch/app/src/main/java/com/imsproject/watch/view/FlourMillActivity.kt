@@ -1,5 +1,6 @@
 package com.imsproject.watch.view
 
+import androidx.compose.ui.graphics.Path
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -22,11 +23,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -47,7 +56,10 @@ import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.utils.Angle
 import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.CYAN_COLOR
+import com.imsproject.watch.DARK_ORANGE_COLOR
+import com.imsproject.watch.DEEP_BLUE_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
+import com.imsproject.watch.LIGHT_ORANGE_COLOR
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
 import com.imsproject.watch.MY_STROKE_WIDTH
@@ -239,20 +251,16 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 painter = painterResource(id = R.drawable.mill),
                 contentDescription = null,
                 modifier = Modifier
-                    .size((SCREEN_RADIUS * 0.7f).dp),
-                contentScale = ContentScale.FillBounds
-            )
-            Image(
-                painter = painterResource(id = R.drawable.wheel),
-                contentDescription = null,
-                modifier = Modifier
-                    .size((SCREEN_RADIUS * 0.4f).dp)
-                    .graphicsLayer(rotationZ = currentWheelAngle.floatValue)
-                    ,
+                    .size((SCREEN_RADIUS * 0.5f).dp),
                 contentScale = ContentScale.FillBounds
             )
 
             Canvas(modifier = Modifier.fillMaxSize()){
+
+                // draw the wheel
+                rotate(currentWheelAngle.floatValue, pivot = SCREEN_CENTER) {
+                    drawWheel()
+                }
 
                 // draw only if the touch point is within the defined borders
                 if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
@@ -296,32 +304,84 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     )
                 }
 
-                // draw the flour
-                val (x,y) = polarToCartesian(SCREEN_RADIUS*0.7f,90.0)
-                for(i in -50 .. 50 step 10){
-                    drawImage(
-                        image = flourImageBitmap,
-                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2),
-                    )
-                }
 
-                for(i in -40 .. 40 step 10){
-                    drawImage(
-                        image = flourImageBitmap,
-                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 5),
-                    )
-                }
-                for(i in -30 .. 30 step 10){
-                    drawImage(
-                        image = flourImageBitmap,
-                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 10),
-                    )
-                }
+//                // draw the flour
+//                val (x,y) = polarToCartesian(SCREEN_RADIUS*0.7f,90.0)
+//                for(i in -50 .. 50 step 10){
+//                    drawImage(
+//                        image = flourImageBitmap,
+//                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+//                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2),
+//                    )
+//                }
+//
+//                for(i in -40 .. 40 step 10){
+//                    drawImage(
+//                        image = flourImageBitmap,
+//                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+//                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 5),
+//                    )
+//                }
+//                for(i in -30 .. 30 step 10){
+//                    drawImage(
+//                        image = flourImageBitmap,
+//                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+//                        dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + i , y.toInt() - scaledFlourHeight / 2 - 10),
+//                    )
+//                }
             }
         }
+    }
+
+    fun DrawScope.drawWheel() {
+        // draw the spokes
+        var angle = Angle(45f)
+        repeat(4) {
+            val (x1, y1) = polarToCartesian(SCREEN_RADIUS * 0.10f, angle)
+            val (x2, y2) = polarToCartesian(SCREEN_RADIUS * 0.56f, angle)
+            drawLine(
+                color = DEEP_BLUE_COLOR,
+                start = Offset(x1, y1),
+                end = Offset(x2, y2),
+                strokeWidth = (SCREEN_RADIUS * 0.04f).dp.toPx()
+            )
+            drawLine(
+                color = DARK_ORANGE_COLOR,
+                start = Offset(x1, y1),
+                end = Offset(x2, y2),
+                strokeWidth = (SCREEN_RADIUS * 0.02f).dp.toPx()
+            )
+            angle += 90f
+        }
+
+        // outer circle
+        drawCircle(
+            color = DEEP_BLUE_COLOR,
+            radius = SCREEN_RADIUS * 0.6f,
+            center = SCREEN_CENTER,
+            style = Stroke(width = (SCREEN_RADIUS * 0.045f).dp.toPx())
+        )
+        drawCircle(
+            color = LIGHT_ORANGE_COLOR,
+            radius = SCREEN_RADIUS * 0.6f,
+            center = SCREEN_CENTER,
+            style = Stroke(width = (SCREEN_RADIUS * 0.025f).dp.toPx())
+        )
+
+        // inner circle
+        drawCircle(
+            color = DEEP_BLUE_COLOR,
+            radius = SCREEN_RADIUS * 0.08f,
+            center = SCREEN_CENTER,
+            style = Stroke(width = (SCREEN_RADIUS * 0.05f).dp.toPx())
+        )
+        drawCircle(
+            color = LIGHT_ORANGE_COLOR,
+            radius = SCREEN_RADIUS * 0.08f,
+            center = SCREEN_CENTER,
+            style = Stroke(width = (SCREEN_RADIUS * 0.03f).dp.toPx())
+        )
+
     }
 
     companion object {
