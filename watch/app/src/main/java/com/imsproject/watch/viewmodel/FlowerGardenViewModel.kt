@@ -156,8 +156,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
-//            myItemType = ItemType.WATER
-            myItemType = ItemType.PLANT
+            myItemType = ItemType.WATER
+//            myItemType = ItemType.PLANT
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
