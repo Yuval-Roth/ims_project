@@ -2,6 +2,7 @@ package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
@@ -91,6 +92,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
         // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
+        val shouldAnimateFlower = viewModel.currFlowerIndex.collectAsState().value
 
         // Box to draw the background
         Box(
@@ -139,8 +141,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // draw active flowers with animation to the latest
                 for ((i, flower) in viewModel.activeFlowerPoints.withIndex()) {
-                    val isLatest = i == viewModel.activeFlowerPoints.lastIndex
-                    val radius = if (isLatest) h / 30f + flowerAnimationRadius.floatValue else h / 30f
+                    val toDrawBigger = i == viewModel._currFlowerIndex.value
+                    val radius = if (toDrawBigger) h / 30f + flowerAnimationRadius.floatValue else h / 30f
 
                     drawFlower(flower, radius = radius)
                 } //todo: after flower slots are full, enlarge existing ones by order as if "picking" themg
@@ -167,11 +169,12 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             }
         }
 
-        val latestFlower = viewModel.activeFlowerPoints.lastOrNull()
+//        val latestFlower = viewModel.activeFlowerPoints.lastOrNull()
+//        val animateFlower = viewModel.
 
         // Only trigger animation when a new flower is added
-        LaunchedEffect(latestFlower) {
-            latestFlower?.let {
+        LaunchedEffect(shouldAnimateFlower) {
+            shouldAnimateFlower.let {
                 // pulse size up
                 repeat(10) {
                     flowerAnimationRadius.floatValue += 1f

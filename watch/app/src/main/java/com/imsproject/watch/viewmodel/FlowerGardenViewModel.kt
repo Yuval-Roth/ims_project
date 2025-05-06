@@ -28,14 +28,11 @@ import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.view.contracts.Result
-import com.imsproject.watch.viewmodel.WaterRipplesViewModel.Ripple
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.util.LinkedList
-import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
@@ -101,8 +98,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     // ======================================
 
     class Flower(
-        var distanceFromCenter : Float,
-        var angle : Double,
         var centerX : Float,
         var centerY : Float,
         var numOfPetals : Int,
@@ -112,10 +107,11 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var petalColor : Color,
     ) {}
 
+    val amountOfFlowers = 12
     var activeFlowerPoints : MutableList<Flower> = mutableListOf()
     lateinit var flowerPoints : List<Flower>
-    lateinit var flowerOrder : Queue<Int>
-
+    var _currFlowerIndex = MutableStateFlow(-1)
+    val currFlowerIndex: StateFlow<Int> = _currFlowerIndex
 
     private lateinit var clickVibration : VibrationEffect
 
@@ -147,12 +143,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     }
 
     override fun onCreate(intent: Intent, context: Context) {
-//        Log.d("FlowerViewModel", "OnCreate() called")
         super.onCreate(intent, context)
         flowerPoints = buildFlowers()
-        val amountOfFlowers = flowerPoints.size
-        flowerOrder = LinkedList((0 until amountOfFlowers).toList())
-
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
@@ -233,8 +225,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         // add new flower if synced click
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
-            if(!flowerOrder.isEmpty()) { //todo: delete the order later, after removing
-                activeFlowerPoints.add(flowerPoints[flowerOrder.poll()!!])
+            _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
+
+            if(activeFlowerPoints.size < amountOfFlowers) {
+                activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
             } else {
                 Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
             }
@@ -250,9 +244,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         _counter.value++ // used to trigger recomposition
     }
 
-    private fun buildFlowers(clockPoints: Int = 12): List<Flower> {
-
-        return List(clockPoints) { i ->
+    private fun buildFlowers(): List<Flower> {
+        return List(amountOfFlowers) { i ->
             val distanceFromCenter = SCREEN_HEIGHT / 2.5f
             val petalCount: Int = listOf(5, 6, 7).random()
             val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
@@ -262,9 +255,9 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                 BROWN_COLOR, ORANGE_COLOR, BLUE_COLOR
             ).random()
 
-            val angle = -90.0 + i * (360.0 / clockPoints)  // Start at 12 o'clock (−90°) and go clockwise
+            val angle = -90.0 + i * (360.0 / amountOfFlowers)  // Start at 12 o'clock (−90°) and go clockwise
             val coor = polarToCartesian(distanceFromCenter, angle)
-            Flower(distanceFromCenter, angle, centerX =  coor.first, centerY = coor.second, petalCount, petalWidth, petalLength, centerColor, petalColor)
+            Flower(centerX =  coor.first, centerY = coor.second, petalCount, petalWidth, petalLength, centerColor, petalColor)
         }
     }
 
