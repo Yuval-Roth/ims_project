@@ -33,8 +33,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.lang.Math.random
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 
 class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
@@ -70,6 +72,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                     polarToCartesian(SCREEN_HEIGHT/3.5f,-150.0),
                     polarToCartesian(SCREEN_HEIGHT/3.5f, -30.0),
                     polarToCartesian(SCREEN_HEIGHT/3.5f, -90.0))
+        val centerXoffset =  SCREEN_HEIGHT * Random.nextInt(from = -2, until = 3) / 100f
+        val centerYoffset =  SCREEN_HEIGHT * Random.nextInt(from = -2, until = 3) / 100f
+
+        var time = 0
         var drop = 0f
     }
     val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
@@ -88,6 +94,15 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                 polarToCartesian(SCREEN_HEIGHT/3.5f, 150.0),
                 polarToCartesian(SCREEN_HEIGHT/3.5f, 90.0))
         var color by mutableStateOf(GRASS_GREEN_COLOR)
+//        val centerXoffset =  SCREEN_HEIGHT * Random.nextInt(from = -5, until = 5) / 100f
+//        val centerYoffset =  SCREEN_HEIGHT * Random.nextInt(from = -5, until = 5) / 100f
+        val centerXoffset = List(5) {
+            SCREEN_HEIGHT * Random.nextInt(from = -4, until = 5) / 100f
+        }
+        val centerYoffset = List(5) {
+            SCREEN_HEIGHT * Random.nextInt(from = -4, until = 5) / 100f
+        }
+        var time = 0
         var sway : Float = 0f
     }
 
@@ -154,7 +169,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
                     val otherPlayerId = "other player"
-                    delay(2000)
+                    delay(500)
                     showItem(otherPlayerId, System.currentTimeMillis())
                 }
             }
@@ -216,17 +231,17 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
                 waterDropletSets.addLast(WaterDroplet(timestamp))
-                if(grassPlantSets.isEmpty()) 0 else grassPlantSets.first().timestamp
+                if(grassPlantSets.isEmpty()) 0 else grassPlantSets.last().timestamp
             } else {
                 grassPlantSets.addLast(Plant(timestamp))
-                if(waterDropletSets.isEmpty()) 0 else waterDropletSets.first().timestamp
+                if(waterDropletSets.isEmpty()) 0 else waterDropletSets.last().timestamp
             }
 
         // add new flower if synced click
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
             _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
-
+            Log.d("model", "synced")
             if(activeFlowerPoints.size < amountOfFlowers) {
                 activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
             } else {

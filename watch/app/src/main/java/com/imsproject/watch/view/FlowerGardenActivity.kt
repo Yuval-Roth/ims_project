@@ -47,6 +47,7 @@ import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -85,10 +86,10 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 Pair(SCREEN_HEIGHT/3.5f, 60.0), Pair(SCREEN_HEIGHT/3.5f, -60.0), Pair(SCREEN_HEIGHT/3.5f, 0.0)) }
 
         // water droplets
-        val dropStep = 0.8f
+        val dropStep = 0.3f
 
         // plants (grass)
-        val swayStep = 0.01f
+        val swayStep = 0.005f
 
         // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
@@ -150,8 +151,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 // draw water droplets - actual water droplets
                 for(waterDropletSet in viewModel.waterDropletSets) {
                     for(center in waterDropletSet.centers) {
-                        val centerX = center.first
-                        val centerY = center.second + waterDropletSet.drop
+                        val centerX = center.first + waterDropletSet.centerXoffset
+                        val centerY = center.second + waterDropletSet.centerYoffset + waterDropletSet.drop
 
                         drawWaterDroplet(centerX, centerY, waterDropletSet.color)
                    }
@@ -159,9 +160,9 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // draw plant - shaped like grass
                 for(grassPlantSet in viewModel.grassPlantSets) {
-                    for(center in grassPlantSet.centers) {
-                        val centerX = center.first
-                        val centerY = center.second
+                    for((i,center) in grassPlantSet.centers.withIndex()) {
+                        val centerX = center.first + grassPlantSet.centerXoffset[i]
+                        val centerY = center.second + grassPlantSet.centerYoffset[i]
 
                         drawGrassStroke(centerX, centerY, 20f, 10f, grassPlantSet.color, 1f * grassPlantSet.sway)
                     }
@@ -197,14 +198,16 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     val waterDropletSet = it.next()
 
                     waterDropletSet.drop += dropStep // increase the water drop
-                    // decrease the opacity
 
+                    // decrease the opacity
                     val currDropletColor = waterDropletSet.color
-                    val nextAlpha = max(currDropletColor.alpha - 0.02f, 0f)
+//                    val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
+                    val nextAlpha = currDropletColor.alpha * exp(-0.0005f * waterDropletSet.time)
+                    waterDropletSet.time++
                     waterDropletSet.color = currDropletColor.copy(nextAlpha)
 
                     //remove done water droplets
-                    if(waterDropletSet.color.alpha <= 0f) {
+                    if(waterDropletSet.color.alpha <= 0.05f) {
                         it.remove()
                         continue
                     }
@@ -219,11 +222,13 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     // decrease the opacity
 
                     val currPlantColor = grassPlantSet.color
-                    val nextAlpha = max(currPlantColor.alpha - 0.015f, 0f)
+//                    val nextAlpha = max(currPlantColor.alpha - 0.015f, 0f)
+                    val nextAlpha = currPlantColor.alpha * exp(-0.0005f * grassPlantSet.time)
+                    grassPlantSet.time++
                     grassPlantSet.color = currPlantColor.copy(nextAlpha)
 
                     //remove done water droplets
-                    if(grassPlantSet.color.alpha <= 0f) {
+                    if(grassPlantSet.color.alpha <= 0.05f) {
                         it2.remove()
                         continue
                     }
