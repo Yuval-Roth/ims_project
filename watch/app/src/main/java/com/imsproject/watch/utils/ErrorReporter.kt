@@ -15,12 +15,13 @@ import java.time.format.DateTimeFormatter
 
 object ErrorReporter {
 
-    fun report(throwable: Throwable) {
+    fun report(throwable: Throwable, additionalInfo: String = "No additional info") {
         val logcatHistory = getLogcatHistory()
         val timestamp = LocalDateTime.now(ZoneId.of("Asia/Jerusalem")).timestamp()
 
         val errorReport = HTML_TEMPLATE
             .replace("{{timestamp}}", timestamp)
+            .replace("{{additionalInfo}}", additionalInfo)
             .replace("{{errorMessage}}", throwable.message ?: "No message available")
             .replace("{{stacktrace}}", throwable.stackTraceToString())
             .replace("{{logcatHistory}}", logcatHistory)
@@ -99,6 +100,8 @@ object ErrorReporter {
             <p><strong>Timestamp:</strong> {{timestamp}}</p>
             <h3>Error Message</h3>
             <pre>{{errorMessage}}</pre>
+            <h3>Additional Info</h3>
+            <pre>{{additionalInfo}}</pre>
             <h3>Stacktrace</h3>
             <pre>{{stacktrace}}</pre>
             <h3>Logcat History</h3>

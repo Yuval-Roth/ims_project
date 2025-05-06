@@ -31,16 +31,16 @@ class FlourMillGame(
         }
     }
 
-    override fun startGame(sessionId: Int) {
-        val timeHandler = TimeServerHandler.instance
-        val timeServerCurr = timeHandler.timeServerCurrentTimeMillis().toString()
-        localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
-        val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
-            .sessionId(sessionId.toString())
-            .timestamp(timeServerCurr)
-        player1.sendTcp(toSend.data(listOf("left")).build().toJson())
-        player2.sendTcp(toSend.data(listOf("right")).build().toJson())
-    }
+//    override fun startGame(sessionId: Int) {
+//        val timeHandler = TimeServerHandler.instance
+//        val timeServerCurr = timeHandler.timeServerCurrentTimeMillis().toString()
+//        localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
+//        val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
+//            .sessionId(sessionId.toString())
+//            .timestamp(timeServerCurr)
+//        player1.sendTcp(toSend.data(listOf("left")).build().toJson())
+//        player2.sendTcp(toSend.data(listOf("right")).build().toJson())
+//    }
 
     companion object {
         private val log = LoggerFactory.getLogger(FlourMillGame::class.java)
