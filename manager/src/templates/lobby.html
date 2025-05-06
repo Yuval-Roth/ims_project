@@ -145,14 +145,14 @@
             'Water Ripples': {
                 syncTolerance: null,
             },
-            'Flour Mill': {
+            'Flower Garden': {
                 syncTolerance: null,
             },
-            'Wine Glasses': {
+            'Flour Mill': {
                 syncTolerance: null,
                 syncWindowLength: null,
             },
-            'Flower Garden': {
+            'Wine Glasses': {
                 syncTolerance: null,
                 syncWindowLength: null,
             },
@@ -221,10 +221,10 @@
             switch(gameType) {
                 case 'Flower Garden':
                 case 'Water Ripples':
-                case 'Flour Mill':
                     syncTolerance = parseInt(formData.get('syncTolerance'), 10);
                     syncWindowLength = -1;
                     break;
+                case 'Flour Mill':
                 case 'Wine Glasses':
                     syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
                     syncWindowLength = parseInt(formData.get('window'), 10);
@@ -345,10 +345,10 @@
                         switch(humanReadableGameType){
                             case 'Flower Garden':
                             case 'Water Ripples':
-                            case 'Flour Mill':
                                 syncTolerance = session.syncTolerance + ' ms';
                                 syncWindowLength = 'N/A';
                                 break;
+                            case 'Flour Mill':
                             case 'Wine Glasses':
                                 syncTolerance = session.syncTolerance / 100 + ' hz';
                                 syncWindowLength = session.syncWindowLength + ' ms';
@@ -521,13 +521,21 @@
                     syncWindowLength: -1,
                     windowLengthEnabled: false
                 },
-                'Flour Mill': {
+                'Flower Garden': {
                     syncTolerance: 50,
                     syncToleranceUnit: 'ms',
                     syncToleranceStep: 1,
                     syncToleranceMin: 1,
                     syncWindowLength: -1,
                     windowLengthEnabled: false
+                },
+                'Flour Mill': {
+                    syncTolerance: 0.10,
+                    syncToleranceUnit: 'hz',
+                    syncToleranceStep: 0.01,
+                    syncToleranceMin: 0.01,
+                    syncWindowLength: 1000,
+                    windowLengthEnabled: true
                 },
                 'Wine Glasses': {
                     syncTolerance: 0.10,
@@ -537,14 +545,6 @@
                     syncWindowLength: 1000,
                     windowLengthEnabled: true
                 },
-                'Flower Garden': {
-                    syncTolerance: 50,
-                    syncToleranceUnit: 'ms',
-                    syncToleranceStep: 1,
-                    syncToleranceMin: 1,
-                    syncWindowLength: -1,
-                    windowLengthEnabled: false
-                },
             };
 
             function updateDefaultValues() {
@@ -553,9 +553,9 @@
                 switch(oldGame){
                     case 'Flower Garden':
                     case 'Water Ripples':
-                    case 'Flour Mill':
                         addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
                         break;
+                    case 'Flour Mill':
                     case 'Wine Glasses':
                         addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
                         addSessionValueHistory[oldGame].syncWindowLength = syncWindowLength.value;
