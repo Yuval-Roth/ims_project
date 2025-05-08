@@ -2,6 +2,7 @@ package com.imsproject.watch.model
 
 import android.util.Log
 import com.google.gson.JsonParseException
+import com.google.gson.JsonSyntaxException
 import com.imsproject.common.etc.TimeRequest
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
@@ -10,6 +11,7 @@ import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.fromJson
 import com.imsproject.common.utils.toJson
+import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.utils.RestApiClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -288,7 +290,15 @@ class MainModel (private val scope : CoroutineScope) {
             .withBody(body.toJson())
             .withPost()
             .send()
-        val response = fromJson<Response>(returned)
+
+        val response: Response
+        try{
+            response = fromJson<Response>(returned)
+        } catch(e: JsonSyntaxException){
+            Log.e(TAG, "uploadSessionEvents: Failed to parse response: $returned", e)
+            ErrorReporter.report(e, "Response from server failed to deserialize in uploadSessionEvents().\nThe response that failed to deserialize was:\n$returned")
+            return false
+        }
         if(response.success){
             Log.d(TAG, "uploadSessionEvents: Success")
             eventCollector.clearEvents()
