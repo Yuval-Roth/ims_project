@@ -94,8 +94,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                 polarToCartesian(SCREEN_HEIGHT/3.5f, 150.0),
                 polarToCartesian(SCREEN_HEIGHT/3.5f, 90.0))
         var color by mutableStateOf(GRASS_GREEN_COLOR)
-//        val centerXoffset =  SCREEN_HEIGHT * Random.nextInt(from = -5, until = 5) / 100f
-//        val centerYoffset =  SCREEN_HEIGHT * Random.nextInt(from = -5, until = 5) / 100f
         val centerXoffset = List(5) {
             SCREEN_HEIGHT * Random.nextInt(from = -4, until = 5) / 100f
         }
@@ -120,10 +118,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var petalHeightCoef : Float,
         var centerColor : Color,
         var petalColor : Color,
-    ) {}
+    )
 
     val amountOfFlowers = 12
-    var activeFlowerPoints : MutableList<Flower> = mutableListOf()
+    var activeFlowerPoints : ConcurrentLinkedDeque<Flower> = ConcurrentLinkedDeque()//todo: to allow concurrency, when adding to this list update counter to force recomposition
     lateinit var flowerPoints : List<Flower>
     var _currFlowerIndex = MutableStateFlow(-1)
     val currFlowerIndex: StateFlow<Int> = _currFlowerIndex
@@ -134,7 +132,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-
+    //tracks the new taps
     private var _counter = MutableStateFlow(0)
     val counter: StateFlow<Int> = _counter
 
@@ -244,16 +242,15 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             Log.d("model", "synced")
             if(activeFlowerPoints.size < amountOfFlowers) {
                 activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
+                // add a vibration effect to clicks that are not mine
+                if (actor != playerId) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        delay(100)
+                        vibrator.vibrate(clickVibration)
+                    }
+                }
             } else {
                 Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
-            }
-        }
-
-        // add a vibration effect to clicks that are not mine
-        if (actor != playerId) {
-            viewModelScope.launch(Dispatchers.IO) {
-                delay(100)
-                vibrator.vibrate(clickVibration)
             }
         }
         _counter.value++ // used to trigger recomposition
@@ -265,10 +262,12 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             val petalCount: Int = listOf(5, 6, 7).random()
             val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
             val petalWidth: Float = listOf(0.4f, 0.5f, 0.6f, 0.7f).random()
-            val petalColor: Color = listOf(BUBBLE_PINK_COLOR, ORANGE_COLOR, BLUE_COLOR, INDIAN_RED_COLOR, PURPLE_WISTERIA_COLOR, BANANA_YELLOW_COLOR, ALMOST_WHITE_COLOR).random()
-            val centerColor: Color = listOf(BANANA_YELLOW_COLOR, PURPLE_WISTERIA_COLOR, ALMOST_WHITE_COLOR,
-                BROWN_COLOR, ORANGE_COLOR, BLUE_COLOR
-            ).random()
+            val petalColor: Color = ORANGE_COLOR
+//                listOf(BUBBLE_PINK_COLOR, ORANGE_COLOR, BLUE_COLOR, INDIAN_RED_COLOR, PURPLE_WISTERIA_COLOR, BANANA_YELLOW_COLOR, ALMOST_WHITE_COLOR).random()
+            val centerColor: Color = BROWN_COLOR
+//                listOf(BANANA_YELLOW_COLOR, PURPLE_WISTERIA_COLOR, ALMOST_WHITE_COLOR,
+//                BROWN_COLOR, ORANGE_COLOR, BLUE_COLOR
+//            ).random()
 
             val angle = -90.0 + i * (360.0 / amountOfFlowers)  // Start at 12 o'clock (−90°) and go clockwise
             val coor = polarToCartesian(distanceFromCenter, angle)

@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.sp
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -27,7 +27,7 @@ var textStyle : TextStyle = TextStyle()
 
 val DARK_BACKGROUND_COLOR = Color(0xFF333842)
 //val LIGHT_BACKGROUND_COLOR = Color(0xFFE2DFD1)
-val LIGHT_BACKGROUND_COLOR = Color(0xffD7E3C7)
+val DARK_GREEN_BACKGROUND_COLOR = Color(0xff65784C)
 val WHITE_ANTIQUE_COLOR = Color(0xFFF0E5D3)//ivory
 val LIGHT_BLUE_COLOR = Color(0xFFACC7F6)
 val BLUE_COLOR = Color(0xFF87B0F3)
@@ -45,6 +45,8 @@ val LIGHT_GRAY_COLOR = Color(0xFFD5D5D5)
 val BRIGHT_CYAN_COLOR = Color(0xFF20BECE)
 val CYAN_COLOR = Color(0xFF00BCD4)
 val BROWN_COLOR = Color(0xFF4E342E)
+val DARKER_BROWN_COLOR = Color(0xff4F3B1C)
+val DARKER_DARKER_BROWN_COLOR = Color(0xff3F2F17)
 val LIGHT_BROWN_COLOR = Color(0xFFAF746C)
 val DARK_BEIGE_COLOR = Color(0xFFA59E7E)
 val BUBBLE_PINK_COLOR = Color(0xFFF1A5BB)

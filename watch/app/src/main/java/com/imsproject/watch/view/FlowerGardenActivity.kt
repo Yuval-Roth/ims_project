@@ -2,7 +2,6 @@ package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
@@ -37,8 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.DARK_BEIGE_COLOR
-import com.imsproject.watch.LIGHT_BACKGROUND_COLOR
+import com.imsproject.watch.DARKER_BROWN_COLOR
+import com.imsproject.watch.DARKER_DARKER_BROWN_COLOR
+import com.imsproject.watch.DARK_GREEN_BACKGROUND_COLOR
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
@@ -48,7 +48,6 @@ import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.exp
-import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -77,19 +76,14 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     @SuppressLint("ReturnFromAwaitPointerEventScope")
     @Composable
     fun FlowerGarden() {
-        // this is used only to to trigger recomposition when new ripples are added //todo: can i remove it?
+        // this is used only to to trigger recomposition when new ripples are added //todo: can i remove it? UPDATE: NO
         viewModel.counter.collectAsState().value
 
-        //shared
-        val waterAndPlantCenters = remember {
-            listOf(Pair(SCREEN_HEIGHT/3.5f, 30.0), Pair(SCREEN_HEIGHT/3.5f, -30.0),
-                Pair(SCREEN_HEIGHT/3.5f, 60.0), Pair(SCREEN_HEIGHT/3.5f, -60.0), Pair(SCREEN_HEIGHT/3.5f, 0.0)) }
-
         // water droplets
-        val dropStep = 0.3f
+        val dropStep = 0.3f // todo: add remember/ const
 
         // plants (grass)
-        val swayStep = 0.005f
+        val swayStep = 0.005f //todo: add remember/ const
 
         // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
@@ -99,7 +93,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = LIGHT_BACKGROUND_COLOR)
+                .background(color = DARK_GREEN_BACKGROUND_COLOR)
                 .shadow(
                     elevation = (SCREEN_RADIUS * 0.35f).dp,
                     CircleShape,
@@ -113,7 +107,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             Button(
                 modifier = Modifier
                     .border(
-                        BorderStroke(2.dp, DARK_BEIGE_COLOR),
+                        BorderStroke(2.dp, DARKER_DARKER_BROWN_COLOR),
                         CircleShape
                     )
                     .size(WATER_RIPPLES_BUTTON_SIZE.dp)
@@ -132,7 +126,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     },
                 onClick = {},
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = DARK_BEIGE_COLOR,
+                    backgroundColor = DARKER_BROWN_COLOR,
                     contentColor = Color.Black
                 )
             ){}
@@ -146,7 +140,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     val radius = if (toDrawBigger) h / 30f + flowerAnimationRadius.floatValue else h / 30f
 
                     drawFlower(flower, radius = radius)
-                } //todo: after flower slots are full, enlarge existing ones by order as if "picking" themg
+                }
 
                 // draw water droplets - actual water droplets
                 for(waterDropletSet in viewModel.waterDropletSets) {
