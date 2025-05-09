@@ -13,17 +13,12 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.ALMOST_WHITE_COLOR
-import com.imsproject.watch.BANANA_YELLOW_COLOR
-import com.imsproject.watch.INDIAN_RED_COLOR
-import com.imsproject.watch.BLUE_COLOR
+import com.imsproject.watch.AMOUNT_OF_FLOWERS
 import com.imsproject.watch.BROWN_COLOR
-import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.PURPLE_WISTERIA_COLOR
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
@@ -33,7 +28,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.lang.Math.random
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 import kotlin.random.Random
@@ -120,8 +114,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var petalColor : Color,
     )
 
-    val amountOfFlowers = 12
-    var activeFlowerPoints : ConcurrentLinkedDeque<Flower> = ConcurrentLinkedDeque()//todo: to allow concurrency, when adding to this list update counter to force recomposition
+    val amountOfFlowers = AMOUNT_OF_FLOWERS
+    var activeFlowerPoints : ConcurrentLinkedDeque<Flower> = ConcurrentLinkedDeque()
     lateinit var flowerPoints : List<Flower>
     var _currFlowerIndex = MutableStateFlow(-1)
     val currFlowerIndex: StateFlow<Int> = _currFlowerIndex
@@ -249,8 +243,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                         vibrator.vibrate(clickVibration)
                     }
                 }
-            } else {
-                Log.d("FlowerGardenViewModel", "ShowItem(): all the flowers had been shown.")
             }
         }
         _counter.value++ // used to trigger recomposition
@@ -263,11 +255,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
             val petalWidth: Float = listOf(0.4f, 0.5f, 0.6f, 0.7f).random()
             val petalColor: Color = ORANGE_COLOR
-//                listOf(BUBBLE_PINK_COLOR, ORANGE_COLOR, BLUE_COLOR, INDIAN_RED_COLOR, PURPLE_WISTERIA_COLOR, BANANA_YELLOW_COLOR, ALMOST_WHITE_COLOR).random()
             val centerColor: Color = BROWN_COLOR
-//                listOf(BANANA_YELLOW_COLOR, PURPLE_WISTERIA_COLOR, ALMOST_WHITE_COLOR,
-//                BROWN_COLOR, ORANGE_COLOR, BLUE_COLOR
-//            ).random()
 
             val angle = -90.0 + i * (360.0 / amountOfFlowers)  // Start at 12 o'clock (−90°) and go clockwise
             val coor = polarToCartesian(distanceFromCenter, angle)

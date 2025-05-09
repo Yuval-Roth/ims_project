@@ -39,8 +39,17 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARKER_BROWN_COLOR
 import com.imsproject.watch.DARKER_DARKER_BROWN_COLOR
 import com.imsproject.watch.DARK_GREEN_BACKGROUND_COLOR
+import com.imsproject.watch.GRASS_PLANT_FADE_COEFFICIENT
+import com.imsproject.watch.GRASS_PLANT_FADE_THREASHOLD
+import com.imsproject.watch.GRASS_PLANT_SWAY_BASE_AMPLITUDE
+import com.imsproject.watch.GRASS_PLANT_SWAY_STEP
 import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.WATER_DROPLET_BASE_HEIGHT
+import com.imsproject.watch.WATER_DROPLET_BASE_WIDTH
+import com.imsproject.watch.WATER_DROPLET_DROP_STEP
+import com.imsproject.watch.WATER_DROPLET_FADE_COEFFICIENT
+import com.imsproject.watch.WATER_DROPLET_FADE_THREASHOLD
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
@@ -80,12 +89,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     fun FlowerGarden() {
         // this is used only to to trigger recomposition when new ripples are added //todo: can i remove it? UPDATE: NO
         viewModel.counter.collectAsState().value
-
-        // water droplets
-        val dropStep = 0.3f // todo: add remember/ const
-
-        // plants (grass)
-        val swayStep = 0.005f //todo: add remember/ const
 
         // flowers
         val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
@@ -160,7 +163,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         val centerX = center.first + grassPlantSet.centerXoffset[i]
                         val centerY = center.second + grassPlantSet.centerYoffset[i]
 
-                        drawGrassStroke(centerX, centerY, 20f, 10f, grassPlantSet.color, 1f * grassPlantSet.sway)
+                        drawGrassStroke(centerX, centerY, WATER_DROPLET_BASE_HEIGHT, WATER_DROPLET_BASE_WIDTH, grassPlantSet.color,
+                            GRASS_PLANT_SWAY_BASE_AMPLITUDE * grassPlantSet.sway)
                     }
                 }
             }
@@ -191,16 +195,17 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 while (it.hasNext()) {
                     val waterDropletSet = it.next()
 
-                    waterDropletSet.drop += dropStep // increase the water drop
+                    waterDropletSet.drop += WATER_DROPLET_DROP_STEP // increase the water drop
 
                     // decrease the opacity
                     val currDropletColor = waterDropletSet.color
-                    val nextAlpha = currDropletColor.alpha * exp(-0.0005f * waterDropletSet.time)
+                    val nextAlpha = currDropletColor.alpha * exp(WATER_DROPLET_FADE_COEFFICIENT
+                            * waterDropletSet.time)
                     waterDropletSet.time++
                     waterDropletSet.color = currDropletColor.copy(nextAlpha)
 
                     //remove done water droplets
-                    if(waterDropletSet.color.alpha <= 0.05f) {
+                    if(waterDropletSet.color.alpha <= WATER_DROPLET_FADE_THREASHOLD) {
                         it.remove()
                         continue
                     }
@@ -211,16 +216,17 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 while (it2.hasNext()) {
                     val grassPlantSet = it2.next()
 
-                    grassPlantSet.sway += swayStep // increase the water drop
+                    grassPlantSet.sway += GRASS_PLANT_SWAY_STEP
                     // decrease the opacity
 
                     val currPlantColor = grassPlantSet.color
-                    val nextAlpha = currPlantColor.alpha * exp(-0.0005f * grassPlantSet.time)
+                    val nextAlpha = currPlantColor.alpha * exp(GRASS_PLANT_FADE_COEFFICIENT
+                            * grassPlantSet.time)
                     grassPlantSet.time++
                     grassPlantSet.color = currPlantColor.copy(nextAlpha)
 
                     //remove done water droplets
-                    if(grassPlantSet.color.alpha <= 0.05f) {
+                    if(grassPlantSet.color.alpha <= GRASS_PLANT_FADE_THREASHOLD) {
                         it2.remove()
                         continue
                     }
@@ -267,8 +273,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             drawPath(rightPart, color, style = Fill)
     }
 
-    fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, amplitude : Float = 1f) {
-        val strokeWidth: Float = 3f
+    fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, amplitude : Float = GRASS_PLANT_SWAY_BASE_AMPLITUDE) {
+        val strokeWidth = 3f
         val halfWidth = width / 2f
         val steps = 30
 
