@@ -48,6 +48,8 @@ import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.exp
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -164,20 +166,18 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             }
         }
 
-//        val latestFlower = viewModel.activeFlowerPoints.lastOrNull()
-//        val animateFlower = viewModel.
 
         // Only trigger animation when a new flower is added
         LaunchedEffect(shouldAnimateFlower) {
             shouldAnimateFlower.let {
                 // pulse size up
                 repeat(10) {
-                    flowerAnimationRadius.floatValue += 1f
+                    flowerAnimationRadius.floatValue = min(flowerAnimationRadius.floatValue + 1f, 10f)
                     delay(16)
                 }
                 // pulse size down
                 repeat(10) {
-                    flowerAnimationRadius.floatValue -= 1f
+                    flowerAnimationRadius.floatValue = max(flowerAnimationRadius.floatValue - 1f, 0f)
                     delay(16)
                 }
                 flowerAnimationRadius.floatValue = 0f
@@ -195,7 +195,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                     // decrease the opacity
                     val currDropletColor = waterDropletSet.color
-//                    val nextAlpha = max(currDropletColor.alpha - 0.01f, 0f)
                     val nextAlpha = currDropletColor.alpha * exp(-0.0005f * waterDropletSet.time)
                     waterDropletSet.time++
                     waterDropletSet.color = currDropletColor.copy(nextAlpha)
@@ -216,7 +215,6 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     // decrease the opacity
 
                     val currPlantColor = grassPlantSet.color
-//                    val nextAlpha = max(currPlantColor.alpha - 0.015f, 0f)
                     val nextAlpha = currPlantColor.alpha * exp(-0.0005f * grassPlantSet.time)
                     grassPlantSet.time++
                     grassPlantSet.color = currPlantColor.copy(nextAlpha)
