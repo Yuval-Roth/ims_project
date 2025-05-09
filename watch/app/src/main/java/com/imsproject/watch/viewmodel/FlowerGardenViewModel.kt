@@ -233,7 +233,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
             _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
-            Log.d("model", "synced")
             if(activeFlowerPoints.size < amountOfFlowers) {
                 activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
                 // add a vibration effect to clicks that are not mine
