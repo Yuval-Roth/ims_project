@@ -236,41 +236,34 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         }
     }
 
+    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color: Color, size: Float = 0.15f) {
+        val diameter = 100f * size
+        val controlOffsetX = 80f * size
+        val controlOffsetY = 100f * size
+        val tipOffsetY = 150f * size
 
-    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color : Color, size: Float = 0.15f) {
-            val diameter = 100f * size
+        val path = Path().apply {
+            moveTo(baseX, baseY - diameter) // bottom center
+            cubicTo(
+                baseX - controlOffsetX, baseY - diameter - controlOffsetY,
+                baseX - 50f * size, baseY - diameter - tipOffsetY,
+                baseX, baseY - diameter - tipOffsetY
+            )
+            cubicTo(
+                baseX + 50f * size, baseY - diameter - tipOffsetY,
+                baseX + controlOffsetX, baseY - diameter - controlOffsetY,
+                baseX, baseY - diameter
+            )
+            close()
+        }
 
-            // Left Part Path
-            val leftPart = Path().apply {
-                moveTo(baseX, baseY - diameter)
-                cubicTo(baseX - 80f * size, baseY - diameter - 100f * size, baseX - 50f * size,
-                    baseY - diameter - 150f * size, baseX, baseY - diameter - 150f * size)
-            }
+        path.transform(Matrix().apply {
+            translate(baseX, baseY - diameter)
+            scale(1f, -1f)
+            translate(-baseX, -(baseY - diameter))
+        })
 
-            leftPart.transform(Matrix().apply {
-                translate(baseX, baseY - diameter)
-                scale(1f, -1f)
-                translate(-baseX, -(baseY - diameter))
-            })
-
-            drawPath(leftPart, color, style = Fill)
-
-            // Right Part Path
-            val rightPart = Path().apply {
-                moveTo(baseX, baseY - diameter)
-                cubicTo(
-                    baseX + 80f * size, baseY - diameter - 100f * size, baseX + 50f * size,
-                    baseY - diameter - 150f * size, baseX, baseY - diameter - 150f * size
-                )
-            }
-
-            rightPart.transform(Matrix().apply {
-                translate(baseX, baseY - diameter)
-                scale(1f, -1f)
-                translate(-baseX, -(baseY - diameter))
-            })
-
-            drawPath(rightPart, color, style = Fill)
+        drawPath(path, color, style = Fill)
     }
 
     fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, amplitude : Float = GRASS_PLANT_SWAY_BASE_AMPLITUDE) {
