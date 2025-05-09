@@ -226,7 +226,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                         }
                         if(angleChangeSum > 360f) {
                             angleChangeSum -= 360f
-                            fallingFlour.add(mutableFloatStateOf(0.36f))
+                            fallingFlour.add(mutableFloatStateOf(0.46f))
                         }
                     }
                     delay(16)
@@ -271,7 +271,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 contentScale = ContentScale.FillBounds
             )
 
-            val (x,y) = remember { polarToCartesian(SCREEN_RADIUS * 0.72f, 90.0) }
+            val (x,y) = remember { polarToCartesian(SCREEN_RADIUS * 0.75f, 90.0) }
             Canvas(modifier = Modifier.fillMaxSize()){
 
                 // draw the falling flour
@@ -292,7 +292,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                             drawImage(
                                 image = flourImageBitmap,
                                 dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-                                dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + (j - (rowSize / 2)) * 10, y.toInt() - scaledFlourHeight / 2 - i * 3),
+                                dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + (j - (rowSize / 2)) * 7, y.toInt() - scaledFlourHeight / 2 - i * 3),
                             )
                         }
                     }
