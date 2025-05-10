@@ -417,27 +417,25 @@ def single_session_data():
     sid          = request.args.get('session_id')
     game_type    = request.args.get('game_type', '')
     participants = request.args.get('participants', '')      # "Alice,Bob"
-    dueation     = request.args.get('duration', '')
+    duration     = request.args.get('duration', '')
 
-    sync_data, intensity_data = get_single_session(sid)
+    # 🔑  get all four return values
+    sync_data, intensity_data, pearson_data, stt = get_single_session(sid)
 
     metadata = {
         "gameType": game_type,
         "participants": [p.strip() for p in participants.split(',') if p],
         "sessionId": sid,
-        "duration": dueation
+        "duration": duration
     }
-    # # enrich metadata with the args we just received
-    # metadata["gameType"]     = game_type
-    # metadata["participants"] = [p.strip() for p in participants.split(',') if p]
-    # metadata["sessionId"]    = sid
-    # metadata["duration"]     = dueation
 
     return render_template(
-        'single_session_data.html',
-        metadata=metadata,
-        sync_data=sync_data,
-        intensity_data=intensity_data
+        "single_session_data.html",
+        metadata       = metadata,
+        sync_data      = sync_data,
+        intensity_data = intensity_data,
+        pearson_data   = pearson_data,
+        stt            = stt
     )
 
 # ───────────────────────────────────────── (optional) JSON API
