@@ -212,7 +212,12 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(top = COLUMN_PADDING, start = COLUMN_PADDING, end = COLUMN_PADDING, bottom = COLUMN_PADDING / 2)
+                        .padding(
+                            top = COLUMN_PADDING,
+                            start = COLUMN_PADDING,
+                            end = COLUMN_PADDING,
+                            bottom = COLUMN_PADDING / 2
+                        )
                         .fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -314,7 +319,12 @@ class MainActivity : ComponentActivity() {
         ) {
             Column(
                 modifier = Modifier
-                    .padding(top =COLUMN_PADDING/4, bottom = COLUMN_PADDING/2, start = COLUMN_PADDING/2, end = COLUMN_PADDING/2)
+                    .padding(
+                        top = COLUMN_PADDING / 4,
+                        bottom = COLUMN_PADDING / 2,
+                        start = COLUMN_PADDING / 2,
+                        end = COLUMN_PADDING / 2
+                    )
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -399,7 +409,11 @@ class MainActivity : ComponentActivity() {
                 ){
                     Column(
                         modifier = Modifier
-                            .padding(top = COLUMN_PADDING, start = COLUMN_PADDING, end = COLUMN_PADDING)
+                            .padding(
+                                top = COLUMN_PADDING,
+                                start = COLUMN_PADDING,
+                                end = COLUMN_PADDING
+                            )
                             .fillMaxWidth()
                             .fillMaxHeight(0.5f),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -460,7 +474,7 @@ class MainActivity : ComponentActivity() {
                     val green = remember { Color(0xFF89F55C) }
                     Box(
                         modifier = Modifier
-                            .background(if(ready) green else red)
+                            .background(if (ready) green else red)
                             .fillMaxWidth()
                             .fillMaxHeight(0.15f)
                         ,
@@ -528,7 +542,7 @@ class MainActivity : ComponentActivity() {
     ) {
         Picker(
             modifier = Modifier
-                .size(20.dp,75.dp)
+                .size(20.dp, 75.dp)
                 .background(Color.Transparent)
             ,
             state = state,
