@@ -43,7 +43,6 @@ import com.imsproject.watch.GRASS_PLANT_FADE_COEFFICIENT
 import com.imsproject.watch.GRASS_PLANT_FADE_THREASHOLD
 import com.imsproject.watch.GRASS_PLANT_SWAY_BASE_AMPLITUDE
 import com.imsproject.watch.GRASS_PLANT_SWAY_STEP
-import com.imsproject.watch.SCREEN_HEIGHT
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_DROPLET_BASE_HEIGHT
 import com.imsproject.watch.WATER_DROPLET_BASE_WIDTH
@@ -137,7 +136,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             ){}
 
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val h = SCREEN_HEIGHT
+                val h = SCREEN_RADIUS * 2f
 
                 // draw active flowers with animation to the latest
                 for ((i, flower) in viewModel.activeFlowerPoints.withIndex()) {

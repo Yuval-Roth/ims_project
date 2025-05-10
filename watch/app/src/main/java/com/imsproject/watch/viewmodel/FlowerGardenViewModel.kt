@@ -19,7 +19,7 @@ import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.SCREEN_HEIGHT
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.view.contracts.Result
@@ -61,13 +61,13 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     ) {
         var color by mutableStateOf(WATER_BLUE_COLOR)
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian(SCREEN_HEIGHT/3.5f, -60.0),
-                    polarToCartesian(SCREEN_HEIGHT/3.5f, -120.0),
-                    polarToCartesian(SCREEN_HEIGHT/3.5f,-150.0),
-                    polarToCartesian(SCREEN_HEIGHT/3.5f, -30.0),
-                    polarToCartesian(SCREEN_HEIGHT/3.5f, -90.0))
-        val centerXoffset =  SCREEN_HEIGHT * Random.nextInt(from = -2, until = 3) / 100f
-        val centerYoffset =  SCREEN_HEIGHT * Random.nextInt(from = -2, until = 3) / 100f
+            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -60.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -120.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f,-150.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -30.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -90.0))
+        val centerXoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
+        val centerYoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
 
         var time = 0
         var drop = 0f
@@ -82,17 +82,17 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var timestamp: Long = 0,
     ) {
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian(SCREEN_HEIGHT/3.5f, 120.0),
-                polarToCartesian(SCREEN_HEIGHT/3.5f, 60.0),
-                polarToCartesian(SCREEN_HEIGHT/3.5f, 30.0),
-                polarToCartesian(SCREEN_HEIGHT/3.5f, 150.0),
-                polarToCartesian(SCREEN_HEIGHT/3.5f, 90.0))
+            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 120.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 60.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 30.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 150.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 90.0))
         var color by mutableStateOf(GRASS_GREEN_COLOR)
         val centerXoffset = List(5) {
-            SCREEN_HEIGHT * Random.nextInt(from = -4, until = 5) / 100f
+            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
         }
         val centerYoffset = List(5) {
-            SCREEN_HEIGHT * Random.nextInt(from = -4, until = 5) / 100f
+            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
         }
         var time = 0
         var sway : Float = 0f
@@ -249,7 +249,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     private fun buildFlowers(): List<Flower> {
         return List(amountOfFlowers) { i ->
-            val distanceFromCenter = SCREEN_HEIGHT / 2.5f
+            val distanceFromCenter = (SCREEN_RADIUS * 2f)  / 2.5f
             val petalCount: Int = listOf(5, 6, 7).random()
             val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
             val petalWidth: Float = listOf(0.4f, 0.5f, 0.6f, 0.7f).random()
