@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
   <style>
-    /* simple 2‑column grid */
     .charts-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -31,11 +31,10 @@
     <h1>Session ID: #{{ metadata.sessionId }}</h1>
     <p style="text-align:center;">
       <strong>Game&nbsp;Type:</strong>
-      {{ metadata.gameType.replace('_', ' ').title() }}   |  
-      <strong>Duration:</strong> {{ metadata.duration }} s   |  
+      {{ metadata.gameType.replace('_', ' ').title() }}   |
+      <strong>Duration:</strong> {{ metadata.duration }} s   |
       <strong>Participants:</strong> {{ metadata.participants | join(' & ') }}
     </p>
-    
 
     <div class="charts-grid">
       <div class="chart-container">
@@ -59,14 +58,37 @@
 
   <script>
     const meta = {{ metadata|tojson }};
-    const timeLabels = [...Array(20).keys()].map(i => `t+${i}s`);
+    const timeLabels = [...Array(20).keys()].map(i => i.toString());
 
     function randArray(len, min, max) {
       return Array.from({ length: len }, () => +(Math.random() * (max - min) + min).toFixed(2));
     }
 
-    // 1) Heart Rate (line) for both participants
-    new Chart(document.getElementById('hrChart'), {
+    function buildChart(ctx, config) {
+      const chart = new Chart(ctx, config);
+      ctx.ondblclick = () => {
+        if (ctx.requestFullscreen) ctx.requestFullscreen();
+        else if (ctx.webkitRequestFullscreen) ctx.webkitRequestFullscreen();
+      };
+      return chart;
+    }
+
+    const baseOptions = {
+      responsive: true,
+      plugins: {
+        zoom: {
+          pan:   { enabled: true, mode: 'x' },
+          zoom:  {
+            wheel: { enabled: true, speed: 0.05 },
+            pinch: { enabled: true },
+            mode: 'x'
+          }
+        }
+      }
+    };
+
+    // 1) Heart Rate
+    buildChart(document.getElementById('hrChart'), {
       type: 'line',
       data: {
         labels: timeLabels,
@@ -78,13 +100,16 @@
         }))
       },
       options: {
-        responsive: true,
-        scales: { y: { beginAtZero: false, title: { display: true, text: 'BPM' } } }
+        ...baseOptions,
+        scales: {
+          x: { title: { display: true, text: 'Seconds' } },
+          y: { beginAtZero: false, title: { display: true, text: 'BPM' } }
+        }
       }
     });
 
-    // 2) HR Variation (line) for both participants
-    new Chart(document.getElementById('hrvChart'), {
+    // 2) HR Variation
+    buildChart(document.getElementById('hrvChart'), {
       type: 'line',
       data: {
         labels: timeLabels,
@@ -96,13 +121,16 @@
         }))
       },
       options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true, title: { display: true, text: 'ms' } } }
+        ...baseOptions,
+        scales: {
+          x: { title: { display: true, text: 'Seconds' } },
+          y: { beginAtZero: true, title: { display: true, text: 'ms' } }
+        }
       }
     });
 
-    // 3) Latency (bar) for both participants
-    new Chart(document.getElementById('latencyChart'), {
+    // 3) Latency
+    buildChart(document.getElementById('latencyChart'), {
       type: 'bar',
       data: {
         labels: timeLabels,
@@ -112,13 +140,16 @@
         }))
       },
       options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true, title: { display: true, text: 'ms' } } }
+        ...baseOptions,
+        scales: {
+          x: { title: { display: true, text: 'Seconds' } },
+          y: { beginAtZero: true, title: { display: true, text: 'ms' } }
+        }
       }
     });
 
-    // 4) Sync Over Time (line) already supports both participants
-    new Chart(document.getElementById('syncChart'), {
+    // 4) Sync Over Time
+    buildChart(document.getElementById('syncChart'), {
       type: 'line',
       data: {
         labels: timeLabels,
@@ -130,9 +161,14 @@
         }))
       },
       options: {
-        responsive: true,
+        ...baseOptions,
         scales: {
-          y: { beginAtZero: true, max: 1, title: { display: true, text: 'Sync Level' } }
+          x: { title: { display: true, text: 'Seconds' } },
+          y: {
+            beginAtZero: true,
+            max: 1,
+            title: { display: true, text: 'Sync Level' }
+          }
         }
       }
     });
