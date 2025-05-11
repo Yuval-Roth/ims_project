@@ -33,16 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
-import com.imsproject.watch.HIGH_LOOP_TRACK
-import com.imsproject.watch.LOW_BUILD_IN_TRACK
-import com.imsproject.watch.LOW_BUILD_OUT_TRACK
 import com.imsproject.watch.LOW_LOOP_TRACK
-import com.imsproject.watch.MARKER_FADE_DURATION
-import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
 import com.imsproject.watch.MY_STROKE_WIDTH
@@ -54,7 +48,6 @@ import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
-import com.imsproject.common.utils.Angle
 import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
@@ -157,23 +150,23 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
 
             // play high sound when in sync
             LaunchedEffect(myReleased){
-                val sound = viewModel.sound
+                val wavPlayer = viewModel.wavPlayer
                 if(! myReleased) {
                     var playing = false
                     var inSync: Boolean
                     while (true) {
                         inSync = viewModel.inSync()
                         if (!playing && inSync) {
-                            sound.playLooped(LOW_LOOP_TRACK)
+                            wavPlayer.playLooped(LOW_LOOP_TRACK)
                             playing = true
                         } else if (playing && !inSync) {
-                            sound.pause(LOW_LOOP_TRACK)
+                            wavPlayer.pause(LOW_LOOP_TRACK)
                             playing = false
                         }
                         delay(100)
                     }
-                } else if(sound.isPlaying(LOW_LOOP_TRACK)) {
-                    sound.stopFadeOut(LOW_LOOP_TRACK, 20)
+                } else if(wavPlayer.isPlaying(LOW_LOOP_TRACK)) {
+                    wavPlayer.stopFadeOut(LOW_LOOP_TRACK, 20)
                 }
             }
 

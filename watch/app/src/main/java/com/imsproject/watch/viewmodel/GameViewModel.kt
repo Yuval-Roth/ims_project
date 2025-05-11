@@ -22,6 +22,7 @@ import com.imsproject.watch.sensors.HeartRateSensorHandler
 import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.watch.utils.PacketTracker
+import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -57,6 +58,8 @@ abstract class GameViewModel(
     private lateinit var latencyTracker : LatencyTracker
     private lateinit var heartRateSensorHandler: HeartRateSensorHandler
     private lateinit var locationSensorsHandler: LocationSensorsHandler
+    lateinit var wavPlayer: WavPlayer
+        private set
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -81,6 +84,7 @@ abstract class GameViewModel(
     open fun onCreate(intent: Intent, context: Context){
 
         vibrator = context.getSystemService(Vibrator::class.java)
+        wavPlayer = WavPlayer(context, viewModelScope)
 
         if(ACTIVITY_DEBUG_MODE){
             setState(State.PLAYING)
@@ -167,7 +171,7 @@ abstract class GameViewModel(
     }
 
     fun exitWithError(errorMessage: String, code: Result.Code) {
-        Log.d(TAG, "exitWithError: game ended with code: $code and error: $errorMessage")
+        Log.e(TAG, "exitWithError: game ended with code: $code and error: $errorMessage")
         addEvent(SessionEvent.sessionEnded(playerId,getCurrentGameTime(),errorMessage))
         _error.value = errorMessage
         _resultCode.value = code
@@ -255,6 +259,8 @@ abstract class GameViewModel(
         if(::heartRateSensorHandler.isInitialized){
             heartRateSensorHandler.disconnect()
         }
+        wavPlayer.pauseAll()
+        wavPlayer.releaseAll()
         setState(State.TERMINATED)
     }
 

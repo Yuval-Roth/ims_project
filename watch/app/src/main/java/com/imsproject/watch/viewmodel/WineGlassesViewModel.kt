@@ -3,39 +3,24 @@ package com.imsproject.watch.viewmodel
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.util.fastCoerceAtLeast
-import androidx.compose.ui.util.fastCoerceAtMost
-import androidx.compose.ui.util.fastCoerceIn
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
 import com.imsproject.watch.HIGH_LOOP_TRACK
 import com.imsproject.watch.INNER_TOUCH_POINT
-import com.imsproject.watch.LOW_BUILD_IN_TRACK
-import com.imsproject.watch.LOW_BUILD_OUT_TRACK
-import com.imsproject.watch.LOW_LOOP_TRACK
-import com.imsproject.watch.MAX_ANGLE_SKEW
-import com.imsproject.watch.MIN_ANGLE_SKEW
-import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
 import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
-import com.imsproject.common.utils.Angle
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.LOW_LOOP_TRACK
 import com.imsproject.watch.utils.Arc
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.cartesianToPolar
-import com.imsproject.watch.utils.isBetweenInclusive
 import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
@@ -46,8 +31,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
-
-    lateinit var sound: WavPlayer
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -86,7 +69,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent,context)
 
-        setupWavPlayer(context)
+        setupWavPlayer()
         myFrequencyTracker = FrequencyTracker()
 
         if(ACTIVITY_DEBUG_MODE){
@@ -219,23 +202,16 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
     }
 
-    private fun setupWavPlayer(context: Context){
+    private fun setupWavPlayer(){
         try{
-            sound = WavPlayer(context, viewModelScope)
-            sound.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
-            sound.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
-            sound.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
-            sound.load(HIGH_LOOP_TRACK, R.raw.wine_high_loop)
+//            wavPlayer.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
+            wavPlayer.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
+//            wavPlayer.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
+//            wavPlayer.load(HIGH_LOOP_TRACK, R.raw.wine_high_loop)
         } catch (e: IllegalArgumentException){
             val msg = e.message ?: "Unknown error"
             exitWithError(msg, Result.Code.BAD_RESOURCE)
         }
-    }
-
-    override fun onExit(){
-        sound.pauseAll()
-        sound.releaseAll()
-        super.onExit()
     }
 
     companion object {
