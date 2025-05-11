@@ -9,6 +9,8 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.model.AlreadyConnectedException
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.ParticipantNotFoundException
+import com.imsproject.watch.model.SessionEventCollectorImpl
+import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -142,14 +144,10 @@ class MainViewModel() : ViewModel() {
             when (result.code) {
                 Result.Code.OK -> {
                     setState(State.UPLOADING_EVENTS)
-                    withContext(Dispatchers.IO) {
-                        do {
-                            if (model.uploadSessionEvents(sessionId)) {
-                                break
-                            }
-                        } while (true)
-                        sessionId = -1
+                    if (! model.uploadSessionEvents(sessionId)) {
+                        fatalError("Failed to upload session events")
                     }
+                    sessionId = -1
                     setState(State.CONNECTED_IN_LOBBY)
                 }
                 else -> {
@@ -347,9 +345,11 @@ class MainViewModel() : ViewModel() {
         _lobbyId.value = ""
         _gameType.value = null
         _timeServerStartTime.value = -1
+        sessionId = -1
         showError(message)
         viewModelScope.launch(Dispatchers.IO) {
             oldModel.closeAllResources()
+            ErrorReporter.report(null, message)
         }
         model = MainModel(viewModelScope)
     }

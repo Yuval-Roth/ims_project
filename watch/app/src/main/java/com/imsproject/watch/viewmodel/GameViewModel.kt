@@ -259,8 +259,10 @@ abstract class GameViewModel(
         if(::heartRateSensorHandler.isInitialized){
             heartRateSensorHandler.disconnect()
         }
-        wavPlayer.pauseAll()
-        wavPlayer.releaseAll()
+        if(::wavPlayer.isInitialized){
+            wavPlayer.pauseAll()
+            wavPlayer.releaseAll()
+        }
         setState(State.TERMINATED)
     }
 

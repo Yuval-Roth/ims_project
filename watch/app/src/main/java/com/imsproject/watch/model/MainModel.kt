@@ -11,11 +11,12 @@ import com.imsproject.common.networking.WebSocketClient
 import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.fromJson
 import com.imsproject.common.utils.toJson
-import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.utils.RestApiClient
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -273,39 +274,63 @@ class MainModel (private val scope : CoroutineScope) {
         return data.average().roundToLong()
     }
 
-    fun uploadSessionEvents(sessionId: Int): Boolean {
+    suspend fun uploadSessionEvents(sessionId: Int): Boolean {
         Log.d(TAG, "Uploading session events")
         val eventCollector = SessionEventCollectorImpl.getInstance()
-        val events = eventCollector.getAllEvents().stream()
-            .map { it.toCompressedJson() }
-            .collect(Collectors.toList())
 
-        val body = object {
-            val sessionId = sessionId
-            val events = events
+        // split events into chunks of 5000
+        val eventLists = mutableListOf<MutableList<String>>()
+        for(event in eventCollector.getAllEvents()){
+            val compressedEvent = event.toCompressedJson()
+            if(eventLists.isEmpty() || eventLists.last().size >= 5000){
+                eventLists.add(mutableListOf(event.toCompressedJson()))
+            } else {
+                eventLists.last().add(compressedEvent)
+            }
         }
 
-        val returned = RestApiClient()
-            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
-            .withBody(body.toJson())
-            .withPost()
-            .send()
+        val deferreds = mutableListOf<Deferred<Boolean>>()
 
-        val response: Response
-        try{
-            response = fromJson<Response>(returned)
-        } catch(e: JsonSyntaxException){
-            Log.e(TAG, "uploadSessionEvents: Failed to parse response: $returned", e)
-            throw RuntimeException("uploadSessionEvents: Failed to parse response: $returned",e)
-            return false
+        eventLists.forEachIndexed { part, eventList ->
+            deferreds.add(scope.async(Dispatchers.IO) {
+                val body = object {
+                    val sessionId = sessionId
+                    val events = eventList
+                }.toJson()
+
+                var tries = 0
+                while(tries < 5){
+                    val returned = RestApiClient()
+                        .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+                        .withBody(body)
+                        .withPost()
+                        .send()
+
+                    val response: Response
+                    try{
+                        response = fromJson<Response>(returned)
+                    } catch(e: JsonSyntaxException){
+                        Log.e(TAG, "uploadSessionEvents: Part ${part+1} failed to parse response: $returned", e)
+                        throw RuntimeException("uploadSessionEvents: Part ${part+1} failed to parse response: $returned",e)
+                    }
+
+                    if(response.success){
+                        Log.d(TAG, "uploadSessionEvents: Part ${part+1} success")
+                        return@async true
+                    } else {
+                        Log.e(TAG, "uploadSessionEvents: Part ${part+1} Failed to upload events\n${response.message}")
+                        tries++
+                    }
+                }
+                return@async false
+            })
         }
-        if(response.success){
-            Log.d(TAG, "uploadSessionEvents: Success")
-            eventCollector.clearEvents()
-        } else {
-            Log.e(TAG, "uploadSessionEvents: Failed to upload events\n${response.message}")
-        }
-        return response.success
+
+        // check if all api calls succeeded
+        val success = deferreds.all { it.await() }
+
+        eventCollector.clearEvents()
+        return success
     }
 
     suspend fun closeAllResources(){

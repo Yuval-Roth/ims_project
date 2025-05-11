@@ -15,15 +15,15 @@ import java.time.format.DateTimeFormatter
 
 object ErrorReporter {
 
-    fun report(throwable: Throwable, additionalInfo: String = "No additional info") {
+    fun report(throwable: Throwable?, additionalInfo: String = "No additional info") {
         val logcatHistory = getLogcatHistory()
         val timestamp = LocalDateTime.now(ZoneId.of("Asia/Jerusalem")).timestamp()
 
         val errorReport = HTML_TEMPLATE
             .replace("{{timestamp}}", timestamp)
             .replace("{{additionalInfo}}", additionalInfo)
-            .replace("{{errorMessage}}", throwable.message ?: "No message available")
-            .replace("{{stacktrace}}", throwable.stackTraceToString())
+            .replace("{{errorMessage}}", throwable?.message ?: "No message available")
+            .replace("{{stacktrace}}", throwable?.stackTraceToString() ?: "No stacktrace available")
             .replace("{{logcatHistory}}", logcatHistory)
 
         @OptIn(DelicateCoroutinesApi::class)
