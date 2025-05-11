@@ -296,7 +296,7 @@ class MainModel (private val scope : CoroutineScope) {
             response = fromJson<Response>(returned)
         } catch(e: JsonSyntaxException){
             Log.e(TAG, "uploadSessionEvents: Failed to parse response: $returned", e)
-            ErrorReporter.report(e, "Response from server failed to deserialize in uploadSessionEvents().\nThe response that failed to deserialize was:\n$returned")
+            throw RuntimeException("uploadSessionEvents: Failed to parse response: $returned",e)
             return false
         }
         if(response.success){
