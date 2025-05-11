@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
@@ -39,7 +38,6 @@ import com.imsproject.watch.R
 import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
-import com.imsproject.watch.initProperties
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.Dispatchers
@@ -49,14 +47,10 @@ import kotlinx.coroutines.launch
 class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 
     private val viewModel : WaterRipplesViewModel by viewModels<WaterRipplesViewModel>()
-    private lateinit var soundPool: SoundPool
-    private var clickSoundId : Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         super.onCreate(viewModel)
-        soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
-        clickSoundId = soundPool.load(applicationContext, R.raw.ripple_click_sound, 1)
         setContent {
             Main()
         }
@@ -110,9 +104,6 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
                                 if (event.type == PointerEventType.Press) {
                                     event.changes[0].consume()
                                     viewModel.click()
-                                    viewModel.viewModelScope.launch(Dispatchers.Default) {
-                                        soundPool.play(clickSoundId, 1f, 1f, 0, 0, 1f)
-                                    }
                                 }
                             }
                         }
