@@ -141,7 +141,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 // draw active flowers with animation to the latest
                 for ((i, flower) in viewModel.activeFlowerPoints.withIndex()) {
                     val toDrawBigger = i == viewModel._currFlowerIndex.value
-                    val radius = if (toDrawBigger) h / 30f + flowerAnimationRadius.floatValue else h / 30f
+                    val radius = if (toDrawBigger) h / 20f + flowerAnimationRadius.floatValue else h / 20f
 
                     drawFlower(flower, radius = radius)
                 }
@@ -235,7 +235,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         }
     }
 
-    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color: Color, size: Float = 0.15f) {
+    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color: Color, size: Float = 0.23f) {
         val diameter = 100f * size
         val controlOffsetX = 80f * size
         val controlOffsetY = 100f * size

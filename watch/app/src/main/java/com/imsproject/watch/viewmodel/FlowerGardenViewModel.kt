@@ -17,6 +17,7 @@ import com.imsproject.watch.AMOUNT_OF_FLOWERS
 import com.imsproject.watch.BROWN_COLOR
 import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.GRASS_GREEN_COLOR
+import com.imsproject.watch.GRASS_WATER_RADIUS
 import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.SCREEN_RADIUS
@@ -60,14 +61,16 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var timestamp: Long = 0,
     ) {
         var color by mutableStateOf(WATER_BLUE_COLOR)
+        val x = 36
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -60.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -120.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f,-150.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -30.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -90.0))
-        val centerXoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
-        val centerYoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
+            listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 0 * x),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 2 * -x),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 2 * x),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * -x),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * x)
+            )
+        val centerXoffset =  0 //(SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
+        val centerYoffset =  0 //(SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
 
         var time = 0
         var drop = 0f
@@ -81,18 +84,20 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     class Plant(
         var timestamp: Long = 0,
     ) {
+        val x = 36
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 120.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 60.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 30.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 150.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 90.0))
+            listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 5 * -x),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 1 * x),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 1 * -x),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 3 * x),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 3 * -x)
+            )
         var color by mutableStateOf(GRASS_GREEN_COLOR)
-        val centerXoffset = List(5) {
-            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
+        val centerXoffset = List(5) { 0
+//            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
         }
-        val centerYoffset = List(5) {
-            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
+        val centerYoffset = List(5) { 0
+//            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
         }
         var time = 0
         var sway : Float = 0f
@@ -132,6 +137,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
 
     // ================================================================================ |
+    // ============================ PUBLIC METHODS ==================================== |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
@@ -222,6 +228,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         // check the delta between taps and show new tap
         var opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
+                Log.d("flowerModel", "$GRASS_WATER_RADIUS")
                 waterDropletSets.addLast(WaterDroplet(timestamp))
                 if(grassPlantSets.isEmpty()) 0 else grassPlantSets.last().timestamp
             } else {
