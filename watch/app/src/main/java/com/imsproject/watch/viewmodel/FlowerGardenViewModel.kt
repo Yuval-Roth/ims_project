@@ -2,6 +2,8 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -20,6 +22,7 @@ import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.GRASS_WATER_RADIUS
 import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
@@ -31,7 +34,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
-import kotlin.random.Random
 
 
 class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
@@ -126,6 +128,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     val currFlowerIndex: StateFlow<Int> = _currFlowerIndex
 
     private lateinit var clickVibration : VibrationEffect
+    private lateinit var soundPool: SoundPool
+    private var bellSoundId : Int = -1
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -159,6 +163,11 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         super.onCreate(intent, context)
         flowerPoints = buildFlowers()
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+        soundPool = SoundPool.Builder().setAudioAttributes(
+            AudioAttributes.Builder().setUsage(
+                AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
+        bellSoundId = soundPool.load(context, R.raw.flower_bell, 1)
+
 
         if(ACTIVITY_DEBUG_MODE){
 //            myItemType = ItemType.WATER
@@ -228,7 +237,6 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         // check the delta between taps and show new tap
         var opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
-                Log.d("flowerModel", "$GRASS_WATER_RADIUS")
                 waterDropletSets.addLast(WaterDroplet(timestamp))
                 if(grassPlantSets.isEmpty()) 0 else grassPlantSets.last().timestamp
             } else {
@@ -242,14 +250,17 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
             if(activeFlowerPoints.size < amountOfFlowers) {
                 activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
-                // add a vibration effect to clicks that are not mine
-                if (actor != playerId) {
-                    viewModelScope.launch(Dispatchers.IO) {
-                        delay(100)
-                        vibrator.vibrate(clickVibration)
-                    }
-                }
             }
+
+//            if (actor != playerId) {
+            viewModelScope.launch(Dispatchers.IO) {
+                Log.d("", "about to play sound")
+                soundPool.play(bellSoundId, 1f, 1f, 0, 0, 1f)
+                delay(100)
+                vibrator.vibrate(clickVibration)
+            }
+//            }
+
         }
         _counter.value++ // used to trigger recomposition
     }

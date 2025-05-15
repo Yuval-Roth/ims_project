@@ -86,7 +86,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     @SuppressLint("ReturnFromAwaitPointerEventScope")
     @Composable
     fun FlowerGarden() {
-        // this is used only to to trigger recomposition when new ripples are added //todo: can i remove it? UPDATE: NO
+        // this is used only to to trigger recomposition when new ripples are added
         viewModel.counter.collectAsState().value
 
         // flowers
