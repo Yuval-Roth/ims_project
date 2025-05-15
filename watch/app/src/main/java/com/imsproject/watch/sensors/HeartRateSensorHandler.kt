@@ -11,20 +11,30 @@ import com.samsung.android.service.health.tracking.HealthTrackingService
 import com.samsung.android.service.health.tracking.data.DataPoint
 import com.samsung.android.service.health.tracking.data.HealthTrackerType
 import com.samsung.android.service.health.tracking.data.ValueKey
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 class HeartRateSensorHandler private constructor() {
     private var healthService: HealthTrackingService? = null
     private var tracker: HealthTracker? = null
     private var initialized = false
     private var connected = false
+    private var gameViewModel : GameViewModel? = null
     var tracking = false
         private set
-    private var gameViewModel : GameViewModel? = null
+    private val _heartRate = MutableStateFlow(0)
+    val heartRate: StateFlow<Int> = _heartRate
+    private val _ibi = MutableStateFlow(0)
+    val ibi: StateFlow<Int> = _ibi
 
     fun init() {
 
         if (initialized) {
             throw IllegalStateException("Heart rate sensor already initialized")
+        }
+
+        if(!connected) {
+            throw IllegalStateException("Heart rate sensor not connected")
         }
 
         // validate healthService and tracker
@@ -34,15 +44,16 @@ class HeartRateSensorHandler private constructor() {
 
         tracker.setEventListener(object : HealthTracker.TrackerEventListener {
             override fun onDataReceived(dataPoints: List<DataPoint>) {
-                if (! tracking) return
-                val gameViewModel = gameViewModel ?: return
                 dataPoints.forEach {
                     val (hr, ibi) = it.toHeartRateData()
+                    _heartRate.value = hr
+                    _ibi.value = ibi
+                    if (! tracking) return
+                    val gameViewModel = gameViewModel ?: return
                     val actor = gameViewModel.playerId
                     val timestamp = gameViewModel.getCurrentGameTime()
                     gameViewModel.addEvent(SessionEvent.heartRate(actor, timestamp, hr.toString()))
-                    gameViewModel.addEvent(
-                        SessionEvent.interBeatInterval(
+                    gameViewModel.addEvent(SessionEvent.interBeatInterval(
                             actor,
                             timestamp,
                             ibi.toString()
@@ -56,6 +67,7 @@ class HeartRateSensorHandler private constructor() {
             }
         })
         this.tracker = tracker
+        initialized = true
     }
 
     fun connect(context: Context, onConnectionResponse: (Boolean, HealthTrackerException?) -> Unit) {

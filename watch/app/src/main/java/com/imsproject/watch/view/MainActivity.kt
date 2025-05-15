@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
@@ -51,6 +52,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.initProperties
@@ -167,7 +169,11 @@ class MainActivity : ComponentActivity() {
                 val gameType = viewModel.gameType.collectAsState().value?.prettyName() ?: ""
                 val gameDuration = (viewModel.gameDuration.collectAsState().value ?: "").toString()
                 val ready = viewModel.ready.collectAsState().value
-                ConnectedInLobbyScreen(userId, lobbyId,gameType,gameDuration, ready){
+                val sensorHandler = viewModel.heartRateSensorHandler
+                val hr = sensorHandler.heartRate.collectAsState().value
+//                val ibi = sensorHandler.ibi.collectAsState().value
+                val hrSensorReady = hr != 0
+                ConnectedInLobbyScreen(userId, lobbyId,gameType,gameDuration, ready, hrSensorReady){
                     viewModel.toggleReady()
                 }
             }
@@ -455,6 +461,7 @@ class MainActivity : ComponentActivity() {
         gameType: String,
         gameDuration: String,
         ready: Boolean,
+        hrSensorReady: Boolean,
         onReady: () -> Unit
     ) {
         MaterialTheme {
@@ -520,10 +527,16 @@ class MainActivity : ComponentActivity() {
                         Spacer(modifier = Modifier.fillMaxHeight(0.2f))
                         // Button
                         Button(
+                            colors = if(hrSensorReady) ButtonDefaults.primaryButtonColors()
+                                    else ButtonDefaults.buttonColors(
+                                             backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
+                                             contentColor = Color.White
+                                         ),
                             onClick = { onReady() },
                             modifier = Modifier
                                 .fillMaxWidth(0.6f)
                                 .fillMaxHeight(0.65f)
+
                         ) {
                             BasicText(
                                 text = if(ready) "UNREADY" else "READY UP",

@@ -44,8 +44,8 @@ class MainViewModel() : ViewModel() {
     }
 
     private var model = MainModel(viewModelScope)
-    private val heartRateSensorHandler = HeartRateSensorHandler.instance
-    private val locationSensorsHandler = LocationSensorsHandler.instance
+    val heartRateSensorHandler = HeartRateSensorHandler.instance
+    val locationSensorsHandler = LocationSensorsHandler.instance
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -220,6 +220,7 @@ class MainViewModel() : ViewModel() {
     fun onDestroy() {
         runBlocking(Dispatchers.Main){
             model.closeAllResources()
+            heartRateSensorHandler.disconnect()
         }
     }
 
