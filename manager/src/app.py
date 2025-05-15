@@ -416,44 +416,44 @@ def single_session_data():
 
     sid          = request.args.get('session_id')
     game_type    = request.args.get('game_type', '')
-    participants = request.args.get('participants', '')      # "Alice,Bob"
+    participants = request.args.get('participants', '')
     duration     = request.args.get('duration', '')
 
-    # 🔑  get all four return values
-    heart = get_heartrate(sid)
-    hrv = get_and_calculate_HRV(sid)
-    latency = get_latency(sid)
-    jitter = get_jitter(sid)
+    # ── metrics ──
+    heart    = get_heartrate(sid)
+    hrv      = get_and_calculate_HRV(sid)
+    latency  = get_latency(sid)
+    jitter   = get_jitter(sid)
 
-    if game_type in ["WATER_RIPPLES", "FLOWER_GARDEN"]:
+    click_events = sync_events = None
+    frequency_data = sync_intervals = None
+
+    if game_type in ("WATER_RIPPLES", "FLOWER_GARDEN"):
         click_events, sync_events = get_click_game_sync(sid)
     else:
-        frequency_data, frequency_labels, sync_intervals = get_swipe_game_frequency(sid)
-
+        frequency_data, sync_intervals = get_swipe_game_frequency(sid)
 
     metadata = {
-        "gameType": game_type,
+        "gameType"    : game_type,
         "participants": [p.strip() for p in participants.split(',') if p],
-        "sessionId": sid,
-        "duration": duration
+        "sessionId"   : sid,
+        "duration"    : duration
     }
     data = {
-        "heart": heart,
-        "hrv": hrv,
-        "latency": latency,
-        "jitter": jitter,
-        "click_events": click_events if game_type in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
-        "sync_events": sync_events if game_type in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
-        "frequency_data": frequency_data if game_type not in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
-        "frequency_labels": frequency_labels if game_type not in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
-        "sync_intervals": sync_intervals if game_type not in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
+        "heart"          : heart,
+        "hrv"            : hrv,
+        "latency"        : latency,
+        "jitter"         : jitter,
+        "click_events"   : click_events,
+        "sync_events"    : sync_events,
+        "frequency_data" : frequency_data,
+        "sync_intervals" : sync_intervals
     }
 
-    return render_template(
-        "single_session_data.html",
-        metadata       = metadata,
-        data           = data,
-    )
+    return render_template("single_session_data.html",
+                           metadata=metadata,
+                           data=data)
+
 
 # ───────────────────────────────────────── (optional) JSON API
 @app.route('/get_all_sessions', methods=['GET'])

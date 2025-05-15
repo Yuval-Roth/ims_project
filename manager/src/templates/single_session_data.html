@@ -8,21 +8,24 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
 
   <style>
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-      gap: 40px;
-      margin-top: 30px;
+    .charts-grid{
+      display:flex;
+      flex-direction:column;
+      gap:50px;
+      align-items:center;
+      margin:40px auto;
     }
-    .chart-container {
-      position: relative;
-      width: 100%;
-      height: 300px;
+    .chart-container{
+      width:90vw;
+      max-width:1200px;
+      height:420px;
+      position:relative;
     }
-    .chart-container:fullscreen {
-      width: 100vw; height: 100vh; background: #fff; padding: 12px; box-sizing: border-box;
+    .chart-container:fullscreen{
+      width:100vw;height:100vh;background:#fff;padding:12px;box-sizing:border-box;
     }
   </style>
 </head>
@@ -41,135 +44,110 @@
   </p>
 
   <div class="charts-grid">
+    <div class="chart-container"><h3 style="text-align:center;" id="gameChartTitle"></h3><canvas id="gameChart"></canvas></div>
     <div class="chart-container"><h3 style="text-align:center;">Heart Rate</h3><canvas id="hrChart"></canvas></div>
     <div class="chart-container"><h3 style="text-align:center;">HR Variation</h3><canvas id="hrvChart"></canvas></div>
     <div class="chart-container"><h3 style="text-align:center;">Latency</h3><canvas id="latencyChart"></canvas></div>
     <div class="chart-container"><h3 style="text-align:center;">Jitter</h3><canvas id="jitterChart"></canvas></div>
-    <div class="chart-container"><h3 style="text-align:center;" id="gameChartTitle"></h3><canvas id="gameChart"></canvas></div>
   </div>
 </div>
 
 <script>
-const meta = {{ metadata|tojson }};
-const heartData = {{ data.heart|tojson }};
-const hrvData = {{ data.hrv|tojson }};
-const latencyData = {{ data.latency|tojson }};
-const jitterData = {{ data.jitter|tojson }};
-const clickEvents = {{ data.click_events|tojson }};
-const syncEvents = {{ data.sync_events|tojson }};
-const frequencyData = {{ data.frequency_data|tojson }};
-const frequencyLabels = {{ data.frequency_labels|tojson }};
-const syncIntervals = {{ data.sync_intervals|tojson }};
+/* ----- data from Flask ----- */
+const meta           = {{ metadata|tojson }};
+const heartData      = {{ data.heart|tojson }};
+const hrvData        = {{ data.hrv|tojson }};
+const latencyData    = {{ data.latency|tojson }};
+const jitterData     = {{ data.jitter|tojson }};
+const clickEvents    = {{ data.click_events|tojson }};
+const syncEvents     = {{ data.sync_events|tojson }};
+const frequencyData  = {{ data.frequency_data|tojson }};
+const syncIntervals  = {{ data.sync_intervals|tojson }};
 
-/* ---------- Helpers ---------- */
-function makeDatasets(srcDict, labels, cfg = {}) {
-  return Object.keys(srcDict).map(actor => ({
-    label: actor,
-    data: srcDict[actor].map((v, i) => ({ x: +labels[i], y: +v })),
-    fill: false,
-    tension: 0.3,
-    ...cfg
+/* ----- helpers ----- */
+function dictToDatasets(dict, extra={}){
+  return Object.keys(dict).map(actor=>({
+    label:actor,
+    data:dict[actor].timestamps.map((t,i)=>({x:+t,y:+dict[actor].values[i]})),
+    pointRadius:3,tension:.3,fill:false,
+    ...extra
   }));
 }
-function makeLine(chartId, labels, datasets, yTitle) {
-  new Chart(chartId, {
-    type: 'line',
-    data: { labels: labels, datasets },
-    options: { responsive: true, scales: { y: { title: { display: true, text: yTitle } } } }
-  });
-}
-function makeBar(chartId, labels, datasets, yTitle) {
-  new Chart(chartId, {
-    type: 'bar',
-    data: { labels: labels, datasets },
-    options: { responsive: true, scales: { y: { beginAtZero: true, title: { display: true, text: yTitle } } } }
-  });
-}
-
-/* ---------- Build Charts ---------- */
-/* Heart Rate */
-{
-  const [hrData, hrLabels] = heartData;
-  makeLine(hrChart, hrLabels, makeDatasets(hrData, hrLabels), 'BPM');
-}
-
-/* HRV */
-{
-  const [hrvDict, hrvLabels] = hrvData;
-  makeLine(hrvChart, hrvLabels, makeDatasets(hrvDict, hrvLabels), 'ms');
-}
-
-/* Latency */
-{
-  const [latDict, latLabels] = latencyData;
-  makeBar(latencyChart, latLabels, makeDatasets(latDict, latLabels), 'ms');
-}
-
-/* Jitter */
-{
-  const [jitDict, jitLabels] = jitterData;
-  makeLine(jitterChart, jitLabels, makeDatasets(jitDict, jitLabels), 'ms');
-}
-
-/* Game-specific */
-const titleEl = document.getElementById('gameChartTitle');
-if (clickEvents) {
-  titleEl.textContent = 'Clicks & Sync Markers';
-  const actors = Object.keys(clickEvents);
-  const clickDatasets = actors.map(a => ({
-    type: 'scatter',
-    label: `${a} Click`,
-    data: clickEvents[a].map(t => ({ x: +t, y: actors.indexOf(a) })),
-    showLine: false
-  }));
-  const syncDataset = {
-    type: 'scatter',
-    label: 'Sync',
-    data: syncEvents.map(t => ({ x: +t, y: -1 })),
-    pointStyle: 'triangle',
-    radius: 6,
-    borderColor: '#d14',
-    backgroundColor: '#d14'
-  };
-  new Chart(gameChart, {
-    data: { datasets: [...clickDatasets, syncDataset] },
-    options: {
-      parsing: false,
-      responsive: true,
-      scales: { x: { title: { display: true, text: 'Time (s)' } }, y: { display: false } }
+function makeLine(canvas, datasets, yLab){
+  new Chart(canvas,{
+    type:'line',
+    data:{datasets},
+    options:{
+      parsing:false,
+      responsive:true,
+      scales:{
+        x:{type:'linear',title:{display:true,text:'Time (s)'}},
+        y:{title:{display:true,text:yLab}}
+      },
+      plugins:{tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}}
     }
   });
-
-} else if (frequencyData) {
-  titleEl.textContent = 'Finger Frequency & Sync Intervals';
-  const datasets = makeDatasets(frequencyData, frequencyLabels);
-  new Chart(gameChart, {
-    type: 'line',
-    data: { labels: frequencyLabels, datasets },
-    options: {
-      responsive: true,
-      scales: { y: { title: { display: true, text: 'Hz' } } },
-      plugins: {
-        annotation: {
-          annotations: (syncIntervals || []).map(([start, end]) => ({
-            type: 'box', xMin: start, xMax: end, backgroundColor: 'rgba(180,180,180,0.15)'
-          }))
-        }
-      }
-    },
-    plugins: [Chart.registry.getPlugin('annotation')]
-  });
-} else {
-  titleEl.textContent = '(No game-specific data)';
 }
 
-/* Fullscreen dblclick */
-document.querySelectorAll('.chart-container').forEach(c => {
-  c.addEventListener('dblclick', () => {
-    if (!document.fullscreenElement) {
-      (c.requestFullscreen || c.webkitRequestFullscreen || c.mozRequestFullScreen || c.msRequestFullscreen).call(c);
-    } else {
-      (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen).call(document);
+/* ----- build charts ----- */
+makeLine(hrChart,  dictToDatasets(heartData), 'BPM');
+makeLine(hrvChart, dictToDatasets(hrvData),  'ms');
+
+/* Latency (smooth) */
+makeLine(latencyChart,
+         dictToDatasets(latencyData,{pointRadius:0,tension:.4,
+                                      backgroundColor:'rgba(60,150,255,.08)',fill:'origin'}),'ms');
+/* Jitter */
+makeLine(jitterChart, dictToDatasets(jitterData), 'ms');
+
+/* ----- Game-specific chart ----- */
+const titleEl = document.getElementById('gameChartTitle');
+if (clickEvents){
+  titleEl.textContent='Clicks & Sync Markers';
+  const actors=Object.keys(clickEvents);
+  const clickSets=actors.map(a=>({
+    type:'scatter',label:`${a} Click`,showLine:false,
+    data:clickEvents[a].map(t=>({x:+t,y:actors.indexOf(a)}))
+  }));
+  const syncSet={type:'scatter',label:'Sync',
+                 data:syncEvents.map(t=>({x:+t,y:-1})),
+                 pointStyle:'triangle',radius:6,borderColor:'#d14',backgroundColor:'#d14'};
+  new Chart(gameChart,{data:{datasets:[...clickSets,syncSet]},options:{
+    parsing:false,responsive:true,
+    scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{display:false}}
+  }});
+}else if(frequencyData){
+  titleEl.textContent='Finger Frequency & Sync Intervals';
+  new Chart(gameChart,{
+    type:'line',
+    data:{datasets:dictToDatasets(frequencyData,{pointRadius:0})},
+    options:{
+      parsing:false,responsive:true,
+      scales:{
+        x:{type:'linear',title:{display:true,text:'Time (s)'}},
+        y:{title:{display:true,text:'Hz'}}
+      },
+      plugins:{
+        annotation:{annotations:(syncIntervals||[]).map(([s,e])=>({
+          type:'box',xMin:s,xMax:e,backgroundColor:'rgba(180,180,180,.15)'}))},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}
+      }
+    },
+    plugins:[Chart.registry.getPlugin('annotation')]
+  });
+}else{
+  titleEl.textContent='(No game-specific data)';
+}
+
+/* ----- fullscreen dbl-click ----- */
+document.querySelectorAll('.chart-container').forEach(c=>{
+  c.addEventListener('dblclick',()=>{
+    if(!document.fullscreenElement){
+      (c.requestFullscreen||c.webkitRequestFullscreen||
+       c.mozRequestFullScreen||c.msRequestFullscreen).call(c);
+    }else{
+      (document.exitFullscreen||document.webkitExitFullscreen||
+       document.mozCancelFullScreen||document.msExitFullscreen).call(document);
     }
   });
 });
