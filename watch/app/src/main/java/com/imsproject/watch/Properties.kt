@@ -8,7 +8,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.imsproject.watch.utils.polarToCartesian
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
@@ -108,14 +107,14 @@ var FREQUENCY_HISTORY_MILLISECONDS = 1000L
 var FLOWER_GARDEN_SYNC_TIME_THRESHOLD = 50
 var AMOUNT_OF_FLOWERS = 12
 var WATER_DROPLET_DROP_STEP = 0f // 0.3f
-var WATER_DROPLET_BASE_HEIGHT = 40f
-var WATER_DROPLET_BASE_WIDTH = 20f
 var WATER_DROPLET_FADE_COEFFICIENT = -0.005f
-var WATER_DROPLET_FADE_THREASHOLD = 0.05f
+var WATER_DROPLET_FADE_THRESHOLD = 0.05f
 var GRASS_PLANT_SWAY_STEP = 0f // 0.005f
 var GRASS_PLANT_SWAY_BASE_AMPLITUDE = 1f
-var GRASS_PLANT_FADE_COEFFICIENT = -0.0005f
-var GRASS_PLANT_FADE_THREASHOLD = 0.05f
+var GRASS_PLANT_FADE_COEFFICIENT = -0.005f
+var GRASS_PLANT_FADE_THRESHOLD = 0.05f
+var GRASS_PLANT_BASE_HEIGHT = 30f
+var GRASS_PLANT_BASE_WIDTH = 15f
 var GRASS_WATER_RADIUS = 0f //initialized later
 
 

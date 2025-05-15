@@ -40,15 +40,15 @@ import com.imsproject.watch.DARKER_BROWN_COLOR
 import com.imsproject.watch.DARKER_DARKER_BROWN_COLOR
 import com.imsproject.watch.DARK_GREEN_BACKGROUND_COLOR
 import com.imsproject.watch.GRASS_PLANT_FADE_COEFFICIENT
-import com.imsproject.watch.GRASS_PLANT_FADE_THREASHOLD
+import com.imsproject.watch.GRASS_PLANT_FADE_THRESHOLD
 import com.imsproject.watch.GRASS_PLANT_SWAY_BASE_AMPLITUDE
 import com.imsproject.watch.GRASS_PLANT_SWAY_STEP
 import com.imsproject.watch.SCREEN_RADIUS
-import com.imsproject.watch.WATER_DROPLET_BASE_HEIGHT
-import com.imsproject.watch.WATER_DROPLET_BASE_WIDTH
+import com.imsproject.watch.GRASS_PLANT_BASE_HEIGHT
+import com.imsproject.watch.GRASS_PLANT_BASE_WIDTH
 import com.imsproject.watch.WATER_DROPLET_DROP_STEP
 import com.imsproject.watch.WATER_DROPLET_FADE_COEFFICIENT
-import com.imsproject.watch.WATER_DROPLET_FADE_THREASHOLD
+import com.imsproject.watch.WATER_DROPLET_FADE_THRESHOLD
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
@@ -162,7 +162,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                         val centerX = center.first + grassPlantSet.centerXoffset[i]
                         val centerY = center.second + grassPlantSet.centerYoffset[i]
 
-                        drawGrassStroke(centerX, centerY, WATER_DROPLET_BASE_HEIGHT, WATER_DROPLET_BASE_WIDTH, grassPlantSet.color,
+                        drawGrassStroke(centerX, centerY, GRASS_PLANT_BASE_HEIGHT, GRASS_PLANT_BASE_WIDTH, grassPlantSet.color,
                             GRASS_PLANT_SWAY_BASE_AMPLITUDE * grassPlantSet.sway)
                     }
                 }
@@ -204,7 +204,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     waterDropletSet.color = currDropletColor.copy(nextAlpha)
 
                     //remove done water droplets
-                    if(waterDropletSet.color.alpha <= WATER_DROPLET_FADE_THREASHOLD) {
+                    if(waterDropletSet.color.alpha <= WATER_DROPLET_FADE_THRESHOLD) {
                         it.remove()
                         continue
                     }
@@ -225,7 +225,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     grassPlantSet.color = currPlantColor.copy(nextAlpha)
 
                     //remove done water droplets
-                    if(grassPlantSet.color.alpha <= GRASS_PLANT_FADE_THREASHOLD) {
+                    if(grassPlantSet.color.alpha <= GRASS_PLANT_FADE_THRESHOLD) {
                         it2.remove()
                         continue
                     }
