@@ -89,6 +89,22 @@ function makeLineChart(canvasId, datasets, yLabel){
   });
 }
 
+function dictToFrequencyDatasets(dict, extra = {}) {
+  return Object.keys(dict).map(actor => ({
+    label: actor,
+    data: dict[actor].timestamps.map((t, i) => {
+      let v = +dict[actor].values[i];
+      // Replace 0 with null to create gaps
+      return { x: +t, y: v === 0 ? null : v };
+    }),
+    pointRadius: 0,
+    tension: 0,
+    spanGaps: false,
+    fill: false,
+    ...extra
+  }));
+}
+
 /* ---------------------------------------------------------------
  *                   Metric charts (unchanged)
  * ------------------------------------------------------------- */
@@ -186,36 +202,40 @@ if (clickEvents) {
 
 } else if (frequencyData) {
   titleEl.textContent = 'Finger Frequency & Sync Intervals';
-  new Chart(document.getElementById('gameChart'), {
-    type: 'line',
-    data: { datasets: dictToDatasets(frequencyData, { pointRadius: 0 }) },
-    options: {
-      parsing: false,
-      responsive: true,
-      scales: {
-        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
-        y: { title: { display: true, text: 'Hz' } }
-      },
-      plugins: {
-        annotation: {
-          annotations: (syncIntervals || []).map(([s, e]) => ({
-            type: 'box',
-            xMin: s,
-            xMax: e,
-            yScaleID: 'y',
-            backgroundColor: 'rgba(180,180,180,0.15)'
-          }))
+  if (Object.keys(frequencyData).length > 0) {
+    new Chart(document.getElementById('gameChart'), {
+      type: 'line',
+      data: { datasets: dictToFrequencyDatasets(frequencyData) },
+      options: {
+        parsing: false,
+        responsive: true,
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+          y: { title: { display: true, text: 'Hz' } }
         },
-        tooltip: {
-          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` }
-        },
-        zoom: {
-          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
-          pan: { enabled: true, mode: 'x' }
+        plugins: {
+          annotation: {
+            annotations: (syncIntervals || []).map(([s, e]) => ({
+              type: 'box',
+              xMin: s,
+              xMax: e,
+              yScaleID: 'y',
+              backgroundColor: 'rgba(180,180,180,0.15)'
+            }))
+          },
+          tooltip: {
+            callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` }
+          },
+          zoom: {
+            zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' },
+            pan: { enabled: true, mode: 'x' }
+          }
         }
       }
-    }
-  });
+    });
+  } else {
+    document.getElementById('gameChart').style.display = 'none';
+  }
 }
 
 /* double-click any chart to toggle true fullscreen */

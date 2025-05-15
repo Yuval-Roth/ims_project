@@ -202,6 +202,13 @@ def get_swipe_game_frequency(session_id: str):
         except (ValueError, TypeError) as e:
             Logger.log_error(f"Invalid FREQUENCY data: {ev['data']}  error={e}")
 
+    # Sort data for each actor by timestamp
+    for actor, data in frequency_data.items():
+        combined = list(zip(map(float, data["timestamps"]), data["values"]))
+        combined.sort(key=lambda x: x[0])
+        data["timestamps"] = [f"{t:.3f}" for t, _ in combined]
+        data["values"] = [v for _, v in combined]
+
     sync_start_times = sorted(ev["timestamp"] / 1000.0 for ev in sync_start_events)
     sync_end_times = sorted(ev["timestamp"] / 1000.0 for ev in sync_end_events)
 
