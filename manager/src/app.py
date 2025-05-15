@@ -427,11 +427,12 @@ def single_session_data():
 
     click_events = sync_events = None
     frequency_data = sync_intervals = None
+    angle_data = None
 
     if game_type in ("WATER_RIPPLES", "FLOWER_GARDEN"):
         click_events, sync_events = get_click_game_sync(sid)
     else:
-        frequency_data, sync_intervals = get_swipe_game_frequency(sid)
+        frequency_data, angle_data, sync_intervals = get_swipe_game_frequency(sid)
 
     metadata = {
         "gameType"    : game_type,
@@ -447,7 +448,8 @@ def single_session_data():
         "click_events"   : click_events,
         "sync_events"    : sync_events,
         "frequency_data" : frequency_data,
-        "sync_intervals" : sync_intervals
+        "sync_intervals" : sync_intervals,
+        "angle_data"     : angle_data
     }
 
     return render_template("single_session_data.html",

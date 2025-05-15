@@ -188,10 +188,12 @@ def get_click_game_sync(session_id: str):
 
 def get_swipe_game_frequency(session_id: str):
     frequency_events = get_event_data(session_id, type_="USER_INPUT", subtype="FREQUENCY")
+    angle_events = get_event_data(session_id, type_="USER_INPUT", subtype="ANGLE")
     sync_start_events = get_event_data(session_id, subtype="SYNC_START_TIME")
     sync_end_events = get_event_data(session_id, subtype="SYNC_END_TIME")
 
     frequency_data = defaultdict(lambda: {"timestamps": [], "values": []})
+    angle_data = defaultdict(lambda: {"timestamps": [], "values": []})
 
     for ev in frequency_events:
         try:
@@ -202,8 +204,26 @@ def get_swipe_game_frequency(session_id: str):
         except (ValueError, TypeError) as e:
             Logger.log_error(f"Invalid FREQUENCY data: {ev['data']}  error={e}")
 
+    # angle data
+
+    for ev in angle_events:
+        try:
+            timestamp_sec = ev["timestamp"] / 1000.0
+            value = float(ev["data"])
+            angle_data[ev["actor"]]["timestamps"].append(f"{timestamp_sec:.3f}")
+            angle_data[ev["actor"]]["values"].append(value)
+        except (ValueError, TypeError) as e:
+            Logger.log_error(f"Invalid ANGLE data: {ev['data']}  error={e}")
+
     # Sort data for each actor by timestamp
     for actor, data in frequency_data.items():
+        combined = list(zip(map(float, data["timestamps"]), data["values"]))
+        combined.sort(key=lambda x: x[0])
+        data["timestamps"] = [f"{t:.3f}" for t, _ in combined]
+        data["values"] = [v for _, v in combined]
+
+    # Sort angle data for each actor by timestamp
+    for actor, data in angle_data.items():
         combined = list(zip(map(float, data["timestamps"]), data["values"]))
         combined.sort(key=lambda x: x[0])
         data["timestamps"] = [f"{t:.3f}" for t, _ in combined]
@@ -217,7 +237,7 @@ def get_swipe_game_frequency(session_id: str):
 
     sync_intervals = list(zip(sync_start_times, sync_end_times))
 
-    return dict(frequency_data), sync_intervals
+    return dict(frequency_data), dict(angle_data), sync_intervals
 
 
 def get_lobbies_data() -> list[dict]:
