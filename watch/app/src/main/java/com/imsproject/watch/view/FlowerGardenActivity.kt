@@ -39,6 +39,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARKER_BROWN_COLOR
 import com.imsproject.watch.DARKER_DARKER_BROWN_COLOR
 import com.imsproject.watch.DARK_GREEN_BACKGROUND_COLOR
+import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.GRASS_PLANT_FADE_COEFFICIENT
 import com.imsproject.watch.GRASS_PLANT_FADE_THRESHOLD
 import com.imsproject.watch.GRASS_PLANT_SWAY_BASE_AMPLITUDE
@@ -47,6 +48,7 @@ import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.GRASS_PLANT_BASE_HEIGHT
 import com.imsproject.watch.GRASS_PLANT_BASE_WIDTH
 import com.imsproject.watch.GRASS_PLANT_STROKE_WIDTH
+import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.WATER_DROPLET_DROP_STEP
 import com.imsproject.watch.WATER_DROPLET_FADE_COEFFICIENT
 import com.imsproject.watch.WATER_DROPLET_FADE_THRESHOLD
@@ -134,7 +136,22 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                     backgroundColor = DARKER_BROWN_COLOR,
                     contentColor = Color.Black
                 )
-            ){}
+            ){
+                //draw instruction icon
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Canvas(modifier = Modifier.matchParentSize()) {
+                        if (viewModel.myItemType == FlowerGardenViewModel.ItemType.WATER) {
+                            val centerX = size.width / 2
+                            val centerY = size.height / 2
+                            drawWaterDroplet(centerX, centerY, WATER_BLUE_COLOR)
+                        } else {
+                            val centerX = size.width / 2
+                            val centerY = size.height / 2 + GRASS_PLANT_BASE_HEIGHT / 2
+                            drawGrassStroke(centerX, centerY, GRASS_PLANT_BASE_HEIGHT, GRASS_PLANT_BASE_WIDTH, GRASS_GREEN_COLOR, amplitude = 0f)
+                        }
+                    }
+                }
+            }
 
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val h = SCREEN_RADIUS * 2f
@@ -162,10 +179,10 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 // draw plant - shaped like grass
                 for(grassPlantSet in viewModel.grassPlantSets) {
                     for(center in grassPlantSet.centers) {
-                        val centerX = center.first
-                        val centerY = center.second
+                        val baseX = center.first
+                        val baseY = center.second + GRASS_PLANT_BASE_HEIGHT / 2
 
-                        drawGrassStroke(centerX, centerY, GRASS_PLANT_BASE_HEIGHT, GRASS_PLANT_BASE_WIDTH, grassPlantSet.color,
+                        drawGrassStroke(baseX, baseY, GRASS_PLANT_BASE_HEIGHT, GRASS_PLANT_BASE_WIDTH, grassPlantSet.color,
                             GRASS_PLANT_SWAY_BASE_AMPLITUDE * grassPlantSet.sway)
                     }
                 }
@@ -268,7 +285,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         drawPath(path, color, style = Fill)
     }
 
-    private fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, amplitude : Float = GRASS_PLANT_SWAY_BASE_AMPLITUDE) {
+    private fun DrawScope.drawGrassStroke(baseX: Float, baseY: Float, height: Float, width: Float, color: Color, amplitude : Float = GRASS_PLANT_SWAY_BASE_AMPLITUDE) {
         val strokeWidth = GRASS_PLANT_STROKE_WIDTH
         val halfWidth = width / 2f
         val steps = 30
@@ -279,8 +296,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             val t = i / steps.toFloat()
             val x = t * halfWidth
             val y = sqrt(t) * height * (1 + amplitude)
-            val screenX = centerX + x
-            val screenY = centerY - y
+            val screenX = baseX + x
+            val screenY = baseY - y
             if (i == 0) {
                 rightPath.moveTo(screenX, screenY)
             } else {
@@ -294,8 +311,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             val t = i / steps.toFloat()
             val x = -t * halfWidth
             val y = sqrt(t) * height * (1 + amplitude - 0.1f)
-            val screenX = centerX + x
-            val screenY = centerY - y
+            val screenX = baseX + x
+            val screenY = baseY - y
             if (i == 0) {
                 leftPath.moveTo(screenX, screenY)
             } else {

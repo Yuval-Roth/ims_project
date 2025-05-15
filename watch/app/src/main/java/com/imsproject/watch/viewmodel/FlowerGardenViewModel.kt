@@ -58,7 +58,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
-    private lateinit var myItemType: ItemType
+    lateinit var myItemType: ItemType
 
 
     // ======================================
