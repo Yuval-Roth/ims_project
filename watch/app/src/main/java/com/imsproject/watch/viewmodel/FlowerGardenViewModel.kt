@@ -5,23 +5,23 @@ import android.content.Intent
 import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.BLUE_COLOR
-import com.imsproject.watch.GRAY_COLOR
+import com.imsproject.watch.AMOUNT_OF_FLOWERS
+import com.imsproject.watch.BROWN_COLOR
+import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
+import com.imsproject.watch.GRASS_GREEN_COLOR
+import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.RIPPLE_MAX_SIZE
-import com.imsproject.watch.VIVID_ORANGE_COLOR
-import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
-import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
-import com.imsproject.watch.WATER_RIPPLES_SYNC_TIME_THRESHOLD
+import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.WATER_BLUE_COLOR
+import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,11 +30,95 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 
 class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
+    enum class ItemType(){
+        WATER,
+        PLANT;
 
+        companion object {
+            fun fromString(string: String) = when(string.lowercase()){
+                "plant" -> PLANT
+                "water" -> WATER
+                else -> throw IllegalArgumentException("invalid string")
+            }
+        }
+    }
+
+    lateinit var myItemType: ItemType
+        private set
+
+
+    // ======================================
+    // =========== water droplet ============
+    // ======================================
+
+    class WaterDroplet(
+        var timestamp: Long = 0,
+    ) {
+        var color by mutableStateOf(WATER_BLUE_COLOR)
+        val centers : List<Pair<Float, Float>> =
+            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -60.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -120.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f,-150.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -30.0),
+                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -90.0))
+        val centerXoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
+        val centerYoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
+
+        var time = 0
+        var drop = 0f
+    }
+    val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
+
+    // ======================================
+    // ============ grass plant =============
+    // ======================================
+
+    class Plant(
+        var timestamp: Long = 0,
+    ) {
+        val centers : List<Pair<Float, Float>> =
+            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 120.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 60.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 30.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 150.0),
+                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 90.0))
+        var color by mutableStateOf(GRASS_GREEN_COLOR)
+        val centerXoffset = List(5) {
+            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
+        }
+        val centerYoffset = List(5) {
+            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
+        }
+        var time = 0
+        var sway : Float = 0f
+    }
+
+    val grassPlantSets = ConcurrentLinkedDeque<Plant>()
+
+    // ======================================
+    // ============== flowers ===============
+    // ======================================
+
+    class Flower(
+        var centerX : Float,
+        var centerY : Float,
+        var numOfPetals : Int,
+        var petalWidthCoef : Float,
+        var petalHeightCoef : Float,
+        var centerColor : Color,
+        var petalColor : Color,
+    )
+
+    val amountOfFlowers = AMOUNT_OF_FLOWERS
+    var activeFlowerPoints : ConcurrentLinkedDeque<Flower> = ConcurrentLinkedDeque()
+    lateinit var flowerPoints : List<Flower>
+    var _currFlowerIndex = MutableStateFlow(-1)
+    val currFlowerIndex: StateFlow<Int> = _currFlowerIndex
 
     private lateinit var clickVibration : VibrationEffect
 
@@ -42,9 +126,10 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-
+    //tracks the new taps
     private var _counter = MutableStateFlow(0)
     val counter: StateFlow<Int> = _counter
+
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -52,7 +137,8 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     fun click() {
         if(ACTIVITY_DEBUG_MODE){
-//            showRipple(playerId, System.currentTimeMillis())
+            Log.d("", "pressing")
+            showItem(playerId, System.currentTimeMillis())
             return
         }
 
@@ -65,25 +151,33 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent, context)
-
+        flowerPoints = buildFlowers()
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
 
         if(ACTIVITY_DEBUG_MODE){
+            myItemType = ItemType.WATER
+//            myItemType = ItemType.PLANT
+
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
-                    delay(1000)
-//                    showRipple("player1", System.currentTimeMillis())
+                    val otherPlayerId = "other player"
+                    delay(500)
+                    showItem(otherPlayerId, System.currentTimeMillis())
                 }
             }
             return
         }
 
+        //decode the sent configuration data
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
+        val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")!!.split(";")
+        myItemType = ItemType.fromString(additionalData[0]) //todo: change after order removed from server
+
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
             return
         }
-        WATER_RIPPLES_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
+        FLOWER_GARDEN_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
         Log.d(TAG, "syncTolerance: $syncTolerance")
     }
 
@@ -111,7 +205,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
                 }
 
                 val arrivedTimestamp = getCurrentGameTime()
-//                showRipple(actor, timestamp)
+                showItem(actor, timestamp)
                 
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
@@ -124,9 +218,53 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
+    private fun showItem(actor: String, timestamp : Long) {
+        // check the delta between taps and show new tap
+        var opponentsLatestTimestamp =
+            if((actor == playerId) == (myItemType == ItemType.WATER)) {
+                waterDropletSets.addLast(WaterDroplet(timestamp))
+                if(grassPlantSets.isEmpty()) 0 else grassPlantSets.last().timestamp
+            } else {
+                grassPlantSets.addLast(Plant(timestamp))
+                if(waterDropletSets.isEmpty()) 0 else waterDropletSets.last().timestamp
+            }
+
+        // add new flower if synced click
+        if((opponentsLatestTimestamp - timestamp)
+                .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
+            _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
+            if(activeFlowerPoints.size < amountOfFlowers) {
+                activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
+                // add a vibration effect to clicks that are not mine
+                if (actor != playerId) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        delay(100)
+                        vibrator.vibrate(clickVibration)
+                    }
+                }
+            }
+        }
+        _counter.value++ // used to trigger recomposition
+    }
+
+    private fun buildFlowers(): List<Flower> {
+        return List(amountOfFlowers) { i ->
+            val distanceFromCenter = (SCREEN_RADIUS * 2f)  / 2.5f
+            val petalCount: Int = listOf(5, 6, 7).random()
+            val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
+            val petalWidth: Float = listOf(0.4f, 0.5f, 0.6f, 0.7f).random()
+            val petalColor: Color = ORANGE_COLOR
+            val centerColor: Color = BROWN_COLOR
+
+            val angle = -90.0 + i * (360.0 / amountOfFlowers)  // Start at 12 o'clock (−90°) and go clockwise
+            val coor = polarToCartesian(distanceFromCenter, angle)
+            Flower(centerX =  coor.first, centerY = coor.second, petalCount, petalWidth, petalLength, centerColor, petalColor)
+        }
+    }
 
     companion object {
         private const val TAG = "WaterRipplesViewModel"
     }
 }
+
 
