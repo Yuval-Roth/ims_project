@@ -5,33 +5,24 @@
   <title>Single Session Data</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- site-wide css -->
   <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
-
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* 2-column responsive grid for the six charts */
-    .charts-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(380px,1fr));
-      gap:40px;
-      margin-top:30px;
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 40px;
+      margin-top: 30px;
     }
-    .chart-container{
-      position:relative;
-      width:100%;
-      height:300px;
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 300px;
     }
-    /* full-screen look & feel */
-    .chart-container:fullscreen{
-      width:100vw;
-      height:100vh;
-      background:#fff;
-      padding:12px;
-      box-sizing:border-box;
+    .chart-container:fullscreen {
+      width: 100vw; height: 100vh; background: #fff; padding: 12px; box-sizing: border-box;
     }
   </style>
 </head>
@@ -50,138 +41,138 @@
   </p>
 
   <div class="charts-grid">
-    <!-- ❶  Heart-rate mock (placeholder) -->
-    <div class="chart-container">
-      <h3 style="text-align:center;">Heart&nbsp;Rate</h3>
-      <canvas id="hrChart"></canvas>
-    </div>
-
-    <!-- ❷  HRV mock (placeholder) -->
-    <div class="chart-container">
-      <h3 style="text-align:center;">HR&nbsp;Variation</h3>
-      <canvas id="hrvChart"></canvas>
-    </div>
-
-    <!-- ❸  Network latency -->
-    <div class="chart-container">
-      <h3 style="text-align:center;">Latency</h3>
-      <canvas id="latencyChart"></canvas>
-    </div>
-
-    <!-- ❹  Input intensity -->
-    <div class="chart-container">
-      <h3 style="text-align:center;">Input&nbsp;Intensity</h3>
-      <canvas id="intensityChart"></canvas>
-    </div>
-
-    <!-- ❺  Pearson r (10-s) -->
-    <div class="chart-container">
-      <h3 style="text-align:center;">Pearson&nbsp;r&nbsp;(10-s window)</h3>
-      <canvas id="pearsonChart"></canvas>
-    </div>
-
-    <!-- ❻  Sync level (0-1) over time if you keep it; otherwise remove -->
-    <div class="chart-container">
-      <h3 style="text-align:center;">Sync&nbsp;Over&nbsp;Time</h3>
-      <canvas id="syncChart"></canvas>
-    </div>
+    <div class="chart-container"><h3 style="text-align:center;">Heart Rate</h3><canvas id="hrChart"></canvas></div>
+    <div class="chart-container"><h3 style="text-align:center;">HR Variation</h3><canvas id="hrvChart"></canvas></div>
+    <div class="chart-container"><h3 style="text-align:center;">Latency</h3><canvas id="latencyChart"></canvas></div>
+    <div class="chart-container"><h3 style="text-align:center;">Jitter</h3><canvas id="jitterChart"></canvas></div>
+    <div class="chart-container"><h3 style="text-align:center;" id="gameChartTitle"></h3><canvas id="gameChart"></canvas></div>
   </div>
 </div>
 
 <script>
-/* ───────────────────────── data injected from Flask ───────────────────────── */
-const meta           = {{ metadata|tojson }};
-const latencyData    = {{ sync_data|tojson }};        // labels + actors
-const intensityData  = {{ intensity_data|tojson }};
-const pearsonData    = {{ pearson_data|tojson }};
-const sttValue       = {{ stt|default('null') }};
+const meta = {{ metadata|tojson }};
+const heartData = {{ data.heart|tojson }};
+const hrvData = {{ data.hrv|tojson }};
+const latencyData = {{ data.latency|tojson }};
+const jitterData = {{ data.jitter|tojson }};
+const clickEvents = {{ data.click_events|tojson }};
+const syncEvents = {{ data.sync_events|tojson }};
+const frequencyData = {{ data.frequency_data|tojson }};
+const frequencyLabels = {{ data.frequency_labels|tojson }};
+const syncIntervals = {{ data.sync_intervals|tojson }};
 
-/* ----------  fullscreen helper  ---------- */
-document.querySelectorAll('.chart-container').forEach(c => {
-  c.addEventListener('dblclick', () => {
-    if (!document.fullscreenElement){
-      (c.requestFullscreen||c.webkitRequestFullscreen||
-       c.mozRequestFullScreen||c.msRequestFullscreen).call(c);
-    }else{
-      (document.exitFullscreen||document.webkitExitFullscreen||
-       document.mozCancelFullScreen||document.msExitFullscreen).call(document);
-    }
-  });
-});
-
-/* ----------  helpers ---------- */
-function makeDatasets(src, cfg={}) {
-  /* turn {actor1:[…],actor2:[…]} → Chart.js datasets */
-  return meta.participants.map(name => ({
-    label:name,
-    data:src[name] ?? [],
-    tension:0.3,
-    fill:false,
+/* ---------- Helpers ---------- */
+function makeDatasets(srcDict, labels, cfg = {}) {
+  return Object.keys(srcDict).map(actor => ({
+    label: actor,
+    data: srcDict[actor].map((v, i) => ({ x: +labels[i], y: +v })),
+    fill: false,
+    tension: 0.3,
     ...cfg
   }));
 }
-
-/* ----------  build charts ---------- */
-
-/* ❶ quick placeholder HR / HRV using randoms – replace when real data arrives */
-function rand(len,min,max){
-  return Array.from({length:len},()=>+(Math.random()*(max-min)+min).toFixed(2));
-}
-const mockLabels=[...Array( latencyData.labels.length||20 ).keys()].map(String);
-
-new Chart(hrChart,{
-  type:'line',
-  data:{labels:mockLabels,
-        datasets:makeDatasets(Object.fromEntries(meta.participants.map(n=>[n,rand(mockLabels.length,60,100)])))},
-  options:{responsive:true,scales:{y:{title:{display:true,text:'BPM'}}}}
-});
-new Chart(hrvChart,{
-  type:'line',
-  data:{labels:mockLabels,
-        datasets:makeDatasets(Object.fromEntries(meta.participants.map(n=>[n,rand(mockLabels.length,5,20)])))},
-  options:{responsive:true,scales:{y:{title:{display:true,text:'ms'}}}}
-});
-
-/* ❸ latency */
-new Chart(latencyChart,{
-  type:'bar',
-  data:{labels:latencyData.labels,datasets:makeDatasets(latencyData)},
-  options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'ms'}}}}
-});
-
-/* ❹ intensity */
-new Chart(intensityChart,{
-  type:'line',
-  data:{labels:intensityData.labels,datasets:makeDatasets(intensityData)},
-  options:{responsive:true,scales:{y:{beginAtZero:true,title:{display:true,text:'Count / 2 s'}}}}
-});
-
-/* ❺ Pearson r */
-if(pearsonData.labels && pearsonData.labels.length){
-  new Chart(pearsonChart,{
-    type:'line',
-    data:{labels:pearsonData.labels,datasets:makeDatasets(pearsonData,{tension:0})},
-    options:{responsive:true,scales:{y:{min:-1,max:1,title:{display:true,text:'r'}}}}
+function makeLine(chartId, labels, datasets, yTitle) {
+  new Chart(chartId, {
+    type: 'line',
+    data: { labels: labels, datasets },
+    options: { responsive: true, scales: { y: { title: { display: true, text: yTitle } } } }
   });
-}else{
-  pearsonChart.parentElement.style.display='none';
+}
+function makeBar(chartId, labels, datasets, yTitle) {
+  new Chart(chartId, {
+    type: 'bar',
+    data: { labels: labels, datasets },
+    options: { responsive: true, scales: { y: { beginAtZero: true, title: { display: true, text: yTitle } } } }
+  });
 }
 
-/* ❻ Sync-over-time – use latencyData here or your own metric */
-new Chart(syncChart,{
-  type:'line',
-  data:{labels:latencyData.labels,datasets:makeDatasets(latencyData,{tension:0.4})},
-  options:{responsive:true,scales:{y:{beginAtZero:true,max:1,title:{display:true,text:'Sync'}}}}
+/* ---------- Build Charts ---------- */
+/* Heart Rate */
+{
+  const [hrData, hrLabels] = heartData;
+  makeLine(hrChart, hrLabels, makeDatasets(hrData, hrLabels), 'BPM');
+}
+
+/* HRV */
+{
+  const [hrvDict, hrvLabels] = hrvData;
+  makeLine(hrvChart, hrvLabels, makeDatasets(hrvDict, hrvLabels), 'ms');
+}
+
+/* Latency */
+{
+  const [latDict, latLabels] = latencyData;
+  makeBar(latencyChart, latLabels, makeDatasets(latDict, latLabels), 'ms');
+}
+
+/* Jitter */
+{
+  const [jitDict, jitLabels] = jitterData;
+  makeLine(jitterChart, jitLabels, makeDatasets(jitDict, jitLabels), 'ms');
+}
+
+/* Game-specific */
+const titleEl = document.getElementById('gameChartTitle');
+if (clickEvents) {
+  titleEl.textContent = 'Clicks & Sync Markers';
+  const actors = Object.keys(clickEvents);
+  const clickDatasets = actors.map(a => ({
+    type: 'scatter',
+    label: `${a} Click`,
+    data: clickEvents[a].map(t => ({ x: +t, y: actors.indexOf(a) })),
+    showLine: false
+  }));
+  const syncDataset = {
+    type: 'scatter',
+    label: 'Sync',
+    data: syncEvents.map(t => ({ x: +t, y: -1 })),
+    pointStyle: 'triangle',
+    radius: 6,
+    borderColor: '#d14',
+    backgroundColor: '#d14'
+  };
+  new Chart(gameChart, {
+    data: { datasets: [...clickDatasets, syncDataset] },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: { x: { title: { display: true, text: 'Time (s)' } }, y: { display: false } }
+    }
+  });
+
+} else if (frequencyData) {
+  titleEl.textContent = 'Finger Frequency & Sync Intervals';
+  const datasets = makeDatasets(frequencyData, frequencyLabels);
+  new Chart(gameChart, {
+    type: 'line',
+    data: { labels: frequencyLabels, datasets },
+    options: {
+      responsive: true,
+      scales: { y: { title: { display: true, text: 'Hz' } } },
+      plugins: {
+        annotation: {
+          annotations: (syncIntervals || []).map(([start, end]) => ({
+            type: 'box', xMin: start, xMax: end, backgroundColor: 'rgba(180,180,180,0.15)'
+          }))
+        }
+      }
+    },
+    plugins: [Chart.registry.getPlugin('annotation')]
+  });
+} else {
+  titleEl.textContent = '(No game-specific data)';
+}
+
+/* Fullscreen dblclick */
+document.querySelectorAll('.chart-container').forEach(c => {
+  c.addEventListener('dblclick', () => {
+    if (!document.fullscreenElement) {
+      (c.requestFullscreen || c.webkitRequestFullscreen || c.mozRequestFullScreen || c.msRequestFullscreen).call(c);
+    } else {
+      (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen).call(document);
+    }
+  });
 });
-
-/* ----------  show STT if present ---------- */
-if(sttValue!==null){
-  document.querySelector('.session-container').insertAdjacentHTML(
-    'beforeend',
-    `<p style="text-align:center;margin-top:8px;">
-       <strong>Shared&nbsp;Tempo&nbsp;Time:</strong>&nbsp;${(sttValue*100).toFixed(1)}%
-     </p>`);
-}
 </script>
 </body>
 </html>
