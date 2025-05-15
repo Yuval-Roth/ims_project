@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
         setupSensorsPermission()
         setupWifi()
         setupUncaughtExceptionHandler()
+        viewModel.onCreate(applicationContext)
         setContent {
             Main()
         }

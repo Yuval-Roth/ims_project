@@ -56,8 +56,8 @@ abstract class GameViewModel(
         private set
     protected val packetTracker = PacketTracker()
     private lateinit var latencyTracker : LatencyTracker
-    private lateinit var heartRateSensorHandler: HeartRateSensorHandler
-    private lateinit var locationSensorsHandler: LocationSensorsHandler
+    private val heartRateSensorHandler: HeartRateSensorHandler = HeartRateSensorHandler.instance
+    private val locationSensorsHandler: LocationSensorsHandler = LocationSensorsHandler.instance
     lateinit var wavPlayer: WavPlayer
         private set
 
@@ -115,9 +115,6 @@ abstract class GameViewModel(
                 addEvent(SessionEvent.packetOutOfOrder(playerId,getCurrentGameTime()))
             }
 
-            heartRateSensorHandler = HeartRateSensorHandler()
-            locationSensorsHandler = LocationSensorsHandler(context, this@GameViewModel)
-
             // latency tracker setup
             latencyTracker = LatencyTracker(
                 viewModelScope,
@@ -153,20 +150,11 @@ abstract class GameViewModel(
 
             // =================== game start =================== |
 
-            locationSensorsHandler.start()
-            heartRateSensorHandler.connect(context){ connected, e ->
-                if(connected){
-                    heartRateSensorHandler.startTracking(this@GameViewModel)
-                } else {
-                    Log.e(TAG, "Could not connect to heart rate monitor", e)
-                    viewModelScope.launch(Dispatchers.Main) {
-                        Toast.makeText(context, "Heart rate unavailable", Toast.LENGTH_LONG).show()
-                    }
-                }
-                addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
-                Log.d(TAG, "onCreate: session started")
-                setState(State.PLAYING)
-            }
+            locationSensorsHandler.startTracking(this@GameViewModel)
+            heartRateSensorHandler.startTracking(this@GameViewModel)
+            addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
+            Log.d(TAG, "onCreate: session started")
+            setState(State.PLAYING)
         }
     }
 
@@ -253,11 +241,11 @@ abstract class GameViewModel(
 
     protected open fun onExit(){
         clearListeners() // clear the listeners to prevent any further messages from being processed.
-        if(::locationSensorsHandler.isInitialized){
-            locationSensorsHandler.stop()
+        if(locationSensorsHandler.tracking){
+            locationSensorsHandler.stopTracking()
         }
-        if(::heartRateSensorHandler.isInitialized){
-            heartRateSensorHandler.disconnect()
+        if(heartRateSensorHandler.tracking){
+            heartRateSensorHandler.stopTracking()
         }
         if(::wavPlayer.isInitialized){
             wavPlayer.pauseAll()
