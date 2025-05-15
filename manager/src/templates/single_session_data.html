@@ -12,17 +12,11 @@
 
   <style>
     .charts-grid{
-      display:flex;
-      flex-direction:column;
-      gap:50px;
-      align-items:center;
-      margin:40px auto;
+      display:flex; flex-direction:column; gap:50px;
+      align-items:center; margin:40px auto;
     }
     .chart-container{
-      width:90vw;
-      max-width:1200px;
-      height:420px;
-      position:relative;
+      width:90vw; max-width:1200px; height:420px; position:relative;
     }
     .chart-container:fullscreen{
       width:100vw;height:100vh;background:#fff;padding:12px;box-sizing:border-box;
@@ -36,10 +30,10 @@
 </a>
 
 <div class="session-container">
-  <h1>Session&nbsp;ID:&nbsp;#{{ metadata.sessionId }}</h1>
+  <h1>Session ID:&nbsp;#{{ metadata.sessionId }}</h1>
   <p style="text-align:center;">
-    <strong>Game&nbsp;Type:</strong>&nbsp;{{ metadata.gameType.replace('_',' ').title() }}&nbsp;|
-    <strong>Duration:</strong>&nbsp;{{ metadata.duration }}&nbsp;s&nbsp;|
+    <strong>Game Type:</strong>&nbsp;{{ metadata.gameType.replace('_',' ').title() }} |
+    <strong>Duration:</strong>&nbsp;{{ metadata.duration }} s |
     <strong>Participants:</strong>&nbsp;{{ metadata.participants|join(' & ') }}
   </p>
 
@@ -53,7 +47,7 @@
 </div>
 
 <script>
-/* ---- data from Flask ---- */
+/* -------- data from Flask -------- */
 const meta           = {{ metadata|tojson }};
 const heartData      = {{ data.heart|tojson }};
 const hrvData        = {{ data.hrv|tojson }};
@@ -64,7 +58,7 @@ const syncEvents     = {{ data.sync_events|tojson }};
 const frequencyData  = {{ data.frequency_data|tojson }};
 const syncIntervals  = {{ data.sync_intervals|tojson }};
 
-/* ---- helpers ---- */
+/* -------- helpers -------- */
 function dictToDatasets(dict, extra={}){
   return Object.keys(dict).map(actor=>({
     label:actor,
@@ -89,7 +83,7 @@ function makeLine(canvas, datasets, yLab){
   });
 }
 
-/* ---- metric charts ---- */
+/* -------- metric charts -------- */
 makeLine(hrChart,  dictToDatasets(heartData), 'BPM');
 makeLine(hrvChart, dictToDatasets(hrvData),  'ms');
 makeLine(latencyChart,
@@ -97,56 +91,92 @@ makeLine(latencyChart,
                                       backgroundColor:'rgba(60,150,255,.08)',fill:'origin'}),'ms');
 makeLine(jitterChart, dictToDatasets(jitterData), 'ms');
 
-/* ---- Clicks & Sync custom chart ---- */
-const titleEl=document.getElementById('gameChartTitle');
+/* -------- Clicks & Sync chart -------- */
+const titleEl = document.getElementById('gameChartTitle');
+const RED  = '#dc3545';
+const BLUE = '#007bff';
+const GOLD = '#ffca2c';
+const SYNC_W = 1.5;
 
-if (clickEvents){
-  titleEl.textContent='Clicks & Sync Markers';
+if (clickEvents) {
+  titleEl.textContent = 'Clicks & Sync Markers';
 
-  const actors=Object.keys(clickEvents).sort();  // first actor -> red/top, second -> blue/bottom
-  const topA   = actors[0]||'A';
-  const bottomA= actors[1]||'B';
+  const actors = Object.keys(clickEvents).sort();
+  const topA = actors[0] || 'A';
+  const bottomA = actors[1] || 'B';
 
-  /* build vertical-line annotations */
-  const annotations=[];
-
-  (clickEvents[topA]||[]).forEach(t=>{
-    annotations.push({type:'line',xMin:+t,xMax:+t,yMin:0.5,yMax:1,borderColor:'red',borderWidth:2});
+  // --- Annotations: the visual bars ---
+  const annotations = [];
+  (clickEvents[topA] || []).forEach(t => {
+    annotations.push({type: 'line', xMin: +t, xMax: +t, yMin: 0.55, yMax: 1, borderColor: RED, borderWidth: 2});
   });
-  (clickEvents[bottomA]||[]).forEach(t=>{
-    annotations.push({type:'line',xMin:+t,xMax:+t,yMin:0,yMax:0.5,borderColor:'blue',borderWidth:2});
+  (clickEvents[bottomA] || []).forEach(t => {
+    annotations.push({type: 'line', xMin: +t, xMax: +t, yMin: 0, yMax: 0.45, borderColor: BLUE, borderWidth: 2});
   });
-  (syncEvents||[]).forEach(t=>{
-    annotations.push({type:'line',xMin:+t,xMax:+t,yMin:0,yMax:1,borderColor:'gold',borderWidth:3});
+  (syncEvents || []).forEach(t => {
+    annotations.push({type: 'line', xMin: +t, xMax: +t, yMin: 0, yMax: 1, borderColor: GOLD, borderWidth: SYNC_W});
   });
 
-  /* dummy datasets only for legend colours */
-  const legendSets=[
-    {label:`${topA} Click`, data:[], borderColor:'red', borderWidth:2},
-    {label:`${bottomA} Click`, data:[], borderColor:'blue', borderWidth:2},
-    {label:'Sync', data:[], borderColor:'gold', borderWidth:3}
+  // --- Invisible scatter for tooltip & filtering ---
+  const datasets = [
+    {
+      label: `${topA} Click`, showLine: false,
+      data: (clickEvents[topA] || []).map(t => ({x: +t, y: 0.775})),
+      pointRadius: 0, hitRadius: 10, backgroundColor: RED
+    },
+    {
+      label: `${bottomA} Click`, showLine: false,
+      data: (clickEvents[bottomA] || []).map(t => ({x: +t, y: 0.225})),
+      pointRadius: 0, hitRadius: 10, backgroundColor: BLUE
+    },
+    {
+      label: 'Sync', showLine: false,
+      data: (syncEvents || []).map(t => ({x: +t, y: 0.5})),
+      pointRadius: 0, hitRadius: 10, backgroundColor: GOLD
+    }
   ];
 
-  new Chart(gameChart,{
-    type:'line',
-    data:{datasets:legendSets},
-    options:{
-      parsing:false,
-      responsive:true,
-      scales:{
-        x:{type:'linear',title:{display:true,text:'Time (s)'}},
-        y:{display:false,min:0,max:1}
+  const gChart = new Chart(gameChart, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { display: false, min: 0, max: 1 }
       },
-      plugins:{
-        annotation:{annotations},
-        legend:{labels:{usePointStyle:true}}
+      plugins: {
+        annotation: { annotations },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(2)}s`
+          }
+        },
+        legend: {
+          labels: { usePointStyle: true },
+          onClick(e, item) {
+            const dsIndex = item.datasetIndex;
+            const meta = gChart.getDatasetMeta(dsIndex);
+            meta.hidden = !meta.hidden;
+
+            const label = item.text;
+            annotations.forEach(a => {
+              const matchSync = label === 'Sync' && a.borderColor === GOLD;
+              const matchTop  = label.includes(topA) && a.borderColor === RED;
+              const matchBot  = label.includes(bottomA) && a.borderColor === BLUE;
+              if (matchSync || matchTop || matchBot) a.display = meta.hidden ? false : true;
+            });
+
+            gChart.update();
+          }
+        }
       }
     },
-    plugins:[Chart.registry.getPlugin('annotation')]
+    plugins: [Chart.registry.getPlugin('annotation')]
   });
 
-}else if (frequencyData){
-  /* --- SWIPE game (unchanged) --- */
+} else if (frequencyData) {
   titleEl.textContent='Finger Frequency & Sync Intervals';
   new Chart(gameChart,{
     type:'line',
@@ -169,7 +199,7 @@ if (clickEvents){
   titleEl.textContent='(No game-specific data)';
 }
 
-/* ---- fullscreen on double-click ---- */
+/* -------- fullscreen on double-click -------- */
 document.querySelectorAll('.chart-container').forEach(c=>{
   c.addEventListener('dblclick',()=>{
     if(!document.fullscreenElement){
