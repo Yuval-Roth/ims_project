@@ -69,6 +69,7 @@ data class SessionEvent internal constructor (
         @SerializedName("sync_start_time")          SYNC_START_TIME,
         @SerializedName("sync_end_time")            SYNC_END_TIME,
         @SerializedName("synced_at_time")           SYNCED_AT_TIME,
+        @SerializedName("flour_dropped")            FLOUR_DROPPED,
 
         // META_DATA
         @SerializedName("server_start_time")        SERVER_START_TIME,
@@ -307,6 +308,11 @@ data class SessionEvent internal constructor (
             actor: String,
             timestamp: Long
         ) = SessionEvent(Type.SYNC_DATA, Subtype.SYNCED_AT_TIME, timestamp, actor)
+
+        fun flourDropped(
+            actor: String,
+            timestamp: Long
+        ) = SessionEvent(Type.SYNC_DATA, Subtype.FLOUR_DROPPED, timestamp, actor)
 
         // ==================== META_DATA ==================== |
 
