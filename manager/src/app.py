@@ -428,7 +428,7 @@ def single_session_data():
     if game_type in ["WATER_RIPPLES", "FLOWER_GARDEN"]:
         click_events, sync_events = get_click_game_sync(sid)
     else:
-        angle, sync_start_events, sync_end_events = get_swipe_game_sync(sid)
+        frequency_data, frequency_labels, sync_intervals = get_swipe_game_frequency(sid)
 
 
     metadata = {
@@ -437,19 +437,22 @@ def single_session_data():
         "sessionId": sid,
         "duration": duration
     }
+    data = {
+        "heart": heart,
+        "hrv": hrv,
+        "latency": latency,
+        "jitter": jitter,
+        "click_events": click_events if game_type in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
+        "sync_events": sync_events if game_type in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
+        "frequency_data": frequency_data if game_type not in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
+        "frequency_labels": frequency_labels if game_type not in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
+        "sync_intervals": sync_intervals if game_type not in ["WATER_RIPPLES", "FLOWER_GARDEN"] else None,
+    }
 
     return render_template(
         "single_session_data.html",
         metadata       = metadata,
-        heart          = heart,
-        hrv            = hrv,
-        latency        = latency,
-        jitter         = jitter,
-        click_events   = click_events,
-        sync_events     = sync_events,
-        angle          = angle,
-        sync_start_events = sync_start_events,
-        sync_end_events = sync_end_events
+        data           = data,
     )
 
 # ───────────────────────────────────────── (optional) JSON API

@@ -96,30 +96,87 @@ def get_heartrate(session_id: str):
 
 def get_click_game_sync(session_id: str):
     """
-    Example usage for click game events with subtype "CLICK" and "SYNCED_AT_TIME"
+    Retrieves click game sync data:
+    - click_data: dict of actor -> sorted list of timestamps in seconds (float)
+    - sync_data: sorted list of timestamps in seconds (float)
     """
     click_events = get_event_data(session_id, type_="USER_INPUT", subtype="CLICK")
     sync_events = get_event_data(session_id, subtype="SYNCED_AT_TIME")
-    return click_events, sync_events
+
+    click_data = defaultdict(list)
+    sync_data = []
+
+    # Collect timestamps
+    for ev in click_events:
+        timestamp_sec = ev["timestamp"] / 1000.0
+        click_data[ev["actor"]].append(timestamp_sec)
+
+    for ev in sync_events:
+        timestamp_sec = ev["timestamp"] / 1000.0
+        sync_data.append(timestamp_sec)
+
+    # Sort lists
+    for actor in click_data:
+        click_data[actor].sort()
+
+    sync_data.sort()
+
+    return click_data, sync_data
 
 
-def get_swipe_game_sync(session_id: str):
+
+def get_swipe_game_frequency(session_id: str):
     """
-    Example usage for swipe game events:
-    - ANGLE events
-    - SYNC_START_TIME and SYNC_END_TIME events
+    Retrieves swipe game frequency data:
+    - frequency_data: dict of actor -> sorted list of values
+    - frequency_labels: sorted list of timestamps in seconds (float)
+    - sync_intervals: list of (start_time_sec, end_time_sec) tuples
     """
-    angle_events = get_event_data(session_id, type_="USER_INPUT", subtype="ANGLE")
+    frequency_events = get_event_data(session_id, type_="USER_INPUT", subtype="FREQUENCY")
     sync_start_events = get_event_data(session_id, subtype="SYNC_START_TIME")
     sync_end_events = get_event_data(session_id, subtype="SYNC_END_TIME")
-    return angle_events, sync_start_events, sync_end_events
+
+    # --- Frequency Data ---
+    frequency_tmp = []
+
+    for ev in frequency_events:
+        try:
+            timestamp_sec = ev["timestamp"] / 1000.0
+            value = float(ev["data"])
+            frequency_tmp.append((timestamp_sec, ev["actor"], value))
+        except (ValueError, TypeError) as e:
+            Logger.log_error(f"Invalid FREQUENCY data: {ev['data']}  error={e}")
+
+    # Sort globally by timestamp
+    frequency_tmp.sort(key=lambda x: x[0])
+
+    frequency_data = defaultdict(list)
+    frequency_labels = []
+
+    for timestamp_sec, actor, value in frequency_tmp:
+        frequency_data[actor].append(value)
+        frequency_labels.append(f"{timestamp_sec:.3f}")
+
+    # --- Sync Intervals ---
+    sync_start_times = sorted(ev["timestamp"] / 1000.0 for ev in sync_start_events)
+    sync_end_times = sorted(ev["timestamp"] / 1000.0 for ev in sync_end_events)
+
+    if len(sync_start_times) != len(sync_end_times):
+        Logger.log_error(f"Session {session_id}: Mismatched SYNC_START_TIME ({len(sync_start_times)}) and SYNC_END_TIME ({len(sync_end_times)}) events")
+
+    # Combine into intervals (zip trims to shortest list)
+    sync_intervals = list(zip(sync_start_times, sync_end_times))
+
+    return frequency_data, frequency_labels, sync_intervals
+
+
 
 
 def get_latency(session_id: str):
     """
     Returns:
         latency_data – latency data for each actor
-        latency_labels – labels for the latency data
+        latency_labels – labels for the latency data (float seconds with ms precision)
     """
     try:
         events = get_event_data(session_id, subtype="LATENCY")
@@ -130,11 +187,19 @@ def get_latency(session_id: str):
         latency_data = defaultdict(list)
         latency_labels = []
 
+        t0 = events[0]["timestamp"]
+
         for ev in events:
             latency_data[ev["actor"]].append(ev["data"])
-            latency_labels.append(str((ev["timestamp"] - events[0]["timestamp"]) // 1000.0))
+            elapsed_sec = (ev["timestamp"] - t0) / 1000.0  # Keep precision
+            latency_labels.append(f"{elapsed_sec:.3f}")     # format to 3 decimal places
 
         return latency_data, latency_labels
+
+    except Exception as e:
+        Logger.log_error(f"get_latency – {e}")
+        return {}, []
+
 
     except Exception as e:
         Logger.log_error(f"get_latency – {e}")
@@ -145,7 +210,7 @@ def get_jitter(session_id: str):
     """
     Returns:
         jitter_data – jitter data for each actor
-        jitter_labels – labels for the jitter data
+        jitter_labels – labels for the jitter data (float seconds with ms precision)
     """
     try:
         events = get_event_data(session_id, subtype="JITTER")
@@ -156,11 +221,14 @@ def get_jitter(session_id: str):
         jitter_data = defaultdict(list)
         jitter_labels = []
 
+        t0 = events[0]["timestamp"]
+
         for ev in events:
             if ev["data"] == '0':
                 continue
             jitter_data[ev["actor"]].append(ev["data"])
-            jitter_labels.append(str((ev["timestamp"] - events[0]["timestamp"]) // 1000))
+            elapsed_sec = (ev["timestamp"] - t0) / 1000.0  # Keep ms precision
+            jitter_labels.append(f"{elapsed_sec:.3f}")     # Format as 3 decimal places
 
         return jitter_data, jitter_labels
 
