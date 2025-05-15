@@ -55,6 +55,8 @@ import com.imsproject.watch.DARK_ORANGE_COLOR
 import com.imsproject.watch.DEEP_BLUE_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_ORANGE_COLOR
+import com.imsproject.watch.LOW_LOOP_TRACK
+import com.imsproject.watch.MILL_SOUND_TRACK
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
 import com.imsproject.watch.MY_STROKE_WIDTH
@@ -175,6 +177,30 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                         bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
+                }
+            }
+
+            // ================== Sound effects ================== |
+
+            // play high sound when in sync
+            LaunchedEffect(myReleased){
+                val sound = viewModel.wavPlayer
+                if(! myReleased) {
+                    var playing = false
+                    var inSync: Boolean
+                    while (true) {
+                        inSync = viewModel.inSync
+                        if (!playing && inSync) {
+                            sound.playLooped(MILL_SOUND_TRACK)
+                            playing = true
+                        } else if (playing && !inSync) {
+                            sound.pause(MILL_SOUND_TRACK)
+                            playing = false
+                        }
+                        delay(16)
+                    }
+                } else if(sound.isPlaying(MILL_SOUND_TRACK)) {
+                    sound.stopFadeOut(MILL_SOUND_TRACK, 20)
                 }
             }
 

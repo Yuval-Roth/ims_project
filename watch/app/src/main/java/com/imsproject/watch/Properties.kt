@@ -97,6 +97,9 @@ const val HIGH_LOOP_TRACK = 4
 
 var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.1f
 
+// tracks
+const val MILL_SOUND_TRACK = 0
+
 // =================== General ====================== |
 
 var FREQUENCY_HISTORY_MILLISECONDS = 1000L

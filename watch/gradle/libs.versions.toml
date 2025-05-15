@@ -11,6 +11,7 @@ composeFoundation = "1.4.0"
 wearToolingPreview = "1.0.0"
 activityCompose = "1.9.3"
 coreSplashscreen = "1.0.1"
+junitJupiter = "5.8.1"
 
 [libraries]
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
@@ -31,6 +32,7 @@ activity-compose = { group = "androidx.activity", name = "activity-compose", ver
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 imsproject-common = { group = "com.imsproject", name = "common" , version = "1.0" }
 fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version = "1.8.5" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
 
 
 [plugins]

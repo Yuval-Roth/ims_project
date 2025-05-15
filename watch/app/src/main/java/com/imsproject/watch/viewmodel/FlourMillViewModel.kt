@@ -28,6 +28,8 @@ import com.imsproject.watch.MIN_ANGLE_SKEW
 import com.imsproject.watch.MY_SWEEP_ANGLE
 import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD
+import com.imsproject.watch.MILL_SOUND_TRACK
+import com.imsproject.watch.R
 import com.imsproject.watch.utils.Arc
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.watch.utils.PacketTracker
@@ -67,18 +69,22 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     private val _targetWheelAngle = MutableStateFlow(Angle(0f))
     val targetWheelAngle: StateFlow<Angle> = _targetWheelAngle
 
+    @Volatile
+    var inSync = false
+        private set
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent,context)
-        
+
+        setupWavPlayer()
         myFrequencyTracker = FrequencyTracker()
 
         // sync checking loop
         viewModelScope.launch(Dispatchers.Default){
-            var inSync = false
             while(true){
                 delay(16)
                 val timestamp = getCurrentGameTime()
@@ -223,6 +229,15 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 addEvent(SessionEvent.opponentFrequency(playerId,arrivedTimestamp,frequency.toString()))
             }
             else -> super.handleGameAction(action)
+        }
+    }
+
+    private fun setupWavPlayer(){
+        try{
+            wavPlayer.load(MILL_SOUND_TRACK, R.raw.mill_sound)
+        } catch (e: IllegalArgumentException){
+            val msg = e.message ?: "Unknown error"
+            exitWithError(msg, Result.Code.BAD_RESOURCE)
         }
     }
 

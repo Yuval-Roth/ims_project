@@ -2,6 +2,8 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -17,6 +19,7 @@ import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.R
 import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.VIVID_ORANGE_COLOR
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
@@ -47,6 +50,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     }
 
     private lateinit var clickVibration : VibrationEffect
+    private lateinit var soundPool: SoundPool
+    private var waterDropSoundId : Int = -1
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -78,6 +83,8 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         super.onCreate(intent, context)
 
         clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+        soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
+        waterDropSoundId = soundPool.load(context, R.raw.water_drop, 1)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -154,6 +161,11 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 rippleToCheck.currentAlpha = newAlpha
                 rippleToCheck.alphaStep = newAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
             }
+            viewModelScope.launch(Dispatchers.IO) {
+                soundPool.play(waterDropSoundId, 1f, 1f, 0, 0, 1f)
+                delay(100)
+                vibrator.vibrate(clickVibration)
+            }
             addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
         // not synced click
@@ -166,14 +178,6 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 Ripple(GRAY_COLOR, 0.5f, timestamp, actor)
             }
             ripples.addFirst(ripple)
-        }
-
-        // add a vibration effect to clicks that are not mine
-        if (actor != playerId) {
-            viewModelScope.launch(Dispatchers.IO) {
-                delay(100)
-                vibrator.vibrate(clickVibration)
-            }
         }
         _counter.value++ // used to trigger recomposition
     }
