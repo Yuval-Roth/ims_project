@@ -140,7 +140,9 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // draw active flowers with animation to the latest
                 for ((i, flower) in viewModel.activeFlowerPoints.withIndex()) {
-                    val toDrawBigger = i == viewModel._currFlowerIndex.value
+//                    val toDrawBigger = i == viewModel._currFlowerIndex.value
+                    val toDrawBigger = i == (viewModel.activeFlowerPoints.size - 1)
+
                     val radius = if (toDrawBigger) h / 20f + flowerAnimationRadius.floatValue else h / 20f
 
                     drawFlower(flower, radius = radius)
