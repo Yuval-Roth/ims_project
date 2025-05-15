@@ -53,7 +53,7 @@
 </div>
 
 <script>
-/* ----- data from Flask ----- */
+/* ---- data from Flask ---- */
 const meta           = {{ metadata|tojson }};
 const heartData      = {{ data.heart|tojson }};
 const hrvData        = {{ data.hrv|tojson }};
@@ -64,7 +64,7 @@ const syncEvents     = {{ data.sync_events|tojson }};
 const frequencyData  = {{ data.frequency_data|tojson }};
 const syncIntervals  = {{ data.sync_intervals|tojson }};
 
-/* ----- helpers ----- */
+/* ---- helpers ---- */
 function dictToDatasets(dict, extra={}){
   return Object.keys(dict).map(actor=>({
     label:actor,
@@ -89,34 +89,64 @@ function makeLine(canvas, datasets, yLab){
   });
 }
 
-/* ----- build charts ----- */
+/* ---- metric charts ---- */
 makeLine(hrChart,  dictToDatasets(heartData), 'BPM');
 makeLine(hrvChart, dictToDatasets(hrvData),  'ms');
-
-/* Latency (smooth) */
 makeLine(latencyChart,
          dictToDatasets(latencyData,{pointRadius:0,tension:.4,
                                       backgroundColor:'rgba(60,150,255,.08)',fill:'origin'}),'ms');
-/* Jitter */
 makeLine(jitterChart, dictToDatasets(jitterData), 'ms');
 
-/* ----- Game-specific chart ----- */
-const titleEl = document.getElementById('gameChartTitle');
+/* ---- Clicks & Sync custom chart ---- */
+const titleEl=document.getElementById('gameChartTitle');
+
 if (clickEvents){
   titleEl.textContent='Clicks & Sync Markers';
-  const actors=Object.keys(clickEvents);
-  const clickSets=actors.map(a=>({
-    type:'scatter',label:`${a} Click`,showLine:false,
-    data:clickEvents[a].map(t=>({x:+t,y:actors.indexOf(a)}))
-  }));
-  const syncSet={type:'scatter',label:'Sync',
-                 data:syncEvents.map(t=>({x:+t,y:-1})),
-                 pointStyle:'triangle',radius:6,borderColor:'#d14',backgroundColor:'#d14'};
-  new Chart(gameChart,{data:{datasets:[...clickSets,syncSet]},options:{
-    parsing:false,responsive:true,
-    scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{display:false}}
-  }});
-}else if(frequencyData){
+
+  const actors=Object.keys(clickEvents).sort();  // first actor -> red/top, second -> blue/bottom
+  const topA   = actors[0]||'A';
+  const bottomA= actors[1]||'B';
+
+  /* build vertical-line annotations */
+  const annotations=[];
+
+  (clickEvents[topA]||[]).forEach(t=>{
+    annotations.push({type:'line',xMin:+t,xMax:+t,yMin:0.5,yMax:1,borderColor:'red',borderWidth:2});
+  });
+  (clickEvents[bottomA]||[]).forEach(t=>{
+    annotations.push({type:'line',xMin:+t,xMax:+t,yMin:0,yMax:0.5,borderColor:'blue',borderWidth:2});
+  });
+  (syncEvents||[]).forEach(t=>{
+    annotations.push({type:'line',xMin:+t,xMax:+t,yMin:0,yMax:1,borderColor:'gold',borderWidth:3});
+  });
+
+  /* dummy datasets only for legend colours */
+  const legendSets=[
+    {label:`${topA} Click`, data:[], borderColor:'red', borderWidth:2},
+    {label:`${bottomA} Click`, data:[], borderColor:'blue', borderWidth:2},
+    {label:'Sync', data:[], borderColor:'gold', borderWidth:3}
+  ];
+
+  new Chart(gameChart,{
+    type:'line',
+    data:{datasets:legendSets},
+    options:{
+      parsing:false,
+      responsive:true,
+      scales:{
+        x:{type:'linear',title:{display:true,text:'Time (s)'}},
+        y:{display:false,min:0,max:1}
+      },
+      plugins:{
+        annotation:{annotations},
+        legend:{labels:{usePointStyle:true}}
+      }
+    },
+    plugins:[Chart.registry.getPlugin('annotation')]
+  });
+
+}else if (frequencyData){
+  /* --- SWIPE game (unchanged) --- */
   titleEl.textContent='Finger Frequency & Sync Intervals';
   new Chart(gameChart,{
     type:'line',
@@ -139,7 +169,7 @@ if (clickEvents){
   titleEl.textContent='(No game-specific data)';
 }
 
-/* ----- fullscreen dbl-click ----- */
+/* ---- fullscreen on double-click ---- */
 document.querySelectorAll('.chart-container').forEach(c=>{
   c.addEventListener('dblclick',()=>{
     if(!document.fullscreenElement){
