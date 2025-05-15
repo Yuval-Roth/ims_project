@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
+import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Angle
 import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.CYAN_COLOR
@@ -253,6 +254,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                         if(angleChangeSum > 360f) {
                             angleChangeSum -= 360f
                             fallingFlour.add(mutableFloatStateOf(0.46f))
+                            viewModel.addEvent(SessionEvent.flourDropped(viewModel.playerId, viewModel.getCurrentGameTime()))
                         }
                     }
                     delay(16)
