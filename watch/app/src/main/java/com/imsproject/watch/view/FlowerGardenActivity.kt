@@ -46,6 +46,7 @@ import com.imsproject.watch.GRASS_PLANT_SWAY_STEP
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.GRASS_PLANT_BASE_HEIGHT
 import com.imsproject.watch.GRASS_PLANT_BASE_WIDTH
+import com.imsproject.watch.GRASS_PLANT_STROKE_WIDTH
 import com.imsproject.watch.WATER_DROPLET_DROP_STEP
 import com.imsproject.watch.WATER_DROPLET_FADE_COEFFICIENT
 import com.imsproject.watch.WATER_DROPLET_FADE_THRESHOLD
@@ -64,7 +65,7 @@ import kotlin.math.sqrt
 class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
     private val viewModel : FlowerGardenViewModel by viewModels<FlowerGardenViewModel>()
-    private var clickSoundId : Int = -1
+//    private var clickSoundId : Int = -1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -151,8 +152,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 // draw water droplets - actual water droplets
                 for(waterDropletSet in viewModel.waterDropletSets) {
                     for(center in waterDropletSet.centers) {
-                        val centerX = center.first + waterDropletSet.centerXoffset
-                        val centerY = center.second + waterDropletSet.centerYoffset + waterDropletSet.drop
+                        val centerX = center.first
+                        val centerY = center.second + waterDropletSet.drop
 
                         drawWaterDroplet(centerX, centerY, waterDropletSet.color)
                    }
@@ -160,9 +161,9 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
                 // draw plant - shaped like grass
                 for(grassPlantSet in viewModel.grassPlantSets) {
-                    for((i,center) in grassPlantSet.centers.withIndex()) {
-                        val centerX = center.first + grassPlantSet.centerXoffset[i]
-                        val centerY = center.second + grassPlantSet.centerYoffset[i]
+                    for(center in grassPlantSet.centers) {
+                        val centerX = center.first
+                        val centerY = center.second
 
                         drawGrassStroke(centerX, centerY, GRASS_PLANT_BASE_HEIGHT, GRASS_PLANT_BASE_WIDTH, grassPlantSet.color,
                             GRASS_PLANT_SWAY_BASE_AMPLITUDE * grassPlantSet.sway)
@@ -196,7 +197,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 while (it.hasNext()) {
                     val waterDropletSet = it.next()
 
-                    waterDropletSet.drop += WATER_DROPLET_DROP_STEP // increase the water drop
+                    waterDropletSet.drop += WATER_DROPLET_DROP_STEP //todo: delete, dropped animation
 
                     // decrease the opacity
                     val currDropletColor = waterDropletSet.color
@@ -217,7 +218,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 while (it2.hasNext()) {
                     val grassPlantSet = it2.next()
 
-                    grassPlantSet.sway += GRASS_PLANT_SWAY_STEP
+                    grassPlantSet.sway += GRASS_PLANT_SWAY_STEP //todo: delete, dropped animation
                     // decrease the opacity
 
                     val currPlantColor = grassPlantSet.color
@@ -237,7 +238,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         }
     }
 
-    fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color: Color, size: Float = 0.23f) {
+    private fun DrawScope.drawWaterDroplet(baseX: Float, baseY: Float, color: Color, size: Float = 0.23f) {
         val diameter = 100f * size
         val controlOffsetX = 80f * size
         val controlOffsetY = 100f * size
@@ -267,8 +268,8 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         drawPath(path, color, style = Fill)
     }
 
-    fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, amplitude : Float = GRASS_PLANT_SWAY_BASE_AMPLITUDE) {
-        val strokeWidth = 3f
+    private fun DrawScope.drawGrassStroke(centerX: Float, centerY: Float, height: Float, width: Float, color: Color, amplitude : Float = GRASS_PLANT_SWAY_BASE_AMPLITUDE) {
+        val strokeWidth = GRASS_PLANT_STROKE_WIDTH
         val halfWidth = width / 2f
         val steps = 30
 
@@ -306,7 +307,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
         drawPath(leftPath, color, style = Stroke(width = strokeWidth))
     }
 
-    fun DrawScope.drawFlower(
+    private fun DrawScope.drawFlower(
         flower : Flower,
         radius: Float,
     ) {
@@ -344,7 +345,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
     }
 
     companion object {
-        private const val TAG = "WaterRipplesActivity"
+        private const val TAG = "FlowerGardenActivity"
     }
 }
 

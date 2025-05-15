@@ -105,20 +105,24 @@ var FREQUENCY_HISTORY_MILLISECONDS = 1000L
 
 // ================= Flower Garden ===================== |
 var FLOWER_GARDEN_SYNC_TIME_THRESHOLD = 200
+// flowers
+var FLOWER_RING_OFFSET_ANGLE = 11.25
 var AMOUNT_OF_FLOWERS = 12
-var WATER_DROPLET_DROP_STEP = 0f // 0.3f
+// water droplets
+var WATER_DROPLET_DROP_STEP = 0f // 0.3f todo:delete
 var WATER_DROPLET_FADE_COEFFICIENT = -0.005f
 var WATER_DROPLET_FADE_THRESHOLD = 0.05f
-var GRASS_PLANT_SWAY_STEP = 0f // 0.005f
+// grass plant
+var GRASS_PLANT_SWAY_STEP = 0f // 0.005f todo:delete
 var GRASS_PLANT_SWAY_BASE_AMPLITUDE = 1f
 var GRASS_PLANT_FADE_COEFFICIENT = -0.005f
 var GRASS_PLANT_FADE_THRESHOLD = 0.05f
 var GRASS_PLANT_BASE_HEIGHT = 30f
 var GRASS_PLANT_BASE_WIDTH = 15f
+var GRASS_PLANT_STROKE_WIDTH = 4.5f
+//shared
 var GRASS_WATER_RADIUS = 0f //initialized later
 var GRASS_WATER_ANGLE = 36
-var FLOWR_RING_OFFSET_ANGLE = 11.25
-
 
 
 // =================== initProperties =================== |
