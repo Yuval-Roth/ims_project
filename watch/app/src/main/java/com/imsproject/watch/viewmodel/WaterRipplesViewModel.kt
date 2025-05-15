@@ -154,7 +154,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         // Synced click
         if (rippleToCheck != null && (rippleToCheck.timestamp - timestamp)
                                             .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
-            rippleToCheck.color = VIVID_ORANGE_COLOR
+            rippleToCheck.color = Color(0xFF4EDA54)
             if (rippleToCheck.actor != playerId) {
                 // update the ripple's alpha to make it seem like it started from 1.0f and not from 0.5f
                 val newAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
