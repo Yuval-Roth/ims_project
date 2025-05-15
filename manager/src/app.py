@@ -420,7 +420,16 @@ def single_session_data():
     duration     = request.args.get('duration', '')
 
     # 🔑  get all four return values
-    sync_data, intensity_data, pearson_data, stt = get_single_session(sid)
+    heart = get_heartrate(sid)
+    hrv = get_and_calculate_HRV(sid)
+    latency = get_latency(sid)
+    jitter = get_jitter(sid)
+
+    if game_type in ["WATER_RIPPLES", "FLOWER_GARDEN"]:
+        click_events, sync_events = get_click_game_sync(sid)
+    else:
+        angle, sync_start_events, sync_end_events = get_swipe_game_sync(sid)
+
 
     metadata = {
         "gameType": game_type,
@@ -432,10 +441,15 @@ def single_session_data():
     return render_template(
         "single_session_data.html",
         metadata       = metadata,
-        sync_data      = sync_data,
-        intensity_data = intensity_data,
-        pearson_data   = pearson_data,
-        stt            = stt
+        heart          = heart,
+        hrv            = hrv,
+        latency        = latency,
+        jitter         = jitter,
+        click_events   = click_events,
+        sync_events     = sync_events,
+        angle          = angle,
+        sync_start_events = sync_start_events,
+        sync_end_events = sync_end_events
     )
 
 # ───────────────────────────────────────── (optional) JSON API
