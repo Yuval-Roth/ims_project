@@ -60,11 +60,9 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
     lateinit var myItemType: ItemType
 
-
     // ======================================
     // =========== water droplet ============
     // ======================================
-
     class WaterDroplet(
         var timestamp: Long = 0,
     ) {
@@ -77,7 +75,6 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
                     polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * GRASS_WATER_ANGLE)
             )
         var time = 0
-        var drop = 0f
     }
     val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
 
@@ -97,7 +94,6 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
             )
         var color by mutableStateOf(GRASS_GREEN_COLOR)
         var time = 0
-        var sway : Float = 0f
     }
 
     val grassPlantSets = ConcurrentLinkedDeque<Plant>()
@@ -126,7 +122,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
     private lateinit var soundPool: SoundPool
     private var bellSoundId : Int = -1
 
-    private var colorsList : List<Pair<Color, Color>> =
+    private val colorsList : List<Pair<Color, Color>> =
         listOf(
             Pair(ORANGE_COLOR, BROWN_COLOR),
             Pair(ALMOST_WHITE_COLOR, BANANA_YELLOW_COLOR),
@@ -165,7 +161,10 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent, context)
-        clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+        clickVibration = VibrationEffect.createOneShot(
+            100, // duration in milliseconds
+            255  // amplitude (0–255); 255 = strongest
+        )
         soundPool = SoundPool.Builder().setAudioAttributes(
             AudioAttributes.Builder().setUsage(
                 AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
@@ -173,8 +172,8 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
 
         if(ACTIVITY_DEBUG_MODE){
-//            myItemType = ItemType.WATER
-            myItemType = ItemType.PLANT
+            myItemType = ItemType.WATER
+//            myItemType = ItemType.PLANT
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
