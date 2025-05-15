@@ -34,19 +34,25 @@
 
   <div class="charts-grid">
     <div class="chart-container"><h3 style="text-align:center;" id="gameChartTitle"></h3><canvas id="gameChart"></canvas></div>
+          {# Angle chart is shown only for swipe-type games where frequency & sync data exist #}
+    {% if data.angle_data %}
+      <div class="chart-container"><h3 style="text-align:center;">Finger Angle</h3><canvas id="angleChart"></canvas></div>
+    {% endif %}
     <div class="chart-container"><h3 style="text-align:center;">Heart Rate</h3><canvas id="hrChart"></canvas></div>
     <div class="chart-container"><h3 style="text-align:center;">HR Variation</h3><canvas id="hrvChart"></canvas></div>
     <div class="chart-container"><h3 style="text-align:center;">Latency</h3><canvas id="latencyChart"></canvas></div>
     <div class="chart-container"><h3 style="text-align:center;">Jitter</h3><canvas id="jitterChart"></canvas></div>
+
+
   </div>
 </div>
 
 <script>
-/* ---------- GLOBAL SPEED-UPS ---------- */
+/**** ---------- GLOBAL SPEED-UPS ---------- ****/
 Chart.defaults.animation             = false;
 Chart.defaults.elements.line.tension = 0;
 
-/* ---------- DATA FROM FLASK ---------- */
+/**** ---------- DATA FROM FLASK ---------- ****/
 const meta          = {{ metadata|tojson }};
 const heartData     = {{ data.heart|tojson }};
 const hrvData       = {{ data.hrv|tojson }};
@@ -56,79 +62,81 @@ const clickEvents   = {{ data.click_events|tojson }};
 const syncEvents    = {{ data.sync_events|tojson }};
 const frequencyData = {{ data.frequency_data|tojson }};
 const syncIntervals = {{ data.sync_intervals|tojson }};
+const angleData     = {{ data.angle_data|tojson }};
 
-/* ---------- HELPERS ---------- */
+/**** ---------- HELPERS ---------- ****/
 function fullscreenZoom(){
-  return { zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'}, pan:{enabled:false} };
+  return {
+    zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'},
+    pan :{enabled:false}
+  };
 }
-function dictToDatasets(dict, extra = {}){
-  return Object.keys(dict).map(actor => ({
-    label: actor,
-    data : dict[actor].timestamps.map((t,i)=>({x:+t, y:+dict[actor].values[i]})),
-    pointRadius: 3,
-    fill : false,
+function dictToDatasets(dict, extra={}){
+  return Object.keys(dict).map(actor=>({
+    label:actor,
+    data :dict[actor].timestamps.map((t,i)=>({x:+t, y:+dict[actor].values[i]})),
+    pointRadius:3,
+    fill:false,
     ...extra
   }));
 }
-function makeLineChart(id, datasets, yLabel){
-  new Chart(document.getElementById(id), {
+function makeLineChart(id, datasets, yLabel, yOpts={}){
+  new Chart(document.getElementById(id),{
     type:'line',
     data:{datasets},
     options:{
-      parsing:false, responsive:true,
+      parsing:false,
+      responsive:true,
       scales:{
         x:{type:'linear',title:{display:true,text:'Time (s)'}},
-        y:{title:{display:true,text:yLabel}}
+        y:{title:{display:true,text:yLabel},...yOpts}
       },
       plugins:{
-        zoom: fullscreenZoom(),
+        zoom:fullscreenZoom(),
         tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}
       }
     }
   });
 }
 
-/* ---------- METRIC CHARTS ---------- */
+/**** ---------- METRIC CHARTS ---------- ****/
 makeLineChart('hrChart'    , dictToDatasets(heartData) , 'BPM');
 makeLineChart('hrvChart'   , dictToDatasets(hrvData)   , 'ms');
-makeLineChart('latencyChart', dictToDatasets(latencyData,
-    {pointRadius:0,backgroundColor:'rgba(60,150,255,.08)',fill:'origin'}), 'ms');
+makeLineChart('latencyChart', dictToDatasets(latencyData,{pointRadius:0,backgroundColor:'rgba(60,150,255,.08)',fill:'origin'}), 'ms');
 makeLineChart('jitterChart', dictToDatasets(jitterData), 'ms');
 
-/* ---------- CLICK-/SYNC CHART ---------- */
+/**** ---------- CLICK-/SYNC OR FREQUENCY VIEW ---------- ****/
 const titleEl    = document.getElementById('gameChartTitle');
-const COLORS     = ['#007bff','#dc3545'];  // P1 blue, P2 red
+const COLORS     = ['#007bff','#dc3545'];      // P1 blue, P2 red
 const SYNC_COLOR = '#ffca2c';
 const BAND_SPACING = 0.10;
 const LINE_HALF    = 0.07;
-function bandCenter(idx){ return idx===0 ? 0.5-BAND_SPACING : 0.5+BAND_SPACING; }
-function bandMin(idx){ return bandCenter(idx)-LINE_HALF; }
-function bandMax(idx){ return bandCenter(idx)+LINE_HALF; }
+function bandCenter(idx){return idx===0?0.5-BAND_SPACING:0.5+BAND_SPACING;}
+function bandMin(idx){return bandCenter(idx)-LINE_HALF;}
+function bandMax(idx){return bandCenter(idx)+LINE_HALF;}
 
-/* fast vertical ticks plugin (only #gameChart) */
+// fast vertical ticks plugin for clicks view
 const fastTicks = {
   id:'fastTicks',
   afterDraw(chart){
-    if(chart.canvas.id!== 'gameChart') return;   // draw only on Clicks chart
+    if(chart.canvas.id!=='gameChart') return;
     if(!clickEvents || !Object.keys(clickEvents).length) return;
     const actors = Object.keys(clickEvents).sort().slice(0,2);
-    const ctx    = chart.ctx, xS = chart.scales.x, yS = chart.scales.y;
-
+    const ctx    = chart.ctx, xS=chart.scales.x, yS=chart.scales.y;
     actors.forEach((actor,idx)=>{
       if(chart.getDatasetMeta(idx).hidden) return;
       ctx.strokeStyle = COLORS[idx]; ctx.lineWidth = 3; ctx.beginPath();
       (clickEvents[actor]||[]).forEach(t=>{
-        const px = xS.getPixelForValue(+t);
+        const px=xS.getPixelForValue(+t);
         ctx.moveTo(px, yS.getPixelForValue(bandMin(idx)));
         ctx.lineTo(px, yS.getPixelForValue(bandMax(idx)));
       });
       ctx.stroke();
     });
-    /* sync lines */
     if(!chart.getDatasetMeta(2).hidden && syncEvents?.length){
       ctx.strokeStyle = SYNC_COLOR; ctx.lineWidth = 2; ctx.beginPath();
       syncEvents.forEach(t=>{
-        const px = xS.getPixelForValue(+t);
+        const px=xS.getPixelForValue(+t);
         ctx.moveTo(px, yS.getPixelForValue(bandMax(0)));
         ctx.lineTo(px, yS.getPixelForValue(bandMin(1)));
       });
@@ -138,47 +146,45 @@ const fastTicks = {
 };
 Chart.register(fastTicks);
 
-/* grey sync‑interval boxes for frequency view */
+// grey sync-interval boxes for frequency view
 const syncBoxes = {
   id:'syncBoxes',
   beforeDraw(chart){
     if(chart.canvas.id!=='gameChart' || chart.config.type!=='line') return;
     if(!syncIntervals?.length) return;
-    const ctx = chart.ctx, xS=chart.scales.x, yS=chart.scales.y;
+    const ctx=chart.ctx, xS=chart.scales.x, yS=chart.scales.y;
     ctx.save(); ctx.fillStyle='rgba(180,180,180,0.15)';
     syncIntervals.forEach(([s,e])=>{
       const x0=xS.getPixelForValue(+s), x1=xS.getPixelForValue(+e);
-      ctx.fillRect(x0, yS.top, x1-x0, yS.bottom-yS.top);
+      ctx.fillRect(x0,yS.top,x1-x0,yS.bottom-yS.top);
     });
     ctx.restore();
   }
 };
 Chart.register(syncBoxes);
 
-/* ---------- Build #gameChart ---------- */
+/**** ---------- BUILD #gameChart ---------- ****/
 if(Object.keys(clickEvents||{}).length){
   titleEl.textContent = 'Clicks & Sync Markers';
   const actors = Object.keys(clickEvents).sort();
+  const topData    = (clickEvents[actors[0]]||[]).map(t=>({x:+t,y:bandCenter(0)}));
+  const bottomData = (clickEvents[actors[1]]||[]).map(t=>({x:+t,y:bandCenter(1)}));
+  const syncData   = (syncEvents||[]).map(t=>({x:+t,y:0.5}));
 
-  // supply real timestamps so X‑axis covers full range (points invisible)
-  const topData    = (clickEvents[actors[0]]||[]).map(t=>({x:+t, y:bandCenter(0)}));
-  const bottomData = (clickEvents[actors[1]]||[]).map(t=>({x:+t, y:bandCenter(1)}));
-  const syncData   = (syncEvents||[]).map(t=>({x:+t, y:0.5}));
-
-  const legendSets = [
-    {label:`${actors[0]||'P1'} Click`, showLine:false, data:topData.length?topData:[{x:0,y:bandCenter(0)}], pointRadius:0, borderColor:COLORS[0]},
-    {label:`${actors[1]||'P2'} Click`, showLine:false, data:bottomData.length?bottomData:[{x:0,y:bandCenter(1)}], pointRadius:0, borderColor:COLORS[1]},
-    {label:'Sync',                      showLine:false, data:syncData.length?syncData:[{x:0,y:0.5}],                pointRadius:0, borderColor:SYNC_COLOR}
+  const legendSets=[
+    {label:`${actors[0]||'P1'} Click`,showLine:false,data:topData.length?topData:[{x:0,y:bandCenter(0)}],pointRadius:0,borderColor:COLORS[0]},
+    {label:`${actors[1]||'P2'} Click`,showLine:false,data:bottomData.length?bottomData:[{x:0,y:bandCenter(1)}],pointRadius:0,borderColor:COLORS[1]},
+    {label:'Sync',showLine:false,data:syncData.length?syncData:[{x:0,y:0.5}],pointRadius:0,borderColor:SYNC_COLOR}
   ];
 
   new Chart(document.getElementById('gameChart'),{
     type:'scatter',
     data:{datasets:legendSets},
     options:{
-      parsing:false, responsive:true,
-      scales:{ x:{type:'linear',title:{display:true,text:'Time (s)'}},
-               y:{display:false,min:0,max:1} },
-      plugins:{ zoom:fullscreenZoom(), tooltip:{enabled:false}, legend:{labels:{usePointStyle:true}} }
+      parsing:false,
+      responsive:true,
+      scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{display:false,min:0,max:1}},
+      plugins:{zoom:fullscreenZoom(),tooltip:{enabled:false},legend:{labels:{usePointStyle:true}}}
     }
   });
 
@@ -188,30 +194,91 @@ if(Object.keys(clickEvents||{}).length){
     label:a,
     data:frequencyData[a].timestamps.map((t,i)=>{
       const v=+frequencyData[a].values[i];
-      return {x:+t, y: v===0 ? null : v};
+      return {x:+t, y:v===0?null:v};
     }),
     pointRadius:0, fill:false
   }));
+
   new Chart(document.getElementById('gameChart'),{
     type:'line',
     data:{datasets:freqSets},
     options:{
-      parsing:false, responsive:true,
-      scales:{ x:{type:'linear',title:{display:true,text:'Time (s)'}},
-               y:{title:{display:true,text:'Hz'}} },
-      plugins:{ zoom:fullscreenZoom(),
-                tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}} }
+      parsing:false,
+      responsive:true,
+      scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{title:{display:true,text:'Hz'}}},
+      plugins:{zoom:fullscreenZoom(),tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}}
     }
   });
 }else{
-  titleEl.textContent = '(No game‑specific data)';
+  titleEl.textContent = '(No game-specific data)';
 }
 
-/* ---------- dbl-click → fullscreen ---------- */
+/**** ---------- ANGLE CHART (shown only when angleData exists) ---------- ****/
+/* ---------- FINGER ANGLE SCATTER (auto-rescales Y) ---------- */
+if (angleData && Object.keys(angleData).length) {
+
+  /* Recompute Y-range of points that are currently visible on the X-axis */
+  function rescaleY(chart) {
+    const {min: xMin, max: xMax} = chart.scales.x;
+    let yMin =  Infinity, yMax = -Infinity;
+
+    chart.data.datasets.forEach(ds => {
+      ds.data.forEach(pt => {
+        if (pt.x >= xMin && pt.x <= xMax) {
+          yMin = Math.min(yMin, pt.y);
+          yMax = Math.max(yMax, pt.y);
+        }
+      });
+    });
+
+    if (yMin !== Infinity) {              // at least one point is visible
+      const PAD = 5;                      // small breathing space
+      chart.options.scales.y.min = Math.floor(yMin - PAD);
+      chart.options.scales.y.max = Math.ceil (yMax + PAD);
+      chart.update('none');               // instant redraw, no animation
+    }
+  }
+
+  new Chart(document.getElementById('angleChart'), {
+    type : 'scatter',
+    data : {
+      datasets: Object.keys(angleData).map(actor => ({
+        label: actor,
+        data : angleData[actor].timestamps.map((t,i)=>({ x:+t, y:+angleData[actor].values[i] })),
+        pointRadius: 3
+      }))
+    },
+    options : {
+      parsing   : false,
+      responsive: true,
+      scales : {
+        x: { type:'linear', title:{display:true,text:'Time (s)'} },
+        y: { title:{display:true,text:'Angle (°)'}, min:-180, max:180 }
+      },
+      plugins : {
+        zoom : {
+          zoom : {
+            wheel : { enabled:true },
+            pinch : { enabled:true },
+            mode  : 'xy'              // allow horizontal and vertical zoom
+          },
+          pan : {
+            enabled:true,
+            mode   :'xy'
+          },
+          onZoomComplete : ({chart}) => rescaleY(chart),
+          onPanComplete  : ({chart}) => rescaleY(chart)
+        },
+        tooltip:{ callbacks:{ label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}` } }
+      }
+    }
+  });
+}
+
+
+/**** ---------- dbl-click → fullscreen ---------- ****/
 document.querySelectorAll('.chart-container').forEach(c=>{
-  c.addEventListener('dblclick',()=> (
-    document.fullscreenElement ? document.exitFullscreen() : c.requestFullscreen()
-  ));
+  c.addEventListener('dblclick',()=>document.fullscreenElement?document.exitFullscreen():c.requestFullscreen());
 });
 </script>
 </body>
