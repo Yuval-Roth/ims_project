@@ -2,6 +2,8 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -13,12 +15,21 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.ALMOST_WHITE_COLOR
+import com.imsproject.watch.BANANA_YELLOW_COLOR
 import com.imsproject.watch.AMOUNT_OF_FLOWERS
 import com.imsproject.watch.BROWN_COLOR
+import com.imsproject.watch.BUBBLE_PINK_COLOR
+import com.imsproject.watch.DEEP_BLUE_COLOR
 import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
+import com.imsproject.watch.FLOWER_RING_OFFSET_ANGLE
 import com.imsproject.watch.GRASS_GREEN_COLOR
+import com.imsproject.watch.GRASS_WATER_ANGLE
+import com.imsproject.watch.GRASS_WATER_RADIUS
 import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.PURPLE_WISTERIA_COLOR
+import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
@@ -30,12 +41,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
-import kotlin.random.Random
 
 
-class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
+class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
-    enum class ItemType(){
+    enum class ItemType{
         WATER,
         PLANT;
 
@@ -49,28 +59,22 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
     }
 
     lateinit var myItemType: ItemType
-        private set
-
 
     // ======================================
     // =========== water droplet ============
     // ======================================
-
     class WaterDroplet(
         var timestamp: Long = 0,
     ) {
         var color by mutableStateOf(WATER_BLUE_COLOR)
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -60.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -120.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f,-150.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -30.0),
-                    polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, -90.0))
-        val centerXoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
-        val centerYoffset =  (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -2, until = 3) / 100f
-
+            listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 0 * GRASS_WATER_ANGLE),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 2 * -GRASS_WATER_ANGLE),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 2 * GRASS_WATER_ANGLE),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * -GRASS_WATER_ANGLE),
+                    polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * GRASS_WATER_ANGLE)
+            )
         var time = 0
-        var drop = 0f
     }
     val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
 
@@ -82,20 +86,14 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var timestamp: Long = 0,
     ) {
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 120.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 60.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 30.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 150.0),
-                polarToCartesian((SCREEN_RADIUS * 2f) /3.5f, 90.0))
+            listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 5 * -GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 1 * GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 1 * -GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 3 * GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 3 * -GRASS_WATER_ANGLE)
+            )
         var color by mutableStateOf(GRASS_GREEN_COLOR)
-        val centerXoffset = List(5) {
-            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
-        }
-        val centerYoffset = List(5) {
-            (SCREEN_RADIUS * 2f)  * Random.nextInt(from = -4, until = 5) / 100f
-        }
         var time = 0
-        var sway : Float = 0f
     }
 
     val grassPlantSets = ConcurrentLinkedDeque<Plant>()
@@ -114,13 +112,24 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         var petalColor : Color,
     )
 
-    val amountOfFlowers = AMOUNT_OF_FLOWERS
-    var activeFlowerPoints : ConcurrentLinkedDeque<Flower> = ConcurrentLinkedDeque()
-    lateinit var flowerPoints : List<Flower>
-    var _currFlowerIndex = MutableStateFlow(-1)
+    private val amountOfFlowers = AMOUNT_OF_FLOWERS
+    private lateinit var flowerPoints : List<Flower>
+    private var _currFlowerIndex = MutableStateFlow(-1)
     val currFlowerIndex: StateFlow<Int> = _currFlowerIndex
+    var activeFlowerPoints : ConcurrentLinkedDeque<Flower> = ConcurrentLinkedDeque()
 
     private lateinit var clickVibration : VibrationEffect
+    private lateinit var soundPool: SoundPool
+    private var bellSoundId : Int = -1
+
+    private val colorsList : List<Pair<Color, Color>> =
+        listOf(
+            Pair(ORANGE_COLOR, BROWN_COLOR),
+            Pair(ALMOST_WHITE_COLOR, BANANA_YELLOW_COLOR),
+            Pair(BUBBLE_PINK_COLOR, ALMOST_WHITE_COLOR),
+            Pair(PURPLE_WISTERIA_COLOR, DEEP_BLUE_COLOR)
+        )
+    private var colorsListIndex = 0
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -132,6 +141,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
 
     // ================================================================================ |
+    // ============================ PUBLIC METHODS ==================================== |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
@@ -151,8 +161,15 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent, context)
-        flowerPoints = buildFlowers()
-        clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+        clickVibration = VibrationEffect.createOneShot(
+            100, // duration in milliseconds
+            255  // amplitude (0–255); 255 = strongest
+        )
+        soundPool = SoundPool.Builder().setAudioAttributes(
+            AudioAttributes.Builder().setUsage(
+                AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
+        bellSoundId = soundPool.load(context, R.raw.flower_bell, 1)
+
 
         if(ACTIVITY_DEBUG_MODE){
             myItemType = ItemType.WATER
@@ -161,7 +178,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
                     val otherPlayerId = "other player"
-                    delay(500)
+                    delay(1000)
                     showItem(otherPlayerId, System.currentTimeMillis())
                 }
             }
@@ -170,8 +187,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
         //decode the sent configuration data
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
-        val additionalData = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")!!.split(";")
-        myItemType = ItemType.fromString(additionalData[0]) //todo: change after order removed from server
+        myItemType = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")?.let { ItemType.fromString(it) }!!
 
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
@@ -220,7 +236,7 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
 
     private fun showItem(actor: String, timestamp : Long) {
         // check the delta between taps and show new tap
-        var opponentsLatestTimestamp =
+        val opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
                 waterDropletSets.addLast(WaterDroplet(timestamp))
                 if(grassPlantSets.isEmpty()) 0 else grassPlantSets.last().timestamp
@@ -233,37 +249,44 @@ class FlowerGardenViewModel() : GameViewModel(GameType.FLOWER_GARDEN) {
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
             _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
-            if(activeFlowerPoints.size < amountOfFlowers) {
-                activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
-                // add a vibration effect to clicks that are not mine
-                if (actor != playerId) {
-                    viewModelScope.launch(Dispatchers.IO) {
-                        delay(100)
-                        vibrator.vibrate(clickVibration)
-                    }
-                }
+
+            //generate next dozen of flowers
+            if(activeFlowerPoints.size % amountOfFlowers == 0) {
+                val iter = (activeFlowerPoints.size / amountOfFlowers)
+                flowerPoints = buildFlowers(
+                    petalColor = colorsList[colorsListIndex].first,
+                    centerColor = colorsList[colorsListIndex].second,
+                    angleOffset = FLOWER_RING_OFFSET_ANGLE * iter)
+                colorsListIndex = (colorsListIndex + 1) %  colorsList.size
+            }
+            //add new active flower
+            activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
+
+            //sound and vibration in sync
+            viewModelScope.launch(Dispatchers.IO) {
+                soundPool.play(bellSoundId, 1f, 1f, 0, 0, 1f)
+                delay(100)
+                vibrator.vibrate(clickVibration)
             }
         }
         _counter.value++ // used to trigger recomposition
     }
 
-    private fun buildFlowers(): List<Flower> {
+    private fun buildFlowers(petalColor: Color, centerColor: Color, angleOffset: Double): List<Flower> {
         return List(amountOfFlowers) { i ->
             val distanceFromCenter = (SCREEN_RADIUS * 2f)  / 2.5f
             val petalCount: Int = listOf(5, 6, 7).random()
             val petalLength: Float = listOf(0.7f, 0.9f, 1.1f).random()
             val petalWidth: Float = listOf(0.4f, 0.5f, 0.6f, 0.7f).random()
-            val petalColor: Color = ORANGE_COLOR
-            val centerColor: Color = BROWN_COLOR
 
-            val angle = -90.0 + i * (360.0 / amountOfFlowers)  // Start at 12 o'clock (−90°) and go clockwise
+            val angle = -90.0 + i * (360.0 / amountOfFlowers) + angleOffset // Start at 12 o'clock (−90°) and go clockwise
             val coor = polarToCartesian(distanceFromCenter, angle)
             Flower(centerX =  coor.first, centerY = coor.second, petalCount, petalWidth, petalLength, centerColor, petalColor)
         }
     }
 
     companion object {
-        private const val TAG = "WaterRipplesViewModel"
+        private const val TAG = "FlowerGardenViewModel"
     }
 }
 
