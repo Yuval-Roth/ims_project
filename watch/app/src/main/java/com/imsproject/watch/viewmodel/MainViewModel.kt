@@ -1,17 +1,23 @@
 package com.imsproject.watch.viewmodel
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.model.AlreadyConnectedException
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.ParticipantNotFoundException
 import com.imsproject.watch.model.SessionEventCollectorImpl
+import com.imsproject.watch.sensors.HeartRateSensorHandler
+import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
+import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +44,8 @@ class MainViewModel() : ViewModel() {
     }
 
     private var model = MainModel(viewModelScope)
+    val heartRateSensorHandler = HeartRateSensorHandler.instance
+    val locationSensorsHandler = LocationSensorsHandler.instance
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -83,6 +91,19 @@ class MainViewModel() : ViewModel() {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
+    fun onCreate(context: Context){
+        heartRateSensorHandler.connect(context){ connected, e ->
+            if(connected){
+                heartRateSensorHandler.init()
+            } else {
+                Log.e(TAG, "Could not connect to heart rate monitor", e)
+                viewModelScope.launch(Dispatchers.Main) {
+                    Toast.makeText(context, "Heart rate unavailable", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        locationSensorsHandler.init(context)
+    }
 
     fun connect() {
         viewModelScope.launch(Dispatchers.IO){
@@ -199,6 +220,7 @@ class MainViewModel() : ViewModel() {
     fun onDestroy() {
         runBlocking(Dispatchers.Main){
             model.closeAllResources()
+            heartRateSensorHandler.disconnect()
         }
     }
 
