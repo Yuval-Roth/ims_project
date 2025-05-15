@@ -40,7 +40,8 @@ class MainViewModel() : ViewModel() {
         UPLOADING_EVENTS,
         ERROR,
         ALREADY_CONNECTED,
-        AFTER_GAME
+        AFTER_GAME,
+        AFTER_GAME_QUESTIONS
     }
 
     private var model = MainModel(viewModelScope)

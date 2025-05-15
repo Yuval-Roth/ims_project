@@ -28,15 +28,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -44,6 +55,7 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
+import androidx.wear.compose.material.InlineSlider
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Picker
 import androidx.wear.compose.material.PickerState
@@ -55,13 +67,17 @@ import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
+import com.imsproject.watch.rtlTextStyle
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.*
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.launch
+import java.util.Properties
+import kotlin.math.roundToInt
 
 
 class MainActivity : ComponentActivity() {
@@ -86,6 +102,7 @@ class MainActivity : ComponentActivity() {
         setupUncaughtExceptionHandler()
         viewModel.onCreate(applicationContext)
         setContent {
+//            AfterGameQuestions()
             Main()
         }
     }
@@ -198,6 +215,8 @@ class MainActivity : ComponentActivity() {
             State.AFTER_GAME -> BlankScreen()
 
             State.UPLOADING_EVENTS -> LoadingScreen("Uploading events...")
+
+            State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()
 
             State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
@@ -478,18 +497,18 @@ class MainActivity : ComponentActivity() {
                     verticalArrangement = Arrangement.Center,
                 ){
                     Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.05f).dp))
-                    val red = remember { Color(0xFFF14141) }
+                    val white = remember { Color(0xFFFFE095) }
                     val green = remember { Color(0xFF89F55C) }
                     Box(
                         modifier = Modifier
-                            .background(if (ready) green else red)
+                            .background(if (ready) green else white)
                             .fillMaxWidth()
                             .fillMaxHeight(0.15f)
                         ,
                         contentAlignment = Alignment.Center,
                     ){
                         BasicText(
-                            text = if (ready) "Ready" else "Not Ready",
+                            text = "Status: "+if (ready) "ready" else "not ready",
                             style = textStyle.copy(color = Color.Black),
                         )
                     }
@@ -505,11 +524,17 @@ class MainActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ){
+                        val textStyle = TextStyle(
+                            color = Color(0xFF707070),
+                            fontSize = TEXT_SIZE,
+                            textAlign = TextAlign.Center,
+                            textDirection = TextDirection.Ltr
+                        )
                         BasicText(
-                            text = "Your ID: $userId",
+                            text = "My ID: $userId",
                             style = textStyle,
                         )
-                        Spacer(modifier = Modifier.height(9.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                         BasicText(
                             text = "Lobby ID: $lobbyId",
                             style = textStyle,
@@ -524,7 +549,7 @@ class MainActivity : ComponentActivity() {
                             text = if(gameDuration.isNotBlank()) "$gameDuration seconds" else "",
                             style = textStyle,
                         )
-                        Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                        Spacer(modifier = Modifier.fillMaxHeight(0.25f))
                         // Button
                         Button(
                             colors = if(hrSensorReady) ButtonDefaults.primaryButtonColors()
@@ -534,15 +559,79 @@ class MainActivity : ComponentActivity() {
                                          ),
                             onClick = { onReady() },
                             modifier = Modifier
-                                .fillMaxWidth(0.6f)
+                                .fillMaxWidth(0.7f)
                                 .fillMaxHeight(0.65f)
 
                         ) {
                             BasicText(
-                                text = if(ready) "UNREADY" else "READY UP",
+                                text = if(ready) "CANCEL READY" else "I'M READY",
                                 style = textStyle.copy(color=Color.Black, letterSpacing = 1.25.sp),
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun AfterGameQuestions() {
+        MaterialTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DARK_BACKGROUND_COLOR),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            top = 30.dp,
+                            start = 20.dp,
+                            end = 20.dp
+                        )
+//                        .align(Alignment.TopCenter)
+                    ,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    BasicText(
+                        modifier = Modifier.fillMaxWidth(0.8f),
+                        text = "עד כמה חשת תחושת \"ביחד\" עם השותפ/ה במשחקון הזה?",
+                        style = rtlTextStyle,
+                    )
+                    var sliderValue by remember { mutableFloatStateOf(1f) }
+                    Slider(
+                        value = sliderValue,
+                        onValueChange = { sliderValue = it },
+                        valueRange = 1f..7f,
+                        steps = 5,
+                        onValueChangeFinished = {
+                            // You can round the value here if you want to use an Int
+                            val selected = sliderValue.roundToInt()
+                            // Do something with `selected`
+                        }
+                    )
+                    BasicText(
+                        modifier = Modifier.fillMaxWidth(0.2f),
+                        text = "${sliderValue.roundToInt()}",
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = TEXT_SIZE*1.5,
+                            textAlign = TextAlign.Center),
+                    )
+                    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+                    Button(
+                        onClick = {},
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .fillMaxHeight(0.5f)
+                    ){
+                        BasicText(
+                            modifier = Modifier.fillMaxWidth(0.8f),
+                            text = "המשך",
+                            style = rtlTextStyle,
+                        )
                     }
                 }
             }
@@ -568,6 +657,13 @@ class MainActivity : ComponentActivity() {
                 style = TextStyle(color = Color.White, fontSize = 30.sp),
             )
         }
+    }
+
+    @Preview(device = "id:wearos_large_round")
+    @Composable
+    private fun Preview() {
+        initProperties(454);
+        AfterGameQuestions()
     }
 }
 
