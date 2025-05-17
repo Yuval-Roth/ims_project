@@ -398,17 +398,156 @@ This endpoint is used to send session events after a session is finished
 - **Body**:
 ```json
 {
-  "sessionId": "id"
+  "sessionId": "id",
   "events": ["serializedEventsList"]
+}
+```
+
+### `/data/participant/select`
+
+#### Description
+This endpoint is used to get data about all or a specific participant.
+
+#### Request to select all participants
+- **Body**:
+```json
+{}
+```
+
+#### Request to select participants according to specified fields (any combination)
+- **Body**:
+
+```json
+{
+  "pid": 3,
+  "firstName": "John",
+  "lastName": "Doe",
+  "age": 25,
+  "gender": "Male",
+  "phone": "0521234567",
+  "email": "jd@mail.com"
+}
+```
+
+- **Example**:
+
+```json
+{
+  "firstName": "John",
+  "age": 25
 }
 ```
         
 #### **Response**
 
   ```json
-  {
-    "success": true,
-  }
+{
+  "success": true,
+  "payload": ["serializedParticipantsList"]
+}
+  ```
+
+### `/data/experiment/select/names`
+#### Request to select the list of experiments with the participants names.
+- **Body**:
+
+```json
+{}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true,
+  "payload": ["serializedExperimentsList"]
+}
+  ```
+
+### `/data/session/select`
+
+#### Description
+This endpoint is used to get data about all or a specific sessions.
+
+#### Request to select all sessions
+- **Body**:
+```json
+{}
+```
+
+#### Request to select sessions according to specified fields (any combination)
+- **Body**:
+
+```json
+{
+  "sessionId": 3,
+  "expId": 2,
+  "duration": 60,
+  "sessionType": "FlowerGarden",
+  "sessionOrder": 1,
+  "tolerance": 20,
+  "windowLength": 50,
+  "state": "STATE"
+}
+```
+
+- **Example**:
+
+```json
+{
+  "sessionType": "FlowerGarden"
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true,
+  "payload": ["serializedSessionsList"]
+}
+  ```
+### `/data/sessionEvent/select`
+
+#### Description
+This endpoint is used to get data about all or a specific session events.
+
+#### Request to select all session events
+- **Body**:
+```json
+{}
+```
+
+#### Request to select session eventss according to specified fields (any combination)
+- **Body**:
+
+```json
+{
+  "eventId": 1,
+  "sessionId": 3,
+  "type": "touch",
+  "subtype": "",
+  "timestamp": 124782,
+  "actor": "player1",
+  "data": ""
+}
+```
+
+- **Example**:
+
+```json
+{
+  "sessionId": 3
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true,
+  "payload": ["serializedSessionEventsList"]
+}
   ```
 
 ### 4. POST `/operators/{action}`
