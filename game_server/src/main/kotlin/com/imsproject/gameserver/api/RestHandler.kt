@@ -11,10 +11,7 @@ import com.imsproject.gameserver.business.ParticipantController
 import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
-import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
-import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
-import com.imsproject.gameserver.dataAccess.models.SessionDTO
-import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
+import com.imsproject.gameserver.dataAccess.models.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
@@ -191,6 +188,40 @@ class RestHandler(
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
+
+    private data class QnA(val question: String, val answer: String)
+    private data class experimentFeedback(val expId: Int, val pid: Int, val qnas: List<QnA>)
+    @PostMapping("/data/experiment/insert/feedback")
+    fun dataInsertExperimentFeedback(@RequestBody body: String): ResponseEntity<String> {
+        val feedbackDTOs: List<ExperimentFeedbackDTO>
+        val feedback: experimentFeedback
+
+        try {
+            feedback = fromJson<experimentFeedback>(body)
+            feedbackDTOs = feedback.qnas.map {
+                ExperimentFeedbackDTO(
+                    expId = feedback.expId,
+                    pid = feedback.pid,
+                    question = it.question,
+                    answer = it.answer
+                )
+            }
+        } catch (e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+
+        scope.launch {
+            val startTime = System.nanoTime()
+            daoController.handleBulkInsertExperimentFeedback(feedbackDTOs)
+            val endTime = System.nanoTime()
+            log.debug("Inserted {} feedback entries in {}ms for expId {}", feedbackDTOs.size, (endTime - startTime) / 1_000_000, feedback.expId)
+        }
+
+        return Response.getOk().toResponseEntity()
+
+
+    }
+
 
     @PostMapping("/data/session/select")
     fun dataSelectSessions(@RequestBody body: String): ResponseEntity<String> {

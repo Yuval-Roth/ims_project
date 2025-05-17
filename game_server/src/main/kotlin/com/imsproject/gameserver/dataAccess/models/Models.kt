@@ -18,6 +18,13 @@ data class ExperimentDTO(
     val pid2: Int?
 )
 
+data class ExperimentFeedbackDTO(
+    val expId: Int,
+    val pid: Int,
+    val question: String,
+    val answer: String
+)
+
 data class SessionDTO(
     val sessionId: Int? = null,
     val expId: Int? = null,

@@ -7,7 +7,6 @@ import com.imsproject.gameserver.dataAccess.models.*
 import org.slf4j.LoggerFactory
 
 import org.springframework.stereotype.Component
-import java.sql.SQLException
 
 
 @Suppress("UNCHECKED_CAST")
@@ -16,7 +15,8 @@ class DAOController(
     private val participantDAO: ParticipantsDAO,
     private val experimentDAO: ExperimentsDAO,
     private val sessionDAO: SessionsDAO,
-    private val sessionEventDAO: SessionEventsDAO
+    private val sessionEventDAO: SessionEventsDAO,
+    private val experimentsFeedbackDAO: ExperimentsFeedbackDAO
 ) {
 
     @Throws(DaoException::class)
@@ -70,6 +70,11 @@ class DAOController(
     @Throws(DaoException::class)
     fun handleBulkInsertSessionEvents(dtos: List<SessionEventDTO>): Int =
         sessionEventDAO.bulkInsert(dtos)
+
+    @Throws(DaoException::class)
+    fun handleBulkInsertExperimentFeedback(dtos: List<ExperimentFeedbackDTO>) {
+        experimentsFeedbackDAO.bulkInsert(dtos)
+    }
 
     @Throws(DaoException::class)
     fun handleExists(pk: ParticipantPK): Boolean {
@@ -188,6 +193,8 @@ class DAOController(
     fun handleSelectAllExperimentsWithNames(): List<ExperimentWithParticipantNamesDTO> {
         return experimentDAO.selectWithParticipantNames()
     }
+
+
 
     companion object {
         private val log = LoggerFactory.getLogger(DAOController::class.java)

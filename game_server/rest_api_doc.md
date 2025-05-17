@@ -518,7 +518,7 @@ This endpoint is used to get data about all or a specific session events.
 {}
 ```
 
-#### Request to select session eventss according to specified fields (any combination)
+#### Request to select session events according to specified fields (any combination)
 - **Body**:
 
 ```json
@@ -547,6 +547,33 @@ This endpoint is used to get data about all or a specific session events.
 {
   "success": true,
   "payload": ["serializedSessionEventsList"]
+}
+  ```
+
+### `/data/experiment/insert/feedback`
+
+#### Description
+This endpoint is used to insert feedback data from a participant in an experiment.
+
+#### Request to insert feedback
+- **Body**:
+
+```json
+{
+  "expId": 1,
+  "pid": 3,
+  "qnas": [
+            {"question": "why?", "answer": "because!"},
+            {"question": "when?", "answer":  "mayber later"}
+          ]
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true
 }
   ```
 

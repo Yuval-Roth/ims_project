@@ -48,6 +48,9 @@ curl -X POST "http://localhost:8080/data/experiment/select" -H "Content-Type: ap
 
 curl -X POST "http://localhost:8080/data/experiment/select" -H "Content-Type: application/json" -d "{\"expId\":1}"
 
+EXPERIMENT FEEDBACK
+curl -X POST "http://localhost:8080/data/experiment/insert/feedback" -H "Content-Type: application/json" -d "{\"expId\":1, \"pid\":4, \"qnas\":[{question: \"my names is 1?\", answer: \"what\"}, {question: \"my names is 2?\", answer: \"who\"}]}"
+
 
 
 SESSION
