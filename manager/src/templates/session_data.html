@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Session Data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
+</head>
+<body>
+
+<a href="{{ url_for('main_menu') }}" class="home-button">
+  <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
+</a>
+
+<div class="session-container">
+  <h1 id="title"></h1>
+
+  <div class="filters">
+    <select id="typeFilter">
+      <option value="">All Types</option>
+      <option value="FLOWER_GARDEN">Flower Garden</option>
+      <option value="WATER_RIPPLES">Water Ripples</option>
+      <option value="WINE_GLASSES">Wine Glasses</option>
+      <option value="FLOUR_MILL">Flour Mill</option>
+    </select>
+    <button onclick="applyFilters()">Filter</button>
+  </div>
+
+  <table id="sessionTable">
+    <thead>
+      <tr>
+        <th>Session ID</th>
+        <th>Type</th>
+        <th>Duration&nbsp;(s)</th>
+        <th>Tolerance</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+  const urlParams   = new URLSearchParams(window.location.search);
+  const participants = urlParams.get('participants') || '';
+
+  // ⸺ Jinja injects the raw list ⸺
+  const rawSessions = {{ sessions | tojson | safe }};
+  const lobbyId     = "{{ lobby_id }}";
+
+  // Turn every string into a JS object
+  const allSessions = rawSessions.map(s => typeof s === 'string' ? JSON.parse(s) : s);
+
+  // ───────────────────────────────────────── table rendering
+  function renderTable(rows) {
+    const tbody = document.querySelector('#sessionTable tbody');
+    tbody.innerHTML = '';
+
+    rows.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.onclick = () =>
+      location.href = `/session_data/single?session_id=${s.sessionId}&game_type=${s.sessionType}&participants=${participants}&duration=${s.duration}`;
+
+
+      tr.innerHTML = `
+        <td>${s.sessionId}</td>
+        <td>${s.sessionType.replace(/_/g,' ')}</td>
+        <td>${s.duration}</td>
+        <td>${s.tolerance ?? ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ───────────────────────────────────────── filter UI
+  function applyFilters() {
+    const type = document.getElementById('typeFilter').value;
+    const filtered = type ? allSessions.filter(s => s.sessionType === type) : allSessions;
+    renderTable(filtered);
+  }
+
+  // init
+  document.getElementById('title').textContent = `Sessions for Lobby #${lobbyId}`;
+  renderTable(allSessions);
+</script>
+
+</body>
+</html>

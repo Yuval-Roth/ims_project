@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Experiments</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
+</head>
+<body>
+
+<a href="{{ url_for('main_menu') }}" class="home-button">
+  <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
+</a>
+
+<div class="session-container">
+  <h1>All Experiments</h1>
+
+  <table id="lobbyTable">
+    <thead>
+      <tr>
+        <th>Exp&nbsp;ID</th>
+        <th>Participants</th>
+        <th>Created&nbsp;At</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lobby in lobbies | sort(attribute='expId', reverse=True) %}
+        <tr onclick="location.href='{{ url_for('session_data_menu') }}?lobby_id={{ lobby.expId }}&participants={{ lobby.participant1Name }},{{ lobby.participant2Name }}'">
+          <td>{{ lobby.expId }}</td>
+          <td>
+            {{ lobby.participant1Name }}
+            {% if lobby.participant2Name %}, {{ lobby.participant2Name }}{% endif %}
+          </td>
+          <td>{{ lobby.created_at if lobby.created_at is defined else '' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+  </table>
+</div>
+
+</body>
+</html>

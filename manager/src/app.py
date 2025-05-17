@@ -6,6 +6,7 @@ from .managers.participants import *
 from .managers.lobby import *
 from .managers.game import *
 from .managers.operators import *
+from .managers.session_data import *
 from .managers.logger import Logger
 from .ENUMS import *
 import json
@@ -14,6 +15,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 Logger()
+
 
 @app.route('/')
 def home():
@@ -65,7 +67,7 @@ def get_parts():
 def lobbies_menu():
     if 'username' not in session:
         return redirect(url_for('login'))
-    lobbies = get_lobbies()  # list of dict : {lobbyId, players}
+    lobbies = get_lobbies_data()  # list of dict : {lobbyId, players}
     # lobbies = None
     if lobbies:
         lobbies = lobbies.lobbies
@@ -388,9 +390,84 @@ def remove_oper():
     return remove_operator(request.json.get('username'))
 
 
-# @app.route('/edit_operator', methods=['PUT'])
-# def edit_operator():
-#     return jsonify({"success":True})
+###################### SESSION DATA ######################
+@app.route('/session_data', methods=['GET'])
+def session_data_menu():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    lobby_id = request.args.get('lobby_id')
+    if lobby_id:
+        participants = request.args.get('participants')
+        sessions = get_sessions_for_lobby(lobby_id)
+        return render_template('session_data.html',
+                               sessions=sessions,
+                                 participants=participants,
+                               lobby_id=lobby_id)
+    else:
+        lobbies = get_lobbies_data()
+        return render_template('lobbies_data.html', lobbies=lobbies)
+
+# ───────────────────────────────────────── single-session page
+@app.route('/session_data/single', methods=['GET'])
+def single_session_data():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    sid          = request.args.get('session_id')
+    game_type    = request.args.get('game_type', '')
+    participants = request.args.get('participants', '')
+    duration     = request.args.get('duration', '')
+
+    # ── metrics ──
+    heart    = get_heartrate(sid)
+    hrv      = get_and_calculate_HRV(sid)
+    latency  = get_latency(sid)
+    jitter   = get_jitter(sid)
+
+    click_events = sync_events = None
+    frequency_data = sync_intervals = None
+    angle_data = None
+
+    if game_type in ("WATER_RIPPLES", "FLOWER_GARDEN"):
+        click_events, sync_events = get_click_game_sync(sid)
+    else:
+        frequency_data, angle_data, sync_intervals = get_swipe_game_frequency(sid)
+
+    metadata = {
+        "gameType"    : game_type,
+        "participants": [p.strip() for p in participants.split(',') if p],
+        "sessionId"   : sid,
+        "duration"    : duration
+    }
+    data = {
+        "heart"          : heart,
+        "hrv"            : hrv,
+        "latency"        : latency,
+        "jitter"         : jitter,
+        "click_events"   : click_events,
+        "sync_events"    : sync_events,
+        "frequency_data" : frequency_data,
+        "sync_intervals" : sync_intervals,
+        "angle_data"     : angle_data
+    }
+
+    return render_template("single_session_data.html",
+                           metadata=metadata,
+                           data=data)
+
+
+# ───────────────────────────────────────── (optional) JSON API
+@app.route('/get_all_sessions', methods=['GET'])
+def get_all_sessions_route():
+    try:
+        sessions = get_sessions_for_lobby("")      # empty ⇒ all
+        return jsonify({"status": "success", "sessions": sessions})
+    except Exception as e:
+        Logger.log_error(f"Error getting all sessions: {e}")
+        return jsonify({"status": "error",
+                        "message": "Internal server error"}), 500
+
 
 if __name__ == '__main__':
     # run on port 80

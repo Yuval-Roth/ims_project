@@ -4,12 +4,14 @@ from ..ENUMS import *
 
 RUNNING_LOCAL = False
 
+
+
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
 else:
     URL = "http://ims-game-server:8080/"
 
-GAL = False
+GAL = True
 
 if GAL:
     URL = "https://ims-project.cs.bgu.ac.il:8640/"
