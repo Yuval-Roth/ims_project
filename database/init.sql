@@ -11,12 +11,22 @@ CREATE TABLE Participants (
 );
 
 -- Create the Lobby table
-CREATE TABLE Experiments ( -- CHANGE NAME TO EXPERIMENT
+CREATE TABLE Experiments (
                        exp_id SERIAL PRIMARY KEY,
                        pid1 INT,
                        pid2 INT,
                        FOREIGN KEY (pid1) REFERENCES Participants(pid) ON DELETE SET NULL,
                        FOREIGN KEY (pid2) REFERENCES Participants(pid) ON DELETE SET NULL
+);
+
+CREATE TABLE ExperimentsFeedback ( 
+                       exp_id INT NOT NULL,
+                       pid INT NOT NULL,
+                       question VARCHAR(100) NOT NULL,
+                       answer VARCHAR(300) NOT NULL,
+                       PRIMARY KEY (exp_id, pid, question),
+                       FOREIGN KEY (pid) REFERENCES Participants(pid) ON DELETE SET NULL,
+                       FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
 );
 
 -- Create the Sessions table
@@ -32,14 +42,26 @@ CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
                           FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
 );
 
+CREATE TABLE SessionsFeedback ( 
+                       exp_id INT NOT NULL,
+                       session_id INT NOT NULL,
+                       pid INT NOT NULL,
+                       question VARCHAR(100) NOT NULL,
+                       answer VARCHAR(300) NOT NULL,
+                       PRIMARY KEY (exp_id, session_id, pid, question),
+                       FOREIGN KEY (pid) REFERENCES Participants(pid) ON DELETE SET NULL,
+                       FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
+);
+
+
 -- Create the SessionUserInputEvent table
-CREATE TABLE SessionEvents ( -- AT THE END OF EVERY SESSION, A LIST OF EVENTS WILL BE PASSED
-                                       event_id SERIAL PRIMARY KEY,
+CREATE TABLE SessionEvents (
+                                        event_id SERIAL PRIMARY KEY,
                                         session_id INT,
-                                       type VARCHAR(50) NOT NULL,
-                                       subtype VARCHAR(50) NOT NULL,
-                                       timestamp BIGINT NOT NULL, --ms from start of session, can be INT
-                                       actor VARCHAR(100) NOT NULL,
-                                       data TEXT,
-                                       FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
+                                        type VARCHAR(50) NOT NULL,
+                                        subtype VARCHAR(50) NOT NULL,
+                                        timestamp BIGINT NOT NULL, --ms from start of session, can be INT
+                                        actor VARCHAR(100) NOT NULL,
+                                        data TEXT,
+                                        FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
 );

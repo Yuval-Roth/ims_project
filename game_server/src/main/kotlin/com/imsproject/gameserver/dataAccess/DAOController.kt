@@ -7,7 +7,6 @@ import com.imsproject.gameserver.dataAccess.models.*
 import org.slf4j.LoggerFactory
 
 import org.springframework.stereotype.Component
-import java.sql.SQLException
 
 
 @Suppress("UNCHECKED_CAST")
@@ -16,7 +15,9 @@ class DAOController(
     private val participantDAO: ParticipantsDAO,
     private val experimentDAO: ExperimentsDAO,
     private val sessionDAO: SessionsDAO,
-    private val sessionEventDAO: SessionEventsDAO
+    private val sessionEventDAO: SessionEventsDAO,
+    private val experimentsFeedbackDAO: ExperimentsFeedbackDAO,
+    private val sessionsFeedbackDAO: SessionsFeedbackDAO
 ) {
 
     @Throws(DaoException::class)
@@ -70,6 +71,15 @@ class DAOController(
     @Throws(DaoException::class)
     fun handleBulkInsertSessionEvents(dtos: List<SessionEventDTO>): Int =
         sessionEventDAO.bulkInsert(dtos)
+
+    @Throws(DaoException::class)
+    fun handleBulkInsertExperimentFeedback(dtos: List<ExperimentFeedbackDTO>) {
+        experimentsFeedbackDAO.bulkInsert(dtos)
+    }
+
+    fun handleBulkInsertSessionFeedback(dtos: List<SessionFeedbackDTO>) {
+        sessionsFeedbackDAO.bulkInsert(dtos)
+    }
 
     @Throws(DaoException::class)
     fun handleExists(pk: ParticipantPK): Boolean {
@@ -168,8 +178,14 @@ class DAOController(
 
     fun handleSelectAllParticipants(): List<ParticipantDTO> = participantDAO.selectAll()
     fun handleSelectAllExperiments(): List<ExperimentDTO> = experimentDAO.selectAll()
+    fun handleSelectAllExperimentsWithNames(): List<ExperimentWithParticipantNamesDTO> {
+        return experimentDAO.selectWithParticipantNames()
+    }
     fun handleSelectAllSessions(): List<SessionDTO> = sessionDAO.selectAll()
     fun handleSelectAllSessionEvents(): List<SessionEventDTO> = sessionEventDAO.selectAll()
+    fun handleSelectAllExperimentsFeedback(): List<ExperimentFeedbackDTO> = experimentsFeedbackDAO.selectAll()
+    fun handleSelectAllSessionsFeedback(): List<SessionFeedbackDTO> = sessionsFeedbackDAO.selectAll()
+
 
     fun handleSelectListSessions(sessionDTO: SessionDTO): List<SessionDTO> {
         val data = sessionDTO.toNonNullMap()
@@ -185,8 +201,18 @@ class DAOController(
         return sessionEventDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
     }
 
-    fun handleSelectAllExperimentsWithNames(): List<ExperimentWithParticipantNamesDTO> {
-        return experimentDAO.selectWithParticipantNames()
+    fun handleSelectListExperimentsFeedback(experimentsFeedbackDTO: ExperimentFeedbackDTO): List<ExperimentFeedbackDTO> {
+        val data = experimentsFeedbackDTO.toNonNullMap()
+        if (data.isEmpty())
+            return handleSelectAllExperimentsFeedback()
+        return experimentsFeedbackDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
+    }
+
+    fun handleSelectListSessionsFeedback(sessionFeedbackDTO: SessionFeedbackDTO): List<Any> {
+        val data = sessionFeedbackDTO.toNonNullMap()
+        if (data.isEmpty())
+            return handleSelectAllExperimentsFeedback()
+        return sessionsFeedbackDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
     }
 
     companion object {
