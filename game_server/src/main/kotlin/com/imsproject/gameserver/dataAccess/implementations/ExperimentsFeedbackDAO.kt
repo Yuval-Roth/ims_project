@@ -17,10 +17,10 @@ import org.springframework.stereotype.Component
 @Component
 class ExperimentsFeedbackDAO(cursor: SQLExecutor) : DAOBase<ExperimentFeedbackDTO, ExperimentFeedbackPK>(cursor, "ExperimentsFeedback", ExperimentPK.primaryColumnsList, arrayOf("exp_id", "pid", "question", "answer")) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ExperimentFeedbackDTO {
-        return ExperimentFeedbackDTO(   expId = (resultSet.getObject("exp_id") as Int),
-            pid = (resultSet.getObject("pid") as Int),
-            question = (resultSet.getObject("question") as String),
-            answer = (resultSet.getObject("answer") as String)
+        return ExperimentFeedbackDTO(   expId = (resultSet.getObject("exp_id") as Int?),
+            pid = (resultSet.getObject("pid") as Int?),
+            question = (resultSet.getObject("question") as String?),
+            answer = (resultSet.getObject("answer") as String?)
         )
     }
 

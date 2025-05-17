@@ -1,6 +1,7 @@
 package com.imsproject.gameserver.dataAccess.models
 
 import com.imsproject.common.gameserver.SessionEvent
+import kotlin.math.exp
 
 data class ParticipantDTO(
     val pid: Int? = null,
@@ -19,11 +20,21 @@ data class ExperimentDTO(
 )
 
 data class ExperimentFeedbackDTO(
-    val expId: Int,
-    val pid: Int,
-    val question: String,
-    val answer: String
-)
+    val expId: Int?,
+    val pid: Int?,
+    val question: String?,
+    val answer: String?
+) {
+    fun toNonNullMap(): Map<String, Any> {
+        return listOf(
+            "exp_id" to expId,
+            "pid" to pid,
+            "question" to question,
+            "answer" to answer
+        ).filter { it.second != null }
+            .associate { it.first to it.second!! }
+    }
+}
 
 data class SessionDTO(
     val sessionId: Int? = null,

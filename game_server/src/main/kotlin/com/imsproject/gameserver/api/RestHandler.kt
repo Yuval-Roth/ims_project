@@ -218,8 +218,18 @@ class RestHandler(
         }
 
         return Response.getOk().toResponseEntity()
+    }
 
+    @PostMapping("/data/experiment/select/feedback")
+    fun dataSelectExperimentsFeedback(@RequestBody body: String): ResponseEntity<String> {
+        val experimentFeedbackDTO: ExperimentFeedbackDTO
 
+        try {
+            experimentFeedbackDTO = fromJson<ExperimentFeedbackDTO>(body)
+            return Response.getOk(daoController.handleSelectListExperimentsFeedback(experimentFeedbackDTO)).toResponseEntity()
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 
 

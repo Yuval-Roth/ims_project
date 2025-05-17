@@ -173,8 +173,12 @@ class DAOController(
 
     fun handleSelectAllParticipants(): List<ParticipantDTO> = participantDAO.selectAll()
     fun handleSelectAllExperiments(): List<ExperimentDTO> = experimentDAO.selectAll()
+    fun handleSelectAllExperimentsWithNames(): List<ExperimentWithParticipantNamesDTO> {
+        return experimentDAO.selectWithParticipantNames()
+    }
     fun handleSelectAllSessions(): List<SessionDTO> = sessionDAO.selectAll()
     fun handleSelectAllSessionEvents(): List<SessionEventDTO> = sessionEventDAO.selectAll()
+    fun handleSelectAllExperimentsFeedback(): List<ExperimentFeedbackDTO> = experimentsFeedbackDAO.selectAll()
 
     fun handleSelectListSessions(sessionDTO: SessionDTO): List<SessionDTO> {
         val data = sessionDTO.toNonNullMap()
@@ -190,9 +194,16 @@ class DAOController(
         return sessionEventDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
     }
 
-    fun handleSelectAllExperimentsWithNames(): List<ExperimentWithParticipantNamesDTO> {
-        return experimentDAO.selectWithParticipantNames()
+    fun handleSelectListExperimentsFeedback(experimentsFeedbackDTO: ExperimentFeedbackDTO): List<ExperimentFeedbackDTO> {
+        val data = experimentsFeedbackDTO.toNonNullMap()
+        if (data.isEmpty())
+            return handleSelectAllExperimentsFeedback()
+        return experimentsFeedbackDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
     }
+
+
+
+
 
 
 
