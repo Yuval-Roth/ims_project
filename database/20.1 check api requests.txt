@@ -49,7 +49,7 @@ curl -X POST "http://localhost:8080/data/experiment/select" -H "Content-Type: ap
 curl -X POST "http://localhost:8080/data/experiment/select" -H "Content-Type: application/json" -d "{\"expId\":1}"
 
 EXPERIMENT FEEDBACK
-curl -X POST "http://localhost:8080/data/experiment/insert/feedback" -H "Content-Type: application/json" -d "{\"expId\":1, \"pid\":4, \"qnas\":[{question: \"my names is 1?\", answer: \"what\"}, {question: \"my names is 2?\", answer: \"who\"}]}"
+curl -X POST "https://ims-project.cs.bgu.ac.il:8644/data/session/insert/feedback" -H "Content-Type: application/json" -d "{\"expId\":267, \"pad\":4, \"qnas\":[{question: \"my names is 1?\", answer: \"what\"}, {question: \"my names is 2?\", answer: \"who\"}]}"
 
 curl -X POST "http://localhost:8080/data/experiment/select/feedback" -H "Content-Type: application/json" -d "{\"expId\":1}"
 
@@ -76,7 +76,7 @@ curl -X POST "http://localhost:8080/data/session/select" -H "Content-Type: appli
 curl -X POST "http://localhost:8080/data/session/delete" -H "Content-Type: application/json" -d "{\"sessionId\":3}" 
 
 SESSION FEEDBACK
-curl -X POST "http://localhost:8080/data/session/insert/feedback" -H "Content-Type: application/json" -d "{\"expId\":1, \"sessionId\":3, \"pid\":5, \"qnas\":[{question: \"my names is 1?\", answer: \"what\"}, {question: \"my names is 2?\", answer: \"who\"}]}"
+curl -X POST "https://ims-project.cs.bgu.ac.il:8644/data/session/insert/feedback" -H "Content-Type: application/json" -d "{\"expId\":1, \"sessionId\":3, \"pid\":5, \"qnas\":[{question: \"my names is 1?\", answer: \"what\"}, {question: \"my names is 2?\", answer: \"who\"}]}"
 
 curl -X POST "http://localhost:8080/data/experiment/select/feedback" -H "Content-Type: application/json" -d "{\"expId\":1}"
 
