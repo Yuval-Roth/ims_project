@@ -4,8 +4,6 @@ from ..ENUMS import *
 
 RUNNING_LOCAL = False
 
-
-
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
 else:
