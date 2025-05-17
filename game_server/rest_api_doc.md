@@ -577,6 +577,115 @@ This endpoint is used to insert feedback data from a participant in an experimen
 }
   ```
 
+### `/data/experiment/select/feedback`
+
+#### Description
+This endpoint is used to get data about all or a specific experiment feedback.
+
+#### Request to select all experiments feedback
+- **Body**:
+```json
+{}
+```
+
+#### Request to select experiment feedback according to specified fields (any combination)
+- **Body**:
+
+```json
+{
+  "expId": 1,
+  "pid": 3,
+  "question": "my name is?",
+  "answer": "what!"
+}
+```
+
+- **Example**:
+
+```json
+{
+  "expId": 1
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true,
+  "payload": ["serializedExperimentFeedbacks"]
+}
+  ```
+
+### `/data/session/insert/feedback`
+
+#### Description
+This endpoint is used to insert feedback data from a participant in a session.
+
+#### Request to insert feedback
+- **Body**:
+
+```json
+{
+  "expId": 1,
+  "sessionId": 1,
+  "pid": 3,
+  "qnas": [
+            {"question": "why?", "answer": "because!"},
+            {"question": "when?", "answer":  "mayber later"}
+          ]
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true
+}
+  ```
+
+### `/data/session/select/feedback`
+
+#### Description
+This endpoint is used to get data about all or a specific sessions feedback.
+
+#### Request to select all sessions feedback
+- **Body**:
+```json
+{}
+```
+
+#### Request to select experiment feedback according to specified fields (any combination)
+- **Body**:
+
+```json
+{
+  "expId": 1,
+  "sessionId": 1,
+  "pid": 3,
+  "question": "my name is?",
+  "answer": "what!"
+}
+```
+
+- **Example**:
+
+```json
+{
+  "expId": 1
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true,
+  "payload": ["serializedSessionFeedbacks"]
+}
+  ```
+
 ### 4. POST `/operators/{action}`
 
 #### **Description**

@@ -8,16 +8,14 @@ import com.imsproject.common.dataAccess.abstracts.DAOBase
 import com.imsproject.common.dataAccess.abstracts.PrimaryKey
 import com.imsproject.common.dataAccess.abstracts.SQLExecutor
 import com.imsproject.common.utils.Response
-import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
-import com.imsproject.gameserver.dataAccess.models.ExperimentFeedbackDTO
-import com.imsproject.gameserver.dataAccess.models.ExperimentWithParticipantNamesDTO
-import com.imsproject.gameserver.dataAccess.models.SessionEventDTO
+import com.imsproject.gameserver.dataAccess.models.*
 import org.springframework.stereotype.Component
 
 @Component
-class ExperimentsFeedbackDAO(cursor: SQLExecutor) : DAOBase<ExperimentFeedbackDTO, ExperimentFeedbackPK>(cursor, "ExperimentsFeedback", ExperimentFeedbackPK.primaryColumnsList, arrayOf("exp_id", "pid", "question", "answer")) {
-    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ExperimentFeedbackDTO {
-        return ExperimentFeedbackDTO(   expId = (resultSet.getObject("exp_id") as Int?),
+class SessionsFeedbackDAO(cursor: SQLExecutor) : DAOBase<SessionFeedbackDTO, SessionFeedbackPK>(cursor, "SessionsFeedback", ExperimentPK.primaryColumnsList, arrayOf("exp_id", "session_id", "pid", "question", "answer")) {
+    override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionFeedbackDTO {
+        return SessionFeedbackDTO(   expId = (resultSet.getObject("exp_id") as Int?),
+            sessionId = (resultSet.getObject("session_id") as Int?),
             pid = (resultSet.getObject("pid") as Int?),
             question = (resultSet.getObject("question") as String?),
             answer = (resultSet.getObject("answer") as String?)
@@ -29,31 +27,32 @@ class ExperimentsFeedbackDAO(cursor: SQLExecutor) : DAOBase<ExperimentFeedbackDT
     }
 
     @Throws(DaoException::class)
-    override fun insert(obj: ExperimentFeedbackDTO, transactionId: String?): Int {
-        val values = arrayOf(obj.expId,obj.pid,obj.question,obj.answer)
+    override fun insert(obj: SessionFeedbackDTO, transactionId: String?): Int {
+        val values = arrayOf(obj.expId,obj.sessionId,obj.pid,obj.question,obj.answer)
         val idColName = "exp_id" //unnecessary
         return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
-    override fun update(obj: ExperimentFeedbackDTO, transactionId: String?) {
-        throw UnsupportedOperationException("Update of experiment feedback is not supported.")
+    override fun update(obj: SessionFeedbackDTO, transactionId: String?) {
+        throw UnsupportedOperationException("Update of session feedback is not supported.")
     }
 
-    fun bulkInsert(objs: List<ExperimentFeedbackDTO>, transactionId: String? = null): Int {
-        val values : List<Array<Any?>> = objs.map { arrayOf(it.expId,it.pid,it.question,it.answer) }
+    fun bulkInsert(objs: List<SessionFeedbackDTO>, transactionId: String? = null): Int {
+        val values : List<Array<Any?>> = objs.map { arrayOf(it.expId,it.sessionId,it.pid,it.question,it.answer) }
         val idColName = "exp_id" // unnecessary
         return buildQueryAndBulkInsert(idColName, values, transactionId)
     }
 }
 
-data class ExperimentFeedbackPK(
+data class SessionFeedbackPK(
     val expId: Int,
+    val sessionId: Int?,
     val pid: Int,
     val question: String
 ) : PrimaryKey {
     companion object {
-        val primaryColumnsList = arrayOf("exp_id", "pid", "question")
+        val primaryColumnsList = arrayOf("exp_id", "session_id", "pid", "question")
     }
 
     override fun columnNames(): Array<out String> {
@@ -63,6 +62,7 @@ data class ExperimentFeedbackPK(
     override fun getValue(columnName: String): Any? {
         return when (columnName) {
             "exp_id" -> expId
+            "session_id" -> sessionId
             "pid" -> pid
             "question" -> question
             else -> null

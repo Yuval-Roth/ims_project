@@ -101,6 +101,26 @@ data class SessionEventDTO(
     }
 }
 
+data class SessionFeedbackDTO(
+    val expId: Int?,
+    val sessionId: Int?,
+    val pid: Int?,
+    val question: String?,
+    val answer: String?
+) {
+    fun toNonNullMap(): Map<String, Any> {
+        return listOf(
+            "exp_id" to expId,
+            "sessions_id" to sessionId,
+            "pid" to pid,
+            "question" to question,
+            "answer" to answer
+        ).filter { it.second != null }
+            .associate { it.first to it.second!! }
+    }
+}
+
+
 data class ExpWithSessionsData(
     val pid1: Int,
     val pid2: Int,

@@ -249,6 +249,49 @@ class RestHandler(
         }
     }
 
+    private data class sessionFeedback(val expId: Int, val sessionId: Int, val pid: Int, val qnas: List<QnA>)
+    @PostMapping("/data/session/insert/feedback")
+    fun dataInsertSessionFeedback(@RequestBody body: String): ResponseEntity<String> {
+        val feedbackDTOs: List<SessionFeedbackDTO>
+        val feedback: sessionFeedback
+
+        try {
+            feedback = fromJson<sessionFeedback>(body)
+            feedbackDTOs = feedback.qnas.map {
+                SessionFeedbackDTO(
+                    expId = feedback.expId,
+                    sessionId = feedback.sessionId,
+                    pid = feedback.pid,
+                    question = it.question,
+                    answer = it.answer
+                )
+            }
+        } catch (e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+
+        scope.launch {
+            val startTime = System.nanoTime()
+            daoController.handleBulkInsertSessionFeedback(feedbackDTOs)
+            val endTime = System.nanoTime()
+            log.debug("Inserted {} feedback entries in {}ms for expId {}", feedbackDTOs.size, (endTime - startTime) / 1_000_000, feedback.expId)
+        }
+
+        return Response.getOk().toResponseEntity()
+    }
+
+    @PostMapping("/data/session/select/feedback")
+    fun dataSelectSessionsFeedback(@RequestBody body: String): ResponseEntity<String> {
+        val sessionFeedbackDTO: SessionFeedbackDTO
+
+        try {
+            sessionFeedbackDTO = fromJson<SessionFeedbackDTO>(body)
+            return Response.getOk(daoController.handleSelectListSessionsFeedback(sessionFeedbackDTO)).toResponseEntity()
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
+
     @PostMapping("/data/sessionEvent/select")
     fun dataSelectSessionEvents(@RequestBody body: String): ResponseEntity<String> {
         val sessionEventDTO: SessionEventDTO

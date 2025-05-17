@@ -16,7 +16,8 @@ class DAOController(
     private val experimentDAO: ExperimentsDAO,
     private val sessionDAO: SessionsDAO,
     private val sessionEventDAO: SessionEventsDAO,
-    private val experimentsFeedbackDAO: ExperimentsFeedbackDAO
+    private val experimentsFeedbackDAO: ExperimentsFeedbackDAO,
+    private val sessionsFeedbackDAO: SessionsFeedbackDAO
 ) {
 
     @Throws(DaoException::class)
@@ -74,6 +75,10 @@ class DAOController(
     @Throws(DaoException::class)
     fun handleBulkInsertExperimentFeedback(dtos: List<ExperimentFeedbackDTO>) {
         experimentsFeedbackDAO.bulkInsert(dtos)
+    }
+
+    fun handleBulkInsertSessionFeedback(dtos: List<SessionFeedbackDTO>) {
+        sessionsFeedbackDAO.bulkInsert(dtos)
     }
 
     @Throws(DaoException::class)
@@ -179,6 +184,8 @@ class DAOController(
     fun handleSelectAllSessions(): List<SessionDTO> = sessionDAO.selectAll()
     fun handleSelectAllSessionEvents(): List<SessionEventDTO> = sessionEventDAO.selectAll()
     fun handleSelectAllExperimentsFeedback(): List<ExperimentFeedbackDTO> = experimentsFeedbackDAO.selectAll()
+    fun handleSelectAllSessionsFeedback(): List<SessionFeedbackDTO> = sessionsFeedbackDAO.selectAll()
+
 
     fun handleSelectListSessions(sessionDTO: SessionDTO): List<SessionDTO> {
         val data = sessionDTO.toNonNullMap()
@@ -201,11 +208,12 @@ class DAOController(
         return experimentsFeedbackDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
     }
 
-
-
-
-
-
+    fun handleSelectListSessionsFeedback(sessionFeedbackDTO: SessionFeedbackDTO): List<Any> {
+        val data = sessionFeedbackDTO.toNonNullMap()
+        if (data.isEmpty())
+            return handleSelectAllExperimentsFeedback()
+        return sessionsFeedbackDAO.selectAggregate(data.keys.toTypedArray(), data.values.toTypedArray())
+    }
 
     companion object {
         private val log = LoggerFactory.getLogger(DAOController::class.java)
