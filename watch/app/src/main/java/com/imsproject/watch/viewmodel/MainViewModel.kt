@@ -8,22 +8,18 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.model.AlreadyConnectedException
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.ParticipantNotFoundException
-import com.imsproject.watch.model.SessionEventCollectorImpl
 import com.imsproject.watch.sensors.HeartRateSensorHandler
 import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
-import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 private const val TAG = "MainViewModel"
@@ -41,7 +37,8 @@ class MainViewModel() : ViewModel() {
         ERROR,
         ALREADY_CONNECTED,
         AFTER_GAME,
-        AFTER_GAME_QUESTIONS
+        AFTER_GAME_QUESTIONS,
+        UPLOADING_ANSWERS
     }
 
     private var model = MainModel(viewModelScope)
@@ -166,11 +163,11 @@ class MainViewModel() : ViewModel() {
             when (result.code) {
                 Result.Code.OK -> {
                     setState(State.UPLOADING_EVENTS)
-                    if (! model.uploadSessionEvents(sessionId)) {
+                    if (model.uploadSessionEvents(sessionId)) {
+                        setState(State.AFTER_GAME_QUESTIONS)
+                    } else {
                         fatalError("Failed to upload session events")
                     }
-                    sessionId = -1
-                    setState(State.CONNECTED_IN_LOBBY)
                 }
                 else -> {
                     // typically, when reaching here, the game ended due to a network error
@@ -228,6 +225,18 @@ class MainViewModel() : ViewModel() {
     fun setState(newState: State){
         _state.value = newState
         Log.d(TAG, "set new state: $newState")
+    }
+
+    fun uploadAnswers(vararg QnAs: Pair<String,String>) {
+        setState(State.UPLOADING_ANSWERS)
+        viewModelScope.launch(Dispatchers.IO) {
+            if(model.uploadAfterGameQuestions(sessionId, *QnAs)){
+                sessionId = -1
+                setState(State.CONNECTED_IN_LOBBY)
+            } else {
+                fatalError("Failed to upload answers")
+            }
+        }
     }
 
     // ================================================================================ |

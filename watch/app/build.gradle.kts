@@ -83,7 +83,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.material.icons.core)
     implementation(libs.okhttp)
-    implementation("androidx.compose.material3:material3:1.3.2")
+    implementation(libs.material3)
 
     implementation (fileTree(
         "dir" to "libs",

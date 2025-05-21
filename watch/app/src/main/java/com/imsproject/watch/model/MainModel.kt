@@ -333,6 +333,44 @@ class MainModel (private val scope : CoroutineScope) {
         return success
     }
 
+    fun uploadAfterGameQuestions(sessionId: Int, vararg QnAs: Pair<String,String>): Boolean {
+        Log.d(TAG, "Uploading after game questions")
+        val body = object {
+            val sessionId = sessionId
+            val qnas = QnAs.map {
+                object {
+                    val question = it.first
+                    val answer = it.second
+                }
+            }.toList()
+        }.toJson()
+        var tries = 0
+        while(tries < 5){
+            val returned = RestApiClient()
+                .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/feedback")
+                .withBody(body)
+                .withPost()
+                .send()
+
+            val response: Response
+            try{
+                response = fromJson<Response>(returned)
+            } catch(e: JsonSyntaxException){
+                Log.e(TAG, "uploadAfterGameQuestions: failed to parse response: $returned", e)
+                throw RuntimeException("uploadAfterGameQuestions: failed to parse response: $returned",e)
+            }
+
+            if(response.success){
+                Log.d(TAG, "uploadAfterGameQuestions: success")
+                return true
+            } else {
+                Log.e(TAG, "uploadAfterGameQuestions: Failed to upload events\n${response.message}")
+                tries++
+            }
+        }
+        return false
+    }
+
     suspend fun closeAllResources(){
         Log.d(TAG, "Closing all resources")
         try{
@@ -641,5 +679,4 @@ class MainModel (private val scope : CoroutineScope) {
             invoke(this@reset)
         }
     }
-
 }

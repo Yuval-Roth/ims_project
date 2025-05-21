@@ -26,8 +26,12 @@ class HeartRateSensorHandler private constructor() {
     val heartRate: StateFlow<Int> = _heartRate
     private val _ibi = MutableStateFlow(0)
     val ibi: StateFlow<Int> = _ibi
+    private var notAvailable = false
 
     fun init() {
+        if (notAvailable) {
+            return
+        }
 
         if (initialized) {
             throw IllegalStateException("Heart rate sensor already initialized")
@@ -78,19 +82,27 @@ class HeartRateSensorHandler private constructor() {
 
         val healthService = HealthTrackingService(
             object : ConnectionListener {
-                override fun onConnectionSuccess() = onConnectionResponse(true,null)
+                override fun onConnectionSuccess(){
+                    connected = true
+                    notAvailable = false
+                    onConnectionResponse(true,null)
+                }
                 override fun onConnectionFailed(e: HealthTrackerException) {
                     healthService = null
+                    notAvailable = true
                     onConnectionResponse(false,e)
                 }
                 override fun onConnectionEnded() {}
             }, context)
         this.healthService = healthService
         healthService.connectService()
-        this.connected = true
     }
 
     fun disconnect() {
+        if(notAvailable) {
+            return
+        }
+
         if (!connected) {
             throw IllegalStateException("Not connected to health service")
         }
@@ -102,6 +114,10 @@ class HeartRateSensorHandler private constructor() {
     }
 
     fun startTracking(gameViewModel: GameViewModel) {
+        if(notAvailable) {
+            return
+        }
+
         if (!initialized) {
             throw IllegalStateException("Heart rate sensor not initialized")
         }
@@ -113,6 +129,10 @@ class HeartRateSensorHandler private constructor() {
     }
 
     fun stopTracking() {
+        if(notAvailable) {
+            return
+        }
+
         if (!initialized) {
             throw IllegalStateException("Heart rate sensor not initialized")
         }

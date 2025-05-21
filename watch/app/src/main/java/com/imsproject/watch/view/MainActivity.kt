@@ -30,13 +30,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -55,7 +52,6 @@ import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
-import androidx.wear.compose.material.InlineSlider
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Picker
 import androidx.wear.compose.material.PickerState
@@ -63,8 +59,8 @@ import androidx.wear.compose.material.rememberPickerState
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
+import com.imsproject.watch.FIRST_QUESTION
 import com.imsproject.watch.LIGHT_BLUE_COLOR
-import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.TEXT_SIZE
@@ -76,9 +72,7 @@ import com.imsproject.watch.view.contracts.*
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.launch
-import java.util.Properties
 import kotlin.math.roundToInt
-
 
 class MainActivity : ComponentActivity() {
 
@@ -216,7 +210,11 @@ class MainActivity : ComponentActivity() {
 
             State.UPLOADING_EVENTS -> LoadingScreen("Uploading events...")
 
-            State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()
+            State.AFTER_GAME_QUESTIONS -> AfterGameQuestion(FIRST_QUESTION){
+                viewModel.uploadAnswers(FIRST_QUESTION to it)
+            }
+
+            State.UPLOADING_ANSWERS -> LoadingScreen("Uploading answers...")
 
             State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
@@ -576,7 +574,7 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun AfterGameQuestions() {
+    fun AfterGameQuestion(question: String, onNext: (String) -> Unit = {}) {
         MaterialTheme {
             Box(
                 modifier = Modifier
@@ -591,13 +589,12 @@ class MainActivity : ComponentActivity() {
                             start = 20.dp,
                             end = 20.dp
                         )
-//                        .align(Alignment.TopCenter)
                     ,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     BasicText(
                         modifier = Modifier.fillMaxWidth(0.8f),
-                        text = "עד כמה חשת תחושת \"ביחד\" עם השותפ/ה במשחקון הזה?",
+                        text = question,
                         style = rtlTextStyle,
                     )
                     var sliderValue by remember { mutableFloatStateOf(1f) }
@@ -606,11 +603,6 @@ class MainActivity : ComponentActivity() {
                         onValueChange = { sliderValue = it },
                         valueRange = 1f..7f,
                         steps = 5,
-                        onValueChangeFinished = {
-                            // You can round the value here if you want to use an Int
-                            val selected = sliderValue.roundToInt()
-                            // Do something with `selected`
-                        }
                     )
                     BasicText(
                         modifier = Modifier.fillMaxWidth(0.2f),
@@ -622,7 +614,9 @@ class MainActivity : ComponentActivity() {
                     )
                     Spacer(modifier = Modifier.fillMaxHeight(0.1f))
                     Button(
-                        onClick = {},
+                        onClick = {
+                            onNext(sliderValue.roundToInt().toString())
+                        },
                         modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .fillMaxHeight(0.5f)
@@ -663,7 +657,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun Preview() {
         initProperties(454);
-        AfterGameQuestions()
+        AfterGameQuestion(FIRST_QUESTION)
     }
 }
 

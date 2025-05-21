@@ -9,7 +9,7 @@ if RUNNING_LOCAL:
 else:
     URL = "http://ims-game-server:8080/"
 
-GAL = False
+GAL = True
 
 if GAL:
     URL = "https://ims-project.cs.bgu.ac.il:8640/"
