@@ -67,7 +67,7 @@ class RestHandler(
                 return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
             }
         } else {
-            Credentials("","",null,null)
+            Credentials("","",null)
         }
         try{
             when(action){
@@ -112,13 +112,7 @@ class RestHandler(
                 "remove" ->{
                     log.debug("Removing participant: {}", participant)
                     val pid = participant.pid ?: throw IllegalArgumentException("Participant id not provided")
-                    participantController.remove(
-                        try{
-                            pid.toInt()
-                        } catch (e: Exception){
-                            throw IllegalArgumentException("Invalid participant id")
-                        }
-                    )
+                    participantController.remove(pid)
                     log.debug("Successfully removed participant with id: {}", pid)
                 }
                 "get" -> {
@@ -313,13 +307,17 @@ class RestHandler(
         if(header == null){
             return Response.getError("No Authorization header").toResponseEntity(HttpStatus.BAD_REQUEST)
         }
-        // base64 encoded user:password
-        val credentials = header.split(" ")[1]
-        val decoded = String(Base64.getDecoder().decode(credentials))
-        val split = decoded.split(":")
-        val userId = split[0]
-        val password = split[1]
-        return authController.authenticateUser(userId, password).toResponseEntity()
+        try{
+            // base64 encoded user:password
+            val credentials = header.split(" ")[1]
+            val decoded = String(Base64.getDecoder().decode(credentials))
+            val split = decoded.split(":")
+            val userId = split[0]
+            val password = split[1]
+            return authController.authenticateUser(userId, password).toResponseEntity()
+        } catch(_: Exception) {
+            return Response.getError("Bad Credentials").toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 
     @GetMapping("/bcrypt")
