@@ -14,36 +14,24 @@ class JwtController {
 
     fun generateJwt(userId: String): String {
         val cleanUserId = userId.lowercase()
+        val roles = mutableListOf("ROLE_USER")
+        if(cleanUserId == "admin") roles.add("ROLE_ADMIN")
         return Jwts.builder()
                 .subject(cleanUserId)
+                .claim("roles",roles)
                 .signWith(key, alg)
                 .compact()
     }
 
-    fun extractUserId(jwt: String): String {
-        return jwtParser.parseSignedClaims(jwt)
-            .payload
-            .subject
-            .lowercase()
-    }
-
-    fun isOwner(jwt: String, userId: String): Boolean {
-        val cleanUserId = userId.lowercase()
-        try {
-            val userIdFromToken = extractUserId(jwt)
-            return cleanUserId == userIdFromToken
-        } catch (_: Exception) {
-            return false
+    fun extractAuthentication(jwt: String): JwtAuthentication {
+        val claims = jwtParser.parseSignedClaims(jwt).payload
+        val userId = claims.subject
+        val rawRoles = claims["roles"]
+        val roles = when (rawRoles) {
+            is List<*> -> rawRoles.filterIsInstance<String>()
+            else -> emptyList()
         }
-    }
-
-    fun isAuthentic(jwt: String): Boolean {
-        return try {
-            extractUserId(jwt)
-            true
-        } catch (_: Exception) {
-            false
-        }
+        return JwtAuthentication(userId,roles)
     }
 
     /**

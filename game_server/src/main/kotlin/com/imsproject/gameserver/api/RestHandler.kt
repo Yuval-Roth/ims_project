@@ -20,6 +20,7 @@ import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import java.util.*
 import java.util.concurrent.Executors
@@ -55,6 +56,7 @@ class RestHandler(
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping("/operators/{action}", method = [RequestMethod.POST, RequestMethod.GET])
     fun operators(
         @PathVariable action: String,
@@ -87,6 +89,7 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @RequestMapping("/participants/{action}", method = [RequestMethod.POST, RequestMethod.GET])
     fun participants(
         @PathVariable action: String,
