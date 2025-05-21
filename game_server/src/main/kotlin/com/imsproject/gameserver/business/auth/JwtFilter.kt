@@ -26,9 +26,9 @@ class JwtFilter(
         val auth = request.getHeader("Authorization")
         if (auth != null) {
             if (auth.startsWith("Bearer ")) {
-                val token = auth.substring(7)
-                if (jwtController.isAuthentic(token)) {
-                    val userId = jwtController.extractUserId(token)
+                val jwt = auth.substring(7)
+                if (jwtController.isAuthentic(jwt)) {
+                    val userId = jwtController.extractUserId(jwt)
                     if(authController.userExists(userId)){
                         SecurityContextHolder.getContext().authentication = JwtAuthentication(userId)
                     }

@@ -29,22 +29,22 @@ class AuthController(
     //============================== USER MANAGEMENT ================================== |
     //================================================================================= |
 
-    fun createUser(user: Credentials) {
-        val cleanUserId = user.userId.lowercase()
-        val password = user.password ?: run {
+    fun createUser(credentials: Credentials) {
+        val cleanUserId = credentials.userId.lowercase()
+        val rawPassword = credentials.password ?: run {
             throw IllegalArgumentException("No password given")
         }
         if (userExists(cleanUserId)) {
             throw IllegalArgumentException("user already exists")
         }
-        if(!isValidPassword(user.password)) {
+        if(!isValidPassword(rawPassword)) {
             throw IllegalArgumentException("Password does not meet the requirements")
         }
 
         log.debug("Adding user credentials for user {}", cleanUserId)
-        val hashedPassword = encoder.encode(password)
+        val hashedPassword = encoder.encode(rawPassword)
         val userCredentials = Credentials(cleanUserId, hashedPassword,null)
-        credentials[cleanUserId] = userCredentials
+        this@AuthController.credentials[cleanUserId] = userCredentials
     }
 
     fun deleteUser(userId: String) {
@@ -55,8 +55,8 @@ class AuthController(
         credentials.remove(cleanUserId)
     }
 
-    fun userExists(username: String): Boolean {
-        return username in credentials
+    fun userExists(userId: String): Boolean {
+        return userId in credentials
     }
 
     fun getAllUsers() : List<String> {
@@ -103,6 +103,5 @@ class AuthController(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(AuthController::class.java)
-
     }
 }
