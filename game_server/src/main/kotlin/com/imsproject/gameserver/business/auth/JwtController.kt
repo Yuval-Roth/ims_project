@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.MacAlgorithm
 import org.slf4j.LoggerFactory
+import java.util.Date
 import javax.crypto.SecretKey
 
 
@@ -16,10 +17,17 @@ class JwtController {
         val cleanUserId = userId.lowercase()
         val roles = mutableListOf("ROLE_USER")
         if(cleanUserId == "admin") roles.add("ROLE_ADMIN")
+        val now = Date().time
+        val expiration = if("ROLE_ADMIN" in roles){
+            Date(now + 30 * 60 * 1000) // 30 mins
+        } else {
+            Date(now + 24 * 60 * 60 * 1000) // 24 hours
+        }
         return Jwts.builder()
                 .subject(cleanUserId)
                 .claim("roles",roles)
                 .signWith(key, alg)
+                .expiration(expiration)
                 .compact()
     }
 
