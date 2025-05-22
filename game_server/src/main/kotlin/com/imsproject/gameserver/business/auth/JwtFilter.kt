@@ -25,32 +25,30 @@ class JwtFilter(
                                   @NonNull response: HttpServletResponse,
                                   @NonNull filterChain: FilterChain
     ) {
-        val jwt = extractTokenFromHeader(request.getHeader("Authorization")) ?: run {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing Authorization header")
-            log.debug("Missing JWT for request to ${request.requestURI}")
-            return
-        }
-        try{
-            val authentication = jwtController.extractAuthentication(jwt)
-            val userId = authentication.principal
-            if(authController.userExists(userId)){
-                SecurityContextHolder.getContext().authentication = authentication
-            }
+        val jwt = extractTokenFromHeader(request.getHeader("Authorization"))
+        if(jwt != null){
+            try{
+                val authentication = jwtController.extractAuthentication(jwt)
+                val userId = authentication.principal
+                if(authController.userExists(userId)){
+                    SecurityContextHolder.getContext().authentication = authentication
+                }
 
-        } catch (e: ExpiredJwtException) {
-            log.debug("Expired JWT token: ${e.message}")
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired")
-            return
-        } catch(_:Exception){
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT")
-            log.debug("Invalid JWT for request to ${request.requestURI}")
-            return
+            } catch (e: ExpiredJwtException) {
+                log.debug("Expired JWT token: ${e.message}")
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired")
+                return
+            } catch(_:Exception){
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT")
+                log.debug("Invalid JWT for request to ${request.requestURI}")
+                return
+            }
         }
         filterChain.doFilter(request, response)
     }
 
     private fun extractTokenFromHeader(header: String?): String? {
-        return if (header?.startsWith("Bearer ") == true) header.substring(7) else null
+        return if (header?.startsWith("Bearer ") == true) header.removePrefix("Bearer ") else null
     }
 
     companion object {

@@ -11,6 +11,11 @@ class CredentialsController {
 
     val credentials = ConcurrentHashMap<String,Credentials>()
 
+    init {
+        credentials.put("admin",Credentials("admin","\$2a\$10\$3Dw.gqCvW3tbdHc7qGSLr.4ry49vTMebhTKxu/J5zcNrEBKi4BuGG",null))
+        credentials.put("user",Credentials("user","\$2a\$10\$3Dw.gqCvW3tbdHc7qGSLr.4ry49vTMebhTKxu/J5zcNrEBKi4BuGG",null))
+    }
+
     operator fun get(userId: String): Credentials? {
         return credentials[userId]
     }

@@ -21,10 +21,12 @@ import org.springframework.core.io.ResourceLoader
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.web.bind.annotation.*
 import java.util.*
 import java.util.concurrent.Executors
 
+@EnableMethodSecurity
 @RestController
 class RestHandler(
     private val gameRequestFacade: GameRequestFacade,
@@ -187,14 +189,14 @@ class RestHandler(
     }
 
     private data class QnA(val question: String, val answer: String)
-    private data class experimentFeedback(val expId: Int, val pid: Int, val qnas: List<QnA>)
+    private data class ExperimentFeedback(val expId: Int, val pid: Int, val qnas: List<QnA>)
     @PostMapping("/data/experiment/insert/feedback")
     fun dataInsertExperimentFeedback(@RequestBody body: String): ResponseEntity<String> {
         val feedbackDTOs: List<ExperimentFeedbackDTO>
-        val feedback: experimentFeedback
+        val feedback: ExperimentFeedback
 
         try {
-            feedback = fromJson<experimentFeedback>(body)
+            feedback = fromJson<ExperimentFeedback>(body)
             feedbackDTOs = feedback.qnas.map {
                 ExperimentFeedbackDTO(
                     expId = feedback.expId,
@@ -312,11 +314,9 @@ class RestHandler(
         }
         try{
             // base64 encoded user:password
-            val credentials = header.split(" ")[1]
+            val credentials = header.removePrefix("Basic ")
             val decoded = String(Base64.getDecoder().decode(credentials))
-            val split = decoded.split(":")
-            val userId = split[0]
-            val password = split[1]
+            val (userId,password) = decoded.split(":",limit=2)
             return authController.authenticateUser(userId, password).toResponseEntity()
         } catch(_: Exception) {
             return Response.getError("Bad Credentials").toResponseEntity(HttpStatus.BAD_REQUEST)
