@@ -1,5 +1,7 @@
 package com.imsproject.gameserver.business.auth
 
+import com.imsproject.common.utils.Response
+import com.imsproject.common.utils.toJson
 import io.jsonwebtoken.ExpiredJwtException
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletException
@@ -12,7 +14,6 @@ import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 import kotlin.text.startsWith
-import kotlin.text.substring
 
 @Component
 class JwtFilter(
@@ -25,7 +26,7 @@ class JwtFilter(
                                   @NonNull response: HttpServletResponse,
                                   @NonNull filterChain: FilterChain
     ) {
-        val jwt = extractTokenFromHeader(request.getHeader("Authorization"))
+        val jwt = extractJwtFromHeader(request.getHeader("Authorization"))
         if(jwt != null){
             try{
                 val authentication = jwtController.extractAuthentication(jwt)
@@ -33,21 +34,26 @@ class JwtFilter(
                 if(authController.userExists(userId)){
                     SecurityContextHolder.getContext().authentication = authentication
                 }
-
-            } catch (e: ExpiredJwtException) {
-                log.debug("Expired JWT token: ${e.message}")
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token expired")
+            } catch (_: ExpiredJwtException) {
+                log.debug("expired JWT for request to ${request.requestURI}")
+                rejectJwt(response)
                 return
             } catch(_:Exception){
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT")
                 log.debug("Invalid JWT for request to ${request.requestURI}")
+                rejectJwt(response)
                 return
             }
         }
         filterChain.doFilter(request, response)
     }
 
-    private fun extractTokenFromHeader(header: String?): String? {
+    private fun rejectJwt(response: HttpServletResponse) {
+        response.status = HttpServletResponse.SC_UNAUTHORIZED
+        response.contentType = "application/json"
+        response.writer.write(Response.getError("Invalid Bearer token").toJson())
+    }
+
+    private fun extractJwtFromHeader(header: String?): String? {
         return if (header?.startsWith("Bearer ") == true) header.removePrefix("Bearer ") else null
     }
 

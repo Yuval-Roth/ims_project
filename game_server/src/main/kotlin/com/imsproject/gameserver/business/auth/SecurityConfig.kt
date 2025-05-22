@@ -20,6 +20,8 @@ class SecurityConfig(
             .authorizeHttpRequests { authorize ->
                 authorize
                     .requestMatchers(
+                        "/bcrypt/**",
+                        "/error",
                         "/login",
                         "/data/session/insert/events",
                         "/data/session/insert/feedback",
