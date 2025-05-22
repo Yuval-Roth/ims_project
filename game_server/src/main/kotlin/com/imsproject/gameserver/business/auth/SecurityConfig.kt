@@ -21,8 +21,10 @@ class SecurityConfig(
                 authorize
                     .requestMatchers(
                         "/login",
-                        "/data",
-                        "/data/experiment/insert/feedback"
+                        "/data/session/insert/events",
+                        "/data/session/insert/feedback",
+                        "/data/experiment/insert/feedback",
+                        "/ws",
                     ).permitAll()
                     .anyRequest().authenticated()
             }
