@@ -37,6 +37,20 @@ class RestHandler(
     private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
     private val scope = CoroutineScope(dispatcher)
 
+    @GetMapping("/login")
+    fun login(@RequestHeader(value = "Authorization") header : String?): ResponseEntity<String> {
+        if(header == null){
+            return Response.getError("No Authorization header").toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+        // base64 encoded user:password
+        val credentials = header.split(" ")[1]
+        val decoded = String(Base64.getDecoder().decode(credentials))
+        val split = decoded.split(":")
+        val userId = split[0]
+        val password = split[1]
+        return authController.authenticateUser(userId, password).toResponseEntity()
+    }
+
     @PostMapping("/manager")
     fun manager(@RequestBody body : String): ResponseEntity<String> {
         val request: GameRequest
@@ -54,6 +68,10 @@ class RestHandler(
             return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
+
+    // =========================================================================== |
+    // ============================= ADMIN ENDPOINTS ============================= |
+    // =========================================================================== |
 
     @RequestMapping("/operators/{action}", method = [RequestMethod.POST, RequestMethod.GET])
     fun operators(
@@ -137,29 +155,9 @@ class RestHandler(
         return Response.getOk().toResponseEntity()
     }
 
-    private data class Events(val sessionId: Int, val events: List<String>)
-    @PostMapping("/data")
-    fun data(@RequestBody body: String): ResponseEntity<String> {
-
-        val eventDTOs: List<SessionEventDTO>?
-        val events: Events
-        try {
-            events = fromJson<Events>(body)
-            eventDTOs = events.events.stream()
-                .map { SessionEvent.fromCompressedJson(it) }
-                .map { SessionEventDTO.fromSessionEvent(it, events.sessionId) }
-                .toList()
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-        scope.launch {
-            val startTime = System.nanoTime()
-            daoController.handleBulkInsertSessionEvents(eventDTOs)
-            val endTime = System.nanoTime()
-            log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
-        }
-        return Response.getOk().toResponseEntity()
-    }
+    // =========================================================================== |
+    // ============================ DATA ENDPOINTS =============================== |
+    // =========================================================================== |
 
     @PostMapping("/data/participant/select")
     fun dataSelectParticipants(@RequestBody body: String): ResponseEntity<String> {
@@ -176,6 +174,8 @@ class RestHandler(
             return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
+
+    // ===== Experiment ===== |
 
     @PostMapping("/data/experiment/select/names")
     fun dataSelectExperiments(@RequestBody body: String): ResponseEntity<String> {
@@ -232,6 +232,7 @@ class RestHandler(
         }
     }
 
+    // ===== Session ===== |
 
     @PostMapping("/data/session/select")
     fun dataSelectSessions(@RequestBody body: String): ResponseEntity<String> {
@@ -292,7 +293,31 @@ class RestHandler(
         }
     }
 
-    @PostMapping("/data/sessionEvent/select")
+    private data class Events(val sessionId: Int, val events: List<String>)
+    @PostMapping("/data/session/insert/events")
+    fun data(@RequestBody body: String): ResponseEntity<String> {
+
+        val eventDTOs: List<SessionEventDTO>?
+        val events: Events
+        try {
+            events = fromJson<Events>(body)
+            eventDTOs = events.events.stream()
+                .map { SessionEvent.fromCompressedJson(it) }
+                .map { SessionEventDTO.fromSessionEvent(it, events.sessionId) }
+                .toList()
+        } catch(e: Exception) {
+            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+        scope.launch {
+            val startTime = System.nanoTime()
+            daoController.handleBulkInsertSessionEvents(eventDTOs)
+            val endTime = System.nanoTime()
+            log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
+        }
+        return Response.getOk().toResponseEntity()
+    }
+
+    @PostMapping("/data/session/select/events")
     fun dataSelectSessionEvents(@RequestBody body: String): ResponseEntity<String> {
         val sessionEventDTO: SessionEventDTO
 
@@ -308,19 +333,9 @@ class RestHandler(
         }
     }
 
-    @GetMapping("/login")
-    fun login(@RequestHeader(value = "Authorization") header : String?): ResponseEntity<String> {
-        if(header == null){
-            return Response.getError("No Authorization header").toResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-        // base64 encoded user:password
-        val credentials = header.split(" ")[1]
-        val decoded = String(Base64.getDecoder().decode(credentials))
-        val split = decoded.split(":")
-        val userId = split[0]
-        val password = split[1]
-        return authController.authenticateUser(userId, password).toResponseEntity()
-    }
+    // =========================================================================== |
+    // ============================== MISCELLANEOUS ============================== |
+    // =========================================================================== |
 
     @GetMapping("/bcrypt")
     fun bcrypt(): ResponseEntity<String> {

@@ -389,19 +389,7 @@ This request type is used to change the order of sessions in a lobby.
 
 ---
 
-### 3. **POST** `/data`
-
-#### Description
-This endpoint is used to send session events after a session is finished
-
-#### Request
-- **Body**:
-```json
-{
-  "sessionId": "id",
-  "events": ["serializedEventsList"]
-}
-```
+### 3. **POST** `/data/*`
 
 ### `/data/participant/select`
 
@@ -447,22 +435,7 @@ This endpoint is used to get data about all or a specific participant.
 }
   ```
 
-### `/data/experiment/select/names`
-#### Request to select the list of experiments with the participants names.
-- **Body**:
-
-```json
-{}
-```
-
-#### **Response**
-
-  ```json
-{
-  "success": true,
-  "payload": ["serializedExperimentsList"]
-}
-  ```
+<br/>
 
 ### `/data/session/select`
 
@@ -507,7 +480,26 @@ This endpoint is used to get data about all or a specific sessions.
   "payload": ["serializedSessionsList"]
 }
   ```
-### `/data/sessionEvent/select`
+
+<br/>
+
+### `/data/session/insert/events`
+
+#### Description
+This endpoint is used to send session events after a session is finished
+
+#### Request
+- **Body**:
+```json
+{
+  "sessionId": "id",
+  "events": ["serializedEventsList"]
+}
+```
+
+<br/>
+
+### `/data/session/select/events`
 
 #### Description
 This endpoint is used to get data about all or a specific session events.
@@ -550,72 +542,7 @@ This endpoint is used to get data about all or a specific session events.
 }
   ```
 
-### `/data/experiment/insert/feedback`
-
-#### Description
-This endpoint is used to insert feedback data from a participant in an experiment.
-
-#### Request to insert feedback
-- **Body**:
-
-```json
-{
-  "expId": 1,
-  "pid": 3,
-  "qnas": [
-            {"question": "why?", "answer": "because!"},
-            {"question": "when?", "answer":  "mayber later"}
-          ]
-}
-```
-
-#### **Response**
-
-  ```json
-{
-  "success": true
-}
-  ```
-
-### `/data/experiment/select/feedback`
-
-#### Description
-This endpoint is used to get data about all or a specific experiment feedback.
-
-#### Request to select all experiments feedback
-- **Body**:
-```json
-{}
-```
-
-#### Request to select experiment feedback according to specified fields (any combination)
-- **Body**:
-
-```json
-{
-  "expId": 1,
-  "pid": 3,
-  "question": "my name is?",
-  "answer": "what!"
-}
-```
-
-- **Example**:
-
-```json
-{
-  "expId": 1
-}
-```
-
-#### **Response**
-
-  ```json
-{
-  "success": true,
-  "payload": ["serializedExperimentFeedbacks"]
-}
-  ```
+<br/>
 
 ### `/data/session/insert/feedback`
 
@@ -644,6 +571,8 @@ This endpoint is used to insert feedback data from a participant in a session.
   "success": true
 }
   ```
+
+<br/>
 
 ### `/data/session/select/feedback`
 
@@ -686,12 +615,104 @@ This endpoint is used to get data about all or a specific sessions feedback.
 }
   ```
 
+<br/>
+
+### `/data/experiment/insert/feedback`
+
+#### Description
+This endpoint is used to insert feedback data from a participant in an experiment.
+
+#### Request to insert feedback
+- **Body**:
+
+```json
+{
+  "expId": 1,
+  "pid": 3,
+  "qnas": [
+            {"question": "why?", "answer": "because!"},
+            {"question": "when?", "answer":  "mayber later"}
+          ]
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true
+}
+  ```
+
+<br/>
+
+### `/data/experiment/select/feedback`
+
+#### Description
+This endpoint is used to get data about all or a specific experiment feedback.
+
+#### Request to select all experiments feedback
+- **Body**:
+```json
+{}
+```
+
+#### Request to select experiment feedback according to specified fields (any combination)
+- **Body**:
+
+```json
+{
+  "expId": 1,
+  "pid": 3,
+  "question": "my name is?",
+  "answer": "what!"
+}
+```
+
+- **Example**:
+
+```json
+{
+  "expId": 1
+}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true,
+  "payload": ["serializedExperimentFeedbacks"]
+}
+  ```
+
+<br/>
+
+### `/data/experiment/select/names`
+#### Request to select the list of experiments with the participants names.
+- **Body**:
+
+```json
+{}
+```
+
+#### **Response**
+
+  ```json
+{
+  "success": true,
+  "payload": ["serializedExperimentsList"]
+}
+  ```
+
+---
+
 ### 4. POST `/operators/{action}`
 
 #### **Description**
 This endpoint manages user operations such as adding or removing operators. The specific action is determined by the `action` path variable, which can be either `add` or `remove`.
 
----
+<br/>
 
 #### **Request**
 
@@ -700,6 +721,8 @@ This endpoint manages user operations such as adding or removing operators. The 
     - **Possible values**:
       - `add`: Add a new operator.
       - `remove`: Remove an existing operator.
+
+<br/>
 
 - **Body**:
   ```json
@@ -719,7 +742,7 @@ This endpoint manages user operations such as adding or removing operators. The 
   - At least one digit.
   - May contain special characters (`!@#$%^&*()-=_+[]{};:<>?/\~|`).
 
----
+<br/>
 
 #### **Response**
 

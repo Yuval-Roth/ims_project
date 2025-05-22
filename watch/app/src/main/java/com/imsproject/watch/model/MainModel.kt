@@ -301,7 +301,7 @@ class MainModel (private val scope : CoroutineScope) {
                 var tries = 0
                 while(tries < 5){
                     val returned = RestApiClient()
-                        .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data")
+                        .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/events")
                         .withBody(body)
                         .withPost()
                         .send()
