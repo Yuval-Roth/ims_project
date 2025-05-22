@@ -15,8 +15,8 @@ CREATE TABLE Experiments (
                        exp_id SERIAL PRIMARY KEY,
                        pid1 INT,
                        pid2 INT,
-                       FOREIGN KEY (pid1) REFERENCES Participants(pid) ON DELETE SET NULL,
-                       FOREIGN KEY (pid2) REFERENCES Participants(pid) ON DELETE SET NULL
+                       FOREIGN KEY (pid1) REFERENCES Participants(pid),
+                       FOREIGN KEY (pid2) REFERENCES Participants(pid)
 );
 
 CREATE TABLE ExperimentsFeedback ( 
@@ -25,8 +25,8 @@ CREATE TABLE ExperimentsFeedback (
                        question VARCHAR(100) NOT NULL,
                        answer VARCHAR(300) NOT NULL,
                        PRIMARY KEY (exp_id, pid, question),
-                       FOREIGN KEY (pid) REFERENCES Participants(pid) ON DELETE SET NULL,
-                       FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
+                       FOREIGN KEY (pid) REFERENCES Participants(pid),
+                       FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id)
 );
 
 -- Create the Sessions table
@@ -39,7 +39,7 @@ CREATE TABLE Sessions ( -- SESSIONS WILL BE INSERTED TOGETHER WITH LOBBY
                           tolerance INT,
                           window_length INT,
                           state VARCHAR(50),
-                          FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
+                          FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id)
 );
 
 CREATE TABLE SessionsFeedback ( 
@@ -49,8 +49,9 @@ CREATE TABLE SessionsFeedback (
                        question VARCHAR(100) NOT NULL,
                        answer VARCHAR(300) NOT NULL,
                        PRIMARY KEY (exp_id, session_id, pid, question),
-                       FOREIGN KEY (pid) REFERENCES Participants(pid) ON DELETE SET NULL,
-                       FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id) ON DELETE CASCADE
+                       FOREIGN KEY (pid) REFERENCES Participants(pid),
+                       FOREIGN KEY (session_id) REFERENCES Sessions(session_id),
+                       FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id)
 );
 
 
@@ -60,8 +61,8 @@ CREATE TABLE SessionEvents (
                                         session_id INT,
                                         type VARCHAR(50) NOT NULL,
                                         subtype VARCHAR(50) NOT NULL,
-                                        timestamp BIGINT NOT NULL, --ms from start of session, can be INT
+                                        timestamp INT NOT NULL,
                                         actor VARCHAR(100) NOT NULL,
                                         data TEXT,
-                                        FOREIGN KEY (session_id) REFERENCES Sessions(session_id) ON DELETE CASCADE
+                                        FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
 );
