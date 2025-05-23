@@ -29,7 +29,7 @@ def get_event_data(session_id: str, type_: str = None, subtype: str = None) -> l
             js["subtype"] = subtype
 
         res = server_response(
-            post_auth(f"{URL}data/sessionEvent/select", json=js, timeout=1.0)
+            post_auth(f"{URL}data/session/select/events", json=js, timeout=1.0)
         )
 
         if not res or not res.get_success():
