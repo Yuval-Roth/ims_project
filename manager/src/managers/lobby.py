@@ -44,7 +44,7 @@ class lobby_info_payload:
 def get_lobbies():
     body = server_request(GAME_REQUEST_TYPE.get_lobbies.name).to_dict()
     try:
-        response = post_auth(URL + "/manager", json=body)
+        response = post_auth(URL + "/manager", body)
 
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
@@ -62,7 +62,7 @@ def get_lobbies():
 def get_lobby(lobby_id: str) -> lobby_info_payload:
     body = server_request(GAME_REQUEST_TYPE.get_lobby.name, lobbyId=lobby_id).to_dict()
     try:
-        response = post_auth(URL + "/manager", json=body)
+        response = post_auth(URL + "/manager", body)
 
         if response.status_code in [200, 201]:
             # print(response.json())  # Debugging print

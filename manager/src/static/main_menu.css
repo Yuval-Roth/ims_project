@@ -147,3 +147,17 @@ select:focus {
 .main-menu-button:hover {
     background-color: #0056b3;
 }
+
+#disconnect-btn {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    margin-top: 20px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+#disconnect-btn:hover {
+    background-color: #a71d2a;
+}

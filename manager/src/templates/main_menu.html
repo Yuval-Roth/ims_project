@@ -11,9 +11,34 @@
     <div class="main-menu-container">
         <h1>Main Menu</h1>
         <button onclick="window.location.href='/lobbies'" class="main-menu-button">Lobbies</button>
-        <button onclick="window.location.href='/participants'" class="main-menu-button">Participants</button>
-        <button onclick="window.location.href='/operators'" class="main-menu-button">Operators</button>
+        <button id="participants-btn" onclick="window.location.href='/participants'" class="main-menu-button">Participants</button>
+        <button id="operators-btn" onclick="window.location.href='/operators'" class="main-menu-button">Operators</button>
         <button onclick="window.location.href='/session_data'" class="main-menu-button">Session Data</button>
+        <button id="disconnect-btn" class="main-menu-button">Disconnect</button>
+
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const username = localStorage.getItem('username');
+            if (username !== 'admin') {
+                document.getElementById('participants-btn').style.display = 'none';
+                document.getElementById('operators-btn').style.display = 'none';
+            }
+        });
+    </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const username = localStorage.getItem('username');
+        if (username !== 'admin') {
+            document.getElementById('participants-btn').style.display = 'none';
+            document.getElementById('operators-btn').style.display = 'none';
+        }
+        document.getElementById('disconnect-btn').addEventListener('click', function() {
+            localStorage.clear();
+            window.location.href = '/login';
+        });
+    });
+</script>
+
 </body>
 </html>

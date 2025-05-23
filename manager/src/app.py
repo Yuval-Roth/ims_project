@@ -19,7 +19,9 @@ Logger()
 
 @app.route('/')
 def home():
-    if 'username' in session:
+    # take username from sessionStorage
+    username = session.get('username')
+    if username:
         return redirect(url_for('main_menu'))
     return redirect(url_for('login'))
 
@@ -32,13 +34,15 @@ def login():
 
         auth_res = authenticate_basic(username, password)
         if auth_res and auth_res.get_success():
+            # session.permanent = False  # <- this line ensures session ends on browser close
             session['username'] = username
-            session['token'] = auth_res.get_payload()[0]  # Store the token in the session
+            session['token'] = auth_res.get_payload()[0]
             return redirect(url_for('main_menu'))
         else:
             flash("Invalid credentials", "error")
 
     return render_template('login.html')
+
 
 
 @app.route('/main_menu', methods=['GET', 'POST'])

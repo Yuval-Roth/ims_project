@@ -11,7 +11,7 @@ if RUNNING_LOCAL:
 else:
     URL = "http://ims-game-server:8080/"
 
-GAL = False
+GAL = True
 
 if GAL:
     URL = "https://ims-project.cs.bgu.ac.il:8640/"
@@ -19,27 +19,36 @@ if GAL:
 
 from flask import session
 
+
 def auth_headers():
     token = session.get('token')
     return {"Authorization": f"Bearer {token}"} if token else {}
 
-def post_auth(url, json_data, timeout=2.0):
-    headers = auth_headers()
-    return requests.post(url, json=json_data, headers=headers, timeout=timeout)
+def post_auth(url, json, headers=None, timeout=2.0):
+    final_headers = auth_headers()
+    if headers:
+        final_headers.update(headers)
+    return requests.post(url, json=json, headers=final_headers, timeout=timeout)
 
-def get_auth(url, timeout=2.0):
-    headers = auth_headers()
-    return requests.get(url, headers=headers, timeout=timeout)
+def get_auth(url, headers=None, timeout=2.0):
+    final_headers = auth_headers()
+    if headers:
+        final_headers.update(headers)
+    return requests.get(url, headers=final_headers, timeout=timeout)
 
 def authenticate_basic(username: str, password: str):
     try:
         token = base64.b64encode(f"{username}:{password}".encode()).decode()
         headers = {"Authorization": f"Basic {token}"}
-        res = get_auth(URL + "auth", headers=headers)
+        Logger.log_debug(f"Sending auth request to {URL + 'auth'} with headers: {headers}")
+        res = requests.get(URL + "login", headers=headers)
+
+        Logger.log_debug(f"Auth status: {res.status_code}, response: {res.text}")
         return server_response(res)
     except Exception as e:
         Logger.log_error(f"Authentication error: {e}")
         return None
+
 
 
 
@@ -74,16 +83,16 @@ class operators_request:
         return {k: v for k, v in self.__dict__.items() if v != ""}
 
 class server_response:
-    # {
-    #     "message": "string?",
-    #     "success": "boolean",
-    #     "payload": "[string]?"
-    # }
     def __init__(self, res: requests.Response):
-        res = res.json()
-        self.message: str = res.get("message", "")
-        self.success: bool = True if res.get("success") else False
-        self.payload: list[str] = res.get("payload", [])
+        try:
+            data = res.json()
+        except Exception as e:
+            Logger.log_error(f"Invalid JSON response: {e} — Raw response: {res.text}")
+            data = {}
+
+        self.message: str = data.get("message", "")
+        self.success: bool = bool(data.get("success"))
+        self.payload: list[str] = data.get("payload", [])
 
     def __str__(self):
         return f"Message: {self.message}, Success: {self.success}, Payload: {self.payload}"

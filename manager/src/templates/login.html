@@ -21,4 +21,12 @@
         </form>
     </div>
 </body>
+<script>
+document.querySelector('form').addEventListener('submit', function(event) {
+    // Get the username value
+    const username = document.getElementById('username').value;
+    // Store in sessionStorage
+    localStorage.setItem('username', username);
+});
+</script>
 </html>
