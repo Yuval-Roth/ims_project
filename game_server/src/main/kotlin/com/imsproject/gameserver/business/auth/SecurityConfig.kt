@@ -7,6 +7,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @EnableWebSecurity
 @Configuration
@@ -40,5 +43,21 @@ class SecurityConfig(
             }
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
         return http.build()
+    }
+
+    @Bean
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration()
+        configuration.allowedOrigins = listOf(
+            "http://localhost:5000",
+            "https://ims-project.cs.bgu.ac.il"
+        )
+        configuration.allowedMethods = listOf("GET", "POST")
+        configuration.allowedHeaders = listOf("*")
+        configuration.allowCredentials = true
+
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", configuration)
+        return source
     }
 }
