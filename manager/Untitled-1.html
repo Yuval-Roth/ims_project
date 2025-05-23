@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>שאלון חוויית שיתוף פעולה</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #e8eaed;
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #202124;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    /* Form Container */
+    .container {
+      background: #fff;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 840px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin: 24px;
+      padding-bottom: 24px;
+    }
+    /* Header */
+    .form-header {
+      background: #1a73e8;
+      color: #fff;
+      padding: 16px;
+      border-radius: 8px 8px 0 0;
+      text-align: center;
+      font-size: 24px;
+    }
+    /* Card for each question */
+    .question-card {
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 24px 24px 0;
+    }
+    .question-number {
+      font-size: 12px;
+      color: #5f6368;
+      margin-bottom: 4px;
+    }
+    .question-text {
+      font-size: 16px;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    /* Scale options */
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .options label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      font-size: 12px;
+      color: #3c4043;
+      flex: 1;
+      padding: 8px;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .options label:hover {
+      background: #e8f0fe;
+      border-color: #1a73e8;
+    }
+    .options input[type="radio"] {
+      margin-bottom: 4px;
+      width: 18px;
+      height: 18px;
+      accent-color: #1a73e8;
+    }
+    /* Open text area card */
+    .question-card textarea {
+      width: 100%;
+      height: 100px;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      resize: vertical;
+      color: #202124;
+    }
+    /* Submit button */
+    .submit-btn {
+      display: block;
+      margin: 24px auto 0;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      padding: 12px 32px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .submit-btn:hover {
+      background: #1669c1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="form-header">שאלון חוויית שיתוף פעולה</div>
+    <form id="survey" action="#" method="post">
+      <!-- Question 1 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 1</div>
+        <div class="question-text">עד כמה הרגשת שהפעולות שלך תואמות את אלה של השותפ/ה?</div>
+        <div class="options">
+          <label><input type="radio" name="q1" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q1" value="2">2</label>
+          <label><input type="radio" name="q1" value="3">3</label>
+          <label><input type="radio" name="q1" value="4">4</label>
+          <label><input type="radio" name="q1" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 2 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 2</div>
+        <div class="question-text">עד כמה הרגשת שאת/ה והשותפ/ה שיתפתם פעולה?</div>
+        <div class="options">
+          <label><input type="radio" name="q2" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q2" value="2">2</label>
+          <label><input type="radio" name="q2" value="3">3</label>
+          <label><input type="radio" name="q2" value="4">4</label>
+          <label><input type="radio" name="q2" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 3 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 3</div>
+        <div class="question-text">האם שיתוף הפעולה עם השותפ/ה היה טוב?</div>
+        <div class="options">
+          <label><input type="radio" name="q3" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q3" value="2">2</label>
+          <label><input type="radio" name="q3" value="3">3</label>
+          <label><input type="radio" name="q3" value="4">4</label>
+          <label><input type="radio" name="q3" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 4 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 4</div>
+        <div class="question-text">האם חשת שאת/ה והשותפ/ה פעלתם בנפרד זה מזה? (היפוך מ‑פעלתם יחד)</div>
+        <div class="options">
+          <label><input type="radio" name="q4" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q4" value="2">2</label>
+          <label><input type="radio" name="q4" value="3">3</label>
+          <label><input type="radio" name="q4" value="4">4</label>
+          <label><input type="radio" name="q4" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 5 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 5</div>
+        <div class="question-text">האם חשת "תחושת ביחד" כשפעלת עם השותפ/ה?</div>
+        <div class="options">
+          <label><input type="radio" name="q5" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q5" value="2">2</label>
+          <label><input type="radio" name="q5" value="3">3</label>
+          <label><input type="radio" name="q5" value="4">4</label>
+          <label><input type="radio" name="q5" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 6 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 6</div>
+        <div class="question-text">האם חשת שיש דמיון בינך לבין השותפ/ה?</div>
+        <div class="options">
+          <label><input type="radio" name="q6" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q6" value="2">2</label>
+          <label><input type="radio" name="q6" value="3">3</label>
+          <label><input type="radio" name="q6" value="4">4</label>
+          <label><input type="radio" name="q6" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 7 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 7</div>
+        <div class="question-text">באיזו מידה תהיי/ה פתוח/ה לשיתוף פעולה נוסף עם השותפ/ה בניסוי המשך?</div>
+        <div class="options">
+          <label><input type="radio" name="q7" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q7" value="2">2</label>
+          <label><input type="radio" name="q7" value="3">3</label>
+          <label><input type="radio" name="q7" value="4">4</label>
+          <label><input type="radio" name="q7" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 8 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 8</div>
+        <div class="question-text">בניסוי המשך, האם תעדיפ/י להמשיך בפעילות הזו על פני פעילות אחרת?</div>
+        <div class="options">
+          <label><input type="radio" name="q8" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q8" value="2">2</label>
+          <label><input type="radio" name="q8" value="3">3</label>
+          <label><input type="radio" name="q8" value="4">4</label>
+          <label><input type="radio" name="q8" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 9 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 9</div>
+        <div class="question-text">באיזו מידה התרכזת במשימה?</div>
+        <div class="options">
+          <label><input type="radio" name="q9" value="1" required>1<br>בכלל&nbsp;לא</label>
+          <label><input type="radio" name="q9" value="2">2</label>
+          <label><input type="radio" name="q9" value="3">3</label>
+          <label><input type="radio" name="q9" value="4">4</label>
+          <label><input type="radio" name="q9" value="5">5<br>מאוד</label>
+        </div>
+      </div>
+
+      <!-- Question 10 -->
+      <div class="question-card">
+        <div class="question-number">שאלה 10</div>
+        <div class="question-text">נא תאר/י בכמה מילים את חוויית הפעילות הזו עם השותפ/ה.</div>
+        <textarea name="q10" required></textarea>
+      </div>
+
+      <!-- Submit button -->
+      <button type="submit" class="submit-btn">שלח</button>
+    </form>
+  </div>
+  <script>
+    document.getElementById('survey').addEventListener('submit', function(event) {
+      event.preventDefault();
+      alert('תודה על המענה!');
+      this.reset();
+    });
+  </script>
+</body>
+</html>
