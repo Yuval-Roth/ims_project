@@ -478,6 +478,10 @@ def get_all_sessions_route():
         return jsonify({"status": "error",
                         "message": "Internal server error"}), 500
 
+@app.route('/experiment_questions', methods=['GET'])
+def get_experiment_questions_route():
+    return render_template('experiment_questions.html')
+
 
 if __name__ == '__main__':
     # run on port 80

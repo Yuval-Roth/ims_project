@@ -1,5 +1,14 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+<script>
+const params = new URLSearchParams(window.location.search);
+const expId = params.get('expid');
+const pid = params.get('pid');
+if (!expId || !pid) {
+    alert('שגיאה: חסר מזהה ניסוי או מזהה משתתף.');
+    window.stop();
+}
+</script>
 <head>
   <meta charset="UTF-8">
   <title>שאלון חוויית שיתוף פעולה</title>
@@ -261,7 +270,7 @@
   function getQueryParams() {
     const params = new URLSearchParams(window.location.search);
     return {
-      expId: parseInt(params.get('expId')),
+      expId: parseInt(params.get('expid')),
       pid: parseInt(params.get('pid'))
     };
   }
