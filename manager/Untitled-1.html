@@ -256,5 +256,71 @@
       this.reset();
     });
   </script>
+
+  <script>
+  function getQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      expId: parseInt(params.get('expId')),
+      pid: parseInt(params.get('pid'))
+    };
+  }
+
+  function collectFormData() {
+    const form = document.getElementById('survey');
+    const qnas = [];
+
+    for (let i = 1; i <= 9; i++) {
+      const questionText = form.querySelector(`.question-card:nth-of-type(${i}) .question-text`).innerText.trim();
+      const answer = form.querySelector(`input[name="q${i}"]:checked`)?.value;
+      if (answer !== undefined) {
+        qnas.push({ question: questionText, answer });
+      }
+    }
+
+    // Handle open text for q10
+    const q10Text = form.querySelector('textarea[name="q10"]').value.trim();
+    const q10Label = form.querySelector('.question-card:nth-of-type(10) .question-text').innerText.trim();
+    if (q10Text !== "") {
+      qnas.push({ question: q10Label, answer: q10Text });
+    }
+
+    return qnas;
+  }
+
+  document.getElementById('survey').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const { expId, pid } = getQueryParams();
+    const qnas = collectFormData();
+
+    if (!expId || !pid || qnas.length === 0) {
+      alert("שגיאה: חסר מזהה ניסוי, מזהה משתתף או תשובות.");
+      return;
+    }
+
+    const payload = { expId, pid, qnas };
+
+    try {
+      const res = await fetch('/data/experiment/insert/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        alert('תודה! המשוב שלך התקבל.');
+        this.reset();
+      } else {
+        alert('שליחה נכשלה. אנא נסה/י שוב.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('שגיאת רשת. אנא בדוק/בדקי את החיבור שלך.');
+    }
+  });
+</script>
+
 </body>
 </html>
