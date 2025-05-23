@@ -294,15 +294,17 @@
     const { expId, pid } = getQueryParams();
     const qnas = collectFormData();
 
-    if (!expId || !pid || qnas.length === 0) {
-      alert("שגיאה: חסר מזהה ניסוי, מזהה משתתף או תשובות.");
-      return;
-    }
+    // if (!expId || !pid || qnas.length === 0) {
+    //   alert("שגיאה: חסר מזהה ניסוי, מזהה משתתף או תשובות.");
+    //   return;
+    // }
 
     const payload = { expId, pid, qnas };
 
     try {
-      const res = await fetch('/data/experiment/insert/feedback', {
+      // URL https://ims-project.cs.bgu.ac.il:8640/
+      // need to add this /data/experiment/insert/feedback
+      const res = await fetch('https://ims-project.cs.bgu.ac.il:8640/data/experiment/insert/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
