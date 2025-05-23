@@ -35,6 +35,6 @@
     <logger name="com.imsproject" level="DEBUG"/>
 
     <!-- Spring logging configuration -->
-    <logger name="org.springframework" level="INFO" />
+    <logger name="org.springframework" level="ERROR" />
 
 </configuration>
