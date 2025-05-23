@@ -16,6 +16,6 @@
 #     body = {
 #         "type": "get_online_player_ids"
 #     }
-#     response = requests.post(url, json=body)
+#     response = post_auth(url, json=body)
 #     return response.json()
 #

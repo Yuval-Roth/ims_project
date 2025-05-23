@@ -1,6 +1,8 @@
 import requests
 import json
 from ..ENUMS import *
+import base64
+from .logger import Logger
 
 RUNNING_LOCAL = False
 
@@ -13,6 +15,32 @@ GAL = False
 
 if GAL:
     URL = "https://ims-project.cs.bgu.ac.il:8640/"
+
+
+from flask import session
+
+def auth_headers():
+    token = session.get('token')
+    return {"Authorization": f"Bearer {token}"} if token else {}
+
+def post_auth(url, json_data, timeout=2.0):
+    headers = auth_headers()
+    return requests.post(url, json=json_data, headers=headers, timeout=timeout)
+
+def get_auth(url, timeout=2.0):
+    headers = auth_headers()
+    return requests.get(url, headers=headers, timeout=timeout)
+
+def authenticate_basic(username: str, password: str):
+    try:
+        token = base64.b64encode(f"{username}:{password}".encode()).decode()
+        headers = {"Authorization": f"Basic {token}"}
+        res = get_auth(URL + "auth", headers=headers)
+        return server_response(res)
+    except Exception as e:
+        Logger.log_error(f"Authentication error: {e}")
+        return None
+
 
 
 class server_request:

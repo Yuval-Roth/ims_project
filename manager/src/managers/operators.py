@@ -1,3 +1,4 @@
+#operators.py
 from . import *
 from .logger import Logger
 import re
@@ -19,7 +20,7 @@ def add_operator(user_id, password):
         #     Logger.log_error("Password does not meet the requirements")
         #     return jsonify({"message": "Password does not meet the requirements", "success": False})
         body = operators_request(user_id, password).to_dict()
-        response = requests.post(URL + "/operators/add", json=body)
+        response = post_auth(URL + "/operators/add", json=body)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
@@ -39,7 +40,7 @@ def add_operator(user_id, password):
 def remove_operator(user_id):
     try:
         body = operators_request(user_id, "").to_dict()
-        response = requests.post(URL + "/operators/remove", json=body)
+        response = post_auth(URL + "/operators/remove", json=body)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
@@ -57,7 +58,7 @@ def remove_operator(user_id):
 
 def get_operators():
     try:
-        response = requests.post(URL + "/operators/get", json={'test': 'test'})
+        response = post_auth(URL + "/operators/get", json={'test': 'test'})
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():

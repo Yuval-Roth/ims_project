@@ -1,4 +1,4 @@
-# CONTROL GAME
+#game.py
 from . import *
 from .logger import Logger
 
@@ -7,7 +7,7 @@ def start_game(lobby_id):
     body = server_request(GAME_REQUEST_TYPE.start_experiment.name, lobbyId=lobby_id).to_dict()
 
     try:
-        res = requests.post(URL+"/manager", json=body)
+        res = post_auth(URL+"/manager", json=body)
         Logger.log_info(f"Starting game: {res}")
         if res.status_code == 200:
             ser_res = server_response(res)
@@ -29,7 +29,7 @@ def stop_game(lobby_id):
     body = server_request(GAME_REQUEST_TYPE.end_experiment.name, lobbyId=lobby_id).to_dict()
 
     try:
-        res = requests.post(URL+"/manager", json=body)
+        res = post_auth(URL+"/manager", json=body)
         if res.status_code == 200:
             ser_res = server_response(res)
             if ser_res.get_success():

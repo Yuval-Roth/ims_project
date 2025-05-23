@@ -1,3 +1,4 @@
+#participants.py
 # GET THE ONLINE PARTICIPANTS
 
 from . import *
@@ -9,7 +10,7 @@ import requests
 def get_participants():
     body = server_request(GAME_REQUEST_TYPE.get_online_player_ids.name).to_dict()
     try:
-        response = requests.post(URL+"/manager", json=body, timeout=0.1)
+        response = post_auth(URL+"/manager", json=body, timeout=0.1)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
@@ -25,7 +26,7 @@ def get_participants():
 
 def get_participants_for_view():
     try:
-        response = requests.get(URL+"/participants/get")
+        response = get_auth(URL+"/participants/get")
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
@@ -40,7 +41,7 @@ def get_participants_for_view():
 
 def add_participant(participant):
     try:
-        response = requests.post(URL+"/participants/add", json=participant)
+        response = post_auth(URL+"/participants/add", json=participant)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
@@ -58,7 +59,7 @@ def add_participant(participant):
     
 def remove_participant(participant_id):
     try:
-        response = requests.post(URL+"/participants/remove", json={"pid": participant_id})
+        response = post_auth(URL+"/participants/remove", json={"pid": participant_id})
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():
@@ -76,7 +77,7 @@ def remove_participant(participant_id):
 def edit_participant(participant):
     body = server_request(GAME_REQUEST_TYPE.edit_participant.name, participant).to_dict()
     try:
-        response = requests.post(URL+"/manager", json=body)
+        response = post_auth(URL+"/manager", json=body)
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():

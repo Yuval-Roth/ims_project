@@ -1,4 +1,4 @@
-# LOBBY MANAGER
+# LOBBY.py
 # Creates and manages the lobby for the game
 
 from . import *
@@ -44,7 +44,7 @@ class lobby_info_payload:
 def get_lobbies():
     body = server_request(GAME_REQUEST_TYPE.get_lobbies.name).to_dict()
     try:
-        response = requests.post(URL + "/manager", json=body)
+        response = post_auth(URL + "/manager", json=body)
 
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
@@ -62,7 +62,7 @@ def get_lobbies():
 def get_lobby(lobby_id: str) -> lobby_info_payload:
     body = server_request(GAME_REQUEST_TYPE.get_lobby.name, lobbyId=lobby_id).to_dict()
     try:
-        response = requests.post(URL + "/manager", json=body)
+        response = post_auth(URL + "/manager", json=body)
 
         if response.status_code in [200, 201]:
             # print(response.json())  # Debugging print
@@ -82,7 +82,7 @@ def get_lobby(lobby_id: str) -> lobby_info_payload:
 def create_lobby(participants: list[str], gameType=GAME_TYPE.water_ripples):
     body = server_request(GAME_REQUEST_TYPE.create_lobby.name, gameType=gameType.name).to_dict()
     try:
-        res = requests.post(URL + "/manager", json=body)
+        res = post_auth(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
             if ser_res.get_success():
@@ -105,7 +105,7 @@ def create_lobby(participants: list[str], gameType=GAME_TYPE.water_ripples):
 def remove_lobby(lobby_id: str):
     body = server_request(GAME_REQUEST_TYPE.remove_lobby.name, lobbyId=lobby_id).to_dict()
     try:
-        res = requests.post(URL + "/manager", json=body)
+        res = post_auth(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
             if ser_res.get_success():
@@ -122,7 +122,7 @@ def join_lobby(lobby_id: str, player_id: str):
     body = server_request(GAME_REQUEST_TYPE.join_lobby.name, player_id, lobby_id).to_dict()
     try:
         Logger.log_debug(f"TRYING TO JOIN LOBBY {lobby_id} WITH PLAYER {player_id}")
-        res = requests.post(URL + "/manager", json=body)
+        res = post_auth(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
             if ser_res.get_success():
@@ -149,7 +149,7 @@ def join_lobby(lobby_id: str, player_id: str):
 def leave_lobby(lobby_id: str, player_id: str):
     body = server_request(GAME_REQUEST_TYPE.leave_lobby.name, player_id, lobby_id).to_dict()
     try:
-        res = requests.post(URL + "/manager", json=body)
+        res = post_auth(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
             if ser_res.get_success():
@@ -169,7 +169,7 @@ def change_session_order(lobby_id: str, session_order: list[str]):
     body["sessionIds"] = session_order
     print(f"Updating session order with body: {body}")
     try:
-        res = requests.post(URL + "/manager", json=body)
+        res = post_auth(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
             if ser_res.get_success():
@@ -186,7 +186,7 @@ def change_session_order(lobby_id: str, session_order: list[str]):
 def get_sessions(lobby_id: str):
     body = server_request(GAME_REQUEST_TYPE.get_sessions.name, lobbyId=lobby_id).to_dict()
     try:
-        response = requests.post(URL + "/manager", json=body)
+        response = post_auth(URL + "/manager", json=body)
 
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
@@ -216,7 +216,7 @@ def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance:
     body["syncWindowLength"] = window
     print(f"Creating session with body: {body}")
     try:
-        res = requests.post(URL + "/manager", json=body)
+        res = post_auth(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
             if ser_res.get_success():
@@ -237,7 +237,7 @@ def delete_session(lobby_id: str, session_id: str):
     body = server_request(GAME_REQUEST_TYPE.remove_session.name, lobbyId=lobby_id).to_dict()
     body["sessionId"] = session_id
     try:
-        res = requests.post(URL + "/manager", json=body)
+        res = post_auth(URL + "/manager", json=body)
         if res.status_code in [200, 201]:
             ser_res = server_response(res)
             if ser_res.get_success():

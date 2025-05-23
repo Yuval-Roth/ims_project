@@ -29,9 +29,15 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        if username == 'admin' and password == 'pass':  # Replace with secure credentials
+
+        auth_res = authenticate_basic(username, password)
+        if auth_res and auth_res.get_success():
             session['username'] = username
+            session['token'] = auth_res.get_payload()[0]  # Store the token in the session
             return redirect(url_for('main_menu'))
+        else:
+            flash("Invalid credentials", "error")
+
     return render_template('login.html')
 
 
