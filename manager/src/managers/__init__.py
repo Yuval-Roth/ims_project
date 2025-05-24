@@ -4,7 +4,7 @@ from ..ENUMS import *
 import base64
 from .logger import Logger
 
-RUNNING_LOCAL = True
+RUNNING_LOCAL = False
 
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
