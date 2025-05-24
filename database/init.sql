@@ -1,11 +1,11 @@
 CREATE TABLE IF NOT EXISTS Participants (
     pid SERIAL PRIMARY KEY,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
     age INT NOT NULL,
-    gender VARCHAR(15) NOT NULL,
-    phone VARCHAR(15) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL
+    gender TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Experiments (
@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS Experiments (
 CREATE TABLE IF NOT EXISTS ExperimentsFeedback ( 
     exp_id INT,
     pid INT,
-    question VARCHAR(100),
-    answer VARCHAR(300) NOT NULL,
+    question TEXT,
+    answer TEXT NOT NULL,
     PRIMARY KEY (exp_id, pid, question),
     FOREIGN KEY (pid) REFERENCES Participants(pid),
     FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id)
@@ -30,19 +30,19 @@ CREATE TABLE IF NOT EXISTS Sessions (
     session_id SERIAL PRIMARY KEY,
     exp_id INT,
     duration INT NOT NULL,
-    session_type VARCHAR(50) NOT NULL,
+    session_type TEXT NOT NULL,
     session_order INT NOT NULL,
     tolerance INT NOT NULL,
     window_length INT NOT NULL,
-    state VARCHAR(50) NOT NULL,
+    state TEXT NOT NULL,
     FOREIGN KEY (exp_id) REFERENCES Experiments(exp_id)
 );
 
 CREATE TABLE IF NOT EXISTS SessionsFeedback ( 
     session_id INT,
     pid INT,
-    question VARCHAR(100),
-    answer VARCHAR(300) NOT NULL,
+    question TEXT,
+    answer TEXT NOT NULL,
     PRIMARY KEY (session_id, pid, question),
     FOREIGN KEY (pid) REFERENCES Participants(pid),
     FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
@@ -51,15 +51,15 @@ CREATE TABLE IF NOT EXISTS SessionsFeedback (
 CREATE TABLE IF NOT EXISTS SessionEvents (
     event_id SERIAL PRIMARY KEY,
     session_id INT,
-    type VARCHAR(50) NOT NULL,
-    subtype VARCHAR(50) NOT NULL,
+    type TEXT NOT NULL,
+    subtype TEXT NOT NULL,
     timestamp INT NOT NULL,
-    actor VARCHAR(100) NOT NULL,
+    actor TEXT NOT NULL,
     data TEXT,
     FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
 );
 
 CREATE TABLE IF NOT EXISTS Credentials (
-    user_id VARCHAR(50) PRIMARY KEY,
-    password VARCHAR(50) NOT NULL
+    user_id TEXT PRIMARY KEY,
+    password TEXT NOT NULL
 )

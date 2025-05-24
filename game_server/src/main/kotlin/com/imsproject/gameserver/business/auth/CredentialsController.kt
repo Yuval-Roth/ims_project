@@ -35,13 +35,20 @@ class CredentialsController(private val credentialsDAO: CredentialsDAO) {
     }
 
     fun getAllUserIds(): List<String>{
-        return credentials.keys().toList().filter { it != "admin" }
+        val allCredentials = credentialsDAO.selectAll()
+        allCredentials.forEach { credentials[it.userId] = it.password }
+        return credentials.keys.toList().filter { it != "admin" }
     }
 
     fun remove(userId: String) : Boolean {
         if(userId == "admin") {
             throw IllegalArgumentException("Cannot delete admin user")
         }
-        return credentials.remove(userId) != null
+        if(!contains(userId)) {
+            return false
+        }
+        credentials.remove(userId)
+        credentialsDAO.delete(CredentialsPK(userId))
+        return true
     }
 }

@@ -4,7 +4,7 @@ from ..ENUMS import *
 import base64
 from .logger import Logger
 
-RUNNING_LOCAL = False
+RUNNING_LOCAL = True
 
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
@@ -28,22 +28,36 @@ def post_auth(url, json, headers=None, timeout=2.0):
     final_headers = auth_headers()
     if headers:
         final_headers.update(headers)
-    return requests.post(url, json=json, headers=final_headers, timeout=timeout)
+    post = requests.post(url, json=json, headers=final_headers, timeout=timeout)
+    if post.status_code == 401:
+        response = server_response(post)
+        if not response.get_success() and response.get_message() == "Invalid Bearer token":
+            session.pop('token')
+            session.pop('username')
+
+    return post
 
 def get_auth(url, headers=None, timeout=2.0):
     final_headers = auth_headers()
     if headers:
         final_headers.update(headers)
-    return requests.get(url, headers=final_headers, timeout=timeout)
+    get = requests.get(url, headers=final_headers, timeout=timeout)
+    if get.status_code == 401:
+        response = server_response(get)
+        if not response.get_success() and response.get_message() == "Invalid Bearer token":
+            session.pop('token')
+            session.pop('username')
+
+    return get
 
 def authenticate_basic(username: str, password: str):
     try:
         token = base64.b64encode(f"{username}:{password}".encode()).decode()
         headers = {"Authorization": f"Basic {token}"}
-        Logger.log_debug(f"Sending auth request to {URL + 'auth'} with headers: {headers}")
-        res = requests.get(URL + "login", headers=headers)
+        # Logger.log_debug(f"Sending auth request to {URL + 'auth'} with headers: {headers}")
+        res = requests.get(URL + "/login", headers=headers)
 
-        Logger.log_debug(f"Auth status: {res.status_code}, response: {res.text}")
+        # Logger.log_debug(f"Auth status: {res.status_code}, response: {res.text}")
         return server_response(res)
     except Exception as e:
         Logger.log_error(f"Authentication error: {e}")
