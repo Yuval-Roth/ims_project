@@ -26,7 +26,7 @@ def get_participants():
 
 def get_participants_for_view():
     try:
-        response = get_auth(URL+"/participants/get")
+        response = post_auth(URL+"/data/participant/select", json={})
         if response.status_code in [200, 201]:
             ser_res = server_response(response)
             if ser_res.get_success():

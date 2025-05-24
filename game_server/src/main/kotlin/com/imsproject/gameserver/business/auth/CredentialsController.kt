@@ -12,7 +12,6 @@ class CredentialsController(private val credentialsDAO: CredentialsDAO) {
 
     init {
         credentials.put("admin", "\$2a\$10\$3Dw.gqCvW3tbdHc7qGSLr.4ry49vTMebhTKxu/J5zcNrEBKi4BuGG")
-        credentials.put("user", "\$2a\$10\$3Dw.gqCvW3tbdHc7qGSLr.4ry49vTMebhTKxu/J5zcNrEBKi4BuGG")
     }
 
     operator fun get(userId: String): String? {

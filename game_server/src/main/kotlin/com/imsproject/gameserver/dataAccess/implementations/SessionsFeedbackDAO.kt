@@ -12,7 +12,7 @@ import com.imsproject.gameserver.dataAccess.models.*
 import org.springframework.stereotype.Component
 
 @Component
-class SessionsFeedbackDAO(cursor: SQLExecutor) : DAOBase<SessionFeedbackDTO, SessionFeedbackPK>(cursor, "SessionsFeedback", ExperimentPK.primaryColumnsList, arrayOf("exp_id", "session_id", "pid", "question", "answer")) {
+class SessionsFeedbackDAO(cursor: SQLExecutor) : DAOBase<SessionFeedbackDTO, SessionFeedbackPK>(cursor, "SessionsFeedback", ExperimentPK.primaryColumnsList, arrayOf("session_id", "pid", "question", "answer")) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionFeedbackDTO {
         return SessionFeedbackDTO(
             sessionId = resultSet.getInt("session_id"),
