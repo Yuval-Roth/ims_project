@@ -29,7 +29,7 @@ def get_event_data(session_id: str, type_: str = None, subtype: str = None) -> l
             js["subtype"] = subtype
 
         res = server_response(
-            post_auth(f"{URL}data/session/select/events", json=js, timeout=1.0)
+            post_auth(f"{URL}/data/session/select/events", json=js, timeout=1.0)
         )
 
         if not res or not res.get_success():
@@ -244,7 +244,7 @@ def get_swipe_game_frequency(session_id: str):
 def get_lobbies_data() -> list[dict]:
     try:
         res = server_response(
-            post_auth(URL + "data/experiment/select/names", json={"sessionId": None}, timeout=1.0)
+            post_auth(URL + "/data/experiment/select/names", json={"sessionId": None}, timeout=1.0)
         )
         return _decode_list(res.get_payload()) if res.get_success() else []
     except Exception as e:
@@ -255,7 +255,7 @@ def get_lobbies_data() -> list[dict]:
 def get_sessions_for_lobby(lobby_id: str) -> list[dict]:
     try:
         res = server_response(
-            post_auth(URL + "data/session/select", json={"expId": lobby_id}, timeout=1.0)
+            post_auth(URL + "/data/session/select", json={"expId": lobby_id}, timeout=1.0)
         )
         return _decode_list(res.get_payload()) if res.get_success() else []
     except Exception as e:

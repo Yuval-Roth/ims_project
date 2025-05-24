@@ -37,3 +37,10 @@ fun String.toResponseEntity (): ResponseEntity<String> {
 fun LocalDateTime.isMoreThanSecondsAgo(seconds: Long): Boolean {
     return this.isAfter(LocalDateTime.now().minusSeconds(seconds))
 }
+
+inline fun <reified T> runTimed(lambda: () -> T) : Pair<T,Long> {
+    val start = System.currentTimeMillis()
+    val result = lambda()
+    val end = System.currentTimeMillis()
+    return result to end - start
+}

@@ -31,9 +31,7 @@ class AuthController(
 
     fun createUser(credentials: Credentials) {
         val cleanUserId = credentials.userId.lowercase()
-        val rawPassword = credentials.password ?: run {
-            throw IllegalArgumentException("No password given")
-        }
+        val rawPassword = credentials.password
         if (userExists(cleanUserId)) {
             throw IllegalArgumentException("user already exists")
         }
@@ -43,7 +41,7 @@ class AuthController(
 
         log.debug("Adding user credentials for user {}", cleanUserId)
         val hashedPassword = encoder.encode(rawPassword)
-        val userCredentials = Credentials(cleanUserId, hashedPassword,null)
+        val userCredentials = Credentials(cleanUserId, hashedPassword)
         this@AuthController.credentials[cleanUserId] = userCredentials
     }
 
@@ -83,9 +81,7 @@ class AuthController(
             return false
         }
         log.trace("User {} exists", userId)
-        val hashedPassword = user.password ?: run {
-            throw IllegalArgumentException("No password given")
-        }
+        val hashedPassword = user.password
 
         // check if the password is correct
         if (!isPasswordsMatch(password, hashedPassword)) {

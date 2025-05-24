@@ -333,9 +333,10 @@ class MainModel (private val scope : CoroutineScope) {
         return success
     }
 
-    fun uploadAfterGameQuestions(sessionId: Int, vararg QnAs: Pair<String,String>): Boolean {
+    fun uploadAfterGameQuestions(playerId: String, sessionId: Int, vararg QnAs: Pair<String,String>): Boolean {
         Log.d(TAG, "Uploading after game questions")
         val body = object {
+            val
             val sessionId = sessionId
             val qnas = QnAs.map {
                 object {

@@ -9,12 +9,12 @@ RUNNING_LOCAL = False
 if RUNNING_LOCAL:
     URL = "http://localhost:8080"
 else:
-    URL = "http://ims-game-server:8080/"
+    URL = "http://ims-game-server:8080"
 
 GAL = False
 
 if GAL:
-    URL = "https://ims-project.cs.bgu.ac.il:8640/"
+    URL = "https://ims-project.cs.bgu.ac.il:8640"
 
 
 from flask import session

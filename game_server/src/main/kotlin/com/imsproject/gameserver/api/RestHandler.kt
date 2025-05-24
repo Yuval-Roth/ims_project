@@ -1,5 +1,6 @@
 package com.imsproject.gameserver.api
 
+import com.imsproject.common.dataAccess.DaoException
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Response
@@ -12,9 +13,9 @@ import com.imsproject.gameserver.business.auth.AuthController
 import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
 import com.imsproject.gameserver.dataAccess.models.*
+import com.imsproject.gameserver.runTimed
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.boot.web.servlet.error.ErrorController
 import org.springframework.core.io.ResourceLoader
@@ -46,29 +47,18 @@ class RestHandler(
             return Response.getError("No Authorization header").toResponseEntity(HttpStatus.BAD_REQUEST)
         }
         // base64 encoded user:password
-        val credentials = header.split(" ")[1]
+        val credentials = header.removePrefix("Basic ")
         val decoded = String(Base64.getDecoder().decode(credentials))
-        val split = decoded.split(":")
-        val userId = split[0]
-        val password = split[1]
+        val (userId, password) = decoded.split(":")
         return authController.authenticateUser(userId, password).toResponseEntity()
     }
 
     @PostMapping("/manager")
     fun manager(@RequestBody body : String): ResponseEntity<String> {
-        val request: GameRequest
-        try{
-            request = fromJson(body)
-        } catch(e: Exception){
-            log.error("Error parsing request", e)
-            return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
-        }
-
-        try {
-            return gameRequestFacade.handleGameRequest(request).toResponseEntity()
-        } catch (e: Exception) {
-            log.error("Error handling game request", e)
-            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        return withParsedBody<GameRequest>(body) { request ->
+            withErrorHandling("Error handling game request") {
+                gameRequestFacade.handleGameRequest(request).toResponseEntity()
+            }
         }
     }
 
@@ -77,81 +67,61 @@ class RestHandler(
     // =========================================================================== |
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/operators/{action}", method = [RequestMethod.POST, RequestMethod.GET])
-    fun operators(
-        @PathVariable action: String,
-        @RequestBody body : String?
-    ): ResponseEntity<String> {
-        val credentials : Credentials = if(body != null){
-            try{
-                fromJson(body)
-            } catch(e: Exception){
-                return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
-            }
-        } else {
-            Credentials("","",null)
-        }
-        try{
-            when(action){
-                "add" -> authController.createUser(credentials)
-                "remove" -> authController.deleteUser(credentials.userId)
-                "get" -> {
-                    val users = authController.getAllUsers()
-                    return Response.getOk(users).toResponseEntity()
+    @PostMapping("/operators/{action}")
+    fun operators(@PathVariable action: String, @RequestBody body : String): ResponseEntity<String> {
+        return withParsedBody<Credentials>(body) { credentials ->
+            withErrorHandling("Error handling operator request") {
+                try {
+                    when (action) {
+                        "add" -> authController.createUser(credentials)
+                        "remove" -> authController.deleteUser(credentials.userId)
+                        "get" -> {
+                            val users = authController.getAllUsers()
+                            return Response.getOk(users).toResponseEntity()
+                        }
+
+                        else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
+                    }
+                    Response.getOk().toResponseEntity()
+                } catch (e: IllegalArgumentException) {
+                    return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
                 }
-                else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
             }
-        } catch(e: IllegalArgumentException){
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
-        } catch(e: Exception){
-            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
         }
-        return Response.getOk().toResponseEntity()
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @RequestMapping("/participants/{action}", method = [RequestMethod.POST, RequestMethod.GET])
-    fun participants(
-        @PathVariable action: String,
-        @RequestBody body : String?
-    ): ResponseEntity<String> {
-        val participant : ParticipantDTO = if(body != null){
-            try{
-                fromJson(body)
-            } catch(e: Exception){
-                return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
+    @PostMapping("/participants/{action}")
+    fun participants(@PathVariable action: String, @RequestBody body : String): ResponseEntity<String> {
+        return withParsedBody<ParticipantDTO>(body) { participant ->
+            withErrorHandling("Error handling participant request") {
+                try{
+                    when(action){
+                        "add" -> {
+                            log.debug("Adding participant: {}", participant)
+                            val id = participantController.addParticipant(participant)
+                            log.debug("Successfully Added participant with id: {}", id)
+                            Response.getOk(id).toResponseEntity()
+                        }
+                        "remove" ->{
+                            log.debug("Removing participant: {}", participant)
+                            val pid = participant.pid ?: throw IllegalArgumentException("Participant id not provided")
+                            participantController.remove(pid)
+                            log.debug("Successfully removed participant with id: {}", pid)
+                            Response.getOk().toResponseEntity()
+                        }
+                        "get" -> {
+                            val participants = participantController.getAll()
+                            Response.getOk(participants).toResponseEntity()
+                        }
+                        else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
+                    }
+                } catch (e: IllegalArgumentException) {
+                    log.debug("Error handling participant request", e)
+                    Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+                }
             }
-        } else {
-            ParticipantDTO(null,null,null,null,null,null,null)
         }
-        try{
-            when(action){
-                "add" -> {
-                    log.debug("Adding participant: {}", participant)
-                    val id = participantController.addParticipant(participant)
-                    log.debug("Successfully Added participant with id: {}", id)
-                    return Response.getOk(id).toResponseEntity()
-                }
-                "remove" ->{
-                    log.debug("Removing participant: {}", participant)
-                    val pid = participant.pid ?: throw IllegalArgumentException("Participant id not provided")
-                    participantController.remove(pid)
-                    log.debug("Successfully removed participant with id: {}", pid)
-                }
-                "get" -> {
-                    val participants = participantController.getAll()
-                    return Response.getOk(participants).toResponseEntity()
-                }
-                else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
-            }
-        } catch (e: IllegalArgumentException) {
-            log.debug("Error handling participant request", e)
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
-        } catch (e: Exception) {
-            log.error("Error handling participant request", e)
-            return Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
-        }
-        return Response.getOk().toResponseEntity()
     }
 
     // =========================================================================== |
@@ -160,31 +130,23 @@ class RestHandler(
 
     @PostMapping("/data/participant/select")
     fun dataSelectParticipants(@RequestBody body: String): ResponseEntity<String> {
-        val participantDTO: ParticipantDTO
-
-        try {
-            participantDTO = fromJson<ParticipantDTO>(body)
-            return if(participantDTO.pid == null) {
-                Response.getOk(daoController.handleSelectAllParticipants()).toResponseEntity()
-            } else {
-                Response.getOk(daoController.handleSelect(participantDTO)).toResponseEntity()
+        return withParsedBody<ParticipantDTO>(body) { participantDTO ->
+            withErrorHandling("Error selecting participants"){
+                if(participantDTO.pid == null) {
+                    Response.getOk(daoController.handleSelectAllParticipants()).toResponseEntity()
+                } else {
+                    Response.getOk(daoController.handleSelect(participantDTO)).toResponseEntity()
+                }
             }
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
 
     // ===== Experiment ===== |
 
-    @PostMapping("/data/experiment/select/names")
-    fun dataSelectExperiments(@RequestBody body: String): ResponseEntity<String> {
-        val experimentDTO: ExperimentDTO
-
-        try {
-            experimentDTO = fromJson<ExperimentDTO>(body)
-            return Response.getOk(daoController.handleSelectAllExperimentsWithNames()).toResponseEntity()
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+    @RequestMapping("/data/experiment/select/names", method = [RequestMethod.POST, RequestMethod.GET])
+    fun dataSelectExperiments(): ResponseEntity<String> {
+        return withErrorHandling("Error selecting experiments"){
+            Response.getOk(daoController.handleSelectAllExperimentsWithNames()).toResponseEntity()
         }
     }
 
@@ -192,42 +154,35 @@ class RestHandler(
     private data class ExperimentFeedback(val expId: Int, val pid: Int, val qnas: List<QnA>)
     @PostMapping("/data/experiment/insert/feedback")
     fun dataInsertExperimentFeedback(@RequestBody body: String): ResponseEntity<String> {
-        val feedbackDTOs: List<ExperimentFeedbackDTO>
-        val feedback: ExperimentFeedback
+        return withParsedBody<ExperimentFeedback>(body){ feedback ->
+            withErrorHandling("Error inserting experiment feedback"){
+                val feedbackDTOs = feedback.qnas.map { qna ->
+                    ExperimentFeedbackDTO(
+                        expId = feedback.expId,
+                        pid = feedback.pid,
+                        question = qna.question,
+                        answer = qna.answer
+                    )
+                }
 
-        try {
-            feedback = fromJson<ExperimentFeedback>(body)
-            feedbackDTOs = feedback.qnas.map {
-                ExperimentFeedbackDTO(
-                    expId = feedback.expId,
-                    pid = feedback.pid,
-                    question = it.question,
-                    answer = it.answer
-                )
+                return try{
+                    val (_,runTime) = runTimed { daoController.handleBulkInsertExperimentFeedback(feedbackDTOs) }
+                    log.debug("Inserted {} feedback entries in {}ms for expId {}", feedbackDTOs.size, runTime , feedback.expId)
+                    Response.getOk().toResponseEntity()
+                } catch(e: DaoException){
+                    log.error("Error inserting experiment feedback - Feedback already submitted", e)
+                    Response.getError("Feedback already submitted").toResponseEntity(HttpStatus.BAD_REQUEST)
+                }
             }
-        } catch (e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
-
-        scope.launch {
-            val startTime = System.nanoTime()
-            daoController.handleBulkInsertExperimentFeedback(feedbackDTOs)
-            val endTime = System.nanoTime()
-            log.debug("Inserted {} feedback entries in {}ms for expId {}", feedbackDTOs.size, (endTime - startTime) / 1_000_000, feedback.expId)
-        }
-
-        return Response.getOk().toResponseEntity()
     }
 
     @PostMapping("/data/experiment/select/feedback")
     fun dataSelectExperimentsFeedback(@RequestBody body: String): ResponseEntity<String> {
-        val experimentFeedbackDTO: ExperimentFeedbackDTO
-
-        try {
-            experimentFeedbackDTO = fromJson<ExperimentFeedbackDTO>(body)
-            return Response.getOk(daoController.handleSelectListExperimentsFeedback(experimentFeedbackDTO)).toResponseEntity()
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        return withParsedBody<ExperimentFeedbackDTO>(body){ experimentFeedbackDTO ->
+            withErrorHandling("Error selecting experiment feedback") {
+                Response.getOk(daoController.handleSelectListExperimentsFeedback(experimentFeedbackDTO)).toResponseEntity()
+            }
         }
     }
 
@@ -235,100 +190,78 @@ class RestHandler(
 
     @PostMapping("/data/session/select")
     fun dataSelectSessions(@RequestBody body: String): ResponseEntity<String> {
-        val sessionDTO: SessionDTO
-
-        try {
-            sessionDTO = fromJson<SessionDTO>(body)
-            return if(sessionDTO.sessionId != null) {
-                Response.getOk(daoController.handleSelect(sessionDTO)).toResponseEntity()
-            } else {
-                Response.getOk(daoController.handleSelectListSessions(sessionDTO)).toResponseEntity()
+        return withParsedBody<SessionDTO>(body) { sessionDTO ->
+            withErrorHandling("Error selecting sessions"){
+                if(sessionDTO.sessionId != null) {
+                    Response.getOk(daoController.handleSelect(sessionDTO)).toResponseEntity()
+                } else {
+                    Response.getOk(daoController.handleSelectListSessions(sessionDTO)).toResponseEntity()
+                }
             }
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
 
-    private data class sessionFeedback(val expId: Int, val sessionId: Int, val pid: Int, val qnas: List<QnA>)
+    private data class SessionFeedback(val expId: Int, val sessionId: Int, val pid: Int, val qnas: List<QnA>)
     @PostMapping("/data/session/insert/feedback")
     fun dataInsertSessionFeedback(@RequestBody body: String): ResponseEntity<String> {
-        val feedbackDTOs: List<SessionFeedbackDTO>
-        val feedback: sessionFeedback
-
-        try {
-            feedback = fromJson<sessionFeedback>(body)
-            feedbackDTOs = feedback.qnas.map {
-                SessionFeedbackDTO(
-                    expId = feedback.expId,
-                    sessionId = feedback.sessionId,
-                    pid = feedback.pid,
-                    question = it.question,
-                    answer = it.answer
-                )
+        return withParsedBody<SessionFeedback>(body) { feedback ->
+            withErrorHandling("Error inserting session feedback") {
+                val feedbackDTOs = feedback.qnas.map {
+                    SessionFeedbackDTO(
+                        expId = feedback.expId,
+                        sessionId = feedback.sessionId,
+                        pid = feedback.pid,
+                        question = it.question,
+                        answer = it.answer
+                    )
+                }
+                try{
+                    val (_, runTime) = runTimed { daoController.handleBulkInsertSessionFeedback(feedbackDTOs) }
+                    log.debug("Inserted {} feedback entries in {}ms for expId {}", feedbackDTOs.size, runTime, feedback.expId)
+                    Response.getOk().toResponseEntity()
+                } catch(e: DaoException){
+                    log.error("Error inserting session feedback - Feedback already submitted", e)
+                    Response.getError("Feedback already submitted").toResponseEntity(HttpStatus.BAD_REQUEST)
+                }
             }
-        } catch (e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
-
-        scope.launch {
-            val startTime = System.nanoTime()
-            daoController.handleBulkInsertSessionFeedback(feedbackDTOs)
-            val endTime = System.nanoTime()
-            log.debug("Inserted {} feedback entries in {}ms for expId {}", feedbackDTOs.size, (endTime - startTime) / 1_000_000, feedback.expId)
-        }
-
-        return Response.getOk().toResponseEntity()
     }
 
     @PostMapping("/data/session/select/feedback")
     fun dataSelectSessionsFeedback(@RequestBody body: String): ResponseEntity<String> {
-        val sessionFeedbackDTO: SessionFeedbackDTO
-
-        try {
-            sessionFeedbackDTO = fromJson<SessionFeedbackDTO>(body)
-            return Response.getOk(daoController.handleSelectListSessionsFeedback(sessionFeedbackDTO)).toResponseEntity()
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+        return withParsedBody<SessionFeedbackDTO>(body){ sessionFeedbackDTO ->
+            withErrorHandling("Error selecting session feedback") {
+                Response.getOk(daoController.handleSelectListSessionsFeedback(sessionFeedbackDTO)).toResponseEntity()
+            }
         }
     }
 
     private data class Events(val sessionId: Int, val events: List<String>)
     @PostMapping("/data/session/insert/events")
-    fun data(@RequestBody body: String): ResponseEntity<String> {
-
-        val eventDTOs: List<SessionEventDTO>?
-        val events: Events
-        try {
-            events = fromJson<Events>(body)
-            eventDTOs = events.events.stream()
-                .map { SessionEvent.fromCompressedJson(it) }
-                .map { SessionEventDTO.fromSessionEvent(it, events.sessionId) }
-                .toList()
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+    fun dataInsertSessionEvents(@RequestBody body: String): ResponseEntity<String> {
+        return withParsedBody<Events>(body){ events ->
+            withErrorHandling("Error inserting session events") {
+                val eventDTOs = events.events.stream()
+                    .map { SessionEvent.fromCompressedJson(it) }
+                    .map { SessionEventDTO.fromSessionEvent(it, events.sessionId) }
+                    .toList()
+                val (_,runTime) = runTimed { daoController.handleBulkInsertSessionEvents(eventDTOs) }
+                log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, runTime, events.sessionId)
+                Response.getOk().toResponseEntity()
+            }
         }
-        scope.launch {
-            val startTime = System.nanoTime()
-            daoController.handleBulkInsertSessionEvents(eventDTOs)
-            val endTime = System.nanoTime()
-            log.debug("Inserted {} events in {}ms for session {}", eventDTOs.size, (endTime - startTime) / 1_000_000, events.sessionId)
-        }
-        return Response.getOk().toResponseEntity()
     }
 
     @PostMapping("/data/session/select/events")
     fun dataSelectSessionEvents(@RequestBody body: String): ResponseEntity<String> {
-        val sessionEventDTO: SessionEventDTO
-
-        try {
-            sessionEventDTO = fromJson<SessionEventDTO>(body)
-            return if(sessionEventDTO.eventId != null) {
-                Response.getOk(daoController.handleSelect(sessionEventDTO)).toResponseEntity()
-            } else {
-                Response.getOk(daoController.handleSelectListSessionEvents(sessionEventDTO)).toResponseEntity()
+        return withParsedBody<SessionEventDTO>(body) { sessionEventDTO ->
+            withErrorHandling("Error selecting session events") {
+                if(sessionEventDTO.eventId != null) {
+                    Response.getOk(daoController.handleSelect(sessionEventDTO)).toResponseEntity()
+                } else {
+                    Response.getOk(daoController.handleSelectListSessionEvents(sessionEventDTO)).toResponseEntity()
+                }
             }
-        } catch(e: Exception) {
-            return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
 
@@ -350,15 +283,41 @@ class RestHandler(
     fun errorPage(): ResponseEntity<String> {
         val code = HttpStatus.BAD_REQUEST
         return readHtmlFile("static/error_page.html")
-            .replace("[MESSAGE]", "Something went wrong")
-            .replace("[TIME_STAMP]", Date().toString())
-            .replace("[STATUS]", code.toString())
+            .replace("{{message}}", "Something went wrong")
+            .replace("{{timestamp}}", Date().toString())
+            .replace("{{status}}", code.toString())
             .toResponseEntity(code)
     }
 
     private fun readHtmlFile(path: String): String {
         return resources.getResource("classpath:$path").inputStream
             .bufferedReader().use { it.readText() }
+    }
+
+    private inline fun <reified T> withParsedBody (
+        body: String,
+        onSuccess: (T) -> ResponseEntity<String>
+    ): ResponseEntity<String> {
+        val data: T
+        try {
+            data = fromJson(body)
+        } catch (e: Exception) {
+            log.error("Error parsing request", e)
+            return Response.getError("Error parsing request").toResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+        return onSuccess(data)
+    }
+
+    private inline fun withErrorHandling(
+        logErrorMessage: String,
+        block: () -> ResponseEntity<String>
+    ): ResponseEntity<String> {
+        return try {
+            return block()
+        } catch (e: Exception) {
+            log.error(logErrorMessage, e)
+            Response.getError(e).toResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR)
+        }
     }
 
     companion object {

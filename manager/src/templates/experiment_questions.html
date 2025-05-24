@@ -258,13 +258,13 @@ if (!expId || !pid) {
       <button type="submit" class="submit-btn">שלח</button>
     </form>
   </div>
-  <script>
-    document.getElementById('survey').addEventListener('submit', function(event) {
-      event.preventDefault();
-      alert('תודה על המענה!');
-      this.reset();
-    });
-  </script>
+{#  <script>#}
+{#    document.getElementById('survey').addEventListener('submit', function(event) {#}
+{#      event.preventDefault();#}
+{#      alert('תודה על המענה!');#}
+{#      this.reset();#}
+{#    });#}
+{#  </script>#}
 
   <script>
   function getQueryParams() {
@@ -303,17 +303,10 @@ if (!expId || !pid) {
     const { expId, pid } = getQueryParams();
     const qnas = collectFormData();
 
-    // if (!expId || !pid || qnas.length === 0) {
-    //   alert("שגיאה: חסר מזהה ניסוי, מזהה משתתף או תשובות.");
-    //   return;
-    // }
-
     const payload = { expId, pid, qnas };
 
     try {
-      // URL https://ims-project.cs.bgu.ac.il:8640/
-      // need to add this /data/experiment/insert/feedback
-      const res = await fetch('https://ims-project.cs.bgu.ac.il:8640/data/experiment/insert/feedback', {
+      const res = await fetch('{{URL}}/data/experiment/insert/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

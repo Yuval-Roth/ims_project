@@ -480,7 +480,11 @@ def get_all_sessions_route():
 
 @app.route('/experiment_questions', methods=['GET'])
 def get_experiment_questions_route():
-    return render_template('experiment_questions.html')
+    if RUNNING_LOCAL:
+        url = "http://localhost:8080"
+    else:
+        url = "https://ims-project.cs.bgu.ac.il:8640"
+    return render_template('experiment_questions.html',URL=url)
 
 
 if __name__ == '__main__':
