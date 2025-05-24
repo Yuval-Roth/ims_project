@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS Participants (
     age INT NOT NULL,
     gender VARCHAR(15) NOT NULL,
     phone VARCHAR(15) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Experiments (
@@ -61,5 +61,5 @@ CREATE TABLE IF NOT EXISTS SessionEvents (
 
 CREATE TABLE IF NOT EXISTS Credentials (
     user_id VARCHAR(50) PRIMARY KEY,
-    password VARCHAR(50) NOT NULL,
+    password VARCHAR(50) NOT NULL
 )
