@@ -201,14 +201,13 @@ class RestHandler(
         }
     }
 
-    private data class SessionFeedback(val expId: Int, val sessionId: Int, val pid: Int, val qnas: List<QnA>)
+    private data class SessionFeedback(val sessionId: Int, val pid: Int, val qnas: List<QnA>)
     @PostMapping("/data/session/insert/feedback")
     fun dataInsertSessionFeedback(@RequestBody body: String): ResponseEntity<String> {
         return withParsedBody<SessionFeedback>(body) { feedback ->
             withErrorHandling("Error inserting session feedback") {
                 val feedbackDTOs = feedback.qnas.map {
                     SessionFeedbackDTO(
-                        expId = feedback.expId,
                         sessionId = feedback.sessionId,
                         pid = feedback.pid,
                         question = it.question,
@@ -217,7 +216,7 @@ class RestHandler(
                 }
                 try{
                     val (_, runTime) = runTimed { daoController.handleBulkInsertSessionFeedback(feedbackDTOs) }
-                    log.debug("Inserted {} feedback entries in {}ms for expId {}", feedbackDTOs.size, runTime, feedback.expId)
+                    log.debug("Inserted {} feedback entries in {}ms for sessionId {}", feedbackDTOs.size, runTime, feedback.sessionId)
                     Response.getOk().toResponseEntity()
                 } catch(e: DaoException){
                     log.error("Error inserting session feedback - Feedback already submitted", e)

@@ -47,27 +47,53 @@ class OfflineResultSet(rs: ResultSet) {
         return false
     }
 
-    inline fun <reified T> getTyped(columnName: String): T? {
-        val obj = getObject(columnName) ?: return null
-        if(T::class == LocalDateTime::class)
-            return LocalDateTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE_TIME) as T
-        if(T::class == LocalDate::class)
-            return LocalDate.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE) as T
-        if(T::class == LocalTime::class)
-            return LocalTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_TIME) as T
-        if(T::class.java.isEnum){
-            val enumConstants = T::class.java.enumConstants
-            for (enumConstant in enumConstants) {
-                if((enumConstant as Enum<*>).name == obj)
-                    return enumConstant
-            }
-        }
-
-        return obj as T
-    }
-
     fun getObject(columnName: String): Any? {
         val row = currentRowData ?: return null
         return row[columnName.lowercase()]
+    }
+
+    fun getString(columnName: String): String? {
+        return getObject(columnName) as String?
+    }
+
+    fun getInt(columnName: String): Int? {
+        return getObject(columnName) as Int?
+    }
+
+    fun getLong(columnName: String): Long? {
+        return getObject(columnName) as Long?
+    }
+
+    fun getDouble(columnName: String): Double? {
+        return getObject(columnName) as Double?
+    }
+
+    fun getBoolean(columnName: String): Boolean? {
+        return getObject(columnName) as Boolean?
+    }
+
+    fun getLocalDate(columnName: String): LocalDate? {
+        val obj = getObject(columnName) ?: return null
+        return LocalDate.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE)
+    }
+
+    fun getTime(columnName: String): LocalTime? {
+        val obj = getObject(columnName) ?: return null
+        return LocalTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_TIME)
+    }
+
+    fun getLocalDateTime(columnName: String): LocalDateTime? {
+        val obj = getObject(columnName) ?: return null
+        return LocalDateTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+    }
+
+    inline fun <reified T> getEnum(columnName: String): T? {
+        val obj = getObject(columnName) ?: return null
+        val enumConstants = T::class.java.enumConstants
+        for (enumConstant in enumConstants) {
+            if((enumConstant as Enum<*>).name == obj)
+                return enumConstant
+        }
+        throw IllegalArgumentException("Value '$obj' is not a valid enum constant for ${T::class.java.name}")
     }
 }

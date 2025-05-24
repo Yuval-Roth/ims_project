@@ -19,14 +19,14 @@ class SessionsDAO(cursor: SQLExecutor) : DAOBase<SessionDTO, SessionPK>(cursor, 
 
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionDTO {
         return SessionDTO(
-            sessionId = (resultSet.getObject("session_id") as? Int),
-            expId = resultSet.getObject("exp_id") as? Int,
-            duration = resultSet.getObject("duration") as? Int,
-            sessionType = (resultSet.getObject("session_type") as? String),
-            sessionOrder = resultSet.getObject("session_order") as? Int,
-            tolerance = resultSet.getObject("tolerance") as? Int,
-            windowLength = resultSet.getObject("window_length") as? Int,
-            state = resultSet.getObject("state") as? String
+            sessionId = resultSet.getInt("session_id"),
+            expId = resultSet.getInt("exp_id"),
+            duration = resultSet.getInt("duration"),
+            sessionType = resultSet.getString("session_type"),
+            sessionOrder = resultSet.getInt("session_order"),
+            tolerance = resultSet.getInt("tolerance"),
+            windowLength = resultSet.getInt("window_length"),
+            state = resultSet.getString("state")
         )
     }
 

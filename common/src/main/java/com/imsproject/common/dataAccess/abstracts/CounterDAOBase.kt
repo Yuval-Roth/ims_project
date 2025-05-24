@@ -47,7 +47,7 @@ abstract class CounterDAOBase protected constructor(
             throw DaoException("Failed to select $columnName", e)
         }
         if (resultSet.next()) {
-            return resultSet.getTyped(columnName) ?: throw DaoException("Failed to select $columnName")
+            return resultSet.getInt(columnName) ?: throw DaoException("Failed to select $columnName")
         } else {
             throw DaoException("Failed to select $columnName")
         }

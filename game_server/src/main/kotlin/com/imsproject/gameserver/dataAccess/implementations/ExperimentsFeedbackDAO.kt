@@ -17,10 +17,11 @@ import org.springframework.stereotype.Component
 @Component
 class ExperimentsFeedbackDAO(cursor: SQLExecutor) : DAOBase<ExperimentFeedbackDTO, ExperimentFeedbackPK>(cursor, "ExperimentsFeedback", ExperimentFeedbackPK.primaryColumnsList, arrayOf("exp_id", "pid", "question", "answer")) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ExperimentFeedbackDTO {
-        return ExperimentFeedbackDTO(   expId = (resultSet.getObject("exp_id") as Int?),
-            pid = (resultSet.getObject("pid") as Int?),
-            question = (resultSet.getObject("question") as String?),
-            answer = (resultSet.getObject("answer") as String?)
+        return ExperimentFeedbackDTO(
+            expId = resultSet.getInt("exp_id"),
+            pid = resultSet.getInt("pid"),
+            question = resultSet.getString("question"),
+            answer = resultSet.getString("answer")
         )
     }
 
@@ -30,7 +31,7 @@ class ExperimentsFeedbackDAO(cursor: SQLExecutor) : DAOBase<ExperimentFeedbackDT
 
     @Throws(DaoException::class)
     override fun insert(obj: ExperimentFeedbackDTO, transactionId: String?): Int {
-        val values = arrayOf(obj.expId,obj.pid,obj.question,obj.answer)
+        val values = arrayOf<Any?>(obj.expId,obj.pid,obj.question,obj.answer)
         val idColName = "exp_id" //unnecessary
         return buildQueryAndInsert(idColName, values, transactionId)
     }
@@ -42,8 +43,7 @@ class ExperimentsFeedbackDAO(cursor: SQLExecutor) : DAOBase<ExperimentFeedbackDT
 
     fun bulkInsert(objs: List<ExperimentFeedbackDTO>, transactionId: String? = null): Int {
         val values : List<Array<Any?>> = objs.map { arrayOf(it.expId,it.pid,it.question,it.answer) }
-        val idColName = "exp_id" // unnecessary
-        return buildQueryAndBulkInsert(idColName, values, transactionId)
+        return buildQueryAndBulkInsert(values, transactionId)
     }
 }
 

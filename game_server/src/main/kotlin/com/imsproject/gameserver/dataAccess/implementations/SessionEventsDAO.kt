@@ -19,13 +19,13 @@ class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEv
 
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): SessionEventDTO {
         return SessionEventDTO(
-            eventId = (resultSet.getObject("event_id") as? Int),
-            sessionId = resultSet.getObject("session_id") as? Int,
-            type = resultSet.getObject("type") as? String,
-            subtype = (resultSet.getObject("subtype") as? String),
-            timestamp = resultSet.getObject("timestamp") as? Long,
-            actor = resultSet.getObject("actor") as? String,
-            data = resultSet.getObject("data") as? String
+            eventId = resultSet.getInt("event_id"),
+            sessionId = resultSet.getInt("session_id"),
+            type = resultSet.getString("type"),
+            subtype = resultSet.getString("subtype"),
+            timestamp = resultSet.getLong("timestamp"),
+            actor = resultSet.getString("actor"),
+            data = resultSet.getString("data")
         )
     }
 
@@ -38,8 +38,7 @@ class SessionEventsDAO(cursor: SQLExecutor) : DAOBase<SessionEventDTO, SessionEv
 
     fun bulkInsert(objs: List<SessionEventDTO>, transactionId: String? = null): Int {
         val values : List<Array<Any?>> = objs.map { arrayOf(it.sessionId,it.type,it.subtype,it.timestamp,it.actor,it.data) }
-        val idColName = SessionEventPK.primaryColumnsList.joinToString()
-        return buildQueryAndBulkInsert(idColName, values, transactionId)
+        return buildQueryAndBulkInsert( values, transactionId)
     }
 
     @Throws(DaoException::class)

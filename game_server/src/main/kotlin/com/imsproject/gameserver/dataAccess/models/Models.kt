@@ -26,13 +26,12 @@ data class ExperimentFeedbackDTO(
     val answer: String?
 ) {
     fun toNonNullMap(): Map<String, Any> {
-        return listOf(
-            "exp_id" to expId,
-            "pid" to pid,
-            "question" to question,
-            "answer" to answer
-        ).filter { it.second != null }
-            .associate { it.first to it.second!! }
+        return mutableMapOf<String,Any>().apply {
+            expId?.let { this["exp_id"] = it }
+            pid?.let { this["pid"] = it }
+            question?.let { this["question"] = it }
+            answer?.let { this["answer"] = it }
+        }
     }
 }
 
@@ -47,17 +46,16 @@ data class SessionDTO(
     val state: String? = null
 ) {
     fun toNonNullMap(): Map<String, Any> {
-        return listOf(
-            "session_id" to sessionId,
-            "exp_id" to expId,
-            "duration" to duration,
-            "session_type" to sessionType,
-            "session_order" to sessionOrder,
-            "tolerance" to tolerance,
-            "window_length" to windowLength,
-            "state" to state
-        ).filter { it.second != null }
-            .associate { it.first to it.second!! }
+        return mutableMapOf<String, Any>().apply {
+            sessionId?.let { this["session_id"] = it }
+            expId?.let { this["exp_id"] = it }
+            duration?.let { this["duration"] = it }
+            sessionType?.let { this["session_type"] = it }
+            sessionOrder?.let { this["session_order"] = it }
+            tolerance?.let { this["tolerance"] = it }
+            windowLength?.let { this["window_length"] = it }
+            state?.let { this["state"] = it }
+        }
     }
 
     companion object {
@@ -76,16 +74,15 @@ data class SessionEventDTO(
     val data: String?
 ){
     fun toNonNullMap(): Map<String, Any> {
-        return listOf(
-            "event_id" to eventId,
-            "session_id" to sessionId,
-            "type" to type,
-            "subtype" to subtype,
-            "timestamp" to timestamp,
-            "actor" to actor,
-            "data" to data
-        ).filter { it.second != null }
-            .associate { it.first to it.second!! }
+        return mutableMapOf<String, Any>().apply {
+            eventId?.let { this["event_id"] = it }
+            sessionId?.let { this["session_id"] = it }
+            type?.let { this["type"] = it }
+            subtype?.let { this["subtype"] = it }
+            timestamp?.let { this["timestamp"] = it }
+            actor?.let { this["actor"] = it }
+            data?.let { this["data"] = it }
+        }
     }
     companion object {
         fun fromSessionEvent(event: SessionEvent, sessionId: Int? = null) =
@@ -102,21 +99,18 @@ data class SessionEventDTO(
 }
 
 data class SessionFeedbackDTO(
-    val expId: Int?,
     val sessionId: Int?,
     val pid: Int?,
     val question: String?,
     val answer: String?
 ) {
     fun toNonNullMap(): Map<String, Any> {
-        return listOf(
-            "exp_id" to expId,
-            "sessions_id" to sessionId,
-            "pid" to pid,
-            "question" to question,
-            "answer" to answer
-        ).filter { it.second != null }
-            .associate { it.first to it.second!! }
+        return mutableMapOf<String, Any>().apply {
+            sessionId?.let { this["session_id"] = it }
+            pid?.let { this["pid"] = it }
+            question?.let { this["question"] = it }
+            answer?.let { this["answer"] = it }
+        }
     }
 }
 

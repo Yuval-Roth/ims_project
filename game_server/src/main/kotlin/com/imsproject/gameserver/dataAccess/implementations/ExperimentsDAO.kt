@@ -15,9 +15,10 @@ import org.springframework.stereotype.Component
 @Component
 class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ExperimentDTO {
-        return ExperimentDTO(   expId = (resultSet.getObject("exp_id") as? Int),
-                        pid1 = (resultSet.getObject("pid1") as? Int),
-                        pid2 = (resultSet.getObject("pid2") as? Int)
+        return ExperimentDTO(
+            expId = resultSet.getInt("exp_id"),
+            pid1 = resultSet.getInt("pid1"),
+            pid2 = resultSet.getInt("pid2")
         )
 
     }
@@ -58,9 +59,9 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
             while (resultSet.next()) {
                 result.add(
                     ExperimentWithParticipantNamesDTO(
-                        expId = resultSet.getTyped("eid")!!,
-                        participant1Name = resultSet.getTyped("p1_name")!!,
-                        participant2Name = resultSet.getTyped("p2_name")!!
+                        expId = resultSet.getInt("eid")!!,
+                        participant1Name = resultSet.getString("p1_name")!!,
+                        participant2Name = resultSet.getString("p2_name")!!
                     )
                 )
             }

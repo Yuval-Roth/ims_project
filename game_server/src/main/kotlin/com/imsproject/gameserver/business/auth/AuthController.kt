@@ -41,8 +41,7 @@ class AuthController(
 
         log.debug("Adding user credentials for user {}", cleanUserId)
         val hashedPassword = encoder.encode(rawPassword)
-        val userCredentials = Credentials(cleanUserId, hashedPassword)
-        this@AuthController.credentials[cleanUserId] = userCredentials
+        this.credentials[cleanUserId] = hashedPassword
     }
 
     fun deleteUser(userId: String) {
@@ -58,7 +57,7 @@ class AuthController(
     }
 
     fun getAllUsers() : List<String> {
-        return credentials.getAll()
+        return credentials.getAllUserIds()
     }
 
     fun textToBCrypt(text: String): String {
@@ -76,12 +75,11 @@ class AuthController(
 
     private fun authenticate(userId: String, password: String): Boolean {
         log.debug("Authenticating user: {}", userId)
-        val user = credentials[userId] ?: run {
+        val hashedPassword = credentials[userId] ?: run {
             log.debug("User {} does not exist", userId)
             return false
         }
         log.trace("User {} exists", userId)
-        val hashedPassword = user.password
 
         // check if the password is correct
         if (!isPasswordsMatch(password, hashedPassword)) {

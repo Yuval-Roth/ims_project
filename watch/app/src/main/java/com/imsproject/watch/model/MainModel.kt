@@ -333,10 +333,14 @@ class MainModel (private val scope : CoroutineScope) {
         return success
     }
 
-    fun uploadAfterGameQuestions(playerId: String, sessionId: Int, vararg QnAs: Pair<String,String>): Boolean {
+    fun uploadAfterGameQuestions(sessionId: Int, vararg QnAs: Pair<String,String>): Boolean {
         Log.d(TAG, "Uploading after game questions")
+        val playerId = this.playerId ?: run {
+            Log.e(TAG, "uploadAfterGameQuestions: Missing player id")
+            throw IllegalStateException("uploadAfterGameQuestions: Missing player id")
+        }
         val body = object {
-            val
+            val pid = playerId
             val sessionId = sessionId
             val qnas = QnAs.map {
                 object {

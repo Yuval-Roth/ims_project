@@ -184,7 +184,7 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
         try {
             val keysResultSet = cursor.executeInsert(insertQuery,values, transactionId)
             if(keysResultSet.next()) {
-                val id = keysResultSet.getTyped<Int>(idColumnName)
+                val id = keysResultSet.getInt(idColumnName)
                 if(id != null){
                     return id;
                 }
@@ -198,15 +198,14 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     /**
      * @return the affected row count
      */
-    fun buildQueryAndBulkInsert(idColumnName: String, values: List<Array<out Any?>>, transactionId: String?): Int {
+    fun buildQueryAndBulkInsert(values: List<Array<out Any?>>, transactionId: String?): Int {
         val questionmarks = List(nonKeyColumnNames.size) { "?" }.joinToString(", "); //don't ask please
-        val insertQuery = "INSERT INTO $tableName (${nonKeyColumnNames.joinToString()}) VALUES (${questionmarks}) RETURNING $idColumnName"
+        val insertQuery = "INSERT INTO $tableName (${nonKeyColumnNames.joinToString()}) VALUES (${questionmarks})"
         try {
             return cursor.executeBulkInsert(insertQuery,values, transactionId)
         } catch (e: SQLException) {
             throw DaoException("Failed to insert to table $tableName", e)
         }
-        throw DaoException("Error in insertion to $tableName")
     }
 
     fun buildQueryAndUpdate(idColumnName: String, id: Int, values: Array<out Any?>, transactionId: String?): Unit {

@@ -19,13 +19,13 @@ class ParticipantsDAO(cursor: SQLExecutor) : DAOBase<ParticipantDTO, Participant
 
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ParticipantDTO {
         return ParticipantDTO(
-            pid = (resultSet.getObject("pid") as? Int),
-            firstName = resultSet.getObject("first_name") as? String,
-            lastName = resultSet.getObject("last_name") as? String,
-            age = (resultSet.getObject("age") as? Int),
-            gender = resultSet.getObject("gender") as? String,
-            phone = resultSet.getObject("phone") as? String,
-            email = resultSet.getObject("email") as? String
+            pid = resultSet.getInt("pid"),
+            firstName = resultSet.getString("first_name"),
+            lastName = resultSet.getString("last_name"),
+            age = resultSet.getInt("age"),
+            gender = resultSet.getString("gender"),
+            phone = resultSet.getString("phone"),
+            email = resultSet.getString("email")
         )
     }
 
