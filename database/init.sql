@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS SessionEvents (
     session_id INT,
     type TEXT NOT NULL,
     subtype TEXT NOT NULL,
-    timestamp INT NOT NULL,
+    timestamp BIGINT NOT NULL,
     actor TEXT NOT NULL,
     data TEXT,
     FOREIGN KEY (session_id) REFERENCES Sessions(session_id)
