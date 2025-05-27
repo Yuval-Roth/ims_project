@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mock
 import org.mockito.Mockito.*
 import org.mockito.MockitoAnnotations
@@ -33,7 +31,7 @@ class LobbyControllerTest {
     }
 
     @Mock
-    private lateinit var mockClients: ClientController
+    private lateinit var mockClients: ClientService
     @Mock
     lateinit var mockClientHandler1: ClientHandler
     @Mock
@@ -44,12 +42,12 @@ class LobbyControllerTest {
     lateinit var mockSession: Session
 
     // test subject
-    private lateinit var lobbyController: LobbyController
+    private lateinit var lobbyService: LobbyService
 
     /**
      * When exiting the setup, the following facts are true:
      *
-     * 1. The mock [LobbyController] instance is a spy, meaning its methods can be verified and stubbed.
+     * 1. The mock [LobbyService] instance is a spy, meaning its methods can be verified and stubbed.
      *
      * 2. The mock [ClientHandler] objects are associated with specific client IDs:
      *    - The mock [ClientHandler] for client1 has the ID `CLIENT1_ID`.
@@ -70,7 +68,7 @@ class LobbyControllerTest {
     fun setUp() {
         MockitoAnnotations.openMocks(this) // initializes the mocks
 
-        lobbyController = spy(LobbyController(mockClients))
+        lobbyService = spy(LobbyService(mockClients))
 
         // set up mock ClientsController
         whenever(mockClients.getByClientId(CLIENT1_ID)).thenReturn(mockClientHandler1)
@@ -97,15 +95,15 @@ class LobbyControllerTest {
     @Test
     fun `onClientDisconnect() - GIVEN client in lobby WHEN client disconnects THEN client should be removed from the lobby`() {
         // given a client in a lobby
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        doNothing().whenever(lobbyController).leaveLobby(anyParam(), anyParam(),anyParam())
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        doNothing().whenever(lobbyService).leaveLobby(anyParam(), anyParam(),anyParam())
 
         // when client disconnects
-        lobbyController.onClientDisconnect(mockClientHandler1)
+        lobbyService.onClientDisconnect(mockClientHandler1)
 
         // then the client should be removed from the lobby
-        verify(lobbyController,times(1)).leaveLobby(anyParam(),anyParam(),anyParam())
+        verify(lobbyService,times(1)).leaveLobby(anyParam(),anyParam(),anyParam())
     }
 
     @Test
@@ -114,10 +112,10 @@ class LobbyControllerTest {
             /* nothing to do */
 
         // when client disconnects
-        lobbyController.onClientDisconnect(mockClientHandler1)
+        lobbyService.onClientDisconnect(mockClientHandler1)
 
         // then no further action should be taken
-        verify(lobbyController,never()).leaveLobby(anyParam(), anyParam(), anyParam())
+        verify(lobbyService,never()).leaveLobby(anyParam(), anyParam(), anyParam())
     }
 
     // ================================================================================= |
@@ -129,10 +127,10 @@ class LobbyControllerTest {
         // given nothing
 
         // when createLobby is called
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
 
         // then a new lobby should be created
-        assertNotNull(lobbyController[lobbyId])
+        assertNotNull(lobbyService[lobbyId])
     }
 
     @Test
@@ -140,13 +138,13 @@ class LobbyControllerTest {
         // given nothing
 
         // when createLobby is called multiple times
-        val lobbyId1 = lobbyController.createLobby()
-        val lobbyId2 = lobbyController.createLobby()
-        val lobbyId3 = lobbyController.createLobby()
+        val lobbyId1 = lobbyService.createLobby()
+        val lobbyId2 = lobbyService.createLobby()
+        val lobbyId3 = lobbyService.createLobby()
 
         // then unique lobby IDs should be generated
-        assertNotNull(lobbyController[lobbyId1])
-        assertNotNull(lobbyController[lobbyId2])
+        assertNotNull(lobbyService[lobbyId1])
+        assertNotNull(lobbyService[lobbyId2])
         assertEquals(3,setOf(lobbyId1, lobbyId2, lobbyId3).size)
     }
 
@@ -157,27 +155,27 @@ class LobbyControllerTest {
     @Test
     fun `removeLobby() - GIVEN empty lobby WHEN removeLobby is called THEN the lobby is removed successfully`() {
         // given an existing lobby
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
 
         // when removeLobby is called
-        lobbyController.removeLobby(lobbyId)
+        lobbyService.removeLobby(lobbyId)
 
         // then the lobby should be removed
-        assertNull(lobbyController[lobbyId])
+        assertNull(lobbyService[lobbyId])
     }
 
     @Test
     fun `removeLobby() - GIVEN lobby with players WHEN removeLobby is called THEN lobby is removed and clients should be notified`() {
         // given an existing lobby with players
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        lobbyService.joinLobby(lobbyId,CLIENT2_ID)
 
         // when removeLobby is called
-        lobbyController.removeLobby(lobbyId)
+        lobbyService.removeLobby(lobbyId)
 
         // then the clients should be notified and the lobby should be removed
-        assertNull(lobbyController[lobbyId])
+        assertNull(lobbyService[lobbyId])
         verify(mockClientHandler1,times(1)).sendTcp(LEAVE_LOBBY_MESSAGE)
         verify(mockClientHandler2,times(1)).sendTcp(LEAVE_LOBBY_MESSAGE)
     }
@@ -191,7 +189,7 @@ class LobbyControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when removeLobby is called
-            lobbyController.removeLobby(lobbyId)
+            lobbyService.removeLobby(lobbyId)
         }
 
         verify(mockClients,never()).getByClientId(anyParam())
@@ -200,16 +198,16 @@ class LobbyControllerTest {
     @Test
     fun `removeLobby() - GIVEN existing lobby WHEN removeLobby is called twice THEN an exception should be thrown on second attempt`() {
         // given an existing lobby
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
 
-        lobbyController.removeLobby(lobbyId) // first call
-        assertNull(lobbyController[lobbyId])
+        lobbyService.removeLobby(lobbyId) // first call
+        assertNull(lobbyService[lobbyId])
 
         // then an exception should be thrown on second attempt
         assertThrows<IllegalArgumentException> {
 
             // when removeLobby is called twice
-            lobbyController.removeLobby(lobbyId)
+            lobbyService.removeLobby(lobbyId)
         }
     }
 
@@ -220,13 +218,13 @@ class LobbyControllerTest {
     @Test
     fun `joinLobby() - GIVEN valid client and lobby WHEN joinLobby is called THEN client should be added successfully`() {
         // given an existing lobby
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
 
         // when joinLobby is called
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
 
         // then the client should be added to the lobby
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobby = assertNotNull(lobbyService[lobbyId])
         assertTrue(lobby.getPlayers().contains(CLIENT1_ID))
         val joinLobbyMessage = GameRequest.builder(GameRequest.Type.JOIN_LOBBY)
             .lobbyId(lobbyId)
@@ -237,18 +235,18 @@ class LobbyControllerTest {
     @Test
     fun `joinLobby() - GIVEN full lobby WHEN joinLobby is called THEN an exception should be thrown`() {
         // given a full lobby
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        lobbyService.joinLobby(lobbyId,CLIENT2_ID)
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
 
             // when joinLobby is called
-            lobbyController.joinLobby(lobbyId,CLIENT3_ID)
+            lobbyService.joinLobby(lobbyId,CLIENT3_ID)
         }
 
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobby = assertNotNull(lobbyService[lobbyId])
         assertTrue(lobby.getPlayers().contains(CLIENT1_ID))
         assertTrue(lobby.getPlayers().contains(CLIENT2_ID))
         assertFalse(lobby.getPlayers().contains(CLIENT3_ID))
@@ -257,19 +255,19 @@ class LobbyControllerTest {
     @Test
     fun `joinLobby() - GIVEN client already in another lobby WHEN joinLobby is called THEN an exception should be thrown`() {
         // given a client already in another lobby
-        val lobbyId1 = lobbyController.createLobby()
-        val lobbyId2 = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId1,CLIENT1_ID)
+        val lobbyId1 = lobbyService.createLobby()
+        val lobbyId2 = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId1,CLIENT1_ID)
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
 
             // when joinLobby is called
-            lobbyController.joinLobby(lobbyId2,CLIENT1_ID)
+            lobbyService.joinLobby(lobbyId2,CLIENT1_ID)
         }
 
-        val lobby1 = assertNotNull(lobbyController[lobbyId1])
-        val lobby2 = assertNotNull(lobbyController[lobbyId2])
+        val lobby1 = assertNotNull(lobbyService[lobbyId1])
+        val lobby2 = assertNotNull(lobbyService[lobbyId2])
         assertTrue(lobby1.getPlayers().contains(CLIENT1_ID))
         assertFalse(lobby2.getPlayers().contains(CLIENT1_ID))
     }
@@ -283,10 +281,10 @@ class LobbyControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when joinLobby is called
-            lobbyController.joinLobby(lobbyId,CLIENT1_ID)
+            lobbyService.joinLobby(lobbyId,CLIENT1_ID)
         }
 
-        assertNull(lobbyController.getByClientId(CLIENT1_ID))
+        assertNull(lobbyService.getByClientId(CLIENT1_ID))
     }
 
     // ================================================================================= |
@@ -296,67 +294,67 @@ class LobbyControllerTest {
     @Test
     fun `leaveLobby() - GIVEN client in full lobby WHEN leaveLobby is called THEN client should be removed from lobby`() {
         // given a client in a lobby
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        lobbyService.joinLobby(lobbyId,CLIENT2_ID)
 
         // when leaveLobby is called
-        lobbyController.leaveLobby(lobbyId,CLIENT1_ID)
+        lobbyService.leaveLobby(lobbyId,CLIENT1_ID)
 
         // then the client should be removed from the lobby
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobby = assertNotNull(lobbyService[lobbyId])
         assertFalse(lobby.getPlayers().contains(CLIENT1_ID))
         assertTrue(lobby.getPlayers().contains(CLIENT2_ID))
-        assertNull(lobbyController.getByClientId(CLIENT1_ID))
-        assertNotNull(lobbyController.getByClientId(CLIENT2_ID))
+        assertNull(lobbyService.getByClientId(CLIENT1_ID))
+        assertNotNull(lobbyService.getByClientId(CLIENT2_ID))
         verify(mockClientHandler1,times(1)).sendTcp(LEAVE_LOBBY_MESSAGE)
     }
 
     @Test
     fun `leaveLobby() - GIVEN client doesn't exist WHEN leaveLobby is called THEN an exception should be thrown`() {
         // given a non-existing client
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
         val clientId = "non-existing-client"
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
 
             // when leaveLobby is called
-            lobbyController.leaveLobby(lobbyId,clientId)
+            lobbyService.leaveLobby(lobbyId,clientId)
         }
 
-        assertNotNull(lobbyController[lobbyId])
+        assertNotNull(lobbyService[lobbyId])
     }
 
     @Test
     fun `leaveLobby() - GIVEN last client in lobby WHEN leaveLobby is called THEN client is removed form the lobby and lobby should be removed automatically`() {
         // given a client in a lobby
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        val lobby = assertNotNull(lobbyService[lobbyId])
 
         // when leaveLobby is called
-        lobbyController.leaveLobby(lobbyId,CLIENT1_ID)
+        lobbyService.leaveLobby(lobbyId,CLIENT1_ID)
 
         // then the lobby should be removed
         assertFalse(lobby.getPlayers().contains(CLIENT1_ID))
-        assertNull(lobbyController[lobbyId])
-        assertNull(lobbyController.getByClientId(CLIENT1_ID))
+        assertNull(lobbyService[lobbyId])
+        assertNull(lobbyService.getByClientId(CLIENT1_ID))
     }
 
     @Test
     fun `leaveLobby() - GIVEN client not in lobby WHEN leaveLobby is called THEN an exception should be thrown`() {
         // given a client not in a lobby
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
 
             // when leaveLobby is called
-            lobbyController.leaveLobby(lobbyId,CLIENT1_ID)
+            lobbyService.leaveLobby(lobbyId,CLIENT1_ID)
         }
 
-        assertNotNull(lobbyController[lobbyId])
+        assertNotNull(lobbyService[lobbyId])
     }
 
     // ================================================================================= |
@@ -366,53 +364,53 @@ class LobbyControllerTest {
     @Test
     fun `toggleReady() - GIVEN client in lobby WHEN toggleReady is called THEN the ready status should be toggled`() {
         // given a client in a lobby
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        lobbyService.joinLobby(lobbyId,CLIENT2_ID)
 
         // when toggleReady is called
-        lobbyController.toggleReady(mockClientHandler1)
-        lobbyController.toggleReady(mockClientHandler2)
+        lobbyService.toggleReady(mockClientHandler1)
+        lobbyService.toggleReady(mockClientHandler2)
 
         // then the ready status should be toggled
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobby = assertNotNull(lobbyService[lobbyId])
         assertTrue(lobby.isReady())
     }
 
     @Test
     fun `toggleReady() - GIVEN client not in lobby WHEN toggleReady is called THEN an exception should be thrown`() {
         // given a client not in a lobby
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
 
             // when toggleReady is called
-            lobbyController.toggleReady(mockClientHandler1)
+            lobbyService.toggleReady(mockClientHandler1)
         }
 
-        assertNotNull(lobbyController[lobbyId])
+        assertNotNull(lobbyService[lobbyId])
     }
 
     @Test
     fun `toggleReady() - GIVEN client in lobby WHEN toggleReady is called multiple times THEN ready status should toggle each time`() {
         // given a client in a lobby
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        lobbyService.joinLobby(lobbyId,CLIENT2_ID)
 
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobby = assertNotNull(lobbyService[lobbyId])
 
         // when toggleReady is called multiple times
         // then the ready status should toggle each time
-        lobbyController.toggleReady(mockClientHandler1)
-        lobbyController.toggleReady(mockClientHandler2)
+        lobbyService.toggleReady(mockClientHandler1)
+        lobbyService.toggleReady(mockClientHandler2)
         assertTrue(lobby.isReady())
 
-        lobbyController.toggleReady(mockClientHandler1)
+        lobbyService.toggleReady(mockClientHandler1)
         assertFalse(lobby.isReady())
 
-        lobbyController.toggleReady(mockClientHandler1)
+        lobbyService.toggleReady(mockClientHandler1)
         assertTrue(lobby.isReady())
     }
 
@@ -423,10 +421,10 @@ class LobbyControllerTest {
     @Test
     fun `getLobby() - GIVEN valid lobby ID WHEN getLobby is called THEN correct lobby info should be returned`() {
         // given an existing lobby
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
 
         // when getLobby is called
-        val lobbyInfo = lobbyController.getLobby(lobbyId)
+        val lobbyInfo = lobbyService.getLobby(lobbyId)
 
         // then correct lobby info should be returned
         assertNotNull(lobbyInfo)
@@ -443,19 +441,19 @@ class LobbyControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when getLobby is called
-            lobbyController.getLobby(lobbyId)
+            lobbyService.getLobby(lobbyId)
         }
     }
 
     @Test
     fun `getLobby() - GIVEN full lobby WHEN getLobby is called THEN correct number of players should be returned`() {
         // given a full lobby
-        val lobbyId = lobbyController.createLobby()
-        lobbyController.joinLobby(lobbyId,CLIENT1_ID)
-        lobbyController.joinLobby(lobbyId,CLIENT2_ID)
+        val lobbyId = lobbyService.createLobby()
+        lobbyService.joinLobby(lobbyId,CLIENT1_ID)
+        lobbyService.joinLobby(lobbyId,CLIENT2_ID)
 
         // when getLobby is called
-        val lobbyInfo = lobbyController.getLobby(lobbyId)
+        val lobbyInfo = lobbyService.getLobby(lobbyId)
 
         // then correct number of players should be returned
         assertNotNull(lobbyInfo)
@@ -472,11 +470,11 @@ class LobbyControllerTest {
         // given existing lobbies
         val gameType1 = GAME_TYPE_1
         val gameType2 = GAME_TYPE_2
-        val lobbyId1 = lobbyController.createLobby()
-        val lobbyId2 = lobbyController.createLobby()
+        val lobbyId1 = lobbyService.createLobby()
+        val lobbyId2 = lobbyService.createLobby()
 
         // when getLobbiesInfo is called
-        val lobbiesInfo = lobbyController.getLobbiesInfo()
+        val lobbiesInfo = lobbyService.getLobbiesInfo()
 
         // then all lobby info should be returned
         assertEquals(2,lobbiesInfo.size)
@@ -490,7 +488,7 @@ class LobbyControllerTest {
             /* nothing to do */
 
         // when getLobbiesInfo is called
-        val lobbiesInfo = lobbyController.getLobbiesInfo()
+        val lobbiesInfo = lobbyService.getLobbiesInfo()
 
         // then empty list should be returned
         assertEquals(0,lobbiesInfo.size)
@@ -504,14 +502,14 @@ class LobbyControllerTest {
     fun `configureLobby() - GIVEN valid lobby ID and game type WHEN configureLobby is called THEN lobby should be updated`() {
         // given an existing lobby
         val gameType = GAME_TYPE_1
-        val lobbyId = lobbyController.createLobby()
+        val lobbyId = lobbyService.createLobby()
         whenever(mockSession.gameType).thenReturn(GAME_TYPE_2)
 
         // when configureLobby is called
-        lobbyController.configureLobby(lobbyId,mockSession)
+        lobbyService.configureLobby(lobbyId,mockSession)
 
         // then the lobby should be updated
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobby = assertNotNull(lobbyService[lobbyId])
         assertEquals(GAME_TYPE_2,lobby.gameType)
         kotlin.test.assertEquals(DURATION,lobby.gameDuration)
         assertEquals(SYNC_WINDOW_LENGTH,lobby.syncWindowLength)
@@ -527,22 +525,22 @@ class LobbyControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when configureLobby is called
-            lobbyController.configureLobby(lobbyId,mockSession)
+            lobbyService.configureLobby(lobbyId,mockSession)
         }
     }
 
     @Test
     fun `configureLobby() - GIVEN lobby is playing WHEN configureLobby THEN throw exception`(){
         // given a lobby is playing
-        val lobbyId = lobbyController.createLobby()
-        val lobby = assertNotNull(lobbyController[lobbyId])
+        val lobbyId = lobbyService.createLobby()
+        val lobby = assertNotNull(lobbyService[lobbyId])
         lobby.state = LobbyState.PLAYING
 
         // then an exception should be thrown
         assertThrows<IllegalStateException> {
 
             // when configureLobby is called
-            lobbyController.configureLobby(lobbyId, mockSession)
+            lobbyService.configureLobby(lobbyId, mockSession)
         }
     }
 }

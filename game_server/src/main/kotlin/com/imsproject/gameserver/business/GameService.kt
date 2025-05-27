@@ -8,13 +8,13 @@ import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.games.*
 import com.imsproject.gameserver.business.lobbies.LobbyState
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 
-@Component
-class GameController(
-    private val clients: ClientController,
-    private val lobbies: LobbyController
+@Service
+class GameService(
+    private val clients: ClientService,
+    private val lobbies: LobbyService
 ) {
 
     init{
@@ -176,6 +176,6 @@ class GameController(
     }
 
     companion object{
-        private val log = LoggerFactory.getLogger(GameController::class.java)
+        private val log = LoggerFactory.getLogger(GameService::class.java)
     }
 }

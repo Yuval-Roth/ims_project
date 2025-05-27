@@ -2,8 +2,6 @@ package com.imsproject.gameserver.business
 
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameRequest.Type
-import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.lobbies.Lobby
@@ -11,11 +9,12 @@ import com.imsproject.gameserver.business.lobbies.LobbyInfo
 import com.imsproject.gameserver.business.lobbies.LobbyState
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 
-@Component
-class LobbyController(
-    private val clients: ClientController
+@Service
+class LobbyService(
+    private val clients: ClientService
 ) {
 
     init{
@@ -285,6 +284,6 @@ class LobbyController(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(LobbyController::class.java)
+        private val log = LoggerFactory.getLogger(LobbyService::class.java)
     }
 }

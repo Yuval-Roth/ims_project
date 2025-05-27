@@ -10,12 +10,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.util.concurrent.Semaphore
 
-@Component
-class TimeServerHandler {
+@Service
+class TimeServerService {
 
     @Value("\${running.local}")
     private var runningLocal: Boolean = false
@@ -114,8 +115,8 @@ class TimeServerHandler {
     }
 
     companion object {
-        lateinit var instance: TimeServerHandler
-        private val log = LoggerFactory.getLogger(TimeServerHandler::class.java)
+        lateinit var instance: TimeServerService
+        private val log = LoggerFactory.getLogger(TimeServerService::class.java)
     }
 
 

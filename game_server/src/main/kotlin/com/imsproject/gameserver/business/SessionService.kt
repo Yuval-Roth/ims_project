@@ -4,12 +4,13 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.SimpleIdGenerator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 
-@Component
-class SessionController(
-    private val lobbies: LobbyController
+@Service
+class SessionService(
+    private val lobbies: LobbyService
 ) {
 
     private val lobbyIdToSessions = ConcurrentHashMap<String, ConcurrentLinkedDeque<Session>>()
@@ -130,6 +131,6 @@ class SessionController(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(SessionController::class.java)
+        private val log = LoggerFactory.getLogger(SessionService::class.java)
     }
 }

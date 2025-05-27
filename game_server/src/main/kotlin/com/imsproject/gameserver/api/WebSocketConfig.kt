@@ -8,11 +8,11 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @Configuration
 @EnableWebSocket
 class WebSocketConfig(
-    private val wsGameRequestHandler: WsGameRequestHandler
+    private val wsGameRequestController: WsGameRequestController
 ) : WebSocketConfigurer {
 
     override fun registerWebSocketHandlers(registry: WebSocketHandlerRegistry) {
-        registry.addHandler(wsGameRequestHandler, "/ws").setAllowedOrigins("*")
+        registry.addHandler(wsGameRequestController, "/ws").setAllowedOrigins("*")
     }
 }
 

@@ -4,7 +4,7 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
-import com.imsproject.gameserver.business.TimeServerHandler
+import com.imsproject.gameserver.business.TimeServerService
 import org.slf4j.LoggerFactory
 
 
@@ -26,7 +26,7 @@ class FlowerGardenGame(
     }
 
     override fun startGame(sessionId: Int) {
-        val timeHandler = TimeServerHandler.instance
+        val timeHandler = TimeServerService.instance
         val timeServerCurr = timeHandler.timeServerCurrentTimeMillis().toString()
         localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
         val toSend = GameRequest.builder(GameRequest.Type.START_GAME)

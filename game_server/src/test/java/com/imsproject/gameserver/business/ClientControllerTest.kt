@@ -51,12 +51,12 @@ class ClientControllerTest {
     lateinit var mockWsSession3: WebSocketSession
 
     // test subject
-    private lateinit var clientController: ClientController
+    private lateinit var clientService: ClientService
 
     /**
      * When exiting the setup, the following facts are true:
      *
-     * 1. The mock [ClientController] instance is a spy, meaning its methods can be verified and stubbed.
+     * 1. The mock [ClientService] instance is a spy, meaning its methods can be verified and stubbed.
      *
      * 2. The mock [ClientHandler] objects are associated with specific client IDs:
      *    - The mock [ClientHandler] for client1 has the ID `"000"`.
@@ -83,7 +83,7 @@ class ClientControllerTest {
     fun setUp() {
         MockitoAnnotations.openMocks(this) // initializes the mocks
 
-        clientController = spy(ClientController())
+        clientService = spy(ClientService())
 
         // set up mock client handlers
         whenever(mockClientHandler1.id).thenReturn(CLIENT1_ID)
@@ -110,11 +110,11 @@ class ClientControllerTest {
     @Test
     fun `getByClientId() - GIVEN existing client WHEN getByClientId is called THEN correct client handler should be returned`() {
         // given
-        clientController.addClientHandler(mockClientHandler1)
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.addClientHandler(mockClientHandler1)
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // when
-        val result = clientController.getByClientId(CLIENT1_ID)
+        val result = clientService.getByClientId(CLIENT1_ID)
 
         // then
         assertEquals(mockClientHandler1, result)
@@ -126,7 +126,7 @@ class ClientControllerTest {
         val clientId = "non-existing-client"
 
         // when getByClientId is called
-        val result = clientController.getByClientId(clientId)
+        val result = clientService.getByClientId(clientId)
 
         // then null should be returned
         assertNull(result)
@@ -140,11 +140,11 @@ class ClientControllerTest {
     @Test
     fun `getByWsSessionId() - GIVEN existing session ID WHEN getByWsSessionId is called THEN correct client handler should be returned`() {
         // given
-        clientController.addClientHandler(mockClientHandler1)
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.addClientHandler(mockClientHandler1)
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // when
-        val result = clientController.getByWsSessionId(WS_SESSION1_ID)
+        val result = clientService.getByWsSessionId(WS_SESSION1_ID)
 
         // then
         assertEquals(mockClientHandler1, result)
@@ -156,7 +156,7 @@ class ClientControllerTest {
         val sessionId = "non-existing-session"
 
         // when getByWsSessionId is called
-        val result = clientController.getByWsSessionId(sessionId)
+        val result = clientService.getByWsSessionId(sessionId)
 
         // then null should be returned
         assertNull(result)
@@ -169,11 +169,11 @@ class ClientControllerTest {
     @Test
     fun `getByHostPort() - GIVEN existing host port WHEN getByHostPort is called THEN correct client handler should be returned`() {
         // given
-        clientController.addClientHandler(mockClientHandler1)
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.addClientHandler(mockClientHandler1)
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // when
-        val result = clientController.getByHostPort(UDP_ADDRESS1.toHostPortString())
+        val result = clientService.getByHostPort(UDP_ADDRESS1.toHostPortString())
 
         // then
         assertEquals(mockClientHandler1, result)
@@ -185,7 +185,7 @@ class ClientControllerTest {
         val hostPort = "non-existing-host-port"
 
         // when getByHostPort is called
-        val result = clientController.getByHostPort(hostPort)
+        val result = clientService.getByHostPort(hostPort)
 
         // then null should be returned
         assertNull(result)
@@ -201,11 +201,11 @@ class ClientControllerTest {
         val newClientHandler = mockClientHandler1
 
         // when addClientHandler is called
-        clientController.addClientHandler(newClientHandler)
+        clientService.addClientHandler(newClientHandler)
 
         // then client should be added successfully
-        assertTrue(clientController.containsByWsSessionId(WS_SESSION1_ID))
-        assertEquals(newClientHandler,clientController.getByClientId(CLIENT1_ID))
+        assertTrue(clientService.containsByWsSessionId(WS_SESSION1_ID))
+        assertEquals(newClientHandler,clientService.getByClientId(CLIENT1_ID))
     }
 
     @Test
@@ -217,17 +217,17 @@ class ClientControllerTest {
         whenever(newHandler.udpAddress).thenReturn(UDP_ADDRESS1)
 
         // given existing client handler
-        clientController.addClientHandler(mockClientHandler1)
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.addClientHandler(mockClientHandler1)
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // when addClientHandler is called with new client handler
-        clientController.addClientHandler(newHandler)
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.addClientHandler(newHandler)
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // then existing handler should be replaced
-        assertEquals(newHandler,clientController.getByClientId(CLIENT1_ID))
-        assertEquals(newHandler, clientController.getByHostPort(UDP_ADDRESS1.toHostPortString()))
-        assertEquals(newHandler, clientController.getByWsSessionId(WS_SESSION1_ID))
+        assertEquals(newHandler,clientService.getByClientId(CLIENT1_ID))
+        assertEquals(newHandler, clientService.getByHostPort(UDP_ADDRESS1.toHostPortString()))
+        assertEquals(newHandler, clientService.getByWsSessionId(WS_SESSION1_ID))
     }
 
     // ======================================================================================== |
@@ -237,16 +237,16 @@ class ClientControllerTest {
     @Test
     fun `removeClientHandler() - GIVEN existing client WHEN removeClientHandler is called THEN client should be removed successfully`() {
         // given existing client
-        clientController.addClientHandler(mockClientHandler1)
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.addClientHandler(mockClientHandler1)
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // when removeClientHandler is called
-        clientController.removeClientHandler(CLIENT1_ID)
+        clientService.removeClientHandler(CLIENT1_ID)
 
         // then client should be removed successfully
-        assertNull(clientController.getByClientId(CLIENT1_ID))
-        assertNull(clientController.getByHostPort(UDP_ADDRESS1.toHostPortString()))
-        assertNull(clientController.getByWsSessionId(WS_SESSION1_ID))
+        assertNull(clientService.getByClientId(CLIENT1_ID))
+        assertNull(clientService.getByHostPort(UDP_ADDRESS1.toHostPortString()))
+        assertNull(clientService.getByWsSessionId(WS_SESSION1_ID))
     }
 
     @Test
@@ -255,10 +255,10 @@ class ClientControllerTest {
         val clientId = "non-existing-client"
 
         // when removeClientHandler is called
-        clientController.removeClientHandler(clientId)
+        clientService.removeClientHandler(clientId)
 
         // then no action should be taken
-        assertNull(clientController.getByClientId(clientId))
+        assertNull(clientService.getByClientId(clientId))
     }
 
     // ======================================================================================== |
@@ -268,13 +268,13 @@ class ClientControllerTest {
     @Test
     fun `setHostPort() - GIVEN valid client and host port WHEN setHostPort is called THEN host port should be associated with client`() {
         // given valid client and host port
-        clientController.addClientHandler(mockClientHandler1)
+        clientService.addClientHandler(mockClientHandler1)
 
         // when setHostPort is called
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // then host port should be associated with client
-        assertEquals(mockClientHandler1, clientController.getByHostPort(UDP_ADDRESS1.toHostPortString()))
+        assertEquals(mockClientHandler1, clientService.getByHostPort(UDP_ADDRESS1.toHostPortString()))
     }
 
     @Test
@@ -286,21 +286,21 @@ class ClientControllerTest {
         assertThrows<IllegalStateException> {
 
             // when setHostPort is called
-            clientController.setHostPort(clientId, UDP_ADDRESS1.toHostPortString())
+            clientService.setHostPort(clientId, UDP_ADDRESS1.toHostPortString())
         }
     }
 
     @Test
     fun `setHostPort() - GIVEN existing host port WHEN setHostPort is called THEN it should be updated successfully`() {
         // given existing host port
-        clientController.addClientHandler(mockClientHandler1)
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
+        clientService.addClientHandler(mockClientHandler1)
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS1.toHostPortString())
 
         // when setHostPort is called
-        clientController.setHostPort(CLIENT1_ID, UDP_ADDRESS2.toHostPortString())
+        clientService.setHostPort(CLIENT1_ID, UDP_ADDRESS2.toHostPortString())
 
         // then it should be updated successfully
-        assertEquals(mockClientHandler1, clientController.getByHostPort(UDP_ADDRESS2.toHostPortString()))
+        assertEquals(mockClientHandler1, clientService.getByHostPort(UDP_ADDRESS2.toHostPortString()))
     }
 
     // ======================================================================================== |
@@ -310,10 +310,10 @@ class ClientControllerTest {
     @Test
     fun `containsByWsSessionId() - GIVEN existing session ID WHEN containsByWsSessionId is called THEN it should return true`() {
         // given existing session ID
-        clientController.addClientHandler(mockClientHandler1)
+        clientService.addClientHandler(mockClientHandler1)
 
         // when containsByWsSessionId is called
-        val result = clientController.containsByWsSessionId(WS_SESSION1_ID)
+        val result = clientService.containsByWsSessionId(WS_SESSION1_ID)
 
         // then it should return true
         assertTrue(result)
@@ -325,7 +325,7 @@ class ClientControllerTest {
         val sessionId = "non-existing-session"
 
         // when containsByWsSessionId is called
-        val result = clientController.containsByWsSessionId(sessionId)
+        val result = clientService.containsByWsSessionId(sessionId)
 
         // then it should return false
         assertFalse(result)
@@ -338,12 +338,12 @@ class ClientControllerTest {
     @Test
     fun `getAllClientIds() - GIVEN multiple clients WHEN getAllClientIds is called THEN list of all client IDs should be returned`() {
         // given multiple clients
-        clientController.addClientHandler(mockClientHandler1)
-        clientController.addClientHandler(mockClientHandler2)
-        clientController.addClientHandler(mockClientHandler3)
+        clientService.addClientHandler(mockClientHandler1)
+        clientService.addClientHandler(mockClientHandler2)
+        clientService.addClientHandler(mockClientHandler3)
 
         // when getAllClientIds is called
-        val result = clientController.getAllClientIds()
+        val result = clientService.getAllClientIds()
 
         // then list of all client IDs should be returned
         assertEquals(3,result.size)
@@ -358,7 +358,7 @@ class ClientControllerTest {
             /* nothing to do */
 
         // when getAllClientIds is called
-        val result = clientController.getAllClientIds()
+        val result = clientService.getAllClientIds()
 
         // then empty list should be returned
         assertTrue(result.isEmpty())

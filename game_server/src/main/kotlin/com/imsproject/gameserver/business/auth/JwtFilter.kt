@@ -17,8 +17,8 @@ import kotlin.text.startsWith
 
 @Component
 class JwtFilter(
-    private val jwtController: JwtController,
-    private val authController: AuthController
+    private val jwtService: JwtService,
+    private val authService: AuthService
 ) : OncePerRequestFilter() {
 
     @Throws(ServletException::class, IOException::class)
@@ -29,9 +29,9 @@ class JwtFilter(
         val jwt = extractJwtFromHeader(request.getHeader("Authorization"))
         if(jwt != null){
             try{
-                val authentication = jwtController.extractAuthentication(jwt)
+                val authentication = jwtService.extractAuthentication(jwt)
                 val userId = authentication.principal
-                if(authController.userExists(userId)){
+                if(authService.userExists(userId)){
                     SecurityContextHolder.getContext().authentication = authentication
                 }
             } catch (_: ExpiredJwtException) {

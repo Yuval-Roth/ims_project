@@ -5,12 +5,12 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 
-@Component
-class AuthController(
-    private val credentials: CredentialsController,
-    private val jwtController: JwtController,
+@Service
+class AuthService(
+    private val credentials: CredentialsService,
+    private val jwtService: JwtService,
 ) {
     private val encoder: PasswordEncoder = BCryptPasswordEncoder()
 
@@ -19,7 +19,7 @@ class AuthController(
         log.debug("Authenticating user {}", cleanUserId)
         val answer = authenticate(cleanUserId, password)
         return if(answer){
-            Response.getOk(jwtController.generateJwt(cleanUserId))
+            Response.getOk(jwtService.generateJwt(cleanUserId))
         } else {
             Response.getError("Invalid credentials")
         }
@@ -96,6 +96,6 @@ class AuthController(
     }
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(AuthController::class.java)
+        private val log: Logger = LoggerFactory.getLogger(AuthService::class.java)
     }
 }

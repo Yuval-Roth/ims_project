@@ -9,7 +9,7 @@ import javax.crypto.SecretKey
 
 
 @Service
-class JwtController {
+class JwtService {
     private var key: SecretKey = Jwts.SIG.HS512.key().build()
     private var jwtParser = Jwts.parser().verifyWith(key).build()
 
@@ -52,7 +52,7 @@ class JwtController {
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(JwtController::class.java)
+        private val log = LoggerFactory.getLogger(JwtService::class.java)
         private val alg: MacAlgorithm = Jwts.SIG.HS512
     }
 }

@@ -8,8 +8,8 @@ import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.toResponseEntity
 import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
-import com.imsproject.gameserver.business.ParticipantController
-import com.imsproject.gameserver.business.auth.AuthController
+import com.imsproject.gameserver.business.ParticipantService
+import com.imsproject.gameserver.business.auth.AuthService
 import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
 import com.imsproject.gameserver.dataAccess.models.*
@@ -29,10 +29,10 @@ import java.util.concurrent.Executors
 
 @EnableMethodSecurity
 @RestController
-class RestHandler(
+class RestApiController(
     private val gameRequestFacade: GameRequestFacade,
-    private val authController: AuthController,
-    private val participantController: ParticipantController,
+    private val authService: AuthService,
+    private val participantService: ParticipantService,
     private val daoController: DAOController,
     private val resources: ResourceLoader,
     private val participantsDAO: ParticipantsDAO
@@ -50,7 +50,7 @@ class RestHandler(
         val credentials = header.removePrefix("Basic ")
         val decoded = String(Base64.getDecoder().decode(credentials))
         val (userId, password) = decoded.split(":")
-        return authController.authenticateUser(userId, password).toResponseEntity()
+        return authService.authenticateUser(userId, password).toResponseEntity()
     }
 
     @PostMapping("/manager")
@@ -73,10 +73,10 @@ class RestHandler(
             withErrorHandling("Error handling operator request") {
                 try {
                     when (action) {
-                        "add" -> authController.createUser(credentials)
-                        "remove" -> authController.deleteUser(credentials.userId)
+                        "add" -> authService.createUser(credentials)
+                        "remove" -> authService.deleteUser(credentials.userId)
                         "get" -> {
-                            val users = authController.getAllUsers()
+                            val users = authService.getAllUsers()
                             return Response.getOk(users).toResponseEntity()
                         }
 
@@ -99,19 +99,19 @@ class RestHandler(
                     when(action){
                         "add" -> {
                             log.debug("Adding participant: {}", participant)
-                            val id = participantController.addParticipant(participant)
+                            val id = participantService.addParticipant(participant)
                             log.debug("Successfully Added participant with id: {}", id)
                             Response.getOk(id).toResponseEntity()
                         }
                         "remove" ->{
                             log.debug("Removing participant: {}", participant)
                             val pid = participant.pid ?: throw IllegalArgumentException("Participant id not provided")
-                            participantController.remove(pid)
+                            participantService.remove(pid)
                             log.debug("Successfully removed participant with id: {}", pid)
                             Response.getOk().toResponseEntity()
                         }
                         "get" -> {
-                            val participants = participantController.getAll()
+                            val participants = participantService.getAll()
                             Response.getOk(participants).toResponseEntity()
                         }
                         else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
@@ -275,7 +275,7 @@ class RestHandler(
 
     @PostMapping("/bcrypt/encrypt")
     fun bcryptSend(@RequestBody password : String): ResponseEntity<String> {
-        return authController.textToBCrypt(password).toResponseEntity()
+        return authService.textToBCrypt(password).toResponseEntity()
     }
 
     @GetMapping("/error")
@@ -320,6 +320,6 @@ class RestHandler(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(RestHandler::class.java)
+        private val log = LoggerFactory.getLogger(RestController::class.java)
     }
 }

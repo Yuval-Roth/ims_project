@@ -28,11 +28,11 @@ class GameControllerTest {
     }
 
     @Mock
-    lateinit var mockClients: ClientController
+    lateinit var mockClients: ClientService
     @Mock
-    lateinit var mockTimeServer: TimeServerHandler
+    lateinit var mockTimeServer: TimeServerService
     @Mock
-    lateinit var mockLobbies: LobbyController
+    lateinit var mockLobbies: LobbyService
     @Mock
     lateinit var mockClientHandler1: ClientHandler
     @Mock
@@ -43,18 +43,18 @@ class GameControllerTest {
     lateinit var mockGame: Game
 
     // test subject
-    private lateinit var gameController: GameController
+    private lateinit var gameService: GameService
 
     /**
      * When exiting the setup, the following facts are true:
      *
-     * 1. The mock [GameController] instance is a spy, meaning its methods can be verified and stubbed.
+     * 1. The mock [GameService] instance is a spy, meaning its methods can be verified and stubbed.
      *
      * 2. The mock [ClientHandler] objects are associated with specific client IDs:
      *    - The mock [ClientHandler] for client1 has the ID `"000"`.
      *    - The mock [ClientHandler] for client2 has the ID `"001"`.
      *
-     * 3. The mock [ClientController] returns the correct mock [ClientHandler] based on client ID:
+     * 3. The mock [ClientService] returns the correct mock [ClientHandler] based on client ID:
      *    - `mockClients.getByClientId("000")` returns the mock [ClientHandler] for client1.
      *    - `mockClients.getByClientId("001")` returns the mock [ClientHandler] for client2.
      *
@@ -64,7 +64,7 @@ class GameControllerTest {
      *    - `mockLobby.gameType == GameType.WATER_RIPPLES`.
      *    - `mockLobby.id == "000"`.
      *
-     * 5. The mock [LobbyController] provides correct lobby information:
+     * 5. The mock [LobbyService] provides correct lobby information:
      *    - `mockLobbies["000"]` returns the mock [Lobby].
      *    - `mockLobbies.getByClientId("000")` returns the mock [Lobby].
      *    - `mockLobbies.getByClientId("001")` returns the mock [Lobby].
@@ -78,7 +78,7 @@ class GameControllerTest {
         MockitoAnnotations.openMocks(this) // initializes the mocks
 
         // test subject setup
-        gameController = spy(GameController(mockClients, mockLobbies))
+        gameService = spy(GameService(mockClients, mockLobbies))
 
         // client handlers setup
         whenever(mockClientHandler1.id).thenReturn(CLIENT1_ID)
@@ -115,15 +115,15 @@ class GameControllerTest {
     @Test
     fun `handleGameAction() - GIVEN game running WHEN action received THEN handle ok`() {
         //setup
-        val games : MutableMap<String, Game> = getField(gameController, "games")
-        val clientIdToGame : MutableMap<String, Game> = getField(gameController, "clientIdToGame")
+        val games : MutableMap<String, Game> = getField(gameService, "games")
+        val clientIdToGame : MutableMap<String, Game> = getField(gameService, "clientIdToGame")
 
         // given a game is running
         games[LOBBY_ID] = mockGame
         clientIdToGame[CLIENT1_ID] = mockGame
 
         // when game action is receive
-        gameController.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
+        gameService.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
 
         // then verify that the game action was handled
         verify(mockGame, times(1)).handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
@@ -138,7 +138,7 @@ class GameControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when game action is received
-            gameController.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
+            gameService.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
         }
     }
 
@@ -152,21 +152,21 @@ class GameControllerTest {
         whenever(mockLobbies.getByClientId(CLIENT1_ID)).thenReturn(null)
 
         // when client disconnects
-        gameController.onClientDisconnect(mockClientHandler1)
+        gameService.onClientDisconnect(mockClientHandler1)
 
         // then nothing happens
-        verify(gameController, never()).endGame(anyParam(), anyParam())
+        verify(gameService, never()).endGame(anyParam(), anyParam())
     }
 
     @ParameterizedTest
     @ValueSource(strings = [CLIENT1_ID, CLIENT2_ID])
     fun `onClientDisconnect() - GIVEN client in game WHEN client disconnect THEN remove from lobby and end game`() {
         // setup
-        val games : MutableMap<String, Game> = getField(gameController, "games")
-        val clientIdToGame : MutableMap<String, Game> = getField(gameController, "clientIdToGame")
+        val games : MutableMap<String, Game> = getField(gameService, "games")
+        val clientIdToGame : MutableMap<String, Game> = getField(gameService, "clientIdToGame")
         // disable endGame method call, we are only interested that it was called
         // we don't want to test the endGame method here
-        doNothing().whenever(gameController).endGame(anyParam(),anyParam())
+        doNothing().whenever(gameService).endGame(anyParam(),anyParam())
 
         // given a client is in a game
         games[LOBBY_ID] = mockGame
@@ -174,10 +174,10 @@ class GameControllerTest {
         clientIdToGame[CLIENT2_ID] = mockGame
 
         // when client disconnects
-        gameController.onClientDisconnect(mockClientHandler1)
+        gameService.onClientDisconnect(mockClientHandler1)
 
         // then he is removed from lobby and game is ended
-        verify(gameController, times(1)).endGame(anyParam(), notNull())
+        verify(gameService, times(1)).endGame(anyParam(), notNull())
     }
 
     // ============================================================================== |
@@ -189,8 +189,8 @@ class GameControllerTest {
     @NullSource // game end without error
     fun `endGame() - GIVEN game running WHEN end game THEN success`(errorMessage: String?) {
         // setup
-        val games : MutableMap<String, Game> = getField(gameController, "games")
-        val clientIdToGame : MutableMap<String, Game> = getField(gameController, "clientIdToGame")
+        val games : MutableMap<String, Game> = getField(gameService, "games")
+        val clientIdToGame : MutableMap<String, Game> = getField(gameService, "clientIdToGame")
 
         // given a game is running
         games[LOBBY_ID] = mockGame
@@ -198,17 +198,17 @@ class GameControllerTest {
         clientIdToGame[CLIENT2_ID] = mockGame
 
         // when endGame is called
-        gameController.endGame(LOBBY_ID,errorMessage)
+        gameService.endGame(LOBBY_ID,errorMessage)
 
         // then the game is ended
         verify(mockGame, times(1)).endGame(errorMessage)
         verify(mockLobby, times(1)).state = LobbyState.WAITING
-        assertTrue(gameController.getLobbiesWithRunningGames().isEmpty(), "Lobbies should be empty after ending the game")
+        assertTrue(gameService.getLobbiesWithRunningGames().isEmpty(), "Lobbies should be empty after ending the game")
         assertThrows<IllegalArgumentException> {
-            gameController.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
+            gameService.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
         }
         assertThrows<IllegalArgumentException> {
-            gameController.handleGameAction(mockClientHandler2, USER_INPUT_ACTION)
+            gameService.handleGameAction(mockClientHandler2, USER_INPUT_ACTION)
         }
     }
 
@@ -223,7 +223,7 @@ class GameControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when endGame is called
-            gameController.endGame(LOBBY_ID, errorMessage)
+            gameService.endGame(LOBBY_ID, errorMessage)
         }
 
         verify(mockLobby, never()).state = LobbyState.WAITING
@@ -240,7 +240,7 @@ class GameControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when endGame is called
-            gameController.endGame(LOBBY_ID, errorMessage)
+            gameService.endGame(LOBBY_ID, errorMessage)
         }
 
         verify(mockLobby, never()).state = LobbyState.WAITING
@@ -256,13 +256,13 @@ class GameControllerTest {
         whenever(mockLobby.isReady()).thenReturn(true)
 
         // when startGame is called
-        gameController.startGame(LOBBY_ID,0)
+        gameService.startGame(LOBBY_ID,0)
 
         // then the game is started
         verify(mockLobby, times(1)).state = LobbyState.PLAYING
-        assertTrue(gameController.getLobbiesWithRunningGames().contains(LOBBY_ID))
-        assertDoesNotThrow { gameController.handleGameAction(mockClientHandler1, USER_INPUT_ACTION) }
-        assertDoesNotThrow { gameController.handleGameAction(mockClientHandler2, USER_INPUT_ACTION) }
+        assertTrue(gameService.getLobbiesWithRunningGames().contains(LOBBY_ID))
+        assertDoesNotThrow { gameService.handleGameAction(mockClientHandler1, USER_INPUT_ACTION) }
+        assertDoesNotThrow { gameService.handleGameAction(mockClientHandler2, USER_INPUT_ACTION) }
     }
 
     @Test
@@ -274,16 +274,16 @@ class GameControllerTest {
         assertThrows<IllegalStateException> {
 
             // when startGame is called
-            gameController.startGame(LOBBY_ID,0)
+            gameService.startGame(LOBBY_ID,0)
         }
 
         verify(mockLobby, never()).state = LobbyState.PLAYING
-        assertTrue(gameController.getLobbiesWithRunningGames().isEmpty())
+        assertTrue(gameService.getLobbiesWithRunningGames().isEmpty())
         assertThrows<IllegalArgumentException> {
-            gameController.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
+            gameService.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
         }
         assertThrows<IllegalArgumentException> {
-            gameController.handleGameAction(mockClientHandler2, USER_INPUT_ACTION)
+            gameService.handleGameAction(mockClientHandler2, USER_INPUT_ACTION)
         }
     }
 
@@ -296,16 +296,16 @@ class GameControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when startGame is called
-            gameController.startGame(LOBBY_ID,0)
+            gameService.startGame(LOBBY_ID,0)
         }
 
         verify(mockLobby, never()).state = LobbyState.PLAYING
-        assertTrue(gameController.getLobbiesWithRunningGames().isEmpty())
+        assertTrue(gameService.getLobbiesWithRunningGames().isEmpty())
         assertThrows<IllegalArgumentException> {
-            gameController.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
+            gameService.handleGameAction(mockClientHandler1, USER_INPUT_ACTION)
         }
         assertThrows<IllegalArgumentException> {
-            gameController.handleGameAction(mockClientHandler2, USER_INPUT_ACTION)
+            gameService.handleGameAction(mockClientHandler2, USER_INPUT_ACTION)
         }
     }
 }

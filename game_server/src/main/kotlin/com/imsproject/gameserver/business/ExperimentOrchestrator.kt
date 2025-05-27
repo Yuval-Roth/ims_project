@@ -5,14 +5,14 @@ import com.imsproject.gameserver.dataAccess.DAOController import com.imsproject.
 import com.imsproject.gameserver.dataAccess.models.SessionDTO
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.util.concurrent.Executors
 
-@Component
+@Service
 class ExperimentOrchestrator(
-    private val lobbies: LobbyController,
-    private val sessions: SessionController,
-    private val games: GameController,
+    private val lobbies: LobbyService,
+    private val sessions: SessionService,
+    private val games: GameService,
     private val daoController: DAOController
 ) {
 

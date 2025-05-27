@@ -4,15 +4,15 @@ import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameRequest.Type
 import com.imsproject.common.utils.Response
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import kotlin.reflect.full.memberProperties
 
-@Component
+@Service
 final class GameRequestFacade(
-    private val games: GameController,
-    private val sessions: SessionController,
-    private val lobbies: LobbyController,
-    private val clients: ClientController,
+    private val games: GameService,
+    private val sessions: SessionService,
+    private val lobbies: LobbyService,
+    private val clients: ClientService,
     private val experiments: ExperimentOrchestrator
 ) {
 

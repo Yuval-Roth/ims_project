@@ -4,22 +4,22 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameAction.Type
 import com.imsproject.common.networking.UdpClient
 import com.imsproject.gameserver.*
-import com.imsproject.gameserver.business.ClientController
+import com.imsproject.gameserver.business.ClientService
 import com.imsproject.gameserver.business.ClientHandler
-import com.imsproject.gameserver.business.GameController
+import com.imsproject.gameserver.business.GameService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import java.net.SocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
 
-@Component
-class UdpGameActionHandler(
-    private val gameController: GameController,
-    private val clients: ClientController
+@Service
+class UdpGameActionController(
+    private val gameService: GameService,
+    private val clients: ClientService
 ) {
 
     @Value("\${udp.local_port}")
@@ -66,7 +66,7 @@ class UdpGameActionHandler(
                     return
                 }
                 try{
-                    gameController.handleGameAction(client, action)
+                    gameService.handleGameAction(client, action)
                 } catch(e: Exception){
                     log.error("Error handling game action", e)
                 }
@@ -119,7 +119,7 @@ class UdpGameActionHandler(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(UdpGameActionHandler::class.java)
+        private val log = LoggerFactory.getLogger(UdpGameActionController::class.java)
     }
 
 }

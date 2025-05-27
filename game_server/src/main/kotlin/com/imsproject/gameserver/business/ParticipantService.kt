@@ -1,14 +1,13 @@
 package com.imsproject.gameserver.business
 
-import com.imsproject.common.utils.SimpleIdGenerator
 import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantPK
 import com.imsproject.gameserver.dataAccess.models.ParticipantDTO
 import org.springframework.stereotype.Component
-import java.util.concurrent.ConcurrentHashMap
+import org.springframework.stereotype.Service
 
-@Component
-class ParticipantController(val daoController: DAOController) {
+@Service
+class ParticipantService(val daoController: DAOController) {
 
     operator fun contains(userId: Int): Boolean {
         val pk = ParticipantPK(userId)

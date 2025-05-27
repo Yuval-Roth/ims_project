@@ -4,7 +4,7 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
-import com.imsproject.gameserver.business.TimeServerHandler
+import com.imsproject.gameserver.business.TimeServerService
 
 abstract class Game (
     val lobbyId: String,
@@ -17,7 +17,7 @@ abstract class Game (
     var timeServerStartTime = -1L
 
     open fun startGame(sessionId: Int) {
-        val timeHandler = TimeServerHandler.instance
+        val timeHandler = TimeServerService.instance
         timeServerStartTime = timeHandler.timeServerCurrentTimeMillis()
         localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
