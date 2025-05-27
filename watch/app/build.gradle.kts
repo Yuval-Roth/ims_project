@@ -1,3 +1,6 @@
+import com.android.build.gradle.internal.api.BaseVariantOutputImpl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.android.application)
@@ -34,10 +37,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-
-            kotlinOptions {
-                freeCompilerArgs = listOf("-Xdebug")
-            }
         }
         release {
             signingConfig = signingConfigs.getByName("release")
@@ -48,6 +47,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -57,6 +57,14 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+
+    tasks.withType<KotlinCompile>().configureEach {
+        compilerOptions {
+            if (name.contains("Debug", ignoreCase = true)) {
+                freeCompilerArgs.add("-Xdebug")
+            }
+        }
     }
 }
 
@@ -89,4 +97,11 @@ dependencies {
         "dir" to "libs",
         "include" to "*.aar"
     ))
+}
+
+android.applicationVariants.all {
+    outputs.all {
+        this as BaseVariantOutputImpl
+        outputFileName = "ims.apk"
+    }
 }
