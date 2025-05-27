@@ -252,7 +252,7 @@ class MainModel (private val scope : CoroutineScope) {
         val timeServerUdp = UdpClient().apply{ init(); setTimeout(100) }
         var count = 0
         val data = mutableListOf<Long>()
-        while(count < 100){
+        while(count < 120){
             try {
                 val currentLocalTime = System.currentTimeMillis()
                 timeServerUdp.send(request, SERVER_IP, TIME_SERVER_PORT)
@@ -271,6 +271,11 @@ class MainModel (private val scope : CoroutineScope) {
             }
         }
         timeServerUdp.close()
+
+        // remove the first and last 10 values (outliers)
+        data.sort()
+        data.subList(0, 10).clear()
+        data.subList(data.size - 10, data.size).clear()
         return data.average().roundToLong()
     }
 
