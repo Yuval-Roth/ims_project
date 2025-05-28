@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,6 +69,7 @@ import com.imsproject.watch.initProperties
 import com.imsproject.watch.rtlTextStyle
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
+import com.imsproject.watch.utils.QRGenerator
 import com.imsproject.watch.view.contracts.*
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
@@ -96,7 +98,6 @@ class MainActivity : ComponentActivity() {
         setupUncaughtExceptionHandler()
         viewModel.onCreate(applicationContext)
         setContent {
-//            AfterGameQuestions()
             Main()
         }
     }
@@ -633,6 +634,54 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
+    fun AfterExperimentQRCode(pid:String,expId:String, onNext: () -> Unit) {
+        val key = "$pid-$expId"
+        val link = remember(key) { "https://ims-project.cs.bgu.ac.il/experiment_questions?pid=${pid}&expid=${expId}" }
+        val qrBitmap = remember(key) { QRGenerator.getQRBitmap(link) }
+        MaterialTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DARK_BACKGROUND_COLOR),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(
+                            top = COLUMN_PADDING,
+                            start = COLUMN_PADDING,
+                            end = COLUMN_PADDING
+                        )
+                        .fillMaxSize()
+                    ,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .fillMaxHeight(0.69f)
+                        ,
+                        bitmap = qrBitmap,
+                        contentDescription = "QR Code",
+                    )
+                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.03f).dp))
+                    Button(
+                        onClick = onNext,
+                        modifier = Modifier
+                            .fillMaxWidth(0.6f)
+                            .fillMaxHeight(0.6f)
+                    ) {
+                        BasicText(
+                            text = "Done",
+                            style = textStyle.copy(color = Color.Black),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
     private fun SimplePicker(
         state: PickerState,
         items: List<String>
@@ -651,13 +700,6 @@ class MainActivity : ComponentActivity() {
                 style = TextStyle(color = Color.White, fontSize = 30.sp),
             )
         }
-    }
-
-    @Preview(device = "id:wearos_large_round")
-    @Composable
-    private fun Preview() {
-        initProperties(454);
-        AfterGameQuestion(FIRST_QUESTION)
     }
 }
 

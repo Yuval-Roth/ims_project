@@ -1,5 +1,4 @@
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -92,6 +91,7 @@ dependencies {
     implementation(libs.material.icons.core)
     implementation(libs.okhttp)
     implementation(libs.material3)
+    implementation(libs.zxing.core)
 
     implementation (fileTree(
         "dir" to "libs",
