@@ -74,7 +74,7 @@ class TimeServerService {
                 lock.acquire()
                 var count = 0
                 val data = mutableListOf<Long>()
-                while(count < 100){
+                while(count < 120){
                     try {
                         val currentLocalTime = System.currentTimeMillis()
                         timeServerUdp.send(request)
@@ -92,6 +92,10 @@ class TimeServerService {
                         log.error("Failed to fetch time", e)
                     }
                 }
+                // remove the first and last 10 values (outliers)
+                data.sort()
+                data.subList(0, 10).clear()
+                data.subList(data.size - 10, data.size).clear()
                 timeServerDelta = data.average().toLong()
             } catch(e: Exception){
                 log.error("Failed to fetch time from time server", e)

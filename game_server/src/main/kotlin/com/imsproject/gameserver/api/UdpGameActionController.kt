@@ -13,13 +13,14 @@ import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import java.net.SocketAddress
+import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 
 
 @Service
 class UdpGameActionController(
     private val gameService: GameService,
-    private val clients: ClientService
+    private val clientService: ClientService
 ) {
 
     @Value("\${udp.local_port}")
@@ -60,7 +61,7 @@ class UdpGameActionController(
 
         when (action.type) {
             Type.USER_INPUT -> {
-                val client = clients.getByHostPort(address.toHostPortString())
+                val client = clientService.getByHostPort(address.toHostPortString())
                 if (client == null) {
                     log.debug("Client not found for packet from ${address.toHostPortString()}")
                     return
@@ -73,7 +74,12 @@ class UdpGameActionController(
             }
             Type.PING -> send(GameAction.pong, address)
             Type.PONG -> {}
-            Type.HEARTBEAT -> send(GameAction.heartbeat, address)
+            Type.HEARTBEAT -> {
+                clientService.getByHostPort(address.toHostPortString())?.let {
+                    it.lastHeartbeat = LocalDateTime.now()
+                }
+                send(GameAction.heartbeat, address)
+            }
 
 
             Type.ENTER -> {
@@ -93,7 +99,7 @@ class UdpGameActionController(
                 }
 
                 // get the client handler for the client id
-                val clientHandler = clients.getByClientId(clientId)
+                val clientHandler = clientService.getByClientId(clientId)
                 if (clientHandler == null) {
                     log.debug("Client not found for enter code: $enterCode")
                     return
@@ -101,7 +107,7 @@ class UdpGameActionController(
                 clientHandler.udpAddress = address
 
                 // map from address:port to the client
-                clients.setHostPort(clientId, address.toHostPortString())
+                clientService.setHostPort(clientId, address.toHostPortString())
 
                 // send confirmation to client
                 send(GameAction.builder(Type.ENTER).build().toString(), address)
