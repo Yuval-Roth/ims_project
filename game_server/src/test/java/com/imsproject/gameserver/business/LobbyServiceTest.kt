@@ -15,7 +15,7 @@ import org.mockito.kotlin.whenever
 import kotlin.test.assertNotNull
 import org.mockito.kotlin.any as anyParam
 
-class LobbyControllerTest {
+class LobbyServiceTest {
 
     companion object {
         private const val CLIENT1_ID = "000"

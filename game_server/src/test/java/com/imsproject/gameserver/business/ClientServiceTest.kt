@@ -14,7 +14,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.socket.WebSocketSession
 import java.net.SocketAddress
 
-class ClientControllerTest {
+class ClientServiceTest {
 
     private class MockSocketAddress(
         address: String

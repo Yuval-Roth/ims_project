@@ -149,7 +149,9 @@ class LobbyService(
     fun getLobby(lobbyId: String) : LobbyInfo {
         // check if the lobby exists
         val lobby = lobbies[lobbyId] ?: run {
-            log.debug("getLobby: Lobby not found")
+            // we're not logging cuz it's spamming the log files,
+            // and it happens every time a lobby is removed
+//            log.debug("getLobby: Lobby not found")
             throw IllegalArgumentException("Lobby not found")
         }
 

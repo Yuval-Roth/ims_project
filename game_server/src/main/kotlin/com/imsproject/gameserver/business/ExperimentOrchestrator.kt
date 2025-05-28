@@ -10,14 +10,14 @@ import java.util.concurrent.Executors
 
 @Service
 class ExperimentOrchestrator(
-    private val lobbies: LobbyService,
-    private val sessions: SessionService,
-    private val games: GameService,
+    private val lobbyService: LobbyService,
+    private val sessionService: SessionService,
+    private val gameService: GameService,
     private val daoController: DAOController
 ) {
 
     init{
-        games.onMalformedGameTermination = {lobbyId ->
+        gameService.onMalformedGameTermination = { lobbyId ->
             log.debug("onMalformedGameTermination() with lobbyId: {}",lobbyId)
             stopExperiment(lobbyId)
         }
@@ -31,12 +31,12 @@ class ExperimentOrchestrator(
         log.debug("startExperiment() with lobbyId: {}",lobbyId)
 
         // check that the lobby exists
-        val lobby = lobbies[lobbyId] ?: run{
+        val lobby = lobbyService[lobbyId] ?: run{
             log.debug("startExperiment: Lobby with id $lobbyId not found")
             throw IllegalArgumentException("Lobby with id $lobbyId not found")
         }
 
-        val experimentSessions = sessions.getSessions(lobbyId)
+        val experimentSessions = sessionService.getSessions(lobbyId)
         if(experimentSessions.isEmpty()){
             log.debug("startExperiment: No sessions found for lobby $lobbyId")
             throw IllegalArgumentException("No sessions found for lobby $lobbyId")
@@ -78,7 +78,7 @@ class ExperimentOrchestrator(
             val iterator = experimentSessions.iterator()
             while(iterator.hasNext() && isActive) {
                 val session = iterator.next()
-                lobbies.configureLobby(lobbyId, session)
+                lobbyService.configureLobby(lobbyId, session)
                 val sessionId = session.dbId ?: run {
                     // should not happen
                     log.error("startExperiment: Session dbId not found for session in lobby $lobbyId")
@@ -87,14 +87,15 @@ class ExperimentOrchestrator(
                 while(! lobby.isReady()){
                     delay(1000)
                 }
-                games.startGame(lobbyId,sessionId)
+                gameService.startGame(lobbyId,sessionId)
                 session.state = SessionState.IN_PROGRESS
                 delay(session.duration.toLong()*1000)
-                games.endGame(lobbyId)
+                gameService.endGame(lobbyId)
                 val updatedSessionDTO = SessionDTO(sessionId = sessionId, state = SessionState.COMPLETED.name)
                 daoController.handleUpdate(updatedSessionDTO)
-                sessions.removeSession(lobbyId, session.sessionId)
+                sessionService.removeSession(lobbyId, session.sessionId)
             }
+            lobbyService.remove(lobby.id)
             lobby.experimentRunning = false
         }
         ongoingExperiments[lobbyId] = job
@@ -104,7 +105,7 @@ class ExperimentOrchestrator(
     fun stopExperiment(lobbyId: String) {
         log.debug("stopExperiment() with lobbyId: {}",lobbyId)
 
-        val lobby = lobbies[lobbyId] ?: run{
+        val lobby = lobbyService[lobbyId] ?: run{
             log.debug("stopExperiment: Lobby with id $lobbyId not found")
             throw IllegalArgumentException("Lobby with id $lobbyId not found")
         }
@@ -121,10 +122,10 @@ class ExperimentOrchestrator(
         ongoingExperiments.remove(lobbyId)
         lobby.experimentRunning = false
         if(lobby.state == LobbyState.PLAYING){
-            games.endGame(lobbyId)
+            gameService.endGame(lobbyId)
         }
         if(lobby.hasSessions){
-            val currentSession = sessions.getSessions(lobbyId).first()
+            val currentSession = sessionService.getSessions(lobbyId).first()
             if(currentSession.state == SessionState.IN_PROGRESS){
                 val dbId = currentSession.dbId ?: run {
                     // should not happen
@@ -133,11 +134,11 @@ class ExperimentOrchestrator(
                 }
                 val updatedSessionDTO = SessionDTO(sessionId = dbId, state = SessionState.CANCELLED.name)
                 daoController.handleUpdate(updatedSessionDTO)
-                sessions.removeSession(lobbyId, currentSession.sessionId)
+                sessionService.removeSession(lobbyId, currentSession.sessionId)
             }
             if(lobby.hasSessions){
-                val nextSession = sessions.getSessions(lobbyId).first()
-                lobbies.configureLobby(lobbyId,nextSession)
+                val nextSession = sessionService.getSessions(lobbyId).first()
+                lobbyService.configureLobby(lobbyId,nextSession)
             }
         }
         log.debug("stopExperiment() successful")

@@ -14,7 +14,8 @@ import java.util.concurrent.ConcurrentHashMap
 @Service
 class GameService(
     private val clients: ClientService,
-    private val lobbies: LobbyService
+    private val lobbies: LobbyService,
+    private val gameFactory: GameFactory
 ) {
 
     init{
@@ -24,6 +25,7 @@ class GameService(
     private val games = ConcurrentHashMap<String, Game>()
     private val clientIdToGame = ConcurrentHashMap<String, Game>()
 
+    // this is set by the ExperimentOrchestrator class
     lateinit var onMalformedGameTermination: ((String) -> Unit)
 
     /**
@@ -138,28 +140,8 @@ class GameService(
         }
         // ===================================== |
 
-        val game = when(lobby.gameType){
-                GameType.WATER_RIPPLES -> {
-                    log.debug("startGame: Selected WaterRipplesGame")
-                    WaterRipplesGame(lobbyId,player1Handler, player2Handler)
-                }
-                GameType.WINE_GLASSES -> {
-                    log.debug("startGame: Selected WineGlassesGame")
-                    WineGlassesGame(lobbyId,player1Handler, player2Handler)
-                }
-                GameType.FLOUR_MILL -> {
-                    log.debug("startGame: Selected FlourMillGame")
-                    FlourMillGame(lobbyId,player1Handler, player2Handler)
-                }
-                GameType.FLOWER_GARDEN -> {
-                    log.debug("startGame: Selected FlowerGardenGame")
-                    FlowerGardenGame(lobbyId,player1Handler, player2Handler)
-                }
-                else -> {
-                    log.debug("startGame: Invalid game type")
-                    throw IllegalArgumentException("Invalid game type")
-                }
-        }
+        log.debug("startGame: Selected {}", lobby.gameType)
+        val game = gameFactory.get(lobby.id,player1Handler,player2Handler,lobby.gameType)
         lobby.state = LobbyState.PLAYING
         games[lobby.id] = game
         clientIdToGame[player1Id] = game

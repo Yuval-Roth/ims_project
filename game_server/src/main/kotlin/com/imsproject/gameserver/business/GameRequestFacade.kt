@@ -43,7 +43,11 @@ final class GameRequestFacade(
                 else -> Response.getError("Invalid message type")
             }
         } catch (e: Exception) {
-            log.error("Error handling game request", e)
+            // we're not logging lobby not found events cuz it's spamming the log files,
+            // and it happens every time a lobby is removed
+            if(e.message?.contains("Lobby not found",false) != true){
+                log.error("Error handling game request", e)
+            }
             return Response.getError(e)
         }
     }

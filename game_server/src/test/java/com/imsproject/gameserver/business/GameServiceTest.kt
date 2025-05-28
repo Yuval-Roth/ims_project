@@ -3,6 +3,7 @@ package com.imsproject.gameserver.business
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.gameserver.business.games.Game
+import com.imsproject.gameserver.business.games.GameFactory
 import com.imsproject.gameserver.business.lobbies.Lobby
 import com.imsproject.gameserver.business.lobbies.LobbyState
 import getField
@@ -16,7 +17,7 @@ import org.mockito.kotlin.*
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any as anyParam
 
-class GameControllerTest {
+class GameServiceTest {
 
     // test data
     companion object {
@@ -30,7 +31,7 @@ class GameControllerTest {
     @Mock
     lateinit var mockClients: ClientService
     @Mock
-    lateinit var mockTimeServer: TimeServerService
+    lateinit var gameFactory: GameFactory
     @Mock
     lateinit var mockLobbies: LobbyService
     @Mock
@@ -78,7 +79,8 @@ class GameControllerTest {
         MockitoAnnotations.openMocks(this) // initializes the mocks
 
         // test subject setup
-        gameService = spy(GameService(mockClients, mockLobbies))
+        gameService = spy(GameService(mockClients, mockLobbies, gameFactory))
+        gameService.onMalformedGameTermination = {}
 
         // client handlers setup
         whenever(mockClientHandler1.id).thenReturn(CLIENT1_ID)
@@ -103,6 +105,16 @@ class GameControllerTest {
         whenever(mockGame.player1).thenReturn(mockClientHandler1)
         whenever(mockGame.player2).thenReturn(mockClientHandler2)
         whenever(mockGame.lobbyId).thenReturn(LOBBY_ID)
+
+        // gameFactory setup
+        whenever(gameFactory.get(
+            LOBBY_ID,
+            mockClientHandler1,
+            mockClientHandler2,
+            GAME_TYPE
+        )).thenReturn(mockGame)
+
+
     }
 
     @AfterEach

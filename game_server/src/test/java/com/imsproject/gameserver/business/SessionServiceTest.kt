@@ -11,7 +11,7 @@ import kotlin.test.*
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.whenever
 
-class SessionControllerTest {
+class SessionServiceTest {
 
     companion object {
         private const val LOBBY1_ID = "0000"
@@ -115,7 +115,7 @@ class SessionControllerTest {
         assertThrows<IllegalArgumentException> {
 
             // when createSession is called
-            sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, invalidSyncWindowLength, SYNC_TOLERANCE)
+            sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, invalidSyncWindowLength, SYNC_TOLERANCE)
         }
     }
 
