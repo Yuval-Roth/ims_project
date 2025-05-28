@@ -29,16 +29,8 @@ class LobbyService(
         return lobbies[lobbyId]
     }
     
-    operator fun set(lobbyId: String, lobby: Lobby) {
-        lobbies[lobbyId] = lobby
-    }
-    
     operator fun contains(lobbyId: String): Boolean {
         return lobbies.containsKey(lobbyId)
-    }
-    
-    fun remove(lobbyId: String) {
-        lobbies.remove(lobbyId)
     }
     
     fun getByClientId(clientId: String): Lobby? {

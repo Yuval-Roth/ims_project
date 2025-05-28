@@ -50,7 +50,7 @@ class GameService(
         val game = clientIdToGame[clientHandler.id]
         if(game != null){
             log.debug("onClientDisconnect: Player was in game, ending game")
-            endGame(game.lobbyId, "Player ${clientHandler.id} disconnected")
+            endGame(game.lobbyId, errorMessage = "Player ${clientHandler.id} disconnected")
             onMalformedGameTermination(game.lobbyId)
         } else  {
             log.debug("onClientDisconnect: Player not in game")
@@ -89,7 +89,7 @@ class GameService(
         log.debug("onClientConnect() successful")
     }
 
-    fun endGame(lobbyId: String, errorMessage: String? = null) {
+    fun endGame(lobbyId: String, expId: Int? = null, errorMessage: String? = null) {
         log.debug("endGame() with lobbyId: {}", lobbyId)
 
         // check if the game exists
@@ -98,7 +98,7 @@ class GameService(
             throw IllegalArgumentException("Game not found for lobby $lobbyId")
         }
 
-        game.endGame(errorMessage) // game.endGame() notifies the clients
+        game.endGame(expId, errorMessage) // game.endGame() notifies the clients
         clientIdToGame.remove(game.player1.id)
         clientIdToGame.remove(game.player2.id)
         games.remove(game.lobbyId)

@@ -7,6 +7,7 @@ import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.concurrent.Executors
+import kotlin.math.exp
 
 @Service
 class ExperimentOrchestrator(
@@ -55,12 +56,12 @@ class ExperimentOrchestrator(
         val pid2 = Integer.parseInt(player2Id)
 
         val experimentDTO = ExperimentDTO(null,pid1,pid2)
-        val experimentId = daoController.handleInsert(experimentDTO)
+        val expId = daoController.handleInsert(experimentDTO)
         experimentSessions.forEachIndexed { index, session ->
             if(session.dbId == null){
                 val dto = SessionDTO(
                     null,
-                    experimentId,
+                    expId,
                     session.duration,
                     session.gameType.name,
                     index+1,
@@ -90,12 +91,12 @@ class ExperimentOrchestrator(
                 gameService.startGame(lobbyId,sessionId)
                 session.state = SessionState.IN_PROGRESS
                 delay(session.duration.toLong()*1000)
-                gameService.endGame(lobbyId)
+                gameService.endGame(lobbyId, if(! iterator.hasNext()) expId else null)
                 val updatedSessionDTO = SessionDTO(sessionId = sessionId, state = SessionState.COMPLETED.name)
                 daoController.handleUpdate(updatedSessionDTO)
                 sessionService.removeSession(lobbyId, session.sessionId)
             }
-            lobbyService.remove(lobby.id)
+            lobbyService.removeLobby(lobby.id)
             lobby.experimentRunning = false
         }
         ongoingExperiments[lobbyId] = job

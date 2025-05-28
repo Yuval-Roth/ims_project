@@ -26,19 +26,44 @@ private const val TAG = "MainViewModel"
 
 class MainViewModel() : ViewModel() {
 
+
+    /**
+     *  The application flow is the following:
+     *  1. [State.DISCONNECTED] - the initial state when the app is opened
+     *  2. [State.CONNECTING] - the app is trying to connect to the server for the first time
+     *  3. [State.SELECTING_ID] - the user selects an ID to enter with
+     *  4. [State.CONNECTING] - trying to enter with the selected ID
+     *  5. [State.CONNECTED_NOT_IN_LOBBY] - connected to the server, but not in a lobby
+     *  6. [State.CONNECTED_IN_LOBBY] - connected to the server and in a lobby
+     *  7. [State.IN_GAME] - the lobby was set up and the game has started
+     *  8. [State.AFTER_GAME] - the game has ended and we prepare to upload session events
+     *  9. [State.UPLOADING_EVENTS] - uploading session events to the server
+     *  10. [State.AFTER_GAME_QUESTIONS] - finished uploading events, now we ask the user post-game questions
+     *  11. [State.UPLOADING_ANSWERS] - uploading the answers of the post-game questions to the server
+     *  12. [State.EXPERIMENT_QUESTIONS_QR] - if the experiment has ended, we show the QR code to the user
+     *  13. [State.THANKS_FOR_PARTICIPATING] - the user has scanned the QR code and we thank them for participating
+     *
+     *  Note that state 12 and 13 are skipped if the experiment has not ended
+     *  and then after state 11 the app returns to state 6.
+     */
     enum class State {
+     // flow states
         DISCONNECTED,
-        SELECTING_ID,
         CONNECTING,
+        SELECTING_ID,
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
         IN_GAME,
-        UPLOADING_EVENTS,
-        ERROR,
-        ALREADY_CONNECTED,
         AFTER_GAME,
+        UPLOADING_EVENTS,
         AFTER_GAME_QUESTIONS,
-        UPLOADING_ANSWERS
+        UPLOADING_ANSWERS,
+        EXPERIMENT_QUESTIONS_QR,
+        THANKS_FOR_PARTICIPATING,
+
+        // error states
+        ALREADY_CONNECTED,
+        ERROR,
     }
 
     private var model = MainModel(viewModelScope)
@@ -81,6 +106,9 @@ class MainViewModel() : ViewModel() {
 
     private var _additionalData = MutableStateFlow("")
     val additionalData : StateFlow<String> = _additionalData
+
+    private var _expId = MutableStateFlow<String?>(null)
+    val expId : StateFlow<String?> = _expId
 
     private var sessionId = -1
     var temporaryPlayerId = ""
@@ -155,15 +183,19 @@ class MainViewModel() : ViewModel() {
 
     fun afterGame(result: Result) {
         Log.d(TAG, "afterGame: $result")
+        setupListeners()
         viewModelScope.launch(Dispatchers.Default) {
             _ready.value = false
             _timeServerStartTime.value = -1
             _gameType.value = null
             _gameDuration.value = null
             when (result.code) {
-                Result.Code.OK -> {
+                Result.Code.OK, Result.Code.OK_EXPERIMENT_ENDED -> {
                     setState(State.UPLOADING_EVENTS)
                     if (model.uploadSessionEvents(sessionId)) {
+                        if(result.code == Result.Code.OK_EXPERIMENT_ENDED) {
+                            _expId.value = result.expId ?: throw IllegalStateException("Experiment ID is required for OK_EXPERIMENT_ENDED result")
+                        }
                         setState(State.AFTER_GAME_QUESTIONS)
                     } else {
                         fatalError("Failed to upload session events")
@@ -179,7 +211,14 @@ class MainViewModel() : ViewModel() {
                     fatalError(error)
                 }
             }
-            setupListeners() // take back control of the listeners
+        }
+    }
+
+    fun afterExperiment() {
+        if(_lobbyId.value == ""){
+            setState(State.CONNECTED_NOT_IN_LOBBY)
+        } else {
+            setState(State.CONNECTED_IN_LOBBY)
         }
     }
 
@@ -232,7 +271,11 @@ class MainViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if(model.uploadAfterGameQuestions(sessionId, *QnAs)){
                 sessionId = -1
-                setState(State.CONNECTED_IN_LOBBY)
+                if(_expId.value != null) {
+                    setState(State.EXPERIMENT_QUESTIONS_QR)
+                } else {
+                    setState(State.CONNECTED_IN_LOBBY)
+                }
             } else {
                 fatalError("Failed to upload answers")
             }
@@ -247,10 +290,14 @@ class MainViewModel() : ViewModel() {
         when (request.type){
             GameRequest.Type.PONG -> {}
             GameRequest.Type.HEARTBEAT -> {}
-            GameRequest.Type.END_GAME -> {}
             GameRequest.Type.EXIT -> {
                 fatalError(request.message ?: "Connection closed by server")
             }
+
+            // we ignore this here on purpose because it is handled in the GameActivity
+            // and this can be sent multiple times after the game ended
+            GameRequest.Type.END_GAME -> {}
+
             GameRequest.Type.JOIN_LOBBY -> {
                 val lobbyId = request.lobbyId ?: run {
                     Log.e(TAG, "handleGameRequest: JOIN_LOBBY request missing lobbyId")
@@ -264,11 +311,15 @@ class MainViewModel() : ViewModel() {
                 _ready.value = false
 
                 _lobbyId.value = lobbyId
-                setState(State.CONNECTED_IN_LOBBY)
+                if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
+                    setState(State.CONNECTED_IN_LOBBY)
+                }
             }
             GameRequest.Type.LEAVE_LOBBY -> {
                 _lobbyId.value = ""
-                setState(State.CONNECTED_NOT_IN_LOBBY)
+                if(_state.value == State.CONNECTED_IN_LOBBY){
+                    setState(State.CONNECTED_NOT_IN_LOBBY)
+                }
             }
             GameRequest.Type.CONFIGURE_LOBBY -> {
                 val gameType = request.gameType ?: run {
@@ -299,7 +350,7 @@ class MainViewModel() : ViewModel() {
             }
             GameRequest.Type.START_GAME -> {
                 if(_state.value != State.CONNECTED_IN_LOBBY){
-                    Log.e(TAG, "handleGameRequest: START_GAME request received while not in lobby")
+                    Log.e(TAG, "handleGameRequest: START_GAME request received while not in the 'CONNECTED_IN_LOBBY' state")
                     return
                 }
 

@@ -26,7 +26,11 @@ abstract class GenericActivityResultContract : ActivityResultContract<Map<String
     }
 
     override fun parseResult(resultCode: Int, intent: Intent?): Result {
-        return Result(Result.Code.entries[resultCode],intent?.getStringExtra("$PACKAGE_PREFIX.error"))
+        return Result(
+            Result.Code.entries[resultCode],
+            intent?.getStringExtra("$PACKAGE_PREFIX.error"),
+            intent?.getStringExtra("$PACKAGE_PREFIX.expId")
+        )
     }
 }
 

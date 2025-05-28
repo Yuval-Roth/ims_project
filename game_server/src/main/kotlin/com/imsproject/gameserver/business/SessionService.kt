@@ -87,7 +87,9 @@ class SessionService(
 
     fun getSessions(lobbyId: String): Collection<Session> {
         if(! lobbies.contains(lobbyId)){
-            log.debug("getSessions: Lobby not found")
+            // we're not logging cuz it's spamming the log files,
+            // and it happens every time a lobby is removed
+//            log.debug("getSessions: Lobby not found")
             throw IllegalArgumentException("Lobby not found")
         }
 

@@ -167,7 +167,7 @@ class GameServiceTest {
         gameService.onClientDisconnect(mockClientHandler1)
 
         // then nothing happens
-        verify(gameService, never()).endGame(anyParam(), anyParam())
+        verify(gameService, never()).endGame(anyParam(), anyOrNull(), anyParam())
     }
 
     @ParameterizedTest
@@ -178,7 +178,7 @@ class GameServiceTest {
         val clientIdToGame : MutableMap<String, Game> = getField(gameService, "clientIdToGame")
         // disable endGame method call, we are only interested that it was called
         // we don't want to test the endGame method here
-        doNothing().whenever(gameService).endGame(anyParam(),anyParam())
+        doNothing().whenever(gameService).endGame(anyParam(),anyOrNull(),anyParam())
 
         // given a client is in a game
         games[LOBBY_ID] = mockGame
@@ -189,7 +189,7 @@ class GameServiceTest {
         gameService.onClientDisconnect(mockClientHandler1)
 
         // then he is removed from lobby and game is ended
-        verify(gameService, times(1)).endGame(anyParam(), notNull())
+        verify(gameService, times(1)).endGame(anyParam(), anyOrNull(),notNull())
     }
 
     // ============================================================================== |
@@ -210,10 +210,10 @@ class GameServiceTest {
         clientIdToGame[CLIENT2_ID] = mockGame
 
         // when endGame is called
-        gameService.endGame(LOBBY_ID,errorMessage)
+        gameService.endGame(LOBBY_ID,errorMessage = errorMessage)
 
         // then the game is ended
-        verify(mockGame, times(1)).endGame(errorMessage)
+        verify(mockGame, times(1)).endGame(errorMessage = errorMessage)
         verify(mockLobby, times(1)).state = LobbyState.WAITING
         assertTrue(gameService.getLobbiesWithRunningGames().isEmpty(), "Lobbies should be empty after ending the game")
         assertThrows<IllegalArgumentException> {
@@ -235,7 +235,7 @@ class GameServiceTest {
         assertThrows<IllegalArgumentException> {
 
             // when endGame is called
-            gameService.endGame(LOBBY_ID, errorMessage)
+            gameService.endGame(LOBBY_ID, errorMessage = errorMessage)
         }
 
         verify(mockLobby, never()).state = LobbyState.WAITING
@@ -252,7 +252,7 @@ class GameServiceTest {
         assertThrows<IllegalArgumentException> {
 
             // when endGame is called
-            gameService.endGame(LOBBY_ID, errorMessage)
+            gameService.endGame(LOBBY_ID, errorMessage = errorMessage)
         }
 
         verify(mockLobby, never()).state = LobbyState.WAITING

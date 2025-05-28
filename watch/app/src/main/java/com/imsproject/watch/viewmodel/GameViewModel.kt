@@ -74,6 +74,9 @@ abstract class GameViewModel(
     private val _resultCode = MutableStateFlow(Result.Code.OK)
     val resultCode : StateFlow<Result.Code> = _resultCode
 
+    private val _expId = MutableStateFlow<String?>(null)
+    val expId: StateFlow<String?> = _expId
+
     private var timeServerDelta = 0L
     private var myStartTime = 0L
 
@@ -217,6 +220,13 @@ abstract class GameViewModel(
                 }
 
                 if(success){
+                    // experiment ID, if available
+                    _expId.value = request.data?.first().also {
+                        // if available it means the experiment has ended successfully
+                        if (it != null){
+                            _resultCode.value = Result.Code.OK_EXPERIMENT_ENDED
+                        }
+                    }
                     exitOk()
                 } else {
                     val errorMessage = request.message ?: "Unknown error"

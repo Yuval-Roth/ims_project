@@ -99,7 +99,6 @@ class MainActivity : ComponentActivity() {
         setupUncaughtExceptionHandler()
         viewModel.onCreate(applicationContext)
         setContent {
-//            AfterExperimentQRCode("1","1"){}
             Main()
         }
     }
@@ -218,6 +217,18 @@ class MainActivity : ComponentActivity() {
             }
 
             State.UPLOADING_ANSWERS -> LoadingScreen("Uploading answers...")
+
+            State.EXPERIMENT_QUESTIONS_QR -> {
+                val pid = viewModel.playerId.collectAsState().value
+                val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("Experiment ID is not set")
+                AfterExperimentQRCode(pid, expId) {
+                    viewModel.setState(State.THANKS_FOR_PARTICIPATING)
+                }
+            }
+
+            State.THANKS_FOR_PARTICIPATING -> ThanksForParticipating {
+                viewModel.afterExperiment()
+            }
 
             State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
@@ -667,6 +678,47 @@ class MainActivity : ComponentActivity() {
                         contentDescription = "QR Code",
                     )
                     Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.03f).dp))
+                    Button(
+                        onClick = onNext,
+                        modifier = Modifier
+                            .fillMaxWidth(0.6f)
+                            .fillMaxHeight(0.6f)
+                    ) {
+                        BasicText(
+                            text = "Done",
+                            style = textStyle.copy(color = Color.Black),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun ThanksForParticipating(onNext: () -> Unit) {
+        MaterialTheme {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DARK_BACKGROUND_COLOR),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(
+                            top = COLUMN_PADDING*3,
+                            start = COLUMN_PADDING,
+                            end = COLUMN_PADDING
+                        )
+                        .fillMaxSize()
+                    ,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    BasicText(
+                        text = "Thank you for participating in the experiment!",
+                        style = textStyle,
+                    )
+                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.2f).dp))
                     Button(
                         onClick = onNext,
                         modifier = Modifier

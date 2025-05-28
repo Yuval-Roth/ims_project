@@ -80,7 +80,9 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
                     .build().sanitize(intent) {
                         Log.d(TAG, it)
                     }
-                if(result != Result.Code.OK){
+                if (result.name.substring(0,2) == "OK") {
+                    intent.putExtra("$PACKAGE_PREFIX.expId", viewModel.expId.collectAsState().value)
+                } else {
                     intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
                 }
                 setResult(result.ordinal,intent)
