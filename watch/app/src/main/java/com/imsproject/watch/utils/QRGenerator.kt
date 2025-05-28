@@ -15,7 +15,7 @@ object QRGenerator {
     private const val bgColor = -0x1
     private const val fgColor = -0x1000000
 
-    fun getQRBitmap(text: String): ImageBitmap {
+    fun generate(text: String): ImageBitmap {
         return encodeBitmap(text, SCREEN_RADIUS.toInt(), SCREEN_RADIUS.toInt())
     }
 

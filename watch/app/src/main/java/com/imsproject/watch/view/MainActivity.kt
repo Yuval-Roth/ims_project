@@ -45,7 +45,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -66,6 +65,8 @@ import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
+import com.imsproject.watch.model.REST_SCHEME
+import com.imsproject.watch.model.SERVER_IP
 import com.imsproject.watch.rtlTextStyle
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
@@ -98,6 +99,7 @@ class MainActivity : ComponentActivity() {
         setupUncaughtExceptionHandler()
         viewModel.onCreate(applicationContext)
         setContent {
+//            AfterExperimentQRCode("1","1"){}
             Main()
         }
     }
@@ -636,8 +638,8 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun AfterExperimentQRCode(pid:String,expId:String, onNext: () -> Unit) {
         val key = "$pid-$expId"
-        val link = remember(key) { "https://ims-project.cs.bgu.ac.il/experiment_questions?pid=${pid}&expid=${expId}" }
-        val qrBitmap = remember(key) { QRGenerator.getQRBitmap(link) }
+        val link = remember(key) { "${REST_SCHEME}://${SERVER_IP}/experiment_questions?pid=${pid}&expid=${expId}" }
+        val qrBitmap = remember(key) { QRGenerator.generate(link) }
         MaterialTheme {
             Box(
                 modifier = Modifier
