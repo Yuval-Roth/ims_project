@@ -658,20 +658,26 @@ class MainModel (private val scope : CoroutineScope) {
 
         if(connectionRecoveryLock.tryLock()){
             scope.launch(Dispatchers.IO) {
-                Log.d(TAG, "Attempting connection recovery")
-                val success = if(!connected){
-                    ws.reset()
-                    ws.connectBlocking(TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                } else {
-                    closeAllResources()
-                    connectToServer(2) && reconnect()
-                }
-                connectionRecoveryLock.unlock()
-                if(success){
-                    Log.d(TAG, "Connection recovery successful")
-                } else {
-                    Log.e(TAG, "Connection recovery failed")
+                try{
+                    Log.d(TAG, "Attempting connection recovery")
+                    val success = if(!connected){
+                        ws.reset()
+                        ws.connectBlocking(TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                    } else {
+                        closeAllResources()
+                        connectToServer(2) && reconnect()
+                    }
+                    if(success){
+                        Log.d(TAG, "Connection recovery successful")
+                    } else {
+                        Log.e(TAG, "Connection recovery failed")
+                        onFailure()
+                    }
+                } catch(e: Exception){
+                    Log.e(TAG, "Connection recovery failed",e)
                     onFailure()
+                } finally {
+                    connectionRecoveryLock.unlock()
                 }
             }
         }
