@@ -123,6 +123,7 @@ var GRASS_PLANT_STROKE_WIDTH = 4.5f
 //shared
 var GRASS_WATER_RADIUS = 0f //initialized later
 var GRASS_WATER_ANGLE = 36
+var GRASS_WATER_VISIBILITY_THRESHOLD = 450
 
 // ================== After game questions =============== |
 const val FIRST_QUESTION = "עד כמה חשת תחושת \"ביחד\" עם השותפ/ה במשחקון הזה?"
