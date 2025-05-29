@@ -21,7 +21,6 @@ var SCREEN_CENTER = Offset(0f,0f)
 var TEXT_SIZE = 0.sp
 var COLUMN_PADDING = 0.dp
 var textStyle : TextStyle = TextStyle()
-var rtlTextStyle: TextStyle = TextStyle()
 
 // ===================== Colors ===================== |
 
@@ -142,12 +141,6 @@ fun initProperties(screenWidth: Int){
         fontSize = TEXT_SIZE,
         textAlign = TextAlign.Center,
         textDirection = TextDirection.Ltr
-    )
-    rtlTextStyle = TextStyle(
-        color = Color.White,
-        fontSize = TEXT_SIZE,
-        textAlign = TextAlign.Center,
-        textDirection = TextDirection.Rtl
     )
 
     // Water Ripples

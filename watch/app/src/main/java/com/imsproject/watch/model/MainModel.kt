@@ -28,6 +28,7 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 import kotlin.math.roundToLong
@@ -111,7 +112,11 @@ class MainModel (private val scope : CoroutineScope) {
         }
 
         if (clientsClosed) {
-            val (ws, udp) = getNewClients()
+            val (ws, udp) = try{
+                getNewClients()
+            } catch(_ : UnknownHostException){
+                return false
+            }
             this.ws = ws
             this.udp = udp
             clientsClosed = false

@@ -61,10 +61,10 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
         val state by viewModel.state.collectAsState()
         when(state){
             GameViewModel.State.LOADING -> {
-                LoadingScreen("Loading session...")
+                LoadingScreen("טוען פעילות...")
             }
             GameViewModel.State.TRYING_TO_RECONNECT -> {
-                LoadingScreen("Trying to reconnect...")
+                LoadingScreen("מנסה להתחבר מחדש....")
             }
             GameViewModel.State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "Unknown error"
@@ -113,7 +113,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
                         modifier = Modifier.size((SCREEN_RADIUS *0.4f).dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    BasicText(
+                    RTLText(
                         text = text,
                         style = textStyle
                     )

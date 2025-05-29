@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +25,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
@@ -58,8 +65,8 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                     ,
                     contentAlignment = Alignment.Center,
                 ){
-                    BasicText(
-                        text = "ERROR",
+                    RTLText(
+                        text = "שגיאה",
                         style = textStyle.copy(color = Color.Black),
                     )
                 }
@@ -90,8 +97,8 @@ fun ErrorScreen(error: String, onDismiss: () -> Unit) {
                     ,
                     shape = RectangleShape,
                 ) {
-                    BasicText(
-                        text = "Dismiss",
+                    RTLText(
+                        text = "המשך",
                         style = textStyle.copy(color = Color.Black, letterSpacing = 1.sp),
                     )
                 }
@@ -138,6 +145,18 @@ fun Modifier.verticalColumnScrollbar(
             color = scrollBarColor,
             topLeft = Offset(this.size.width - endPadding, scrollBarStartOffset),
             size = Size(width.toPx(), scrollBarHeight)
+        )
+    }
+}
+
+@Composable
+fun RTLText(text: String, style: TextStyle, modifier: Modifier = Modifier){
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Text(
+            modifier = modifier,
+            text = text,
+            textAlign = TextAlign.Center,
+            style = style.copy(textDirection = TextDirection.Rtl)
         )
     }
 }

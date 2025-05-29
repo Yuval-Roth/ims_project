@@ -31,7 +31,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,9 +44,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -67,7 +72,6 @@ import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.model.REST_SCHEME
 import com.imsproject.watch.model.SERVER_IP
-import com.imsproject.watch.rtlTextStyle
 import com.imsproject.watch.textStyle
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.utils.QRGenerator
@@ -169,7 +173,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            State.CONNECTING -> LoadingScreen("Connecting...")
+            State.CONNECTING -> LoadingScreen("מתחבר...")
 
             State.CONNECTED_NOT_IN_LOBBY -> {
                 val userId = viewModel.playerId.collectAsState().value
@@ -179,7 +183,7 @@ class MainActivity : ComponentActivity() {
             State.CONNECTED_IN_LOBBY -> {
                 val userId = viewModel.playerId.collectAsState().value
                 val lobbyId = viewModel.lobbyId.collectAsState().value
-                val gameType = viewModel.gameType.collectAsState().value?.prettyName() ?: ""
+                val gameType = viewModel.gameType.collectAsState().value?.hebrewName() ?: ""
                 val gameDuration = (viewModel.gameDuration.collectAsState().value ?: "").toString()
                 val ready = viewModel.ready.collectAsState().value
                 val sensorHandler = viewModel.heartRateSensorHandler
@@ -210,13 +214,13 @@ class MainActivity : ComponentActivity() {
 
             State.AFTER_GAME -> BlankScreen()
 
-            State.UPLOADING_EVENTS -> LoadingScreen("Uploading events...")
+            State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
 
             State.AFTER_GAME_QUESTIONS -> AfterGameQuestion(FIRST_QUESTION){
                 viewModel.uploadAnswers(FIRST_QUESTION to it)
             }
 
-            State.UPLOADING_ANSWERS -> LoadingScreen("Uploading answers...")
+            State.UPLOADING_ANSWERS -> LoadingScreen("מעלה תשובות....")
 
             State.EXPERIMENT_QUESTIONS_QR -> {
                 val pid = viewModel.playerId.collectAsState().value
@@ -260,8 +264,8 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ){
-                    BasicText(
-                        text = "The ID you entered is already connected from another location.\n\nDo you want to force the connection?",
+                    RTLText(
+                        text = "המזהה שבחרת כבר מחובר ממקום אחר.\n\nהאם תרצה/י להתחבר בכל זאת?",
                         style = textStyle,
                     )
                     Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.1f).dp))
@@ -328,7 +332,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(0.4f)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    BasicText(
+                    RTLText(
                         text = text,
                         style = textStyle
                     )
@@ -375,8 +379,8 @@ class MainActivity : ComponentActivity() {
                     ,
                     contentAlignment = Alignment.Center,
                 ){
-                    BasicText(
-                        text = "Participant ID",
+                    RTLText(
+                        text = "מזהה משתתף",
                         style = textStyle.copy(color = Color.Black),
                     )
                 }
@@ -406,7 +410,7 @@ class MainActivity : ComponentActivity() {
                         enabled = getId() != "000"
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Refresh,
+                            imageVector = Icons.Default.Close,
                             contentDescription = "reset"
                         )
                     }
@@ -457,13 +461,13 @@ class MainActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ){
-                        BasicText(
-                            text = "Your ID: $id",
+                        RTLText(
+                            text = "המזהה שלי: $id",
                             style = textStyle,
                         )
                         Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.1f).dp))
-                        BasicText(
-                            text = "Waiting to be assigned\nto a lobby ...",
+                        RTLText(
+                            text = "מחכה לצירוף ללובי...",
                             style = textStyle,
                         )
                     }
@@ -475,8 +479,8 @@ class MainActivity : ComponentActivity() {
                             .fillMaxSize(),
                         shape = RectangleShape,
                     ) {
-                        BasicText(
-                            text = "Change ID",
+                        RTLText(
+                            text = "החלף מזהה",
                             style = textStyle.copy(color = Color.Black),
                         )
                     }
@@ -519,8 +523,8 @@ class MainActivity : ComponentActivity() {
                         ,
                         contentAlignment = Alignment.Center,
                     ){
-                        BasicText(
-                            text = "Status: "+if (ready) "ready" else "not ready",
+                        RTLText(
+                            text = "סטטוס: "+if (ready) "מוכן" else "לא מוכן",
                             style = textStyle.copy(color = Color.Black),
                         )
                     }
@@ -538,37 +542,35 @@ class MainActivity : ComponentActivity() {
                     ){
                         val textStyle = TextStyle(
                             color = Color(0xFF707070),
-                            fontSize = TEXT_SIZE,
-                            textAlign = TextAlign.Center,
-                            textDirection = TextDirection.Ltr
+                            fontSize = TEXT_SIZE
                         )
-                        BasicText(
-                            text = "My ID: $userId",
+                        RTLText(
+                            text = "המזהה שלי: $userId",
                             style = textStyle,
                         )
                         Spacer(modifier = Modifier.height(3.dp))
-                        BasicText(
-                            text = "Lobby ID: $lobbyId",
+                        RTLText(
+                            text = "מזהה לובי: $lobbyId",
                             style = textStyle,
                         )
                         Spacer(modifier = Modifier.height(3.dp))
-                        BasicText(
+                        RTLText(
                             text = gameType.ifBlank { "" },
                             style = textStyle,
                         )
                         Spacer(modifier = Modifier.height(3.dp))
-                        BasicText(
-                            text = if(gameDuration.isNotBlank()) "$gameDuration seconds" else "",
+                        RTLText(
+                            text = if(gameDuration.isNotBlank()) "$gameDuration שניות" else "",
                             style = textStyle,
                         )
                         Spacer(modifier = Modifier.fillMaxHeight(0.25f))
                         // Button
                         Button(
                             colors = if(hrSensorReady) ButtonDefaults.primaryButtonColors()
-                                    else ButtonDefaults.buttonColors(
-                                             backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
-                                             contentColor = Color.White
-                                         ),
+                            else ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
+                                contentColor = Color.White
+                            ),
                             onClick = { onReady() },
                             modifier = Modifier
                                 .fillMaxWidth(0.7f)
@@ -576,7 +578,7 @@ class MainActivity : ComponentActivity() {
 
                         ) {
                             BasicText(
-                                text = if(ready) "CANCEL READY" else "I'M READY",
+                                text = if(ready) "השהה התחלה" else "אפשר להתחיל",
                                 style = textStyle.copy(color=Color.Black, letterSpacing = 1.25.sp),
                             )
                         }
@@ -606,10 +608,10 @@ class MainActivity : ComponentActivity() {
                     ,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    BasicText(
+                    RTLText(
                         modifier = Modifier.fillMaxWidth(0.8f),
                         text = question,
-                        style = rtlTextStyle,
+                        style = textStyle,
                     )
                     var sliderValue by remember { mutableFloatStateOf(1f) }
                     Slider(
@@ -635,10 +637,10 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth(0.5f)
                             .fillMaxHeight(0.5f)
                     ){
-                        BasicText(
+                        RTLText(
                             modifier = Modifier.fillMaxWidth(0.8f),
                             text = "המשך",
-                            style = rtlTextStyle,
+                            style = textStyle.copy(color = Color.Black),
                         )
                     }
                 }
@@ -684,8 +686,8 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth(0.6f)
                             .fillMaxHeight(0.6f)
                     ) {
-                        BasicText(
-                            text = "Done",
+                        RTLText(
+                            text = "המשך",
                             style = textStyle.copy(color = Color.Black),
                         )
                     }
@@ -714,19 +716,19 @@ class MainActivity : ComponentActivity() {
                     ,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    BasicText(
-                        text = "Thank you for participating in the experiment!",
+                    RTLText(
+                        text = "תודה על השתתפותך בניסוי !",
                         style = textStyle,
                     )
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.2f).dp))
+                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.275f).dp))
                     Button(
                         onClick = onNext,
                         modifier = Modifier
                             .fillMaxWidth(0.6f)
                             .fillMaxHeight(0.6f)
                     ) {
-                        BasicText(
-                            text = "Done",
+                        RTLText(
+                            text = "המשך",
                             style = textStyle.copy(color = Color.Black),
                         )
                     }
@@ -752,6 +754,34 @@ class MainActivity : ComponentActivity() {
             BasicText(
                 text = items[it],
                 style = TextStyle(color = Color.White, fontSize = 30.sp),
+            )
+        }
+    }
+
+
+    @Preview(device = "id:wearos_large_round")
+    @Composable
+    private fun PreviewConnectedInLobbyScreen() {
+        initProperties(454)
+        MaterialTheme {
+            ConnectedInLobbyScreen(
+                userId = "001",
+                lobbyId = "0001",
+                gameType = "אדוות מים",
+                gameDuration = "60",
+                ready = true,
+                hrSensorReady = true,
+            ) { }
+        }
+    }
+
+    @Preview(device = "id:wearos_large_round")
+    @Composable
+    private fun PreviewConnectedNotInLobbyScreen() {
+        initProperties(454)
+        MaterialTheme {
+            ConnectedNotInLobbyScreen(
+                id = "001",
             )
         }
     }

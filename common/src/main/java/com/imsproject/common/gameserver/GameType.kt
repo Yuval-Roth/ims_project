@@ -17,4 +17,12 @@ enum class GameType {
         FLOUR_MILL -> "Flour Mill"
         FLOWER_GARDEN -> "Flower Garden"
     }
+
+    fun hebrewName() = when(this) {
+        UNDEFINED -> "לא מוגדר"
+        WATER_RIPPLES -> "אדוות מים"
+        WINE_GLASSES -> "כוסות יין"
+        FLOUR_MILL -> "מטחנת קמח"
+        FLOWER_GARDEN -> "גינת פרחים"
+    }
 }
