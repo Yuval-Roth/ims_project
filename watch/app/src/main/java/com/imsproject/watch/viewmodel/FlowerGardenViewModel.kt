@@ -245,7 +245,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
                 if(waterDropletSets.isEmpty()) 0 else waterDropletSets.last().timestamp
             }
 
-        // add new flower if synced click
+        // synced click
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
             _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
@@ -268,6 +268,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
                 delay(100)
                 vibrator.vibrate(clickVibration)
             }
+            addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
         _counter.value++ // used to trigger recomposition
     }

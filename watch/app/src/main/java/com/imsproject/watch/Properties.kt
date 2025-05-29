@@ -12,7 +12,7 @@ import org.w3c.dom.Text
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
