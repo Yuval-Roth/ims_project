@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 private const val TAG = "MainViewModel"
@@ -274,7 +275,11 @@ class MainViewModel() : ViewModel() {
                 if(_expId.value != null) {
                     setState(State.EXPERIMENT_QUESTIONS_QR)
                 } else {
-                    setState(State.CONNECTED_IN_LOBBY)
+                    if(_lobbyId.value == ""){
+                        setState(State.CONNECTED_NOT_IN_LOBBY)
+                    } else {
+                        setState(State.CONNECTED_IN_LOBBY)
+                    }
                 }
             } else {
                 fatalError("Failed to upload answers")
@@ -310,15 +315,19 @@ class MainViewModel() : ViewModel() {
                 _gameDuration.value = null
                 _ready.value = false
 
-                _lobbyId.value = lobbyId
-                if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
-                    setState(State.CONNECTED_IN_LOBBY)
+                withContext(Dispatchers.Main) {
+                    _lobbyId.value = lobbyId
+                    if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
+                        setState(State.CONNECTED_IN_LOBBY)
+                    }
                 }
             }
             GameRequest.Type.LEAVE_LOBBY -> {
-                _lobbyId.value = ""
-                if(_state.value == State.CONNECTED_IN_LOBBY){
-                    setState(State.CONNECTED_NOT_IN_LOBBY)
+                withContext(Dispatchers.Main) {
+                    _lobbyId.value = ""
+                    if(_state.value == State.CONNECTED_IN_LOBBY){
+                        setState(State.CONNECTED_NOT_IN_LOBBY)
+                    }
                 }
             }
             GameRequest.Type.CONFIGURE_LOBBY -> {
