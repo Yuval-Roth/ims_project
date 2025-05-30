@@ -68,6 +68,7 @@ import com.imsproject.watch.FIRST_QUESTION
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.SECOND_QUESTION
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.model.REST_SCHEME
@@ -216,8 +217,13 @@ class MainActivity : ComponentActivity() {
 
             State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
 
-            State.AFTER_GAME_QUESTIONS -> AfterGameQuestion(FIRST_QUESTION){
-                viewModel.uploadAnswers(FIRST_QUESTION to it)
+            State.AFTER_GAME_QUESTIONS -> AfterGameQuestion(
+                listOf(FIRST_QUESTION,SECOND_QUESTION)
+            ){
+                viewModel.uploadAnswers(
+                    FIRST_QUESTION to it[0],
+                    SECOND_QUESTION to it[1]
+                )
             }
 
             State.UPLOADING_ANSWERS -> LoadingScreen("מעלה תשובות....")
@@ -590,7 +596,11 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun AfterGameQuestion(question: String, onNext: (String) -> Unit = {}) {
+    fun AfterGameQuestion(questions: List<String>, onNext: (List<String>) -> Unit) {
+        val answers = remember { mutableListOf<String>() }
+        val questionsIterator = remember { questions.iterator() }
+        var question = remember { questionsIterator.next() }
+
         MaterialTheme {
             Box(
                 modifier = Modifier
@@ -631,7 +641,13 @@ class MainActivity : ComponentActivity() {
                     Spacer(modifier = Modifier.fillMaxHeight(0.1f))
                     Button(
                         onClick = {
-                            onNext(sliderValue.roundToInt().toString())
+                            answers.add(sliderValue.roundToInt().toString())
+                            if(questionsIterator.hasNext()){
+                                sliderValue = 1f
+                                question = questionsIterator.next()
+                            } else {
+                                onNext(answers)
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth(0.5f)

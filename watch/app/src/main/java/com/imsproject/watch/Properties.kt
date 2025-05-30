@@ -125,6 +125,7 @@ var GRASS_WATER_ANGLE = 36
 
 // ================== After game questions =============== |
 const val FIRST_QUESTION = "עד כמה חשת תחושת \"ביחד\" עם השותפ/ה במשחקון הזה?"
+const val SECOND_QUESTION = "עד כמה הצלחתם לפעול ביחד?"
 
 
 // =================== initProperties =================== |
