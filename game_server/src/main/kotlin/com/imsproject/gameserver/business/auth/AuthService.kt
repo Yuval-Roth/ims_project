@@ -16,7 +16,6 @@ class AuthService(
 
     fun authenticateUser(userId: String, password: String): String {
         val cleanUserId = userId.lowercase()
-        log.debug("Authenticating user {}", cleanUserId)
         val answer = authenticate(cleanUserId, password)
         return if(answer){
             Response.getOk(jwtService.generateJwt(cleanUserId))

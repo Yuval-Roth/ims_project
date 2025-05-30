@@ -37,6 +37,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -599,7 +600,7 @@ class MainActivity : ComponentActivity() {
     fun AfterGameQuestion(questions: List<String>, onNext: (List<String>) -> Unit) {
         val answers = remember { mutableListOf<String>() }
         val questionsIterator = remember { questions.iterator() }
-        var question = remember { questionsIterator.next() }
+        var question by remember { mutableStateOf(questionsIterator.next()) }
 
         MaterialTheme {
             Box(

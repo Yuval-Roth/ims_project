@@ -38,9 +38,6 @@ class RestApiController(
     private val participantsDAO: ParticipantsDAO
 ) : ErrorController {
 
-    private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
-    private val scope = CoroutineScope(dispatcher)
-
     @RequestMapping("/login", method = [RequestMethod.POST, RequestMethod.GET])
     fun login(@RequestHeader(value = "Authorization") header : String?): ResponseEntity<String> {
         if(header == null){
@@ -320,6 +317,6 @@ class RestApiController(
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(RestController::class.java)
+        private val log = LoggerFactory.getLogger(RestApiController::class.java)
     }
 }
