@@ -22,9 +22,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -35,6 +37,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
@@ -44,8 +49,11 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -616,29 +624,56 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(scrollState,false)
-                        .padding(
-                            top = COLUMN_PADDING * 2f,
-                            start = 20.dp,
-                            end = 20.dp
-                        )
                         .pointerInput(Unit){
                             detectVerticalDragGestures { inputChange, value ->
                                 inputChange.consume()
                                 val direction = if(value > 0) -1 else 1
                                 scope.launch {
-                                    scrollState.animateScrollTo((scrollState.value + (SCREEN_RADIUS * 1.4f) * direction).toInt())
+                                    scrollState.animateScrollTo((scrollState.value + (SCREEN_RADIUS * 2f) * direction).toInt())
                                 }
                             }
                         }
-                    ,
-                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
-                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
-                    ScrollHintArrow(showHint)
-                    SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
-                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
-                    ScrollHintArrow(true)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height((SCREEN_RADIUS).dp)
+                    ){
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    top = COLUMN_PADDING * 2f,
+                                    start = 20.dp,
+                                    end = 20.dp
+                                )
+                            , horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
+                            Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                            ScrollHintArrow(showHint)
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .height((SCREEN_RADIUS).dp)
+                    ){
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    top = COLUMN_PADDING * 2.5f,
+                                    start = 20.dp,
+                                    end = 20.dp
+                                )
+                            , horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
+                            Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                            ScrollHintArrow(true)
+                        }
+                    }
                 }
             }
         }
