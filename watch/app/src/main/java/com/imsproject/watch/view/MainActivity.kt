@@ -40,6 +40,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
@@ -126,7 +128,7 @@ class MainActivity : ComponentActivity() {
         setupUncaughtExceptionHandler()
         viewModel.onCreate(applicationContext)
         setContent {
-            AfterGameQuestions()
+            AfterGameQuestions("30")
 //            Main()
         }
     }
@@ -243,7 +245,7 @@ class MainActivity : ComponentActivity() {
 
             State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
 
-            State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()
+            State.AFTER_GAME_QUESTIONS -> AfterGameQuestions("30") // TODO: get this dynamically
 
             State.UPLOADING_ANSWERS -> LoadingScreen("מעלה תשובות....")
 
@@ -605,73 +607,72 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AfterGameQuestions() {
-        val scope = rememberCoroutineScope()
-        val scrollState = rememberScrollState()
+    fun AfterGameQuestions(expId: String?) {
         var firstSliderValue by remember { mutableFloatStateOf(1f) }
         var secondSliderValue by remember { mutableFloatStateOf(1f) }
-        var showHint = ! scrollState.canScrollBackward
+        val experimentEnded = remember { expId != null }
+        val pagerState = rememberPagerState(pageCount = {
+            if(experimentEnded) 3 else 2
+        })
 
         MaterialTheme {
-            Scaffold(
+            Box(
                 modifier = Modifier
-                    .background(color = DARK_BACKGROUND_COLOR),
-                positionIndicator = {
-                    PositionIndicator(scrollState = scrollState)
-                }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState,false)
-                        .pointerInput(Unit){
-                            detectVerticalDragGestures { inputChange, value ->
-                                inputChange.consume()
-                                val direction = if(value > 0) -1 else 1
-                                scope.launch {
-                                    scrollState.animateScrollTo((scrollState.value + (SCREEN_RADIUS * 2f) * direction).toInt())
+                    .background(color = DARK_BACKGROUND_COLOR)
+                    .fillMaxSize()
+            ){
+                VerticalPager(pagerState){ page ->
+                    when(page) {
+                        0 -> {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height((SCREEN_RADIUS).dp)
+                            ){
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            top = COLUMN_PADDING * 2f,
+                                            start = 20.dp,
+                                            end = 20.dp
+                                        )
+                                    , horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                                    ScrollHintArrow(! pagerState.isScrollInProgress)
                                 }
                             }
                         }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height((SCREEN_RADIUS).dp)
-                    ){
-                        Column(
-                            modifier = Modifier
+                        1 -> {
+                            Box(modifier = Modifier
                                 .fillMaxSize()
-                                .padding(
-                                    top = COLUMN_PADDING * 2f,
-                                    start = 20.dp,
-                                    end = 20.dp
-                                )
-                            , horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
-                            Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
-                            ScrollHintArrow(showHint)
+                                .height((SCREEN_RADIUS).dp)){
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            top = COLUMN_PADDING / 4f,
+                                            start = 20.dp,
+                                            end = 20.dp
+                                        )
+                                    , horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    ScrollHintArrow(!pagerState.isScrollInProgress, backwards = true)
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                                    SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                                    if(experimentEnded){
+                                        ScrollHintArrow(!pagerState.isScrollInProgress)
+                                    }
+                                }
+                            }
                         }
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .height((SCREEN_RADIUS).dp)
-                    ){
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    top = COLUMN_PADDING * 2.5f,
-                                    start = 20.dp,
-                                    end = 20.dp
-                                )
-                            , horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
-                            Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
-                            ScrollHintArrow(true)
+                        2 -> {
+                            if(pagerState.currentPage == 2 && !pagerState.isScrollInProgress){
+                                println("done")
+                            }
                         }
                     }
                 }
@@ -741,10 +742,10 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun ScrollHintArrow(show: Boolean) {
+    fun ScrollHintArrow(show: Boolean = true,backwards: Boolean = false) {
         val offsetY by rememberInfiniteTransition(label = "ArrowBounce").animateFloat(
-            initialValue = -8f,
-            targetValue = 8f,
+            initialValue = if(backwards) -4f else 4f,
+            targetValue = if(backwards) 4f else -4f,
             animationSpec = infiniteRepeatable(
                 animation = tween(700),
                 repeatMode = RepeatMode.Reverse
@@ -755,7 +756,7 @@ class MainActivity : ComponentActivity() {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height((SCREEN_RADIUS*0.2f).dp),
+                .height((SCREEN_RADIUS * 0.2f).dp),
             contentAlignment = Alignment.TopCenter
         ){
             AnimatedVisibility(
@@ -765,10 +766,10 @@ class MainActivity : ComponentActivity() {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
+                        imageVector = if(backwards) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = "Scroll",
                         modifier = Modifier
-                            .size((SCREEN_RADIUS*0.15f).dp)
+                            .size((SCREEN_RADIUS * 0.15f).dp)
                             .offset(y = offsetY.dp),
                         tint = Color.White
                     )
