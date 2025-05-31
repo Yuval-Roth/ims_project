@@ -28,12 +28,10 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -45,12 +43,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -221,7 +216,7 @@ class MainActivity : ComponentActivity() {
 
             State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
 
-            State.AFTER_GAME_QUESTIONS -> AfterGameQuestion(
+            State.AFTER_GAME_QUESTIONS -> SliderQuestion(
                 listOf(FIRST_QUESTION,SECOND_QUESTION)
             ){
                 viewModel.uploadAnswers(
@@ -235,7 +230,7 @@ class MainActivity : ComponentActivity() {
             State.EXPERIMENT_QUESTIONS_QR -> {
                 val pid = viewModel.playerId.collectAsState().value
                 val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("Experiment ID is not set")
-                AfterExperimentQRCode(pid, expId) {
+                ExperimentQuestionsQRCode(pid, expId) {
                     viewModel.setState(State.THANKS_FOR_PARTICIPATING)
                 }
             }
@@ -600,161 +595,47 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun AfterGameQuestion(questions: List<String>, onNext: (List<String>) -> Unit) {
-        val answers = remember { mutableListOf<String>() }
-        val questionsIterator = remember { questions.iterator() }
-        var question by remember { mutableStateOf(questionsIterator.next()) }
-
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            top = 30.dp,
-                            start = 20.dp,
-                            end = 20.dp
-                        )
-                    ,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    RTLText(
-                        modifier = Modifier.fillMaxWidth(0.8f),
-                        text = question,
-                        style = textStyle,
-                    )
-                    var sliderValue by remember { mutableFloatStateOf(1f) }
-                    Slider(
-                        value = sliderValue,
-                        onValueChange = { sliderValue = it },
-                        valueRange = 1f..7f,
-                        steps = 5,
-                    )
-                    BasicText(
-                        modifier = Modifier.fillMaxWidth(0.2f),
-                        text = "${sliderValue.roundToInt()}",
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = TEXT_SIZE*1.5,
-                            textAlign = TextAlign.Center),
-                    )
-                    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-                    Button(
-                        onClick = {
-                            answers.add(sliderValue.roundToInt().toString())
-                            if(questionsIterator.hasNext()){
-                                sliderValue = 1f
-                                question = questionsIterator.next()
-                            } else {
-                                onNext(answers)
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .fillMaxHeight(0.5f)
-                    ){
-                        RTLText(
-                            modifier = Modifier.fillMaxWidth(0.8f),
-                            text = "המשך",
-                            style = textStyle.copy(color = Color.Black),
-                        )
-                    }
-                }
-            }
-        }
+    fun SliderQuestion(question: String, sliderValue: MutableFloatState) {
+        RTLText(
+            modifier = Modifier.fillMaxWidth(0.8f),
+            text = question,
+            style = textStyle,
+        )
+        Slider(
+            value = sliderValue.floatValue,
+            onValueChange = { sliderValue.floatValue = it },
+            valueRange = 1f..7f,
+            steps = 5,
+        )
+        BasicText(
+            modifier = Modifier.fillMaxWidth(0.2f),
+            text = "${sliderValue.floatValue.roundToInt()}",
+            style = TextStyle(
+                color = Color.White,
+                fontSize = TEXT_SIZE*1.5,
+                textAlign = TextAlign.Center),
+        )
     }
 
     @Composable
-    fun AfterExperimentQRCode(pid:String,expId:String, onNext: () -> Unit) {
+    fun ExperimentQuestionsQRCode(
+        pid:String,
+        expId:String,
+        modifier :Modifier = Modifier
+    ) {
         val key = "$pid-$expId"
         val link = remember(key) { "${REST_SCHEME}://${SERVER_IP}/experiment_questions?pid=${pid}&expid=${expId}" }
         val qrBitmap = remember(key) { QRGenerator.generate(link) }
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(
-                            top = COLUMN_PADDING,
-                            start = COLUMN_PADDING,
-                            end = COLUMN_PADDING
-                        )
-                        .fillMaxSize()
-                    ,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .fillMaxHeight(0.69f)
-                        ,
-                        bitmap = qrBitmap,
-                        contentDescription = "QR Code",
-                    )
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.03f).dp))
-                    Button(
-                        onClick = onNext,
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .fillMaxHeight(0.6f)
-                    ) {
-                        RTLText(
-                            text = "המשך",
-                            style = textStyle.copy(color = Color.Black),
-                        )
-                    }
-                }
-            }
-        }
+        Image(
+            modifier = modifier,
+            bitmap = qrBitmap,
+            contentDescription = "QR Code"
+        )
     }
 
     @Composable
-    fun ThanksForParticipating(onNext: () -> Unit) {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(
-                            top = COLUMN_PADDING * 3,
-                            start = COLUMN_PADDING,
-                            end = COLUMN_PADDING
-                        )
-                        .fillMaxSize()
-                    ,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    RTLText(
-                        text = "תודה על השתתפותך בניסוי !",
-                        style = textStyle,
-                    )
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.275f).dp))
-                    Button(
-                        onClick = onNext,
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .fillMaxHeight(0.6f)
-                    ) {
-                        RTLText(
-                            text = "המשך",
-                            style = textStyle.copy(color = Color.Black),
-                        )
-                    }
-                }
-            }
-        }
+    fun Modal(){
+        
     }
 
     @Composable
