@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -621,14 +622,12 @@ class MainActivity : ComponentActivity() {
                     .background(color = DARK_BACKGROUND_COLOR)
                     .fillMaxSize()
             ){
-                VerticalPager(pagerState){ page ->
+                VerticalPager(
+                    state = pagerState,
+                ){ page ->
                     when(page) {
                         0 -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height((SCREEN_RADIUS).dp)
-                            ){
+                            Box(modifier = Modifier.fillMaxWidth()){
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -646,9 +645,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         1 -> {
-                            Box(modifier = Modifier
-                                .fillMaxSize()
-                                .height((SCREEN_RADIUS).dp)){
+                            Box(modifier = Modifier.fillMaxSize()){
                                 Column(
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -669,11 +666,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        2 -> {
-                            if(pagerState.currentPage == 2 && !pagerState.isScrollInProgress){
-                                println("done")
-                            }
-                        }
+                        2 -> viewModel.setState()
                     }
                 }
             }
@@ -769,7 +762,7 @@ class MainActivity : ComponentActivity() {
                         imageVector = if(backwards) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = "Scroll",
                         modifier = Modifier
-                            .size((SCREEN_RADIUS * 0.15f).dp)
+                            .requiredSize((SCREEN_RADIUS * 0.15f).dp)
                             .offset(y = offsetY.dp),
                         tint = Color.White
                     )

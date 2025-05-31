@@ -59,7 +59,7 @@ class MainViewModel() : ViewModel() {
         UPLOADING_EVENTS,
         AFTER_GAME_QUESTIONS,
         UPLOADING_ANSWERS,
-        THANKS_FOR_PARTICIPATING,
+        AFTER_EXPERIMENT,
 
         // error states
         ALREADY_CONNECTED,
