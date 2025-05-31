@@ -216,6 +216,7 @@ class MainViewModel() : ViewModel() {
     }
 
     fun afterExperiment() {
+        _expId.value = null
         if(_lobbyId.value == ""){
             setState(State.CONNECTED_NOT_IN_LOBBY)
         } else {
