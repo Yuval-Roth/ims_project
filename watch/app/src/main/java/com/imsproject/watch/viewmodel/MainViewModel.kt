@@ -59,7 +59,6 @@ class MainViewModel() : ViewModel() {
         UPLOADING_EVENTS,
         AFTER_GAME_QUESTIONS,
         UPLOADING_ANSWERS,
-        EXPERIMENT_QUESTIONS_QR,
         THANKS_FOR_PARTICIPATING,
 
         // error states
@@ -273,14 +272,10 @@ class MainViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if(model.uploadAfterGameQuestions(sessionId, *QnAs)){
                 sessionId = -1
-                if(_expId.value != null) {
-                    setState(State.EXPERIMENT_QUESTIONS_QR)
+                if(_lobbyId.value == ""){
+                    setState(State.CONNECTED_NOT_IN_LOBBY)
                 } else {
-                    if(_lobbyId.value == ""){
-                        setState(State.CONNECTED_NOT_IN_LOBBY)
-                    } else {
-                        setState(State.CONNECTED_IN_LOBBY)
-                    }
+                    setState(State.CONNECTED_IN_LOBBY)
                 }
             } else {
                 fatalError("Failed to upload answers")

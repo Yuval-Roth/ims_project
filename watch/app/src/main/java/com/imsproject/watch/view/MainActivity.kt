@@ -216,28 +216,12 @@ class MainActivity : ComponentActivity() {
 
             State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
 
-            State.AFTER_GAME_QUESTIONS -> SliderQuestion(
-                listOf(FIRST_QUESTION,SECOND_QUESTION)
-            ){
-                viewModel.uploadAnswers(
-                    FIRST_QUESTION to it[0],
-                    SECOND_QUESTION to it[1]
-                )
-            }
+            State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()
 
             State.UPLOADING_ANSWERS -> LoadingScreen("מעלה תשובות....")
 
-            State.EXPERIMENT_QUESTIONS_QR -> {
-                val pid = viewModel.playerId.collectAsState().value
-                val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("Experiment ID is not set")
-                ExperimentQuestionsQRCode(pid, expId) {
-                    viewModel.setState(State.THANKS_FOR_PARTICIPATING)
-                }
-            }
-
-            State.THANKS_FOR_PARTICIPATING -> ThanksForParticipating {
-                viewModel.afterExperiment()
-            }
+            //TODO: handle this
+            State.THANKS_FOR_PARTICIPATING -> BlankScreen()
 
             State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
@@ -593,6 +577,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    fun AfterGameQuestions() {
+        TODO("Not yet implemented")
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SliderQuestion(question: String, sliderValue: MutableFloatState) {
@@ -631,11 +620,6 @@ class MainActivity : ComponentActivity() {
             bitmap = qrBitmap,
             contentDescription = "QR Code"
         )
-    }
-
-    @Composable
-    fun Modal(){
-        
     }
 
     @Composable
