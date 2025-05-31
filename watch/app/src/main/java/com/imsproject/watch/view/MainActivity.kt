@@ -9,6 +9,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,18 +30,22 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -56,6 +70,8 @@ import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Picker
 import androidx.wear.compose.material.PickerState
+import androidx.wear.compose.material.PositionIndicator
+import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.rememberPickerState
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.COLUMN_PADDING
@@ -100,7 +116,8 @@ class MainActivity : ComponentActivity() {
         setupUncaughtExceptionHandler()
         viewModel.onCreate(applicationContext)
         setContent {
-            Main()
+            AfterGameQuestions()
+//            Main()
         }
     }
 
@@ -579,26 +596,60 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun AfterGameQuestions() {
-        TODO("Not yet implemented")
+        val scrollState = rememberScrollState()
+        var firstSliderValue by remember { mutableFloatStateOf(1f) }
+        var secondSliderValue by remember { mutableFloatStateOf(1f) }
+        var showHint = ! scrollState.canScrollBackward
+
+        MaterialTheme {
+            Scaffold(
+                modifier = Modifier
+                    .background(color = DARK_BACKGROUND_COLOR),
+                positionIndicator = {
+                    PositionIndicator(scrollState = scrollState)
+                }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(
+                            top = COLUMN_PADDING * 2f,
+                            start = 20.dp,
+                            end = 20.dp
+                        )
+                    ,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
+                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                    ScrollHintArrow(showHint)
+                    SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
+                    Spacer(Modifier.height((SCREEN_RADIUS * 0.3f).dp))
+                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                    ScrollHintArrow(true)
+                }
+            }
+        }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun SliderQuestion(question: String, sliderValue: MutableFloatState) {
+    fun SliderQuestion(question: String, sliderValue: Float, onValueChanged: (Float) -> Unit) {
         RTLText(
-            modifier = Modifier.fillMaxWidth(0.8f),
+            modifier = Modifier.fillMaxWidth(),
             text = question,
             style = textStyle,
         )
         Slider(
-            value = sliderValue.floatValue,
-            onValueChange = { sliderValue.floatValue = it },
+            value = sliderValue,
+            onValueChange = onValueChanged,
             valueRange = 1f..7f,
             steps = 5,
         )
         BasicText(
             modifier = Modifier.fillMaxWidth(0.2f),
-            text = "${sliderValue.floatValue.roundToInt()}",
+            text = "${sliderValue.roundToInt()}",
             style = TextStyle(
                 color = Color.White,
                 fontSize = TEXT_SIZE*1.5,
@@ -640,6 +691,43 @@ class MainActivity : ComponentActivity() {
                 text = items[it],
                 style = TextStyle(color = Color.White, fontSize = 30.sp),
             )
+        }
+    }
+
+    @Composable
+    fun ScrollHintArrow(show: Boolean) {
+        val offsetY by rememberInfiniteTransition(label = "ArrowBounce").animateFloat(
+            initialValue = -8f,
+            targetValue = 8f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(700),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "OffsetAnimation"
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height((SCREEN_RADIUS*0.2f).dp),
+            contentAlignment = Alignment.TopCenter
+        ){
+            AnimatedVisibility(
+                visible = show,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Scroll",
+                        modifier = Modifier
+                            .size((SCREEN_RADIUS*0.15f).dp)
+                            .offset(y = offsetY.dp),
+                        tint = Color.White
+                    )
+                }
+            }
         }
     }
 
