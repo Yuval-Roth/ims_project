@@ -21,6 +21,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -596,6 +598,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun AfterGameQuestions() {
+        val scope = rememberCoroutineScope()
         val scrollState = rememberScrollState()
         var firstSliderValue by remember { mutableFloatStateOf(1f) }
         var secondSliderValue by remember { mutableFloatStateOf(1f) }
@@ -612,12 +615,21 @@ class MainActivity : ComponentActivity() {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(scrollState)
+                        .verticalScroll(scrollState,false)
                         .padding(
                             top = COLUMN_PADDING * 2f,
                             start = 20.dp,
                             end = 20.dp
                         )
+                        .pointerInput(Unit){
+                            detectVerticalDragGestures { inputChange, value ->
+                                inputChange.consume()
+                                val direction = if(value > 0) -1 else 1
+                                scope.launch {
+                                    scrollState.animateScrollTo((scrollState.value + (SCREEN_RADIUS * 1.4f) * direction).toInt())
+                                }
+                            }
+                        }
                     ,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -625,7 +637,6 @@ class MainActivity : ComponentActivity() {
                     Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
                     ScrollHintArrow(showHint)
                     SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
-                    Spacer(Modifier.height((SCREEN_RADIUS * 0.3f).dp))
                     Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
                     ScrollHintArrow(true)
                 }
