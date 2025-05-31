@@ -82,7 +82,11 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent, context)
 
-        clickVibration = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+        clickVibration = VibrationEffect.createWaveform(
+            longArrayOf(0, 20,10,10,10),
+            intArrayOf(0, 200,120,100,80),
+            -1
+        )
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         waterDropSoundId = soundPool.load(context, R.raw.water_drop, 1)
 

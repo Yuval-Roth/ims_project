@@ -58,19 +58,36 @@ val LIGHT_ORANGE_COLOR = Color(0xFFD9A978)
 val DARK_ORANGE_COLOR = Color(0xFFC0674F)
 
 // ================= Water Ripples ================== |
-var WATER_RIPPLES_SYNC_TIME_THRESHOLD = 50
+
+var WATER_RIPPLES_SYNC_TIME_THRESHOLD = 100
 const val WATER_RIPPLES_ANIMATION_DURATION = 2000
 var WATER_RIPPLES_BUTTON_SIZE = 0
 var RIPPLE_MAX_SIZE = 0
 
 // ================= Wine Glasses =================== |
 
+var WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = 0.1f
+
+// tracks
+const val LOW_BUILD_IN_TRACK = 0
+const val LOW_LOOP_TRACK = 1
+const val LOW_BUILD_OUT_TRACK = 2
+const val HIGH_LOOP_TRACK = 4
+
+// ================= Flour Mill ===================== |
+
+var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.1f
+
+// tracks
+const val MILL_SOUND_TRACK = 0
+
+// =================== Arc Related =================== |
+
 // general
 const val MARKER_FADE_DURATION = 500
 const val ARC_DEFAULT_ALPHA = 0.8f
 const val MAX_ANGLE_SKEW = 60f
 const val MIN_ANGLE_SKEW = 15f
-var WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = 0.1f
 var OUTER_TOUCH_POINT = 0f
 var INNER_TOUCH_POINT = 0f
 
@@ -87,19 +104,6 @@ const val OPPONENT_SWEEP_ANGLE = 45f
 var OPPONENT_RADIUS_OUTER_EDGE = 0f
 var OPPONENT_ARC_TOP_LEFT = Offset(0f,0f)
 var OPPONENT_ARC_SIZE = Size(0f,0f)
-
-// tracks
-const val LOW_BUILD_IN_TRACK = 0
-const val LOW_LOOP_TRACK = 1
-const val LOW_BUILD_OUT_TRACK = 2
-const val HIGH_LOOP_TRACK = 4
-
-// ================= Flour Mill ===================== |
-
-var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.1f
-
-// tracks
-const val MILL_SOUND_TRACK = 0
 
 // =================== General ====================== |
 
@@ -124,6 +128,7 @@ var GRASS_WATER_RADIUS = 0f //initialized later
 var GRASS_WATER_ANGLE = 36
 
 // ================== After game questions =============== |
+
 const val FIRST_QUESTION = "עד כמה חשת תחושת \"ביחד\" עם השותפ/ה במשחקון הזה?"
 const val SECOND_QUESTION = "עד כמה הצלחתם לפעול ביחד?"
 
