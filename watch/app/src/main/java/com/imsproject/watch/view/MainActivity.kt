@@ -2,6 +2,7 @@ package com.imsproject.watch.view
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Paint
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.view.WindowManager
@@ -9,6 +10,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,24 +29,28 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.asFloatState
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -45,12 +58,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -134,7 +144,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun afterGame(result: Result) {
-        viewModel.setState(State.AFTER_GAME)
+        viewModel.setState(State.UPLOADING_EVENTS)
         setupUncaughtExceptionHandler()
         viewModel.afterGame(result)
     }
@@ -217,31 +227,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            State.AFTER_GAME -> BlankScreen()
-
             State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
 
-            State.AFTER_GAME_QUESTIONS -> AfterGameQuestion(
-                listOf(FIRST_QUESTION,SECOND_QUESTION)
-            ){
-                viewModel.uploadAnswers(
-                    FIRST_QUESTION to it[0],
-                    SECOND_QUESTION to it[1]
-                )
-            }
+            State.AFTER_GAME -> AfterGame()
 
             State.UPLOADING_ANSWERS -> LoadingScreen("מעלה תשובות....")
 
-            State.EXPERIMENT_QUESTIONS_QR -> {
-                val pid = viewModel.playerId.collectAsState().value
-                val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("Experiment ID is not set")
-                AfterExperimentQRCode(pid, expId) {
-                    viewModel.setState(State.THANKS_FOR_PARTICIPATING)
-                }
-            }
-
-            State.THANKS_FOR_PARTICIPATING -> ThanksForParticipating {
-                viewModel.afterExperiment()
+            State.AFTER_EXPERIMENT -> {
+                val userId = viewModel.playerId.collectAsState().value
+                val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("expId is null")
+                AfterExperiment(expId,userId)
             }
 
             State.ERROR -> {
@@ -567,11 +562,13 @@ class MainActivity : ComponentActivity() {
                         RTLText(
                             text = gameType.ifBlank { "" },
                             style = textStyle,
+                            Modifier.height((SCREEN_RADIUS * 0.07f).dp)
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         RTLText(
                             text = if(gameDuration.isNotBlank()) "$gameDuration שניות" else "",
                             style = textStyle,
+                            Modifier.height((SCREEN_RADIUS * 0.07f).dp)
                         )
                         Spacer(modifier = Modifier.fillMaxHeight(0.25f))
                         // Button
@@ -598,70 +595,70 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun AfterGameQuestion(questions: List<String>, onNext: (List<String>) -> Unit) {
-        val answers = remember { mutableListOf<String>() }
-        val questionsIterator = remember { questions.iterator() }
-        var question by remember { mutableStateOf(questionsIterator.next()) }
+    fun AfterGame() {
+        var firstSliderValue by remember { mutableFloatStateOf(1f) }
+        var secondSliderValue by remember { mutableFloatStateOf(1f) }
+        val pagerState = rememberPagerState(pageCount = {3})
 
         MaterialTheme {
             Box(
                 modifier = Modifier
+                    .background(color = DARK_BACKGROUND_COLOR)
                     .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            top = 30.dp,
-                            start = 20.dp,
-                            end = 20.dp
-                        )
-                    ,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    RTLText(
-                        modifier = Modifier.fillMaxWidth(0.8f),
-                        text = question,
-                        style = textStyle,
-                    )
-                    var sliderValue by remember { mutableFloatStateOf(1f) }
-                    Slider(
-                        value = sliderValue,
-                        onValueChange = { sliderValue = it },
-                        valueRange = 1f..7f,
-                        steps = 5,
-                    )
-                    BasicText(
-                        modifier = Modifier.fillMaxWidth(0.2f),
-                        text = "${sliderValue.roundToInt()}",
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = TEXT_SIZE*1.5,
-                            textAlign = TextAlign.Center),
-                    )
-                    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-                    Button(
-                        onClick = {
-                            answers.add(sliderValue.roundToInt().toString())
-                            if(questionsIterator.hasNext()){
-                                sliderValue = 1f
-                                question = questionsIterator.next()
-                            } else {
-                                onNext(answers)
+            ){
+                VerticalPager(
+                    state = pagerState,
+                ){ page ->
+                    when(page) {
+                        0 -> {
+                            Box(modifier = Modifier.fillMaxWidth()){
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            top = COLUMN_PADDING * 2f,
+                                            start = 20.dp,
+                                            end = 20.dp
+                                        )
+                                    , horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                                    ScrollHintArrow(! pagerState.isScrollInProgress)
+                                }
                             }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .fillMaxHeight(0.5f)
-                    ){
-                        RTLText(
-                            modifier = Modifier.fillMaxWidth(0.8f),
-                            text = "המשך",
-                            style = textStyle.copy(color = Color.Black),
-                        )
+                        }
+                        1 -> {
+                            Box(modifier = Modifier.fillMaxSize()){
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            top = COLUMN_PADDING / 4f,
+                                            start = 20.dp,
+                                            end = 20.dp
+                                        )
+                                    , horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    ScrollHintArrow(!pagerState.isScrollInProgress, backwards = true)
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                                    SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
+                                    ScrollHintArrow(!pagerState.isScrollInProgress)
+                                }
+                            }
+                        }
+                        2 -> {
+                            val pageOffset = remember { derivedStateOf { pagerState.currentPageOffsetFraction } }
+                            if(pagerState.currentPage == 2 && pageOffset.value > -0.05f){
+                                viewModel.uploadAnswers(
+                                    FIRST_QUESTION to firstSliderValue.toString(),
+                                    SECOND_QUESTION to secondSliderValue.toString()
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -669,92 +666,120 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AfterExperimentQRCode(pid:String,expId:String, onNext: () -> Unit) {
+    fun AfterExperiment(expId: String, userId: String) {
+        val pagerState = rememberPagerState(pageCount = {4})
+
+        MaterialTheme {
+            Box(
+                modifier = Modifier
+                    .background(color = DARK_BACKGROUND_COLOR)
+                    .fillMaxSize()
+            ){
+                VerticalPager(
+                    state = pagerState,
+                ){ page ->
+                    when(page) {
+                        0 -> {
+                            Box(modifier = Modifier.fillMaxWidth()){
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            top = COLUMN_PADDING * 2f,
+                                            start = 20.dp,
+                                            end = 20.dp
+                                        )
+                                    , horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.15f).dp))
+                                    RTLText(
+                                        text = "נשמח שתענה/י על סקר קצר ע\"י סריקת הברקוד בדף הבא",
+                                        style = textStyle
+                                    )
+                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.25f).dp))
+                                    ScrollHintArrow(! pagerState.isScrollInProgress)
+                                }
+                            }
+                        }
+                        1 -> {
+                            Box(modifier = Modifier.fillMaxSize()){
+                                Column(
+                                    modifier = Modifier.fillMaxSize()
+                                    , horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    ScrollHintArrow(!pagerState.isScrollInProgress, backwards = true)
+                                    ExperimentQuestionsQRCode(expId,userId,Modifier.size((SCREEN_RADIUS*0.7f).dp))
+                                    ScrollHintArrow(!pagerState.isScrollInProgress)
+                                }
+                            }
+                        }
+                        2 -> {
+                            Box(modifier = Modifier.fillMaxSize()){
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    ScrollHintArrow(!pagerState.isScrollInProgress, backwards = true)
+                                    RTLText(
+                                        text = "תודה על השתתפותך בניסוי ! \n החלק למטה כדי להמשיך.",
+                                        style = textStyle
+                                    )
+                                    ScrollHintArrow(!pagerState.isScrollInProgress)
+                                }
+                            }
+                        }
+                        3 -> {
+                            val pageOffset = remember { derivedStateOf { pagerState.currentPageOffsetFraction } }
+                            if(pagerState.currentPage == 3 && pageOffset.value > -0.05f){
+                                viewModel.endExperiment()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun SliderQuestion(question: String, sliderValue: Float, onValueChanged: (Float) -> Unit) {
+        RTLText(
+            modifier = Modifier.fillMaxWidth(),
+            text = question,
+            style = textStyle,
+        )
+        Slider(
+            value = sliderValue,
+            onValueChange = onValueChanged,
+            valueRange = 1f..7f,
+            steps = 5,
+        )
+        BasicText(
+            modifier = Modifier.fillMaxWidth(0.2f),
+            text = "${sliderValue.roundToInt()}",
+            style = TextStyle(
+                color = Color.White,
+                fontSize = TEXT_SIZE*1.5,
+                textAlign = TextAlign.Center),
+        )
+    }
+
+    @Composable
+    fun ExperimentQuestionsQRCode(
+        pid:String,
+        expId:String,
+        modifier :Modifier = Modifier
+    ) {
         val key = "$pid-$expId"
         val link = remember(key) { "${REST_SCHEME}://${SERVER_IP}/experiment_questions?pid=${pid}&expid=${expId}" }
         val qrBitmap = remember(key) { QRGenerator.generate(link) }
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(
-                            top = COLUMN_PADDING,
-                            start = COLUMN_PADDING,
-                            end = COLUMN_PADDING
-                        )
-                        .fillMaxSize()
-                    ,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .fillMaxHeight(0.69f)
-                        ,
-                        bitmap = qrBitmap,
-                        contentDescription = "QR Code",
-                    )
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.03f).dp))
-                    Button(
-                        onClick = onNext,
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .fillMaxHeight(0.6f)
-                    ) {
-                        RTLText(
-                            text = "המשך",
-                            style = textStyle.copy(color = Color.Black),
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun ThanksForParticipating(onNext: () -> Unit) {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(
-                            top = COLUMN_PADDING * 3,
-                            start = COLUMN_PADDING,
-                            end = COLUMN_PADDING
-                        )
-                        .fillMaxSize()
-                    ,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    RTLText(
-                        text = "תודה על השתתפותך בניסוי !",
-                        style = textStyle,
-                    )
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.275f).dp))
-                    Button(
-                        onClick = onNext,
-                        modifier = Modifier
-                            .fillMaxWidth(0.6f)
-                            .fillMaxHeight(0.6f)
-                    ) {
-                        RTLText(
-                            text = "המשך",
-                            style = textStyle.copy(color = Color.Black),
-                        )
-                    }
-                }
-            }
-        }
+        Image(
+            modifier = modifier,
+            bitmap = qrBitmap,
+            contentDescription = "QR Code"
+        )
     }
 
     @Composable
@@ -775,6 +800,43 @@ class MainActivity : ComponentActivity() {
                 text = items[it],
                 style = TextStyle(color = Color.White, fontSize = 30.sp),
             )
+        }
+    }
+
+    @Composable
+    fun ScrollHintArrow(show: Boolean = true,backwards: Boolean = false) {
+        val offsetY by rememberInfiniteTransition(label = "ArrowBounce").animateFloat(
+            initialValue = if(backwards) -4f else 4f,
+            targetValue = if(backwards) 4f else -4f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(700),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "OffsetAnimation"
+        )
+
+        Box(
+            modifier = Modifier
+                .requiredSize((SCREEN_RADIUS * 0.15f).dp)
+            ,
+            contentAlignment = Alignment.TopCenter
+        ){
+            AnimatedVisibility(
+                visible = show,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = if(backwards) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Scroll",
+                        modifier = Modifier
+                            .requiredSize((SCREEN_RADIUS * 0.15f).dp)
+                            .offset(y = offsetY.dp),
+                        tint = Color.White
+                    )
+                }
+            }
         }
     }
 

@@ -55,12 +55,10 @@ class MainViewModel() : ViewModel() {
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
         IN_GAME,
-        AFTER_GAME,
         UPLOADING_EVENTS,
-        AFTER_GAME_QUESTIONS,
+        AFTER_GAME,
         UPLOADING_ANSWERS,
-        EXPERIMENT_QUESTIONS_QR,
-        THANKS_FOR_PARTICIPATING,
+        AFTER_EXPERIMENT,
 
         // error states
         ALREADY_CONNECTED,
@@ -190,14 +188,12 @@ class MainViewModel() : ViewModel() {
             _timeServerStartTime.value = -1
             _gameType.value = null
             _gameDuration.value = null
+            _expId.value = result.expId
             when (result.code) {
-                Result.Code.OK, Result.Code.OK_EXPERIMENT_ENDED -> {
+                Result.Code.OK -> {
                     setState(State.UPLOADING_EVENTS)
                     if (model.uploadSessionEvents(sessionId)) {
-                        if(result.code == Result.Code.OK_EXPERIMENT_ENDED) {
-                            _expId.value = result.expId ?: throw IllegalStateException("Experiment ID is required for OK_EXPERIMENT_ENDED result")
-                        }
-                        setState(State.AFTER_GAME_QUESTIONS)
+                        setState(State.AFTER_GAME)
                     } else {
                         fatalError("Failed to upload session events")
                     }
@@ -215,13 +211,14 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    fun afterExperiment() {
+    fun endExperiment() {
         _expId.value = null
-        if(_lobbyId.value == ""){
-            setState(State.CONNECTED_NOT_IN_LOBBY)
+        val nextState = if(_lobbyId.value == ""){
+            State.CONNECTED_NOT_IN_LOBBY
         } else {
-            setState(State.CONNECTED_IN_LOBBY)
+            State.CONNECTED_IN_LOBBY
         }
+        setState(nextState)
     }
 
     fun clearError() {
@@ -273,15 +270,14 @@ class MainViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if(model.uploadAfterGameQuestions(sessionId, *QnAs)){
                 sessionId = -1
-                if(_expId.value != null) {
-                    setState(State.EXPERIMENT_QUESTIONS_QR)
+                val nextState = if(_expId.value != null){
+                    State.AFTER_EXPERIMENT
+                } else if(_lobbyId.value != ""){
+                    State.CONNECTED_IN_LOBBY
                 } else {
-                    if(_lobbyId.value == ""){
-                        setState(State.CONNECTED_NOT_IN_LOBBY)
-                    } else {
-                        setState(State.CONNECTED_IN_LOBBY)
-                    }
+                    State.CONNECTED_NOT_IN_LOBBY
                 }
+                setState(nextState)
             } else {
                 fatalError("Failed to upload answers")
             }

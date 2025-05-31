@@ -220,13 +220,8 @@ abstract class GameViewModel(
                 }
 
                 if(success){
-                    // experiment ID, if available
-                    _expId.value = request.data?.first().also {
-                        // if available it means the experiment has ended successfully
-                        if (it != null){
-                            _resultCode.value = Result.Code.OK_EXPERIMENT_ENDED
-                        }
-                    }
+                    // if available it means the experiment has ended successfully
+                    _expId.value = request.data?.first()
                     exitOk()
                 } else {
                     val errorMessage = request.message ?: "Unknown error"
