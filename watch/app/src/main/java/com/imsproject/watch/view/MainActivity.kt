@@ -210,7 +210,10 @@ class MainActivity : ComponentActivity() {
                     GameType.WINE_GLASSES -> wineGlasses.launch(input)
                     GameType.FLOUR_MILL -> flourMill.launch(input)
                     GameType.FLOWER_GARDEN -> flowerGarden.launch(input)
-                    else -> viewModel.showError("Unknown game type")
+                    else -> {
+                        viewModel.showError("Unknown game type")
+                        ErrorReporter.report(null,"Unknown game type\n${viewModel.gameType.collectAsState().value}")
+                    }
                 }
             }
 
@@ -725,7 +728,7 @@ class MainActivity : ComponentActivity() {
                 Column(
                     modifier = Modifier
                         .padding(
-                            top = COLUMN_PADDING*3,
+                            top = COLUMN_PADDING * 3,
                             start = COLUMN_PADDING,
                             end = COLUMN_PADDING
                         )
