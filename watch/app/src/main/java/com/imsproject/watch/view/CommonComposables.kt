@@ -2,6 +2,7 @@ package com.imsproject.watch.view
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
@@ -150,13 +152,64 @@ fun Modifier.verticalColumnScrollbar(
 }
 
 @Composable
-fun RTLText(text: String, style: TextStyle, modifier: Modifier = Modifier){
+fun RTLText(text: String, modifier: Modifier = Modifier, style: TextStyle = textStyle){
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Text(
             modifier = modifier,
             text = text,
             textAlign = TextAlign.Center,
             style = style.copy(textDirection = TextDirection.Rtl)
+        )
+    }
+}
+
+@Composable
+fun BlankScreen() {
+    MaterialTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DARK_BACKGROUND_COLOR),
+            contentAlignment = Alignment.Center
+        ){
+
+        }
+    }
+}
+
+@Composable
+fun LoadingScreen(text: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DARK_BACKGROUND_COLOR),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                strokeWidth = (SCREEN_RADIUS * 0.04f).dp,
+                modifier = Modifier.fillMaxSize(0.4f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            RTLText(text)
+        }
+    }
+}
+
+@Composable
+fun FloatingLoading() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(
+            strokeWidth = (SCREEN_RADIUS * 0.04f).dp,
+            modifier = Modifier.fillMaxSize(0.4f)
         )
     }
 }

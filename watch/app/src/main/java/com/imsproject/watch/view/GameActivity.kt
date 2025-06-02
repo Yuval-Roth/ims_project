@@ -110,10 +110,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
                         modifier = Modifier.size((SCREEN_RADIUS *0.4f).dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    RTLText(
-                        text = text,
-                        style = textStyle
-                    )
+                    RTLText(text)
                 }
             }
         }

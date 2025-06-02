@@ -1,8 +1,8 @@
 package com.imsproject.watch.view
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.graphics.Paint
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.view.WindowManager
@@ -20,9 +20,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -34,6 +36,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -46,7 +49,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.asFloatState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -66,7 +68,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Picker
@@ -115,7 +116,9 @@ class MainActivity : ComponentActivity() {
         setupUncaughtExceptionHandler()
         viewModel.onCreate(applicationContext)
         setContent {
-            Main()
+            MaterialTheme {
+                Main()
+            }
         }
     }
 
@@ -167,6 +170,7 @@ class MainActivity : ComponentActivity() {
     private fun Main(){
 
         val state = viewModel.state.collectAsState().value
+        val loading = viewModel.loading.collectAsState().value
 
         when(state) {
             State.DISCONNECTED ->{
@@ -231,8 +235,6 @@ class MainActivity : ComponentActivity() {
 
             State.AFTER_GAME -> AfterGame()
 
-            State.UPLOADING_ANSWERS -> LoadingScreen("מעלה תשובות....")
-
             State.AFTER_EXPERIMENT -> {
                 val userId = viewModel.playerId.collectAsState().value
                 val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("expId is null")
@@ -246,101 +248,57 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+        if(loading) FloatingLoading()
     }
 
     @Composable
     fun AlreadyConnectedScreen(onConfirm: () -> Unit, onReject: () -> Unit) {
-        MaterialTheme {
-            Box(
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DARK_BACKGROUND_COLOR),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(
-                            top = COLUMN_PADDING,
-                            start = COLUMN_PADDING,
-                            end = COLUMN_PADDING,
-                            bottom = COLUMN_PADDING / 2
-                        )
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ){
-                    RTLText(
-                        text = "המזהה שבחרת כבר מחובר ממקום אחר.\n\nהאם תרצה/י להתחבר בכל זאת?",
-                        style = textStyle,
+                    .padding(
+                        top = COLUMN_PADDING,
+                        start = COLUMN_PADDING,
+                        end = COLUMN_PADDING,
+                        bottom = COLUMN_PADDING / 2
                     )
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.1f).dp))
-                    Row(
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Button(
-                            modifier = Modifier
-                                .size((SCREEN_RADIUS*0.22f).dp),
-                            onClick = { onReject() },
-                            shape = CircleShape,
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "reject"
-                            )
-                        }
-                        Spacer(modifier = Modifier.width((SCREEN_RADIUS*0.12f).dp))
-                        Button(
-                            modifier = Modifier
-                                .size((SCREEN_RADIUS*0.22f).dp),
-                            onClick = { onConfirm() },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "confirm"
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun BlankScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ){
-
-            }
-        }
-    }
-
-    @Composable
-    private fun LoadingScreen(text: String) {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                RTLText("המזהה שבחרת כבר מחובר ממקום אחר.\n\nהאם תרצה/י להתחבר בכל זאת?")
+                Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.1f).dp))
+                Row(
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    CircularProgressIndicator(
-                        strokeWidth = (SCREEN_RADIUS * 0.04f).dp,
-                        modifier = Modifier.fillMaxSize(0.4f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    RTLText(
-                        text = text,
-                        style = textStyle
-                    )
+                    Button(
+                        modifier = Modifier
+                            .size((SCREEN_RADIUS*0.22f).dp),
+                        onClick = { onReject() },
+                        shape = CircleShape,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "reject"
+                        )
+                    }
+                    Spacer(modifier = Modifier.width((SCREEN_RADIUS*0.12f).dp))
+                    Button(
+                        modifier = Modifier
+                            .size((SCREEN_RADIUS*0.22f).dp),
+                        onClick = { onConfirm() },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "confirm"
+                        )
+                    }
                 }
             }
         }
@@ -441,55 +399,18 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun ConnectedNotInLobbyScreen(id: String) {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ){
-                    Column(
-                        modifier = Modifier
-                            .padding(
-                                top = COLUMN_PADDING,
-                                start = COLUMN_PADDING,
-                                end = COLUMN_PADDING
-                            )
-                            .fillMaxWidth()
-                            .fillMaxHeight(0.5f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ){
-                        RTLText(
-                            text = "המזהה שלי: $id",
-                            style = textStyle,
-                        )
-                        Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.1f).dp))
-                        RTLText(
-                            text = "מחכה לצירוף ללובי...",
-                            style = textStyle,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.2f).dp))
-                    // return to picking id button
-                    Button(
-                        onClick = { viewModel.exit() },
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        shape = RectangleShape,
-                    ) {
-                        RTLText(
-                            text = "החלף מזהה",
-                            style = textStyle.copy(color = Color.Black),
-                        )
-                    }
-                }
+        ButtonedPage(
+            buttonText = "החלף מזהה",
+            onClick = { viewModel.exit() },
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ){
+                Spacer(modifier = Modifier.fillMaxHeight(0.3f))
+                RTLText("המזהה שלי: $id")
+                Spacer(modifier = Modifier.fillMaxHeight(0.35f))
+                RTLText("מחכה לצירוף ללובי...")
             }
         }
     }
@@ -504,160 +425,134 @@ class MainActivity : ComponentActivity() {
         hrSensorReady: Boolean,
         onReady: () -> Unit
     ) {
-        MaterialTheme {
-            Box(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DARK_BACKGROUND_COLOR)
+                .padding(bottom = (SCREEN_RADIUS * 0.08f).dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ){
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ){
+                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+                val white = remember { Color(0xFFFFE095) }
+                val green = remember { Color(0xFF89F55C) }
+                Box(
                     modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                        .background(if (ready) green else white)
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.20f)
+                    ,
+                    contentAlignment = Alignment.Center,
                 ){
-                    Spacer(modifier = Modifier.height((SCREEN_RADIUS*0.05f).dp))
-                    val white = remember { Color(0xFFFFE095) }
-                    val green = remember { Color(0xFF89F55C) }
-                    Box(
-                        modifier = Modifier
-                            .background(if (ready) green else white)
-                            .fillMaxWidth()
-                            .fillMaxHeight(0.15f)
-                        ,
-                        contentAlignment = Alignment.Center,
-                    ){
-                        RTLText(
-                            text = "סטטוס: "+if (ready) "מוכן" else "לא מוכן",
-                            style = textStyle.copy(color = Color.Black),
-                        )
-                    }
-                    Column(
-                        modifier = Modifier
-                            .padding(
-                                start = COLUMN_PADDING - 10.dp,
-                                end = COLUMN_PADDING - 10.dp,
-                                bottom = COLUMN_PADDING - 10.dp
-                            )
-                            .fillMaxSize()
-                        ,
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ){
-                        val textStyle = TextStyle(
-                            color = Color(0xFF707070),
-                            fontSize = TEXT_SIZE
-                        )
-                        RTLText(
-                            text = "המזהה שלי: $userId",
-                            style = textStyle,
-                        )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        RTLText(
-                            text = "מזהה לובי: $lobbyId",
-                            style = textStyle,
-                        )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        RTLText(
-                            text = gameType.ifBlank { "" },
-                            style = textStyle,
-                            Modifier.height((SCREEN_RADIUS * 0.07f).dp)
-                        )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        RTLText(
-                            text = if(gameDuration.isNotBlank()) "$gameDuration שניות" else "",
-                            style = textStyle,
-                            Modifier.height((SCREEN_RADIUS * 0.07f).dp)
-                        )
-                        Spacer(modifier = Modifier.fillMaxHeight(0.25f))
-                        // Button
-                        Button(
-                            colors = if(hrSensorReady) ButtonDefaults.primaryButtonColors()
-                            else ButtonDefaults.buttonColors(
-                                backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
-                                contentColor = Color.White
-                            ),
-                            onClick = { onReady() },
-                            modifier = Modifier
-                                .fillMaxWidth(0.7f)
-                                .fillMaxHeight(0.65f)
-
-                        ) {
-                            BasicText(
-                                text = if(ready) "השהה התחלה" else "אפשר להתחיל",
-                                style = textStyle.copy(color=Color.Black, letterSpacing = 1.25.sp),
-                            )
-                        }
-                    }
+                    RTLText(
+                        text = "סטטוס: "+if (ready) "מוכן" else "לא מוכן",
+                        style = textStyle.copy(color = Color.Black),
+                    )
                 }
+                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+                val halfVisibleText = remember {
+                    TextStyle(
+                        color = Color(0xFF707070),
+                        fontSize = TEXT_SIZE
+                    )
+                }
+                RTLText(
+                    text = "המזהה שלי: $userId",
+                    style = halfVisibleText,
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                RTLText(
+                    text = "מזהה לובי: $lobbyId",
+                    style = halfVisibleText,
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                RTLText(
+                    text = gameType.ifBlank { "" },
+                    style = halfVisibleText
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                RTLText(
+                    text = if(gameDuration.isNotBlank()) "$gameDuration שניות" else "",
+                    style = halfVisibleText
+                )
+            }
+            Button(
+                colors = if(hrSensorReady) ButtonDefaults.primaryButtonColors()
+                else ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
+                    contentColor = Color.White
+                ),
+                onClick = { onReady() },
+                modifier = Modifier
+                    .fillMaxWidth(0.55f)
+                    .fillMaxHeight()
+            ) {
+                val blackText = remember { textStyle.copy(color = Color.Black) }
+                RTLText(
+                    text = if(ready) "השהה התחלה" else "אפשר להתחיל",
+                    style = blackText,
+                )
             }
         }
     }
 
     @Composable
     fun AfterGame() {
+        val pageCount = remember { 2 }
+        val scope = rememberCoroutineScope()
         var firstSliderValue by remember { mutableFloatStateOf(1f) }
         var secondSliderValue by remember { mutableFloatStateOf(1f) }
-        val pagerState = rememberPagerState(pageCount = {3})
+        val pagerState = rememberPagerState(pageCount = { pageCount })
 
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .background(color = DARK_BACKGROUND_COLOR)
-                    .fillMaxSize()
-            ){
-                VerticalPager(
-                    state = pagerState,
-                ){ page ->
-                    when(page) {
-                        0 -> {
-                            Box(modifier = Modifier.fillMaxWidth()){
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(
-                                            top = COLUMN_PADDING * 2f,
-                                            start = 20.dp,
-                                            end = 20.dp
-                                        )
-                                    , horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
-                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
-                                    ScrollHintArrow(! pagerState.isScrollInProgress)
-                                }
-                            }
+        ButtonedPage(
+            buttonText = "המשך",
+            onClick = {
+                scope.launch {
+                    val nextPage = pagerState.currentPage + 1
+                    if(nextPage < pageCount){
+                        pagerState.animateScrollToPage(nextPage)
+                    } else {
+                        viewModel.uploadAnswers(
+                            FIRST_QUESTION to firstSliderValue.toString(),
+                            SECOND_QUESTION to secondSliderValue.toString()
+                        )
+                    }
+                }
+            }
+        ) {
+            VerticalPager(
+                state = pagerState,
+                userScrollEnabled = false
+            ){ page ->
+                when(page) {
+                    0 -> {
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                top = COLUMN_PADDING * 1.5f,
+                                start = COLUMN_PADDING,
+                                end = COLUMN_PADDING
+                            )
+                        ){
+                            SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
                         }
-                        1 -> {
-                            Box(modifier = Modifier.fillMaxSize()){
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(
-                                            top = COLUMN_PADDING / 4f,
-                                            start = 20.dp,
-                                            end = 20.dp
-                                        )
-                                    , horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    ScrollHintArrow(!pagerState.isScrollInProgress, backwards = true)
-                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
-                                    SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
-                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.1f).dp))
-                                    ScrollHintArrow(!pagerState.isScrollInProgress)
-                                }
-                            }
-                        }
-                        2 -> {
-                            val pageOffset = remember { derivedStateOf { pagerState.currentPageOffsetFraction } }
-                            if(pagerState.currentPage == 2 && pageOffset.value > -0.05f){
-                                viewModel.uploadAnswers(
-                                    FIRST_QUESTION to firstSliderValue.toString(),
-                                    SECOND_QUESTION to secondSliderValue.toString()
-                                )
-                            }
+                    }
+                    1 -> {
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = COLUMN_PADDING*2f,
+                                start = COLUMN_PADDING,
+                                end = COLUMN_PADDING
+                            )
+                        ) {
+                            SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
                         }
                     }
                 }
@@ -667,74 +562,62 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun AfterExperiment(expId: String, userId: String) {
-        val pagerState = rememberPagerState(pageCount = {4})
+        val pageCount = remember { 3 }
+        val scope = rememberCoroutineScope()
+        val pagerState = rememberPagerState(pageCount = { pageCount })
 
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .background(color = DARK_BACKGROUND_COLOR)
-                    .fillMaxSize()
-            ){
-                VerticalPager(
-                    state = pagerState,
-                ){ page ->
-                    when(page) {
-                        0 -> {
-                            Box(modifier = Modifier.fillMaxWidth()){
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(
-                                            top = COLUMN_PADDING * 2f,
-                                            start = 20.dp,
-                                            end = 20.dp
-                                        )
-                                    , horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.15f).dp))
-                                    RTLText(
-                                        text = "נשמח שתענה/י על סקר קצר ע\"י סריקת הברקוד בדף הבא",
-                                        style = textStyle
-                                    )
-                                    Spacer(Modifier.height((SCREEN_RADIUS * 0.25f).dp))
-                                    ScrollHintArrow(! pagerState.isScrollInProgress)
-                                }
-                            }
+        ButtonedPage(
+            buttonText = "המשך",
+            onClick = {
+                scope.launch {
+                    val nextPage = pagerState.currentPage + 1
+                    if(nextPage < pageCount){
+                        pagerState.animateScrollToPage(nextPage)
+                    } else {
+                        viewModel.endExperiment()
+                    }
+                }
+            }
+        ) {
+            VerticalPager(
+                state = pagerState,
+                userScrollEnabled = false
+            ){ page ->
+                when(page) {
+                    0 -> {
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                top = COLUMN_PADDING * 2.5f,
+                                start = COLUMN_PADDING,
+                                end = COLUMN_PADDING
+                            )
+                        ){
+                            RTLText("נשמח שתענה/י על סקר קצר ע\"י סריקת הברקוד בדף הבא")
                         }
-                        1 -> {
-                            Box(modifier = Modifier.fillMaxSize()){
-                                Column(
-                                    modifier = Modifier.fillMaxSize()
-                                    , horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    ScrollHintArrow(!pagerState.isScrollInProgress, backwards = true)
-                                    ExperimentQuestionsQRCode(expId,userId,Modifier.size((SCREEN_RADIUS*0.7f).dp))
-                                    ScrollHintArrow(!pagerState.isScrollInProgress)
-                                }
-                            }
+                    }
+                    1 -> {
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = COLUMN_PADDING*0.9f,
+                                bottom = COLUMN_PADDING * 0.25f
+                            ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ExperimentQuestionsQRCode(expId,userId,Modifier.size((SCREEN_RADIUS*0.8f).dp))
                         }
-                        2 -> {
-                            Box(modifier = Modifier.fillMaxSize()){
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    ScrollHintArrow(!pagerState.isScrollInProgress, backwards = true)
-                                    RTLText(
-                                        text = "תודה על השתתפותך בניסוי ! \n החלק למטה כדי להמשיך.",
-                                        style = textStyle
-                                    )
-                                    ScrollHintArrow(!pagerState.isScrollInProgress)
-                                }
-                            }
-                        }
-                        3 -> {
-                            val pageOffset = remember { derivedStateOf { pagerState.currentPageOffsetFraction } }
-                            if(pagerState.currentPage == 3 && pageOffset.value > -0.05f){
-                                viewModel.endExperiment()
-                            }
+                    }
+                    2 -> {
+                        Box(modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = COLUMN_PADDING*3f,
+                                start = COLUMN_PADDING,
+                                end = COLUMN_PADDING
+                            )
+                        ) {
+                            RTLText("תודה על השתתפותך בניסוי ! ")
                         }
                     }
                 }
@@ -745,25 +628,30 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SliderQuestion(question: String, sliderValue: Float, onValueChanged: (Float) -> Unit) {
-        RTLText(
-            modifier = Modifier.fillMaxWidth(),
-            text = question,
-            style = textStyle,
-        )
-        Slider(
-            value = sliderValue,
-            onValueChange = onValueChanged,
-            valueRange = 1f..7f,
-            steps = 5,
-        )
-        BasicText(
-            modifier = Modifier.fillMaxWidth(0.2f),
-            text = "${sliderValue.roundToInt()}",
-            style = TextStyle(
-                color = Color.White,
-                fontSize = TEXT_SIZE*1.5,
-                textAlign = TextAlign.Center),
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            RTLText(
+                modifier = Modifier.fillMaxWidth(),
+                text = question
+            )
+            Slider(
+                value = sliderValue,
+                onValueChange = onValueChanged,
+                valueRange = 1f..7f,
+                steps = 5,
+            )
+            BasicText(
+                modifier = Modifier.fillMaxWidth(0.2f),
+                text = "${sliderValue.roundToInt()}",
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = TEXT_SIZE*1.5,
+                    textAlign = TextAlign.Center),
+            )
+        }
     }
 
     @Composable
@@ -840,6 +728,45 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    @SuppressLint("ModifierParameter")
+    fun ButtonedPage(
+        buttonText: String,
+        onClick: () -> Unit,
+        textModifier: Modifier = Modifier,
+        textStyle: TextStyle = com.imsproject.watch.textStyle,
+        content: @Composable () -> Unit
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = DARK_BACKGROUND_COLOR)
+                .padding(bottom = (SCREEN_RADIUS * 0.08f).dp)
+            ,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f)
+            ){
+                content()
+            }
+            Button(
+                onClick = onClick,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.55f)
+            ){
+                RTLText(
+                    buttonText,
+                    modifier = textModifier,
+                    style = textStyle.copy(color = Color.Black)
+                )
+            }
+        }
+    }
+
 
     @Preview(device = "id:wearos_large_round")
     @Composable
@@ -865,6 +792,15 @@ class MainActivity : ComponentActivity() {
             ConnectedNotInLobbyScreen(
                 id = "001",
             )
+        }
+    }
+
+    @Preview(device = "id:wearos_large_round")
+    @Composable
+    private fun PreviewButtonedPage() {
+        initProperties(454)
+        MaterialTheme {
+            ButtonedPage("המשך", {}) { }
         }
     }
 }

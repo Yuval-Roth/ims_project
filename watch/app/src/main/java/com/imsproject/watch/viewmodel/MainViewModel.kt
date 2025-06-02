@@ -57,7 +57,6 @@ class MainViewModel() : ViewModel() {
         IN_GAME,
         UPLOADING_EVENTS,
         AFTER_GAME,
-        UPLOADING_ANSWERS,
         AFTER_EXPERIMENT,
 
         // error states
@@ -73,40 +72,43 @@ class MainViewModel() : ViewModel() {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    private var _state = MutableStateFlow(State.DISCONNECTED)
+    private val _state = MutableStateFlow(State.DISCONNECTED)
     val state : StateFlow<State> = _state
 
-    private var _playerId = MutableStateFlow("")
+    private var _loading = MutableStateFlow(false)
+    val loading : StateFlow<Boolean> = _loading
+
+    private val _playerId = MutableStateFlow("")
     val playerId : StateFlow<String> = _playerId
 
-    private var _error = MutableStateFlow<String?>(null)
+    private val _error = MutableStateFlow<String?>(null)
     val error : StateFlow<String?> = _error
 
-    private var _lobbyId = MutableStateFlow("")
+    private val _lobbyId = MutableStateFlow("")
     val lobbyId : StateFlow<String> = _lobbyId
 
-    private var _gameType = MutableStateFlow<GameType?>(null)
+    private val _gameType = MutableStateFlow<GameType?>(null)
     val gameType : StateFlow<GameType?> = _gameType
 
-    private var _gameDuration = MutableStateFlow<Int?>(null)
+    private val _gameDuration = MutableStateFlow<Int?>(null)
     val gameDuration : StateFlow<Int?> = _gameDuration
 
-    private var _syncWindowLength = MutableStateFlow<Long?>(null)
+    private val _syncWindowLength = MutableStateFlow<Long?>(null)
     val syncWindowLength : StateFlow<Long?> = _syncWindowLength
 
-    private var _syncTolerance = MutableStateFlow<Long?>(null)
+    private val _syncTolerance = MutableStateFlow<Long?>(null)
     val syncTolerance : StateFlow<Long?> = _syncTolerance
 
-    private var _ready = MutableStateFlow(false)
+    private val _ready = MutableStateFlow(false)
     val ready : StateFlow<Boolean> = _ready
 
-    private var _timeServerStartTime = MutableStateFlow(-1L)
+    private val _timeServerStartTime = MutableStateFlow(-1L)
     val gameStartTime : StateFlow<Long> = _timeServerStartTime
 
-    private var _additionalData = MutableStateFlow("")
+    private val _additionalData = MutableStateFlow("")
     val additionalData : StateFlow<String> = _additionalData
 
-    private var _expId = MutableStateFlow<String?>(null)
+    private val _expId = MutableStateFlow<String?>(null)
     val expId : StateFlow<String?> = _expId
 
     private var sessionId = -1
@@ -144,12 +146,14 @@ class MainViewModel() : ViewModel() {
 
     fun enter(selectedId: String, force : Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
-            setState(State.CONNECTING)
+//            setState(State.CONNECTING)
+            _loading.value = true
             while (true) {
                 val playerId: String?
                 try{
                     playerId = model.enter(selectedId,force)
                 } catch (_: AlreadyConnectedException){
+                    _loading.value = false
                     setState(State.ALREADY_CONNECTED)
                     temporaryPlayerId = selectedId
                     return@launch
@@ -159,6 +163,7 @@ class MainViewModel() : ViewModel() {
                 }
                 if (playerId != null) {
                     _playerId.value = playerId
+                    _loading.value = false
                     setState(State.CONNECTED_NOT_IN_LOBBY)
                     setupListeners() // setup the listeners to start receiving messages
                     return@launch
@@ -266,7 +271,7 @@ class MainViewModel() : ViewModel() {
     }
 
     fun uploadAnswers(vararg QnAs: Pair<String,String>) {
-        setState(State.UPLOADING_ANSWERS)
+        _loading.value = true
         viewModelScope.launch(Dispatchers.IO) {
             if(model.uploadAfterGameQuestions(sessionId, *QnAs)){
                 sessionId = -1
@@ -277,6 +282,7 @@ class MainViewModel() : ViewModel() {
                 } else {
                     State.CONNECTED_NOT_IN_LOBBY
                 }
+                _loading.value = false
                 setState(nextState)
             } else {
                 fatalError("Failed to upload answers")
