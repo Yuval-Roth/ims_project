@@ -532,26 +532,29 @@ class MainActivity : ComponentActivity() {
             ){ page ->
                 when(page) {
                     0 -> {
-                        Box(modifier = Modifier
-                            .fillMaxWidth()
+                        Column(modifier = Modifier
+                            .fillMaxSize()
                             .padding(
-                                top = COLUMN_PADDING * 1.5f,
                                 start = COLUMN_PADDING,
                                 end = COLUMN_PADDING
                             )
                         ){
-                            SliderQuestion(FIRST_QUESTION,firstSliderValue) { firstSliderValue = it }
+                            Spacer(Modifier.fillMaxHeight(0.25f))
+                            SliderQuestion(
+                                FIRST_QUESTION,
+                                firstSliderValue,
+                            ) { firstSliderValue = it }
                         }
                     }
                     1 -> {
-                        Box(modifier = Modifier
+                        Column(modifier = Modifier
                             .fillMaxSize()
                             .padding(
-                                top = COLUMN_PADDING*2f,
-                                start = COLUMN_PADDING,
-                                end = COLUMN_PADDING
+                                start = COLUMN_PADDING*0.75f,
+                                end = COLUMN_PADDING*0.75f
                             )
                         ) {
+                            Spacer(Modifier.fillMaxHeight(0.35f))
                             SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
                         }
                     }
@@ -585,14 +588,14 @@ class MainActivity : ComponentActivity() {
             ){ page ->
                 when(page) {
                     0 -> {
-                        Box(modifier = Modifier
+                        Column(modifier = Modifier
                             .fillMaxWidth()
                             .padding(
-                                top = COLUMN_PADDING * 2.5f,
                                 start = COLUMN_PADDING,
                                 end = COLUMN_PADDING
                             )
                         ){
+                            Spacer(Modifier.fillMaxHeight(0.4f))
                             RTLText("נשמח שתענה/י על סקר קצר ע\"י סריקת הברקוד בדף הבא")
                         }
                     }
@@ -609,14 +612,14 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     2 -> {
-                        Box(modifier = Modifier
+                        Column(modifier = Modifier
                             .fillMaxSize()
                             .padding(
-                                top = COLUMN_PADDING*3f,
                                 start = COLUMN_PADDING,
                                 end = COLUMN_PADDING
                             )
                         ) {
+                            Spacer(Modifier.fillMaxHeight(0.5f))
                             RTLText("תודה על השתתפותך בניסוי ! ")
                         }
                     }
@@ -627,10 +630,9 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun SliderQuestion(question: String, sliderValue: Float, onValueChanged: (Float) -> Unit) {
+    fun SliderQuestion(question: String, sliderValue: Float, modifier: Modifier = Modifier, onValueChanged: (Float) -> Unit) {
         Column(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             RTLText(
