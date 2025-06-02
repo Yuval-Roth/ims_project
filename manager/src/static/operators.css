@@ -4,6 +4,7 @@ body {
     background-color: #f4f4f9;
     margin: 0;
     padding: 0;
+    overflow: auto;
 }
 
 /* Main Container */
@@ -30,8 +31,7 @@ body {
 
 .online-participants-table-container {
     max-height: 800px; /* Enable scrolling within the table */
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: auto;
 }
 
 .online-participants-table-container::-webkit-scrollbar {
