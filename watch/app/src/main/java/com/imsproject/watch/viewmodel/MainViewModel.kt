@@ -146,7 +146,6 @@ class MainViewModel() : ViewModel() {
 
     fun enter(selectedId: String, force : Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
-//            setState(State.CONNECTING)
             _loading.value = true
             while (true) {
                 val playerId: String?
@@ -187,13 +186,13 @@ class MainViewModel() : ViewModel() {
 
     fun afterGame(result: Result) {
         Log.d(TAG, "afterGame: $result")
+        _ready.value = false
+        _timeServerStartTime.value = -1
+        _gameType.value = null
+        _gameDuration.value = null
+        _expId.value = result.expId
         setupListeners()
-        viewModelScope.launch(Dispatchers.Default) {
-            _ready.value = false
-            _timeServerStartTime.value = -1
-            _gameType.value = null
-            _gameDuration.value = null
-            _expId.value = result.expId
+        viewModelScope.launch(Dispatchers.IO) {
             when (result.code) {
                 Result.Code.OK -> {
                     setState(State.UPLOADING_EVENTS)
