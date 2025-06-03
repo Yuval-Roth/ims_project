@@ -486,6 +486,9 @@ def get_experiment_questions_route():
         url = "https://ims-project.cs.bgu.ac.il:8640"
     return render_template('experiment_questions.html',URL=url)
 
+@app.route('/thank_you', methods=['GET'])
+def thank_you_route():
+    return render_template('thankyou_page.html')
 
 if __name__ == '__main__':
     # run on port 80
