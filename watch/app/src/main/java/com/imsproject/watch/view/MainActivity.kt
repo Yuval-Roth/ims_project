@@ -53,6 +53,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -568,9 +569,8 @@ class MainActivity : ComponentActivity() {
         val pageCount = remember { 3 }
         val scope = rememberCoroutineScope()
         val pagerState = rememberPagerState(pageCount = { pageCount })
-
         ButtonedPage(
-            buttonText = "המשך",
+            buttonText = if(pagerState.settledPage == pageCount -1) "סיום" else "המשך",
             onClick = {
                 scope.launch {
                     val nextPage = pagerState.currentPage + 1
