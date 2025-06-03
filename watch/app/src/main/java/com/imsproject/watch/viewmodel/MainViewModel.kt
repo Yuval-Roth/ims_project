@@ -373,12 +373,6 @@ class MainViewModel() : ViewModel() {
                     return
                 }
 
-                // ===================================|
-                // clear the listeners to prevent any further messages from being processed.
-                // let the game activity handle the messages from here on out.
-                /*(!)*/ clearListeners()
-                // ===================================|
-
                 val _sessionId = request.sessionId?.toInt() ?: run{
                     Log.e(TAG, "handleGameRequest: START_GAME request missing sessionId")
                     fatalError("Failed to start game: missing session id")
@@ -439,7 +433,7 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    private fun clearListeners() {
+    fun clearListeners() {
         model.onTcpMessage(null)
         model.onTcpError(null)
         model.onUdpMessage(null)

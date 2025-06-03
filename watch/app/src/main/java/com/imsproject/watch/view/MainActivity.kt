@@ -226,16 +226,24 @@ class MainActivity : ComponentActivity() {
                     if(gameType == null){
                         Log.e(TAG,"gameType is null, requesting lobby reconfiguration")
                     }
-                    while(gameType == null) {
+                    var tries = 0
+                    while(gameType == null && tries < 50) { // try for 5 seconds
                         viewModel.requestLobbyReconfiguration()
                         delay(100)
                         gameType = viewModel.gameType.value
                         if(gameType != null){
                             Log.d(TAG,"Successfully reconfigured lobby")
                         } else {
+                            tries++
                             Log.e(TAG,"Lobby reconfiguration failed, retrying")
                         }
                     }
+                    if(gameType == null){
+                        viewModel.fatalError("gameType is null and failed to reconfigure lobby")
+                        return@LaunchedEffect
+                    }
+
+                    viewModel.clearListeners()
 
                     val input = mutableMapOf<String,Any>(
                         "timeServerStartTime" to viewModel.gameStartTime.value,
