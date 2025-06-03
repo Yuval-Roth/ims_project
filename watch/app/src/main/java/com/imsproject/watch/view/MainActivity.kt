@@ -640,7 +640,7 @@ class MainActivity : ComponentActivity() {
                             ),
                             contentAlignment = Alignment.Center
                         ) {
-                            ExperimentQuestionsQRCode(expId,userId,Modifier.size((SCREEN_RADIUS*0.8f).dp))
+                            ExperimentQuestionsQRCode(userId,expId,Modifier.size((SCREEN_RADIUS*0.8f).dp))
                         }
                     }
                     2 -> {
