@@ -60,6 +60,7 @@ final class GameRequestFacade(
     fun handleGameRequest(clientHandler: ClientHandler, request: GameRequest) {
         when (request.type) {
             Type.TOGGLE_READY -> lobbies.toggleReady(clientHandler)
+            Type.CONFIGURE_LOBBY -> lobbies.sendLobbyConfiguration(clientHandler)
             else -> throw IllegalArgumentException("Invalid message type: ${request.type}")
         }
     }

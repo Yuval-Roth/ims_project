@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -49,6 +50,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -92,10 +94,15 @@ import com.imsproject.watch.utils.QRGenerator
 import com.imsproject.watch.view.contracts.*
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     private val viewModel : MainViewModel by viewModels<MainViewModel>()
     private lateinit var waterRipples: ActivityResultLauncher<Map<String,Any>>
@@ -214,20 +221,37 @@ class MainActivity : ComponentActivity() {
 
             State.IN_GAME -> {
                 BlankScreen()
-                val input = mutableMapOf<String,Any>(
-                    "timeServerStartTime" to viewModel.gameStartTime.collectAsState().value,
-                    "additionalData" to viewModel.additionalData.collectAsState().value,
-                    "syncTolerance" to (viewModel.syncTolerance.collectAsState().value ?: -1L),
-                    "syncWindowLength" to (viewModel.syncWindowLength .collectAsState().value ?: -1L)
-                )
-                when(viewModel.gameType.collectAsState().value) {
-                    GameType.WATER_RIPPLES -> waterRipples.launch(input)
-                    GameType.WINE_GLASSES -> wineGlasses.launch(input)
-                    GameType.FLOUR_MILL -> flourMill.launch(input)
-                    GameType.FLOWER_GARDEN -> flowerGarden.launch(input)
-                    else -> {
-                        viewModel.showError("Unknown game type")
-                        ErrorReporter.report(null,"Unknown game type\n${viewModel.gameType.collectAsState().value}")
+                LaunchedEffect(Unit) {
+                    var gameType = viewModel.gameType.value
+                    if(gameType == null){
+                        Log.e(TAG,"gameType is null, requesting lobby reconfiguration")
+                    }
+                    while(gameType == null) {
+                        viewModel.requestLobbyReconfiguration()
+                        delay(100)
+                        gameType = viewModel.gameType.value
+                        if(gameType != null){
+                            Log.d(TAG,"Successfully reconfigured lobby")
+                        } else {
+                            Log.e(TAG,"Lobby reconfiguration failed, retrying")
+                        }
+                    }
+
+                    val input = mutableMapOf<String,Any>(
+                        "timeServerStartTime" to viewModel.gameStartTime.value,
+                        "additionalData" to viewModel.additionalData.value,
+                        "syncTolerance" to (viewModel.syncTolerance.value ?: -1L),
+                        "syncWindowLength" to (viewModel.syncWindowLength.value ?: -1L)
+                    )
+                    when(gameType) {
+                        GameType.WATER_RIPPLES -> waterRipples.launch(input)
+                        GameType.WINE_GLASSES -> wineGlasses.launch(input)
+                        GameType.FLOUR_MILL -> flourMill.launch(input)
+                        GameType.FLOWER_GARDEN -> flowerGarden.launch(input)
+                        else -> {
+                            viewModel.fatalError("Unknown game type")
+                            ErrorReporter.report(null,"Unknown game type\n${gameType}")
+                        }
                     }
                 }
             }

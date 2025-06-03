@@ -290,6 +290,12 @@ class MainViewModel() : ViewModel() {
         }
     }
 
+    fun requestLobbyReconfiguration(){
+        viewModelScope.launch(Dispatchers.IO){
+            model.requestLobbyReconfiguration()
+        }
+    }
+
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
@@ -374,19 +380,23 @@ class MainViewModel() : ViewModel() {
                 /*(!)*/ clearListeners()
                 // ===================================|
 
-                sessionId = request.sessionId?.toInt() ?: run{
+                val _sessionId = request.sessionId?.toInt() ?: run{
                     Log.e(TAG, "handleGameRequest: START_GAME request missing sessionId")
                     fatalError("Failed to start game: missing session id")
                     return
                 }
-                _timeServerStartTime.value = request.timestamp?.toLong() ?: run{
+                val timeServerStartTime = request.timestamp?.toLong() ?: run{
                     Log.e(TAG, "handleGameRequest: START_GAME request missing start time")
                     fatalError("Failed to start game: missing start time")
                     return
                 }
-                _additionalData.value = request.data?.joinToString(";") ?: ""
 
-                setState(State.IN_GAME)
+                withContext(Dispatchers.Main) {
+                    sessionId = _sessionId
+                    _timeServerStartTime.value = timeServerStartTime
+                    _additionalData.value = request.data?.joinToString(";") ?: ""
+                    setState(State.IN_GAME)
+                }
             }
             else -> {
                 Log.e(TAG, "handleGameRequest: Unexpected request type: ${request.type}")

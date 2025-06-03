@@ -8,7 +8,6 @@ import com.imsproject.gameserver.business.lobbies.Lobby
 import com.imsproject.gameserver.business.lobbies.LobbyInfo
 import com.imsproject.gameserver.business.lobbies.LobbyState
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 
@@ -275,6 +274,34 @@ class LobbyService(
 
     fun isClientInALobby(clientId: String): Boolean {
         return clientIdToLobbyId.containsKey(clientId)
+    }
+
+    fun sendLobbyConfiguration(clientHandler: ClientHandler) {
+        log.debug("sendLobbyConfiguration() with clientId: {}",clientHandler.id)
+
+        // ========= parameter validation ========= |
+        val lobbyId = clientIdToLobbyId[clientHandler.id] ?: run {
+            log.debug("sendLobbyConfiguration: Player not in lobby")
+            throw IllegalArgumentException("Player not in lobby")
+        }
+        val lobby = lobbies[lobbyId] ?: run {
+            // should not happen
+            log.error("sendLobbyConfiguration: lobbyId found for client but Lobby not found. client: {}",clientHandler.id)
+            clientIdToLobbyId.remove(clientHandler.id)
+            clientHandler.sendTcp(GameRequest.builder(Type.LEAVE_LOBBY).build().toJson())
+            return
+        }
+        // ======================================== |
+
+        clientHandler.sendTcp(
+            GameRequest.builder(Type.CONFIGURE_LOBBY)
+                .gameType(lobby.gameType)
+                .duration(lobby.gameDuration)
+                .syncWindowLength(lobby.syncWindowLength)
+                .syncTolerance(lobby.syncTolerance)
+                .build().toJson()
+        )
+        log.debug("sendLobbyConfiguration() successful")
     }
 
     companion object {

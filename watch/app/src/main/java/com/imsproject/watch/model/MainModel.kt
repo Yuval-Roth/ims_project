@@ -386,6 +386,16 @@ class MainModel (private val scope : CoroutineScope) {
         return false
     }
 
+    fun requestLobbyReconfiguration() {
+        val playerId = playerId ?: throw IllegalStateException("requestLobbyReconfiguration(): playerId not set")
+        ws.send(
+            GameRequest.builder(GameRequest.Type.CONFIGURE_LOBBY)
+                .playerId(playerId)
+                .build()
+                .toJson()
+        )
+    }
+
     suspend fun closeAllResources(){
         Log.d(TAG, "Closing all resources")
         try{
