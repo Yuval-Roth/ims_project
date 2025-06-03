@@ -20,12 +20,14 @@ import com.imsproject.watch.BANANA_YELLOW_COLOR
 import com.imsproject.watch.AMOUNT_OF_FLOWERS
 import com.imsproject.watch.BROWN_COLOR
 import com.imsproject.watch.BUBBLE_PINK_COLOR
+import com.imsproject.watch.CURRENT_PLAYER_ITEM_ALPHA
 import com.imsproject.watch.DEEP_BLUE_COLOR
 import com.imsproject.watch.FLOWER_GARDEN_SYNC_TIME_THRESHOLD
 import com.imsproject.watch.FLOWER_RING_OFFSET_ANGLE
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.GRASS_WATER_ANGLE
 import com.imsproject.watch.GRASS_WATER_RADIUS
+import com.imsproject.watch.OPPONENT_PLAYER_ITEM_ALPHA
 import com.imsproject.watch.ORANGE_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.PURPLE_WISTERIA_COLOR
@@ -65,8 +67,9 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
     // ======================================
     class WaterDroplet(
         var timestamp: Long = 0,
+        var playerItemType: ItemType
     ) {
-        var color by mutableStateOf(WATER_BLUE_COLOR)
+        var color by mutableStateOf(WATER_BLUE_COLOR.copy(alpha = if (playerItemType == ItemType.WATER) CURRENT_PLAYER_ITEM_ALPHA else OPPONENT_PLAYER_ITEM_ALPHA))
         val centers : List<Pair<Float, Float>> =
             listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 0 * GRASS_WATER_ANGLE),
                     polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 2 * -GRASS_WATER_ANGLE),
@@ -84,15 +87,16 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
     class Plant(
         var timestamp: Long = 0,
+        var playerItemType: ItemType
     ) {
         val centers : List<Pair<Float, Float>> =
-            listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 5 * -GRASS_WATER_ANGLE),
-                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 1 * GRASS_WATER_ANGLE),
-                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 1 * -GRASS_WATER_ANGLE),
-                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 3 * GRASS_WATER_ANGLE),
-                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 3 * -GRASS_WATER_ANGLE)
+            listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 0 * -GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 2 * GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 2 * -GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * GRASS_WATER_ANGLE),
+                polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * -GRASS_WATER_ANGLE)
             )
-        var color by mutableStateOf(GRASS_GREEN_COLOR)
+        var color by mutableStateOf(GRASS_GREEN_COLOR.copy(alpha = if (playerItemType == ItemType.PLANT) CURRENT_PLAYER_ITEM_ALPHA else OPPONENT_PLAYER_ITEM_ALPHA))
         var time = 0
     }
 
@@ -172,8 +176,8 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
 
         if(ACTIVITY_DEBUG_MODE){
-            myItemType = ItemType.WATER
-//            myItemType = ItemType.PLANT
+//            myItemType = ItemType.WATER
+            myItemType = ItemType.PLANT
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
@@ -238,14 +242,14 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
         // check the delta between taps and show new tap
         val opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
-                waterDropletSets.addLast(WaterDroplet(timestamp))
+                waterDropletSets.addLast(WaterDroplet(timestamp, myItemType))
                 if(grassPlantSets.isEmpty()) 0 else grassPlantSets.last().timestamp
             } else {
-                grassPlantSets.addLast(Plant(timestamp))
+                grassPlantSets.addLast(Plant(timestamp, myItemType))
                 if(waterDropletSets.isEmpty()) 0 else waterDropletSets.last().timestamp
             }
 
-        // add new flower if synced click
+        // synced click
         if((opponentsLatestTimestamp - timestamp)
                 .absoluteValue <= FLOWER_GARDEN_SYNC_TIME_THRESHOLD) {
             _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
@@ -268,6 +272,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
                 delay(100)
                 vibrator.vibrate(clickVibration)
             }
+            addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
         _counter.value++ // used to trigger recomposition
     }

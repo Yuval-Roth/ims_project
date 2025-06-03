@@ -12,7 +12,7 @@ import org.w3c.dom.Text
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -126,6 +126,9 @@ var GRASS_PLANT_STROKE_WIDTH = 4.5f
 //shared
 var GRASS_WATER_RADIUS = 0f //initialized later
 var GRASS_WATER_ANGLE = 36
+var GRASS_WATER_VISIBILITY_THRESHOLD = 250
+var CURRENT_PLAYER_ITEM_ALPHA = 0.4f
+var OPPONENT_PLAYER_ITEM_ALPHA = 0.9f
 
 // ================== After game questions =============== |
 

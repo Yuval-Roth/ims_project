@@ -2,6 +2,7 @@ package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
@@ -46,6 +47,7 @@ import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.GRASS_PLANT_BASE_HEIGHT
 import com.imsproject.watch.GRASS_PLANT_BASE_WIDTH
 import com.imsproject.watch.GRASS_PLANT_STROKE_WIDTH
+import com.imsproject.watch.GRASS_WATER_VISIBILITY_THRESHOLD
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.WATER_DROPLET_FADE_COEFFICIENT
 import com.imsproject.watch.WATER_DROPLET_FADE_THRESHOLD
@@ -54,6 +56,7 @@ import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.max
@@ -208,38 +211,53 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
                 val it = viewModel.waterDropletSets.iterator()
                 while (it.hasNext()) {
                     val waterDropletSet = it.next()
+                    val currTimestamp = viewModel.getCurrentGameTime()
 
-                    // decrease the opacity
-                    val currDropletColor = waterDropletSet.color
-                    val nextAlpha = currDropletColor.alpha * exp(WATER_DROPLET_FADE_COEFFICIENT
-                            * waterDropletSet.time)
-                    waterDropletSet.time++
-                    waterDropletSet.color = currDropletColor.copy(nextAlpha)
-
-                    //remove done water droplets
-                    if(waterDropletSet.color.alpha <= WATER_DROPLET_FADE_THRESHOLD) {
+                    //remove done water droplets after 250ms, no fade
+                    if(abs(waterDropletSet.timestamp - currTimestamp) >= GRASS_WATER_VISIBILITY_THRESHOLD) {
+                        waterDropletSet.color = waterDropletSet.color.copy(alpha=0f) //trigger redraw
                         it.remove()
                         continue
                     }
+
+                    // fade effect
+//                    val currDropletColor = waterDropletSet.color
+//                    val nextAlpha = currDropletColor.alpha * exp(WATER_DROPLET_FADE_COEFFICIENT
+//                            * waterDropletSet.time)
+//                    waterDropletSet.time++
+//                    waterDropletSet.color = currDropletColor.copy(nextAlpha)
+//
+//                    //remove done water droplets
+//                    if(waterDropletSet.color.alpha <= WATER_DROPLET_FADE_THRESHOLD) {
+//                        it.remove()
+//                        continue
+//                    }
                 }
 
                 // animate plant grass
                 val it2 = viewModel.grassPlantSets.iterator()
                 while (it2.hasNext()) {
                     val grassPlantSet = it2.next()
+                    val currTimestamp = viewModel.getCurrentGameTime()
 
-                    // decrease the opacity
-                    val currPlantColor = grassPlantSet.color
-                    val nextAlpha = currPlantColor.alpha * exp(GRASS_PLANT_FADE_COEFFICIENT
-                            * grassPlantSet.time)
-                    grassPlantSet.time++
-                    grassPlantSet.color = currPlantColor.copy(nextAlpha)
-
-                    //remove done water droplets
-                    if(grassPlantSet.color.alpha <= GRASS_PLANT_FADE_THRESHOLD) {
+                    //remove done water droplets after 250ms, no fade
+                    if(abs(grassPlantSet.timestamp - currTimestamp) >= GRASS_WATER_VISIBILITY_THRESHOLD) {
+                        grassPlantSet.color = grassPlantSet.color.copy(alpha=0f) //trigger redraw
                         it2.remove()
                         continue
                     }
+                    // fade effect
+//                    val currPlantColor = grassPlantSet.color
+//                    val nextAlpha = currPlantColor.alpha * exp(GRASS_PLANT_FADE_COEFFICIENT
+//                            * grassPlantSet.time)
+//                    grassPlantSet.time++
+//                    grassPlantSet.color = currPlantColor.copy(nextAlpha)
+//
+//                    //remove done water droplets
+//                    if(grassPlantSet.color.alpha <= GRASS_PLANT_FADE_THRESHOLD) {
+//                        it2.remove()
+//                        continue
+//                    }
                 }
                 delay(16)
             }
