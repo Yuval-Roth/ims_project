@@ -313,12 +313,12 @@ class MainViewModel() : ViewModel() {
                     return
                 }
 
-                // reset data just in case
-                _gameType.value = null
-                _gameDuration.value = null
-                _ready.value = false
-
                 withContext(Dispatchers.Main) {
+                    // reset data just in case
+                    _gameType.value = null
+                    _gameDuration.value = null
+                    _ready.value = false
+
                     _lobbyId.value = lobbyId
                     if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
                         setState(State.CONNECTED_IN_LOBBY)
@@ -355,10 +355,12 @@ class MainViewModel() : ViewModel() {
                     return
                 }
 
-                _gameType.value = gameType
-                _gameDuration.value = gameDuration
-                _syncWindowLength.value = syncWindowLength
-                _syncTolerance.value = syncTolerance
+                withContext(Dispatchers.Main){
+                    _gameType.value = gameType
+                    _gameDuration.value = gameDuration
+                    _syncWindowLength.value = syncWindowLength
+                    _syncTolerance.value = syncTolerance
+                }
             }
             GameRequest.Type.START_GAME -> {
                 if(_state.value != State.CONNECTED_IN_LOBBY){
