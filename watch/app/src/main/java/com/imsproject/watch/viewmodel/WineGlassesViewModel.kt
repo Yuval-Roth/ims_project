@@ -18,6 +18,7 @@ import com.imsproject.watch.WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.LOW_LOOP_TRACK
+import com.imsproject.watch.RUB_LOOP_TRACK
 import com.imsproject.watch.utils.Arc
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.cartesianToPolar
@@ -202,12 +203,9 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
     }
 
-    private fun setupWavPlayer(){
+    override fun setupWavPlayer(){
         try{
-//            wavPlayer.load(LOW_BUILD_IN_TRACK, R.raw.wine_low_buildin)
-            wavPlayer.load(LOW_LOOP_TRACK, R.raw.wine_low_loop)
-//            wavPlayer.load(LOW_BUILD_OUT_TRACK, R.raw.wine_low_buildout)
-//            wavPlayer.load(HIGH_LOOP_TRACK, R.raw.wine_high_loop)
+            wavPlayer.load(RUB_LOOP_TRACK, R.raw.rub_loop)
         } catch (e: IllegalArgumentException){
             val msg = e.message ?: "Unknown error"
             exitWithError(msg, Result.Code.BAD_RESOURCE)

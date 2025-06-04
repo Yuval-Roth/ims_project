@@ -5,6 +5,7 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.media.VolumeShaper
+import android.util.Log
 import androidx.annotation.FloatRange
 import androidx.annotation.IntRange
 import kotlinx.coroutines.CoroutineScope
@@ -83,10 +84,15 @@ class WavPlayer(private val context: Context, private val scope: CoroutineScope)
         }
     }
 
+    @Throws(WavPlayerException::class)
     fun playLooped(@IntRange(0,31) trackNumber: Int) {
         val track = tracks[trackNumber] ?: throw IllegalArgumentException("Track not loaded")
-        track.setLoopPoints(0, track.bufferSizeInFrames, -1)
-        track.play()
+        try{
+            track.setLoopPoints(0, track.bufferSizeInFrames, -1)
+            track.play()
+        } catch(e: Exception){
+            throw WavPlayerException("playLooped failed",e)
+        }
     }
 
     fun pause(@IntRange(0,31) trackNumber: Int) {
@@ -94,7 +100,11 @@ class WavPlayer(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun release(@IntRange(0,31) trackNumber: Int) {
-        tracks[trackNumber]?.release()
+        try{
+            tracks[trackNumber]?.release()
+        } catch(e: Exception){
+            Log.e(TAG, "Failed to release track $trackNumber",e)
+        }
         jobs[trackNumber]?.cancel()
         tracks[trackNumber] = null
         wavs[trackNumber] = null
@@ -157,4 +167,15 @@ class WavPlayer(private val context: Context, private val scope: CoroutineScope)
         audioTrack.write(wav.audioData, 0, wav.dataSize)
         return audioTrack
     }
+
+    companion object {
+        private const val TAG = "WavPlayer"
+    }
 }
+
+ class WavPlayerException: Exception {
+    constructor(message: String): super(message)
+    constructor(message: String, cause: Throwable): super(message, cause)
+    constructor(cause: Throwable): super(cause)
+    constructor(): super("WavPlayer exception")
+ }

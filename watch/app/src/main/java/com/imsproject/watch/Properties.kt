@@ -73,6 +73,7 @@ const val LOW_BUILD_IN_TRACK = 0
 const val LOW_LOOP_TRACK = 1
 const val LOW_BUILD_OUT_TRACK = 2
 const val HIGH_LOOP_TRACK = 4
+const val RUB_LOOP_TRACK = 5
 
 // ================= Flour Mill ===================== |
 

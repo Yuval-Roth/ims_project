@@ -2,6 +2,7 @@ package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
@@ -49,6 +50,9 @@ import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.MILL_SOUND_TRACK
+import com.imsproject.watch.RUB_LOOP_TRACK
+import com.imsproject.watch.utils.WavPlayerException
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import kotlinx.coroutines.delay
@@ -155,18 +159,23 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
                     var playing = false
                     var inSync: Boolean
                     while (true) {
-                        inSync = viewModel.inSync()
-                        if (!playing && inSync) {
-                            wavPlayer.playLooped(LOW_LOOP_TRACK)
-                            playing = true
-                        } else if (playing && !inSync) {
-                            wavPlayer.pause(LOW_LOOP_TRACK)
-                            playing = false
+                        try{
+                            inSync = viewModel.inSync()
+                            if (!playing && inSync) {
+                                wavPlayer.playLooped(RUB_LOOP_TRACK)
+                                playing = true
+                            } else if (playing && !inSync) {
+                                wavPlayer.pause(RUB_LOOP_TRACK)
+                                playing = false
+                            }
+                            delay(16)
+                        } catch(e: WavPlayerException){
+                            Log.e(TAG, "WavPlayer Exception",e)
+                            viewModel.onWavPlayerException()
                         }
-                        delay(100)
                     }
-                } else if(wavPlayer.isPlaying(LOW_LOOP_TRACK)) {
-                    wavPlayer.stopFadeOut(LOW_LOOP_TRACK, 20)
+                } else if(wavPlayer.isPlaying(RUB_LOOP_TRACK)) {
+                    wavPlayer.stopFadeOut(RUB_LOOP_TRACK, 20)
                 }
             }
 

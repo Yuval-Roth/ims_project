@@ -232,7 +232,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         }
     }
 
-    private fun setupWavPlayer(){
+    override fun setupWavPlayer(){
         try{
             wavPlayer.load(MILL_SOUND_TRACK, R.raw.mill_sound)
         } catch (e: IllegalArgumentException){

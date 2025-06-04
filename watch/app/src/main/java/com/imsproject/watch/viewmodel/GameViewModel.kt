@@ -191,6 +191,11 @@ abstract class GameViewModel(
         }
     }
 
+    fun onWavPlayerException(){
+        wavPlayer.releaseAll()
+        setupWavPlayer()
+    }
+
     // ================================================================================ |
     // ============================ PROTECTED METHODS ================================= |
     // ================================================================================ |
@@ -258,6 +263,8 @@ abstract class GameViewModel(
         }
         setState(State.TERMINATED)
     }
+
+    protected open fun setupWavPlayer(){}
 
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |

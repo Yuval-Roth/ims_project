@@ -1,6 +1,7 @@
 package com.imsproject.watch.view
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
@@ -70,6 +71,7 @@ import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.utils.FlourPile
+import com.imsproject.watch.utils.WavPlayerException
 import com.imsproject.watch.utils.fastCoerceAtMost
 import com.imsproject.watch.utils.polarToCartesian
 import kotlinx.coroutines.delay
@@ -190,15 +192,20 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                     var playing = false
                     var inSync: Boolean
                     while (true) {
-                        inSync = viewModel.inSync
-                        if (!playing && inSync) {
-                            sound.playLooped(MILL_SOUND_TRACK)
-                            playing = true
-                        } else if (playing && !inSync) {
-                            sound.pause(MILL_SOUND_TRACK)
-                            playing = false
+                        try{
+                            inSync = viewModel.inSync
+                            if (!playing && inSync) {
+                                sound.playLooped(MILL_SOUND_TRACK)
+                                playing = true
+                            } else if (playing && !inSync) {
+                                sound.pause(MILL_SOUND_TRACK)
+                                playing = false
+                            }
+                            delay(16)
+                        } catch(e: WavPlayerException){
+                            Log.e(TAG, "WavPlayer Exception",e)
+                            viewModel.onWavPlayerException()
                         }
-                        delay(16)
                     }
                 } else if(sound.isPlaying(MILL_SOUND_TRACK)) {
                     sound.stopFadeOut(MILL_SOUND_TRACK, 20)
@@ -425,7 +432,6 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
             center = SCREEN_CENTER,
             style = Stroke(width = (SCREEN_RADIUS * 0.03f).dp.toPx())
         )
-
     }
 
     companion object {
