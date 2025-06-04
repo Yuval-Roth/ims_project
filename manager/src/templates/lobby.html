@@ -20,7 +20,7 @@
             <h1>Lobby {{ lobby_id }}</h1>
         </div>
 
-        <div class="lobby-content">
+        <div id="content-container" class="lobby-content">
             <!-- Participants Section -->
             <section class="participants-section">
                 <h2>Participants</h2>
@@ -41,6 +41,15 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <!-- Presets Section -->
+            <section class="presets-section">
+                <h2>Presets</h2>
+                <div class="preset-buttons">
+                    <button id="warmup-preset" class="preset-button">Warmup</button>
+                    <button id="full-experiment-preset" class="preset-button">Full experiment</button>
                 </div>
             </section>
 
@@ -86,7 +95,7 @@
                 <button id="toggle-game-btn" class="success-button" data-action="start" disabled>
                     Start Experiment
                 </button>
-                
+
             </div>
         </div>
     </div>
@@ -132,12 +141,14 @@
     <script>
     document.addEventListener('DOMContentLoaded', function () {
 
+        const lobbyId = "{{ lobby_id }}";
         const sessionTableBody = document.getElementById('sessions-tbody');
         const addSessionBtn = document.getElementById('add-session-btn');
         const modal = document.getElementById('add-session-modal');
         const overlay = document.getElementById('modal-overlay');
         const cancelModalBtn = document.getElementById('cancel-modal-btn');
         const addSessionForm = document.getElementById('add-session-form');
+        const contentContainer = document.getElementById('content-container');
 
         let sessionsDragged = false;
         let experimentRunning = false;
@@ -249,6 +260,7 @@
                         console.log('Session added:', data.session);
                         appendSessionRow(data.session);
                         closeModal();
+                        scrollToBottom();
                     } else {
                         alert('Failed to add session.');
                     }
@@ -271,7 +283,7 @@
             fetch('/get_sessions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lobby_id: "{{ lobby_id }}" })
+                body: JSON.stringify({ lobby_id: lobbyId })
             })
                 .then(response => response.json())
                 .then(data => {
@@ -390,7 +402,6 @@
         function handleDeleteSession(event) {
             if (event.target.classList.contains('delete-session-btn')) {
                 const sessionId = event.target.dataset.sessionId;
-                const lobbyId = "{{ lobby_id }}";
 
                 fetch('/delete_session', {
                     method: 'POST',
@@ -416,7 +427,7 @@
             fetch('/update_session_order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lobby_id: "{{ lobby_id }}", session_order: sessionOrder })
+                body: JSON.stringify({ lobby_id: lobbyId, session_order: sessionOrder })
             })
                 .then(response => response.json())
                 .then(data => {
@@ -428,7 +439,6 @@
         }
 
         const toggleGameBtn = document.getElementById('toggle-game-btn');
-        const lobbyId = "{{ lobby_id }}";
 
         function updateButtonState(experimentRunning, readyStatus, hasSessions) {
             const readyCount = readyStatus.filter(status => status).length;
@@ -512,39 +522,27 @@
             const syncWindowLength = document.getElementById('window');
 
             // Define default values for each game type
+            const clickBased = {
+                syncTolerance: 100,
+                syncToleranceUnit: 'ms',
+                syncToleranceStep: 1,
+                syncToleranceMin: 1,
+                syncWindowLength: -1,
+                windowLengthEnabled: false
+            }
+            const swipeBased = {
+                syncTolerance: 0.10,
+                syncToleranceUnit: 'hz',
+                syncToleranceStep: 0.01,
+                syncToleranceMin: 0.01,
+                syncWindowLength: 1000,
+                windowLengthEnabled: true
+            }
             const defaultParams = {
-                'Water Ripples': {
-                    syncTolerance: 50,
-                    syncToleranceUnit: 'ms',
-                    syncToleranceStep: 1,
-                    syncToleranceMin: 1,
-                    syncWindowLength: -1,
-                    windowLengthEnabled: false
-                },
-                'Flower Garden': {
-                    syncTolerance: 50,
-                    syncToleranceUnit: 'ms',
-                    syncToleranceStep: 1,
-                    syncToleranceMin: 1,
-                    syncWindowLength: -1,
-                    windowLengthEnabled: false
-                },
-                'Flour Mill': {
-                    syncTolerance: 0.10,
-                    syncToleranceUnit: 'hz',
-                    syncToleranceStep: 0.01,
-                    syncToleranceMin: 0.01,
-                    syncWindowLength: 1000,
-                    windowLengthEnabled: true
-                },
-                'Wine Glasses': {
-                    syncTolerance: 0.10,
-                    syncToleranceUnit: 'hz',
-                    syncToleranceStep: 0.01,
-                    syncToleranceMin: 0.01,
-                    syncWindowLength: 1000,
-                    windowLengthEnabled: true
-                },
+                'Water Ripples': clickBased,
+                'Flower Garden': clickBased,
+                'Flour Mill': swipeBased,
+                'Wine Glasses': swipeBased,
             };
 
             function updateDefaultValues() {
@@ -577,6 +575,80 @@
 
             gameTypeSelect.addEventListener('change', updateDefaultValues);
             updateDefaultValues()
+        }
+
+        // Presets
+        document.getElementById('warmup-preset').addEventListener('click', () => { runPreset('warmup'); });
+        document.getElementById('full-experiment-preset').addEventListener('click', () => { runPreset('full_experiment'); });
+        const presets = {
+            'warmup': [
+                { gameType: 'Water Ripples', duration: 40, syncTolerance: 100, syncWindowLength: -1 },
+                { gameType: 'Wine Glasses', duration: 40, syncTolerance: 10, syncWindowLength: 1000 },
+                { gameType: 'Flower Garden', duration: 40, syncTolerance: 100, syncWindowLength: -1 },
+                { gameType: 'Flour Mill', duration: 40, syncTolerance: 10, syncWindowLength: 1000 }
+            ],
+            'full_experiment': [
+                { gameType: 'Water Ripples', duration: 80, syncTolerance: 100, syncWindowLength: -1 },
+                { gameType: 'Wine Glasses', duration: 80, syncTolerance: 10, syncWindowLength: 1000 },
+                { gameType: 'Flower Garden', duration: 80, syncTolerance: 100, syncWindowLength: -1 },
+                { gameType: 'Flour Mill', duration: 80, syncTolerance: 10, syncWindowLength: 1000 }
+            ]
+        };
+
+        async function runPreset(preset){
+            async function addSession(gameType, duration, syncTolerance, syncWindowLength) {
+                try {
+                    const response = await fetch('/add_session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            lobby_id: lobbyId,
+                            gameType: gameType,
+                            duration: duration,
+                            syncTolerance: syncTolerance,
+                            syncWindowLength: syncWindowLength
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.status === 'success') {
+                        console.log('Session added:', data.session);
+                        appendSessionRow(data.session);
+                    } else {
+                        alert('Failed to add session.');
+                    }
+                } catch (error) {
+                    console.error('Error adding session:', error);
+                    alert('Failed to add session.');
+                }
+            }
+
+            // Get the selected preset
+            const selectedPreset = presets[preset];
+            if (!selectedPreset) {
+                console.error('Invalid preset selected:', preset);
+                return;
+            }
+
+            // Loop through the sessions in the preset and add them
+            for (const session of selectedPreset) {
+                await addSession(
+                    session.gameType,
+                    session.duration,
+                    session.syncTolerance,
+                    session.syncWindowLength
+                );
+            }
+            scrollToBottom()
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => {
+                contentContainer.scrollTo({
+                    top: contentContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            },50);
         }
 
         // Poll for the lobby state every 5 seconds

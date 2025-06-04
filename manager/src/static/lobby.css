@@ -228,3 +228,27 @@ button:hover {
     display: none;
 }
 
+.presets-section {
+    margin-top: 20px;
+    padding: 10px;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.preset-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.preset-button:hover {
+    background-color: #0056b3;
+}
+
+
