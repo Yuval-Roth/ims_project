@@ -250,10 +250,7 @@ class LobbyService(
             throw IllegalStateException("Lobby is not in waiting state")
         }
 
-        lobby.gameType = sessionDetails.gameType
-        lobby.gameDuration = sessionDetails.duration
-        lobby.syncWindowLength = sessionDetails.syncWindowLength
-        lobby.syncTolerance = sessionDetails.syncTolerance
+        lobby.configure(sessionDetails)
 
         // Notify the clients
         lobby.getPlayers()
@@ -265,6 +262,7 @@ class LobbyService(
                         .duration(sessionDetails.duration)
                         .syncWindowLength(sessionDetails.syncWindowLength)
                         .syncTolerance(sessionDetails.syncTolerance)
+                        .skipFeedback(sessionDetails.skipFeedback)
                         .build().toJson()
                 )
             }
@@ -299,6 +297,7 @@ class LobbyService(
                 .duration(lobby.gameDuration)
                 .syncWindowLength(lobby.syncWindowLength)
                 .syncTolerance(lobby.syncTolerance)
+                .skipFeedback(lobby.skipFeedback)
                 .build().toJson()
         )
         log.debug("sendLobbyConfiguration() successful")

@@ -67,6 +67,7 @@
                                     <th>Session ID</th>
                                     <th>Sync Tolerance</th>
                                     <th>Sync Window</th>
+                                    <th>Skip Feedback</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -77,6 +78,7 @@
                                     <td>{{ session.duration }}</td>
                                     <td>{{ session.sessionId }}</td>
                                     <td>{{ session.syncTolerance }}</td>
+                                    <td>{{ session.skipFeedback }}</td>
                                     <td>{{ session.syncWindowLength }}</td>
                                     <td>
                                         <button class="danger-button delete-session-btn" data-session-id="{{ session.sessionId }}">Delete</button>
@@ -101,7 +103,6 @@
     </div>
 
     <!-- Modal for Adding a Session -->
-    <!-- Modal for Adding a Session -->
     <div id="add-session-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h2>Add a Session</h2>
@@ -118,13 +119,17 @@
                 <label for="duration">Duration (seconds):</label>
                 <input type="number" name="duration" id="duration" required>
 
-                <!-- New Section: Sync Tolerance -->
                 <label id="syncToleranceDescription" for="syncTolerance"></label>
                 <input type="number" name="syncTolerance" id="syncTolerance" required>
 
-                <!-- New Section: Window -->
                 <label for="window">Sync Window Length (ms):</label>
                 <input type="number" name="window" id="window" required>
+
+                <label for="skipFeedback">Skip Feedback</label>
+                <select name="skipFeedback" id="skipFeedback" required>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
 
                 <div class="modal-actions" style="display:flex; justify-content: center; gap: 30px;">
                     <button type="button" id="cancel-modal-btn" class="cancel-button" style="width:150px">Cancel</button>
@@ -246,7 +251,8 @@
                 gameType: gameType,
                 duration: parseInt(formData.get('duration'), 10),
                 syncTolerance: syncTolerance,
-                syncWindowLength: syncWindowLength
+                syncWindowLength: syncWindowLength,
+                skipFeedback: formData.get('skipFeedback') === 'yes'
             };
 
             fetch('/add_session', {
@@ -333,7 +339,7 @@
 
         // Append a session row to the table
         function appendSessionRow(session, index = -1) {
-            if (!session || !session.sessionId || !session.gameType || !session.duration) {
+            if (!session || !session.sessionId || !session.gameType || !session.duration || !session.syncTolerance || !session.syncWindowLength || session.skipFeedback === undefined) {
                 console.warn('Invalid session data:', session);
                 return;
             }
@@ -366,6 +372,7 @@
                                 syncWindowLength = session.syncWindowLength + ' ms';
                                 break;
                         }
+                        const skipFeedback = session.skipFeedback ? 'Yes' : 'No';
                         // Create and append the row
                         const row = document.createElement('tr');
                         row.dataset.sessionId = session.sessionId;
@@ -375,6 +382,7 @@
                             <td>${session.dbId}</td>
                             <td>${syncTolerance}</td>
                             <td>${syncWindowLength}</td>
+                            <td>${skipFeedback}</td>
                             <td>
                                 <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
                             </td>
@@ -577,26 +585,33 @@
             updateDefaultValues()
         }
 
+        // skip feedback select warning
+        const skipFeedbackSelect = document.getElementById('skipFeedback');
+        skipFeedbackSelect.addEventListener('change', function() {
+            const skipFeedback = skipFeedbackSelect.value === 'yes';
+            skipFeedbackSelect.style.backgroundColor = skipFeedback ? 'red' : 'white';
+        })
+
         // Presets
         document.getElementById('warmup-preset').addEventListener('click', () => { runPreset('warmup'); });
         document.getElementById('full-experiment-preset').addEventListener('click', () => { runPreset('full_experiment'); });
         const presets = {
             'warmup': [
-                { gameType: 'Water Ripples', duration: 40, syncTolerance: 100, syncWindowLength: -1 },
-                { gameType: 'Wine Glasses', duration: 40, syncTolerance: 10, syncWindowLength: 1000 },
-                { gameType: 'Flower Garden', duration: 40, syncTolerance: 100, syncWindowLength: -1 },
-                { gameType: 'Flour Mill', duration: 40, syncTolerance: 10, syncWindowLength: 1000 }
+                { gameType: 'Water Ripples', duration: 40, syncTolerance: 100, syncWindowLength: -1, skipFeedback: true },
+                { gameType: 'Wine Glasses', duration: 40, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: true },
+                { gameType: 'Flower Garden', duration: 40, syncTolerance: 100, syncWindowLength: -1, skipFeedback: true },
+                { gameType: 'Flour Mill', duration: 40, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: true }
             ],
             'full_experiment': [
-                { gameType: 'Water Ripples', duration: 80, syncTolerance: 100, syncWindowLength: -1 },
-                { gameType: 'Wine Glasses', duration: 80, syncTolerance: 10, syncWindowLength: 1000 },
-                { gameType: 'Flower Garden', duration: 80, syncTolerance: 100, syncWindowLength: -1 },
-                { gameType: 'Flour Mill', duration: 80, syncTolerance: 10, syncWindowLength: 1000 }
+                { gameType: 'Water Ripples', duration: 80, syncTolerance: 100, syncWindowLength: -1, skipFeedback: false },
+                { gameType: 'Wine Glasses', duration: 80, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: false },
+                { gameType: 'Flower Garden', duration: 80, syncTolerance: 100, syncWindowLength: -1, skipFeedback: false },
+                { gameType: 'Flour Mill', duration: 80, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: false }
             ]
         };
 
         async function runPreset(preset){
-            async function addSession(gameType, duration, syncTolerance, syncWindowLength) {
+            async function addSession(gameType, duration, syncTolerance, syncWindowLength, skipFeedback) {
                 try {
                     const response = await fetch('/add_session', {
                         method: 'POST',
@@ -606,7 +621,8 @@
                             gameType: gameType,
                             duration: duration,
                             syncTolerance: syncTolerance,
-                            syncWindowLength: syncWindowLength
+                            syncWindowLength: syncWindowLength,
+                            skipFeedback: skipFeedback
                         })
                     });
 
@@ -636,7 +652,8 @@
                     session.gameType,
                     session.duration,
                     session.syncTolerance,
-                    session.syncWindowLength
+                    session.syncWindowLength,
+                    session.skipFeedback
                 );
             }
             scrollToBottom()

@@ -1,14 +1,9 @@
 package com.imsproject.gameserver.business.lobbies
 
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.gameserver.business.Session
 
-class Lobby(
-    val id: String,
-    var gameType: GameType = GameType.UNDEFINED,
-    var gameDuration: Int = -1,
-    var syncTolerance: Long = -1,
-    var syncWindowLength: Long = -1
-) {
+class Lobby(val id: String) {
 
     var player1Id : String? = null
         private set
@@ -18,9 +13,27 @@ class Lobby(
     private var player1Ready = false
     private var player2Ready = false
 
+    var gameType: GameType = GameType.UNDEFINED
+        private set
+    var gameDuration: Int = -1
+        private set
+    var syncTolerance: Long = -1
+        private set
+    var syncWindowLength: Long = -1
+        private set
+    var skipFeedback = false
+        private set
     var state = LobbyState.WAITING
     var hasSessions = false
     var experimentRunning = false
+
+    fun configure(sessionDetails: Session) {
+        gameType = sessionDetails.gameType
+        gameDuration = sessionDetails.duration
+        syncWindowLength = sessionDetails.syncWindowLength
+        syncTolerance = sessionDetails.syncTolerance
+        skipFeedback = sessionDetails.skipFeedback
+    }
 
     /**
      * returns true if the player was added successfully, false if the lobby is full
