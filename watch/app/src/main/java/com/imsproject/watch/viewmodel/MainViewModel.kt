@@ -111,7 +111,8 @@ class MainViewModel() : ViewModel() {
     private val _expId = MutableStateFlow<String?>(null)
     val expId : StateFlow<String?> = _expId
 
-    private var sessionId = -1
+    private var _skipFeedback = false
+    private var _sessionId = -1
     var temporaryPlayerId = ""
 
     // ================================================================================ |
@@ -191,13 +192,21 @@ class MainViewModel() : ViewModel() {
         _gameType.value = null
         _gameDuration.value = null
         _expId.value = result.expId
+        val skipFeedback = _skipFeedback
         setupListeners()
         viewModelScope.launch(Dispatchers.IO) {
             when (result.code) {
                 Result.Code.OK -> {
                     setState(State.UPLOADING_EVENTS)
-                    if (model.uploadSessionEvents(sessionId)) {
-                        setState(State.AFTER_GAME)
+                    if (model.uploadSessionEvents(_sessionId)) {
+                        val nextState = if(!skipFeedback){
+                            State.AFTER_GAME
+                        } else if(_lobbyId.value != "") {
+                            State.CONNECTED_IN_LOBBY
+                        } else {
+                            State.CONNECTED_NOT_IN_LOBBY
+                        }
+                        setState(nextState)
                     } else {
                         fatalError("Failed to upload session events")
                     }
@@ -272,8 +281,8 @@ class MainViewModel() : ViewModel() {
     fun uploadAnswers(vararg QnAs: Pair<String,String>) {
         _loading.value = true
         viewModelScope.launch(Dispatchers.IO) {
-            if(model.uploadAfterGameQuestions(sessionId, *QnAs)){
-                sessionId = -1
+            if(model.uploadAfterGameQuestions(_sessionId, *QnAs)){
+                _sessionId = -1
                 val nextState = if(_expId.value != null){
                     State.AFTER_EXPERIMENT
                 } else if(_lobbyId.value != ""){
@@ -323,6 +332,7 @@ class MainViewModel() : ViewModel() {
                     _gameType.value = null
                     _gameDuration.value = null
                     _ready.value = false
+                    _skipFeedback = false
 
                     _lobbyId.value = lobbyId
                     if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
@@ -359,8 +369,14 @@ class MainViewModel() : ViewModel() {
                     showError("Failed to configure lobby")
                     return
                 }
+                val skipFeedback = request.skipFeedback ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing skipQuestions")
+                    showError("Failed to configure lobby")
+                    return
+                }
 
                 withContext(Dispatchers.Main){
+                    _skipFeedback = skipFeedback
                     _gameType.value = gameType
                     _gameDuration.value = gameDuration
                     _syncWindowLength.value = syncWindowLength
@@ -385,7 +401,7 @@ class MainViewModel() : ViewModel() {
                 }
 
                 withContext(Dispatchers.Main) {
-                    sessionId = _sessionId
+                    this@MainViewModel._sessionId = _sessionId
                     _timeServerStartTime.value = timeServerStartTime
                     _additionalData.value = request.data?.joinToString(";") ?: ""
                     setState(State.IN_GAME)
@@ -445,7 +461,7 @@ class MainViewModel() : ViewModel() {
         _lobbyId.value = ""
         _gameType.value = null
         _timeServerStartTime.value = -1
-        sessionId = -1
+        _sessionId = -1
         showError(message)
         viewModelScope.launch(Dispatchers.IO) {
             oldModel.closeAllResources()

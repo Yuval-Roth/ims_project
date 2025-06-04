@@ -3,7 +3,7 @@ package com.imsproject.common.gameserver
 import com.google.gson.annotations.SerializedName
 import com.imsproject.common.utils.toJson
 
-data class GameRequest internal constructor(
+data class GameRequest (
     val type: Type,
     val playerId: String?,
     val lobbyId : String?,
@@ -17,6 +17,7 @@ data class GameRequest internal constructor(
     val timestamp: String?,
     val syncWindowLength: Long?,
     val syncTolerance: Long?,
+    val skipFeedback: Boolean?
 ){
     enum class Type {
         @SerializedName("ping")                     PING,
