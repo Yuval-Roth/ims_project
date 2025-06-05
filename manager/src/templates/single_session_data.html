@@ -34,6 +34,7 @@
       padding: 12px;
       box-sizing: border-box;
     }
+
   </style>
 </head>
 <body>
@@ -97,8 +98,22 @@ const syncIntervals = {{ data.sync_intervals|tojson }};
 const angleData     = {{ data.angle_data|tojson }};
 
 /**** ---------- HELPERS ---------- ****/
+function clampXAxisToZero(chart) {
+  const xScale = chart.scales.x;
+  if (xScale.min < 0) {
+    // Compute the current visible width
+    const width = xScale.max - xScale.min;
+    // Force min = 0, max = width
+    xScale.options.min = 0;
+    xScale.options.max = width;
+    chart.update('none');
+  }
+
+  co
+}
+
 function fullscreenZoom(chartRef) {
-  // Manual left-click pan logic
+  // Manual left-click pan logic, then clamp
   let isPanning = false;
   let startX, startY;
   const canvas = chartRef.canvas;
@@ -123,25 +138,34 @@ function fullscreenZoom(chartRef) {
     if (!isPanning) return;
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
+
+    // Pan by pixel delta
     chartRef.pan({ x: -deltaX, y: -deltaY }, undefined, 'default');
+    // Immediately clamp X
+    clampXAxisToZero(chartRef);
+
     startX = e.clientX;
     startY = e.clientY;
   });
 
   canvas.addEventListener('wheel', e => {
+    // If Ctrl is held, zoom Y; otherwise zoom X
     chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
   }, { passive: true });
 
   return {
     pan: {
-      enabled: false,
-      rangeMin: { x: 0 }  // clamp so that x-axis never goes below 0
+      enabled: false,      // We handle panning manually
+      rangeMin: { x: 0 }   // As backup, but manual clamp is primary
     },
     zoom: {
       wheel: {
         enabled: true,
         speed: 0.1,
-        onZoom: ({ chart }) => chart.update('none')
+        onZoom: ({ chart }) => {
+          // After zoom, force clamp if needed
+          clampXAxisToZero(chart);
+        }
       },
       pinch: {
         enabled: true,
@@ -149,13 +173,13 @@ function fullscreenZoom(chartRef) {
       },
       mode: 'x',
       limits: {
-        x: { min: 0 }    // clamp so that x-axis never goes below 0
+        x: { min: 0 }    // ensures pinch/scroll cannot cross below zero
       }
     }
   };
 }
 
-
+/**** ---------- DATA → DATASETS ---------- ****/
 function dictToDatasets(dict, extra = {}) {
   return Object.keys(dict).map(actor => ({
     label: actor,
@@ -186,7 +210,6 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
         }
       },
       plugins: {
-        // Remove any built-in zoom block here:
         tooltip: {
           callbacks: {
             label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
@@ -196,7 +219,7 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
     }
   });
 
-  // Attach our clamp-to-x>=0 zoom configuration:
+  // Attach the clamp‐aware zoom configuration
   chart.options.plugins.zoom = fullscreenZoom(chart);
   chart.update();
 
@@ -226,7 +249,7 @@ function bandMax(idx) {
   return bandCenter(idx) + LINE_HALF;
 }
 
-// fast vertical ticks plugin for clicks view
+// Fast vertical ticks plugin for clicks view
 const fastTicks = {
   id: 'fastTicks',
   afterDraw(chart) {
@@ -265,7 +288,7 @@ const fastTicks = {
 };
 Chart.register(fastTicks);
 
-// grey sync-interval boxes for frequency view
+// Grey sync-interval boxes plugin for frequency view
 const syncBoxes = {
   id: 'syncBoxes',
   beforeDraw(chart) {
@@ -339,12 +362,11 @@ if (Object.keys(clickEvents || {}).length) {
       plugins: {
         tooltip: { enabled: false },
         legend: { labels: { usePointStyle: true } }
-        // ← No zoom block here initially
       }
     }
   });
 
-  // Attach clamp-to-x>=0 zoom config:
+  // Attach clamp‐aware zoom config
   gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
   gameChart.update();
 
@@ -380,12 +402,11 @@ if (Object.keys(clickEvents || {}).length) {
         tooltip: {
           callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` }
         }
-        // ← No zoom block here initially
       }
     }
   });
 
-  // Attach clamp-to-x>=0 zoom config:
+  // Attach clamp‐aware zoom config
   gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
   gameChart.update();
 
@@ -435,23 +456,26 @@ if (angleData && Object.keys(angleData).length) {
       },
       plugins: {
         tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } }
-        // ← No zoom block here initially
       }
     }
   });
 
-  // Attach clamp-to-x>=0 zoom config:
+  // Attach clamp‐aware zoom config
   angleChart.options.plugins.zoom = fullscreenZoom(angleChart);
 
-  // Add onZoomComplete and onPanComplete to rescale Y:
-  angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => rescaleY(chart);
-  angleChart.options.plugins.zoom.zoom.onPanComplete = ({ chart }) => rescaleY(chart);
+  // After any zoom or pan, rescale Y to visible X range
+  angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => {
+    clampXAxisToZero(chart);
+    rescaleY(chart);
+  };
+  angleChart.options.plugins.zoom.zoom.onPanComplete = ({ chart }) => {
+    clampXAxisToZero(chart);
+    rescaleY(chart);
+  };
 
   angleChart.update();
   addResetZoomButton(angleChart, angleCtx.parentElement);
 }
-
-
 
 function addResetZoomButton(chart, container) {
   const btn = document.createElement('button');
@@ -462,7 +486,6 @@ function addResetZoomButton(chart, container) {
   });
   container.appendChild(btn);
 }
-
 
 /**** ---------- dbl-click → fullscreen ---------- ****/
 document.querySelectorAll('.chart-container').forEach(container => {
