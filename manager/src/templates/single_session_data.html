@@ -53,6 +53,7 @@
     <div class="chart-container">
       <h3 style="text-align:center;" id="gameChartTitle"></h3>
       <canvas id="gameChart"></canvas>
+      <!-- Reset button will be injected here dynamically -->
     </div>
     {% if data.angle_data %}
       <div class="chart-container">
@@ -98,23 +99,21 @@ const angleData     = {{ data.angle_data|tojson }};
 
 /**** ---------- HELPERS ---------- ****/
 function clampAxesToZero(chart) {
-  // Check x‐axis
+  // Clamp X-axis
   const xScale = chart.scales.x;
   if (xScale.min < 0) {
     const spanX = xScale.max - xScale.min;
     xScale.options.min = 0;
     xScale.options.max = spanX;
   }
-
-  // Check y‐axis
+  // Clamp Y-axis
   const yScale = chart.scales.y;
   if (yScale.min < 0) {
     const spanY = yScale.max - yScale.min;
     yScale.options.min = 0;
     yScale.options.max = spanY;
   }
-
-  chart.update('none'); // redraw immediately with clamps
+  chart.update('none'); // redraw with clamped axes
 }
 
 function fullscreenZoom(chartRef) {
@@ -143,9 +142,7 @@ function fullscreenZoom(chartRef) {
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
 
-    // Perform manual pan
     chartRef.pan({ x: -deltaX, y: -deltaY }, undefined, 'default');
-    // Immediately clamp both axes
     clampAxesToZero(chartRef);
 
     startX = e.clientX;
@@ -153,7 +150,7 @@ function fullscreenZoom(chartRef) {
   });
 
   canvas.addEventListener('wheel', e => {
-    // Ctrl+wheel => zoom Y; otherwise zoom X
+    // Ctrl+wheel = zoom Y; otherwise zoom X
     chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
   }, { passive: true });
 
@@ -183,7 +180,6 @@ function fullscreenZoom(chartRef) {
   };
 }
 
-/**** ---------- DATA → DATASETS ---------- ****/
 function dictToDatasets(dict, extra = {}) {
   return Object.keys(dict).map(actor => ({
     label: actor,
@@ -223,7 +219,6 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
     }
   });
 
-  // Attach clamp‐aware zoom config
   chart.options.plugins.zoom = fullscreenZoom(chart);
   chart.update();
 
@@ -313,7 +308,6 @@ const syncBoxes = {
 };
 Chart.register(syncBoxes);
 
-// Build the gameChart based on clickEvents or frequencyData:
 if (Object.keys(clickEvents || {}).length) {
   titleEl.textContent = 'Clicks & Sync Markers';
   const actors = Object.keys(clickEvents).sort();
@@ -370,9 +364,10 @@ if (Object.keys(clickEvents || {}).length) {
     }
   });
 
-  // Attach clamp‐aware zoom config
+  // Attach clamp‐aware zoom config and add reset button
   gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
   gameChart.update();
+  addResetZoomButton(gameChart, gameCtx.parentElement);
 
 } else if (frequencyData && Object.keys(frequencyData).length) {
   titleEl.textContent = 'Finger Frequency & Sync Intervals';
@@ -410,9 +405,10 @@ if (Object.keys(clickEvents || {}).length) {
     }
   });
 
-  // Attach clamp‐aware zoom config
+  // Attach clamp‐aware zoom config and add reset button
   gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
   gameChart.update();
+  addResetZoomButton(gameChart, freqCtx.parentElement);
 
 } else {
   titleEl.textContent = '(No game-specific data)';
