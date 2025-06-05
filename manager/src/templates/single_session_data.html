@@ -52,6 +52,7 @@
 Chart.defaults.animation             = false;
 Chart.defaults.elements.line.tension = 0;
 
+
 /**** ---------- DATA FROM FLASK ---------- ****/
 const meta          = {{ metadata|tojson }};
 const heartData     = {{ data.heart|tojson }};
@@ -65,12 +66,61 @@ const syncIntervals = {{ data.sync_intervals|tojson }};
 const angleData     = {{ data.angle_data|tojson }};
 
 /**** ---------- HELPERS ---------- ****/
-function fullscreenZoom(){
+function fullscreenZoom(chartRef) {
+  // Left-click pan setup
+  let isPanning = false;
+  let startX, startY;
+  const canvas = chartRef.canvas;
+
+  canvas.addEventListener('mousedown', e => {
+    if (e.button === 0) {
+      isPanning = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      canvas.style.cursor = 'grabbing';
+    }
+  });
+
+  canvas.addEventListener('mouseup', e => {
+    if (e.button === 0) {
+      isPanning = false;
+      canvas.style.cursor = 'default';
+    }
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (!isPanning) return;
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+    chartRef.pan({ x: -deltaX, y: -deltaY }, undefined, 'default');
+    startX = e.clientX;
+    startY = e.clientY;
+  });
+
+  canvas.addEventListener('wheel', e => {
+    chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
+  }, { passive: true });
+
   return {
-    zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'},
-    pan :{enabled:false}
+    pan: {
+      enabled: false // Disable built-in pan
+    },
+    zoom: {
+      wheel: {
+        enabled: true,
+        speed: 0.1,
+        onZoom: ({ chart }) => chart.update('none')
+      },
+      pinch: {
+        enabled: true,
+        mode: 'xy'
+      },
+      mode: 'x' // default, will be overridden dynamically
+    }
   };
 }
+
+
 function dictToDatasets(dict, extra={}){
   return Object.keys(dict).map(actor=>({
     label:actor,
@@ -80,29 +130,47 @@ function dictToDatasets(dict, extra={}){
     ...extra
   }));
 }
-function makeLineChart(id, datasets, yLabel, yOpts={}){
-  new Chart(document.getElementById(id),{
-    type:'line',
-    data:{datasets},
-    options:{
-      parsing:false,
-      responsive:true,
-      scales:{
-        x:{type:'linear',title:{display:true,text:'Time (s)'}},
-        y:{title:{display:true,text:yLabel},...yOpts}
+function makeLineChart(id, datasets, yLabel, yOpts = {}) {
+  const ctx = document.getElementById(id);
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { title: { display: true, text: yLabel }, ...yOpts }
       },
-      plugins:{
-        zoom:fullscreenZoom(),
-        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}
+      plugins: {
+        zoom: {
+          pan: { enabled: false },
+          zoom: {
+            wheel: { enabled: true, speed: 0.1 },
+            pinch: { enabled: true, mode: 'xy' },
+            mode: 'x'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
+          }
+        }
       }
     }
   });
+
+  // Attach manual pan + scroll direction logic
+  fullscreenZoom(chart);
+
+  addResetZoomButton(chart, ctx.parentElement);
 }
+
 
 /**** ---------- METRIC CHARTS ---------- ****/
 makeLineChart('hrChart'    , dictToDatasets(heartData) , 'BPM');
 makeLineChart('hrvChart'   , dictToDatasets(hrvData)   , 'ms');
-makeLineChart('latencyChart', dictToDatasets(latencyData,{pointRadius:0,backgroundColor:'rgba(60,150,255,.08)',fill:'origin'}), 'ms');
+makeLineChart('latencyChart', dictToDatasets(latencyData), 'ms');
 makeLineChart('jitterChart', dictToDatasets(jitterData), 'ms');
 
 /**** ---------- CLICK-/SYNC OR FREQUENCY VIEW ---------- ****/
@@ -239,7 +307,8 @@ if (angleData && Object.keys(angleData).length) {
     }
   }
 
-  new Chart(document.getElementById('angleChart'), {
+  const angleCtx = document.getElementById('angleChart');
+  const angleChart = new Chart(angleCtx, {
     type : 'scatter',
     data : {
       datasets: Object.keys(angleData).map(actor => ({
@@ -260,7 +329,7 @@ if (angleData && Object.keys(angleData).length) {
           zoom : {
             wheel : { enabled:true },
             pinch : { enabled:true },
-            mode  : 'xy'              // allow horizontal and vertical zoom
+            mode  : 'xy'
           },
           pan : {
             enabled:true,
@@ -273,13 +342,36 @@ if (angleData && Object.keys(angleData).length) {
       }
     }
   });
+
+  addResetZoomButton(angleChart, angleCtx.parentElement);
+}
+
+
+
+function addResetZoomButton(chart, container) {
+  const btn = document.createElement('button');
+  btn.textContent = 'Reset Zoom';
+  btn.className = 'reset-btn';
+  btn.addEventListener('click', () => {
+    chart.resetZoom();
+  });
+  container.appendChild(btn);
 }
 
 
 /**** ---------- dbl-click → fullscreen ---------- ****/
-document.querySelectorAll('.chart-container').forEach(c=>{
-  c.addEventListener('dblclick',()=>document.fullscreenElement?document.exitFullscreen():c.requestFullscreen());
+document.querySelectorAll('.chart-container').forEach(container => {
+  const canvas = container.querySelector('canvas');
+
+  canvas.addEventListener('dblclick', () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      container.requestFullscreen();
+    }
+  });
 });
+
 </script>
 </body>
 </html>
