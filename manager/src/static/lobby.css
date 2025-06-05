@@ -12,8 +12,7 @@ body {
 
 /* Main Container */
 .main-container {
-    width: 90%;
-    max-width: 1200px;
+    width: 80%;
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -67,8 +66,7 @@ body {
 /* Fixed Size for Scrollable Session Table */
 .scrollable-table-container {
     max-height: 350px; /* Set fixed height for scrollable table */
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: auto;
     border: 1px solid #ddd;
     border-radius: 8px;
     background-color: #ffffff;
@@ -85,7 +83,7 @@ body {
 
 .styled-table th,
 .styled-table td {
-    padding: 12px 15px;
+    padding: 8px 10px;
     border: 1px solid #ddd;
 }
 
@@ -140,8 +138,13 @@ button:hover {
 }
 
 .danger-button {
+    height: 30px;
     background-color: #dc3545;
     color: #ffffff;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .danger-button:hover {
@@ -229,12 +232,13 @@ button:hover {
 }
 
 .presets-section {
-    margin-top: 20px;
-    padding: 10px;
+    width:25%;
 }
 
 .preset-buttons {
     display: flex;
+    justify-content: center;
+    width:100%;
     gap: 15px;
 }
 
@@ -249,6 +253,10 @@ button:hover {
 
 .preset-button:hover {
     background-color: #0056b3;
+}
+
+.participants-section {
+    width: 25%;
 }
 
 

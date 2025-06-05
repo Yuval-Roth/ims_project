@@ -21,37 +21,39 @@
         </div>
 
         <div id="content-container" class="lobby-content">
-            <!-- Participants Section -->
-            <section class="participants-section">
-                <h2>Participants</h2>
-                <div class="table-container">
-                    <table class="styled-table participants-table">
-                        <thead>
+            <div style="display: flex; align-items: center; gap:5%; width:80% ">
+                <!-- Participants Section -->
+                <section class="participants-section">
+                    <h2>Participants</h2>
+                    <div class="table-container">
+                        <table class="styled-table participants-table">
+                            <thead>
                             <tr>
                                 <th>Player Name</th>
                                 <th>Status</th>
                             </tr>
-                        </thead>
-                        <tbody>
+                            </thead>
+                            <tbody>
                             {% for participant in selected_participants %}
-                            <tr>
-                                <td>{{ participant }}</td>
-                                <td id="status-{{participant}}">Not Ready</td>
-                            </tr>
+                                <tr>
+                                    <td>{{ participant }}</td>
+                                    <td id="status-{{participant}}">Not Ready</td>
+                                </tr>
                             {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                <!-- Presets Section -->
+                <section class="presets-section">
+                    <h2>Presets</h2>
+                    <div class="preset-buttons">
+                        <button id="warmup-preset" class="preset-button">Warmup</button>
+                        <button id="full-experiment-preset" class="preset-button">Full experiment</button>
+                    </div>
+                </section>
+            </div>
 
-            <!-- Presets Section -->
-            <section class="presets-section">
-                <h2>Presets</h2>
-                <div class="preset-buttons">
-                    <button id="warmup-preset" class="preset-button">Warmup</button>
-                    <button id="full-experiment-preset" class="preset-button">Full experiment</button>
-                </div>
-            </section>
 
             <!-- Sessions Section -->
             <section class="sessions-section">
