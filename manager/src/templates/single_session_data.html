@@ -34,7 +34,6 @@
       padding: 12px;
       box-sizing: border-box;
     }
-
   </style>
 </head>
 <body>
@@ -98,20 +97,27 @@ const syncIntervals = {{ data.sync_intervals|tojson }};
 const angleData     = {{ data.angle_data|tojson }};
 
 /**** ---------- HELPERS ---------- ****/
-function clampXAxisToZero(chart) {
+function clampAxesToZero(chart) {
+  // Check x‐axis
   const xScale = chart.scales.x;
   if (xScale.min < 0) {
-    // Compute the current visible width
-    const width = xScale.max - xScale.min;
-    // Force min = 0, max = width
+    const spanX = xScale.max - xScale.min;
     xScale.options.min = 0;
-    xScale.options.max = width;
-    chart.update('none');
+    xScale.options.max = spanX;
   }
+
+  // Check y‐axis
+  const yScale = chart.scales.y;
+  if (yScale.min < 0) {
+    const spanY = yScale.max - yScale.min;
+    yScale.options.min = 0;
+    yScale.options.max = spanY;
+  }
+
+  chart.update('none'); // redraw immediately with clamps
 }
 
 function fullscreenZoom(chartRef) {
-  // Manual left-click pan logic, then clamp
   let isPanning = false;
   let startX, startY;
   const canvas = chartRef.canvas;
@@ -137,32 +143,31 @@ function fullscreenZoom(chartRef) {
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
 
-    // Pan by pixel delta
+    // Perform manual pan
     chartRef.pan({ x: -deltaX, y: -deltaY }, undefined, 'default');
-    // Immediately clamp X
-    clampXAxisToZero(chartRef);
+    // Immediately clamp both axes
+    clampAxesToZero(chartRef);
 
     startX = e.clientX;
     startY = e.clientY;
   });
 
   canvas.addEventListener('wheel', e => {
-    // If Ctrl is held, zoom Y; otherwise zoom X
+    // Ctrl+wheel => zoom Y; otherwise zoom X
     chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
   }, { passive: true });
 
   return {
     pan: {
-      enabled: false,      // We handle panning manually
-      rangeMin: { x: 0 }   // As backup, but manual clamp is primary
+      enabled: false,
+      rangeMin: { x: 0, y: 0 }
     },
     zoom: {
       wheel: {
         enabled: true,
         speed: 0.1,
         onZoom: ({ chart }) => {
-          // After zoom, force clamp if needed
-          clampXAxisToZero(chart);
+          clampAxesToZero(chart);
         }
       },
       pinch: {
@@ -171,7 +176,8 @@ function fullscreenZoom(chartRef) {
       },
       mode: 'x',
       limits: {
-        x: { min: 0 }    // ensures pinch/scroll cannot cross below zero
+        x: { min: 0 },
+        y: { min: 0 }
       }
     }
   };
@@ -217,7 +223,7 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
     }
   });
 
-  // Attach the clamp‐aware zoom configuration
+  // Attach clamp‐aware zoom config
   chart.options.plugins.zoom = fullscreenZoom(chart);
   chart.update();
 
@@ -461,13 +467,13 @@ if (angleData && Object.keys(angleData).length) {
   // Attach clamp‐aware zoom config
   angleChart.options.plugins.zoom = fullscreenZoom(angleChart);
 
-  // After any zoom or pan, rescale Y to visible X range
+  // After zoom/pan, clamp both axes then rescale Y
   angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => {
-    clampXAxisToZero(chart);
+    clampAxesToZero(chart);
     rescaleY(chart);
   };
   angleChart.options.plugins.zoom.zoom.onPanComplete = ({ chart }) => {
-    clampXAxisToZero(chart);
+    clampAxesToZero(chart);
     rescaleY(chart);
   };
 
