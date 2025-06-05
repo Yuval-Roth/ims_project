@@ -14,9 +14,38 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
 
   <style>
-    .charts-grid{display:flex;flex-direction:column;gap:50px;align-items:center;margin:40px auto}
-    .chart-container{width:90vw;max-width:1200px;height:420px;position:relative}
-    .chart-container:fullscreen{width:100vw;height:100vh;background:#fff;padding:12px;box-sizing:border-box}
+    .charts-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 50px;
+      align-items: center;
+      margin: 40px auto;
+    }
+    .chart-container {
+      width: 90vw;
+      max-width: 1200px;
+      height: 420px;
+      position: relative;
+    }
+    .chart-container:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      background: #fff;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    .reset-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
+      padding: 4px 8px;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -33,25 +62,39 @@
   </p>
 
   <div class="charts-grid">
-    <div class="chart-container"><h3 style="text-align:center;" id="gameChartTitle"></h3><canvas id="gameChart"></canvas></div>
-          {# Angle chart is shown only for swipe-type games where frequency & sync data exist #}
+    <div class="chart-container">
+      <h3 style="text-align:center;" id="gameChartTitle"></h3>
+      <canvas id="gameChart"></canvas>
+    </div>
     {% if data.angle_data %}
-      <div class="chart-container"><h3 style="text-align:center;">Finger Angle</h3><canvas id="angleChart"></canvas></div>
+      <div class="chart-container">
+        <h3 style="text-align:center;">Finger Angle</h3>
+        <canvas id="angleChart"></canvas>
+      </div>
     {% endif %}
-    <div class="chart-container"><h3 style="text-align:center;">Heart Rate</h3><canvas id="hrChart"></canvas></div>
-    <div class="chart-container"><h3 style="text-align:center;">HR Variation</h3><canvas id="hrvChart"></canvas></div>
-    <div class="chart-container"><h3 style="text-align:center;">Latency</h3><canvas id="latencyChart"></canvas></div>
-    <div class="chart-container"><h3 style="text-align:center;">Jitter</h3><canvas id="jitterChart"></canvas></div>
-
-
+    <div class="chart-container">
+      <h3 style="text-align:center;">Heart Rate</h3>
+      <canvas id="hrChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">HR Variation</h3>
+      <canvas id="hrvChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">Latency</h3>
+      <canvas id="latencyChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">Jitter</h3>
+      <canvas id="jitterChart"></canvas>
+    </div>
   </div>
 </div>
 
 <script>
 /**** ---------- GLOBAL SPEED-UPS ---------- ****/
-Chart.defaults.animation             = false;
+Chart.defaults.animation = false;
 Chart.defaults.elements.line.tension = 0;
-
 
 /**** ---------- DATA FROM FLASK ---------- ****/
 const meta          = {{ metadata|tojson }};
@@ -67,7 +110,7 @@ const angleData     = {{ data.angle_data|tojson }};
 
 /**** ---------- HELPERS ---------- ****/
 function fullscreenZoom(chartRef) {
-  // Left-click pan setup
+  // Manual left-click pan logic
   let isPanning = false;
   let startX, startY;
   const canvas = chartRef.canvas;
@@ -103,7 +146,8 @@ function fullscreenZoom(chartRef) {
 
   return {
     pan: {
-      enabled: false // Disable built-in pan
+      enabled: false,
+      rangeMin: { x: 0 }  // clamp so that x-axis never goes below 0
     },
     zoom: {
       wheel: {
@@ -115,21 +159,26 @@ function fullscreenZoom(chartRef) {
         enabled: true,
         mode: 'xy'
       },
-      mode: 'x' // default, will be overridden dynamically
+      mode: 'x',
+      limits: {
+        x: { min: 0 }    // clamp so that x-axis never goes below 0
+      }
     }
   };
 }
 
 
-function dictToDatasets(dict, extra={}){
-  return Object.keys(dict).map(actor=>({
-    label:actor,
-    data :dict[actor].timestamps.map((t,i)=>({x:+t, y:+dict[actor].values[i]})),
-    pointRadius:3,
-    fill:false,
+function dictToDatasets(dict, extra = {}) {
+  return Object.keys(dict).map(actor => ({
+    label: actor,
+    data: dict[actor].timestamps.map((t, i) => ({ x: +t, y: +dict[actor].values[i] })),
+    pointRadius: 3,
+    fill: false,
     ...extra
   }));
 }
+
+/**** ---------- GENERIC LINE-CHART BUILDER ---------- ****/
 function makeLineChart(id, datasets, yLabel, yOpts = {}) {
   const ctx = document.getElementById(id);
   const chart = new Chart(ctx, {
@@ -139,18 +188,17 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
       parsing: false,
       responsive: true,
       scales: {
-        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
-        y: { title: { display: true, text: yLabel }, ...yOpts }
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' }
+        },
+        y: {
+          title: { display: true, text: yLabel },
+          ...yOpts
+        }
       },
       plugins: {
-        zoom: {
-          pan: { enabled: false },
-          zoom: {
-            wheel: { enabled: true, speed: 0.1 },
-            pinch: { enabled: true, mode: 'xy' },
-            mode: 'x'
-          }
-        },
+        // Remove any built-in zoom block here:
         tooltip: {
           callbacks: {
             label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
@@ -160,51 +208,66 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
     }
   });
 
-  // Attach manual pan + scroll direction logic
-  fullscreenZoom(chart);
+  // Attach our clamp-to-x>=0 zoom configuration:
+  chart.options.plugins.zoom = fullscreenZoom(chart);
+  chart.update();
 
   addResetZoomButton(chart, ctx.parentElement);
 }
 
-
 /**** ---------- METRIC CHARTS ---------- ****/
-makeLineChart('hrChart'    , dictToDatasets(heartData) , 'BPM');
-makeLineChart('hrvChart'   , dictToDatasets(hrvData)   , 'ms');
+makeLineChart('hrChart', dictToDatasets(heartData), 'BPM');
+makeLineChart('hrvChart', dictToDatasets(hrvData), 'ms');
 makeLineChart('latencyChart', dictToDatasets(latencyData), 'ms');
 makeLineChart('jitterChart', dictToDatasets(jitterData), 'ms');
 
 /**** ---------- CLICK-/SYNC OR FREQUENCY VIEW ---------- ****/
-const titleEl    = document.getElementById('gameChartTitle');
-const COLORS     = ['#007bff','#dc3545'];      // P1 blue, P2 red
+const titleEl = document.getElementById('gameChartTitle');
+const COLORS = ['#007bff', '#dc3545'];
 const SYNC_COLOR = '#ffca2c';
 const BAND_SPACING = 0.10;
-const LINE_HALF    = 0.07;
-function bandCenter(idx){return idx===0?0.5-BAND_SPACING:0.5+BAND_SPACING;}
-function bandMin(idx){return bandCenter(idx)-LINE_HALF;}
-function bandMax(idx){return bandCenter(idx)+LINE_HALF;}
+const LINE_HALF = 0.07;
+
+function bandCenter(idx) {
+  return idx === 0 ? 0.5 - BAND_SPACING : 0.5 + BAND_SPACING;
+}
+function bandMin(idx) {
+  return bandCenter(idx) - LINE_HALF;
+}
+function bandMax(idx) {
+  return bandCenter(idx) + LINE_HALF;
+}
 
 // fast vertical ticks plugin for clicks view
 const fastTicks = {
-  id:'fastTicks',
-  afterDraw(chart){
-    if(chart.canvas.id!=='gameChart') return;
-    if(!clickEvents || !Object.keys(clickEvents).length) return;
-    const actors = Object.keys(clickEvents).sort().slice(0,2);
-    const ctx    = chart.ctx, xS=chart.scales.x, yS=chart.scales.y;
-    actors.forEach((actor,idx)=>{
-      if(chart.getDatasetMeta(idx).hidden) return;
-      ctx.strokeStyle = COLORS[idx]; ctx.lineWidth = 3; ctx.beginPath();
-      (clickEvents[actor]||[]).forEach(t=>{
-        const px=xS.getPixelForValue(+t);
+  id: 'fastTicks',
+  afterDraw(chart) {
+    if (chart.canvas.id !== 'gameChart') return;
+    if (!clickEvents || !Object.keys(clickEvents).length) return;
+    const actors = Object.keys(clickEvents).sort().slice(0, 2);
+    const ctx = chart.ctx,
+          xS = chart.scales.x,
+          yS = chart.scales.y;
+
+    actors.forEach((actor, idx) => {
+      if (chart.getDatasetMeta(idx).hidden) return;
+      ctx.strokeStyle = COLORS[idx];
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      (clickEvents[actor] || []).forEach(t => {
+        const px = xS.getPixelForValue(+t);
         ctx.moveTo(px, yS.getPixelForValue(bandMin(idx)));
         ctx.lineTo(px, yS.getPixelForValue(bandMax(idx)));
       });
       ctx.stroke();
     });
-    if(!chart.getDatasetMeta(2).hidden && syncEvents?.length){
-      ctx.strokeStyle = SYNC_COLOR; ctx.lineWidth = 2; ctx.beginPath();
-      syncEvents.forEach(t=>{
-        const px=xS.getPixelForValue(+t);
+
+    if (!chart.getDatasetMeta(2)?.hidden && syncEvents?.length) {
+      ctx.strokeStyle = SYNC_COLOR;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      syncEvents.forEach(t => {
+        const px = xS.getPixelForValue(+t);
         ctx.moveTo(px, yS.getPixelForValue(bandMax(0)));
         ctx.lineTo(px, yS.getPixelForValue(bandMin(1)));
       });
@@ -216,79 +279,137 @@ Chart.register(fastTicks);
 
 // grey sync-interval boxes for frequency view
 const syncBoxes = {
-  id:'syncBoxes',
-  beforeDraw(chart){
-    if(chart.canvas.id!=='gameChart' || chart.config.type!=='line') return;
-    if(!syncIntervals?.length) return;
-    const ctx=chart.ctx, xS=chart.scales.x, yS=chart.scales.y;
-    ctx.save(); ctx.fillStyle='rgba(180,180,180,0.15)';
-    syncIntervals.forEach(([s,e])=>{
-      const x0=xS.getPixelForValue(+s), x1=xS.getPixelForValue(+e);
-      ctx.fillRect(x0,yS.top,x1-x0,yS.bottom-yS.top);
+  id: 'syncBoxes',
+  beforeDraw(chart) {
+    if (chart.canvas.id !== 'gameChart' || chart.config.type !== 'line') return;
+    if (!syncIntervals?.length) return;
+    const ctx = chart.ctx,
+          xS = chart.scales.x,
+          yS = chart.scales.y;
+    ctx.save();
+    ctx.fillStyle = 'rgba(180,180,180,0.15)';
+    syncIntervals.forEach(([s, e]) => {
+      const x0 = xS.getPixelForValue(+s),
+            x1 = xS.getPixelForValue(+e);
+      ctx.fillRect(x0, yS.top, x1 - x0, yS.bottom - yS.top);
     });
     ctx.restore();
   }
 };
 Chart.register(syncBoxes);
 
-/**** ---------- BUILD #gameChart ---------- ****/
-if(Object.keys(clickEvents||{}).length){
+// Build the gameChart based on clickEvents or frequencyData:
+if (Object.keys(clickEvents || {}).length) {
   titleEl.textContent = 'Clicks & Sync Markers';
   const actors = Object.keys(clickEvents).sort();
-  const topData    = (clickEvents[actors[0]]||[]).map(t=>({x:+t,y:bandCenter(0)}));
-  const bottomData = (clickEvents[actors[1]]||[]).map(t=>({x:+t,y:bandCenter(1)}));
-  const syncData   = (syncEvents||[]).map(t=>({x:+t,y:0.5}));
+  const topData    = (clickEvents[actors[0]] || []).map(t => ({ x: +t, y: bandCenter(0) }));
+  const bottomData = (clickEvents[actors[1]] || []).map(t => ({ x: +t, y: bandCenter(1) }));
+  const syncData   = (syncEvents || []).map(t => ({ x: +t, y: 0.5 }));
 
-  const legendSets=[
-    {label:`${actors[0]||'P1'} Click`,showLine:false,data:topData.length?topData:[{x:0,y:bandCenter(0)}],pointRadius:0,borderColor:COLORS[0]},
-    {label:`${actors[1]||'P2'} Click`,showLine:false,data:bottomData.length?bottomData:[{x:0,y:bandCenter(1)}],pointRadius:0,borderColor:COLORS[1]},
-    {label:'Sync',showLine:false,data:syncData.length?syncData:[{x:0,y:0.5}],pointRadius:0,borderColor:SYNC_COLOR}
+  const legendSets = [
+    {
+      label: `${actors[0] || 'P1'} Click`,
+      showLine: false,
+      data: topData.length ? topData : [{ x: 0, y: bandCenter(0) }],
+      pointRadius: 0,
+      borderColor: COLORS[0]
+    },
+    {
+      label: `${actors[1] || 'P2'} Click`,
+      showLine: false,
+      data: bottomData.length ? bottomData : [{ x: 0, y: bandCenter(1) }],
+      pointRadius: 0,
+      borderColor: COLORS[1]
+    },
+    {
+      label: 'Sync',
+      showLine: false,
+      data: syncData.length ? syncData : [{ x: 0, y: 0.5 }],
+      pointRadius: 0,
+      borderColor: SYNC_COLOR
+    }
   ];
 
-  new Chart(document.getElementById('gameChart'),{
-    type:'scatter',
-    data:{datasets:legendSets},
-    options:{
-      parsing:false,
-      responsive:true,
-      scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{display:false,min:0,max:1}},
-      plugins:{zoom:fullscreenZoom(),tooltip:{enabled:false},legend:{labels:{usePointStyle:true}}}
+  const gameCtx = document.getElementById('gameChart');
+  const gameChart = new Chart(gameCtx, {
+    type: 'scatter',
+    data: { datasets: legendSets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' }
+        },
+        y: {
+          display: false,
+          min: 0,
+          max: 1
+        }
+      },
+      plugins: {
+        tooltip: { enabled: false },
+        legend: { labels: { usePointStyle: true } }
+        // ← No zoom block here initially
+      }
     }
   });
 
-}else if(frequencyData && Object.keys(frequencyData).length){
+  // Attach clamp-to-x>=0 zoom config:
+  gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
+  gameChart.update();
+
+} else if (frequencyData && Object.keys(frequencyData).length) {
   titleEl.textContent = 'Finger Frequency & Sync Intervals';
-  const freqSets = Object.keys(frequencyData).map(a=>({
-    label:a,
-    data:frequencyData[a].timestamps.map((t,i)=>{
-      const v=+frequencyData[a].values[i];
-      return {x:+t, y:v===0?null:v};
+  const freqSets = Object.keys(frequencyData).map(a => ({
+    label: a,
+    data: frequencyData[a].timestamps.map((t, i) => {
+      const v = +frequencyData[a].values[i];
+      return { x: +t, y: v === 0 ? null : v };
     }),
-    pointRadius:0, fill:false
+    pointRadius: 0,
+    fill: false
   }));
 
-  new Chart(document.getElementById('gameChart'),{
-    type:'line',
-    data:{datasets:freqSets},
-    options:{
-      parsing:false,
-      responsive:true,
-      scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{title:{display:true,text:'Hz'}}},
-      plugins:{zoom:fullscreenZoom(),tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}}
+  const freqCtx = document.getElementById('gameChart');
+  const gameChart = new Chart(freqCtx, {
+    type: 'line',
+    data: { datasets: freqSets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' }
+        },
+        y: {
+          title: { display: true, text: 'Hz' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` }
+        }
+        // ← No zoom block here initially
+      }
     }
   });
-}else{
+
+  // Attach clamp-to-x>=0 zoom config:
+  gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
+  gameChart.update();
+
+} else {
   titleEl.textContent = '(No game-specific data)';
 }
 
 /**** ---------- ANGLE CHART (shown only when angleData exists) ---------- ****/
-/* ---------- FINGER ANGLE SCATTER (auto-rescales Y) ---------- */
 if (angleData && Object.keys(angleData).length) {
-
-  /* Recompute Y-range of points that are currently visible on the X-axis */
   function rescaleY(chart) {
-    const {min: xMin, max: xMax} = chart.scales.x;
-    let yMin =  Infinity, yMax = -Infinity;
+    const { min: xMin, max: xMax } = chart.scales.x;
+    let yMin = Infinity, yMax = -Infinity;
 
     chart.data.datasets.forEach(ds => {
       ds.data.forEach(pt => {
@@ -299,50 +420,46 @@ if (angleData && Object.keys(angleData).length) {
       });
     });
 
-    if (yMin !== Infinity) {              // at least one point is visible
-      const PAD = 5;                      // small breathing space
+    if (yMin !== Infinity) {
+      const PAD = 5;
       chart.options.scales.y.min = Math.floor(yMin - PAD);
-      chart.options.scales.y.max = Math.ceil (yMax + PAD);
-      chart.update('none');               // instant redraw, no animation
+      chart.options.scales.y.max = Math.ceil(yMax + PAD);
+      chart.update('none');
     }
   }
 
   const angleCtx = document.getElementById('angleChart');
   const angleChart = new Chart(angleCtx, {
-    type : 'scatter',
-    data : {
+    type: 'scatter',
+    data: {
       datasets: Object.keys(angleData).map(actor => ({
         label: actor,
-        data : angleData[actor].timestamps.map((t,i)=>({ x:+t, y:+angleData[actor].values[i] })),
+        data: angleData[actor].timestamps.map((t, i) => ({ x: +t, y: +angleData[actor].values[i] })),
         pointRadius: 3
       }))
     },
-    options : {
-      parsing   : false,
+    options: {
+      parsing: false,
       responsive: true,
-      scales : {
-        x: { type:'linear', title:{display:true,text:'Time (s)'} },
-        y: { title:{display:true,text:'Angle (°)'}, min:-180, max:180 }
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { title: { display: true, text: 'Angle (°)' }, min: -180, max: 180 }
       },
-      plugins : {
-        zoom : {
-          zoom : {
-            wheel : { enabled:true },
-            pinch : { enabled:true },
-            mode  : 'xy'
-          },
-          pan : {
-            enabled:true,
-            mode   :'xy'
-          },
-          onZoomComplete : ({chart}) => rescaleY(chart),
-          onPanComplete  : ({chart}) => rescaleY(chart)
-        },
-        tooltip:{ callbacks:{ label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}` } }
+      plugins: {
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } }
+        // ← No zoom block here initially
       }
     }
   });
 
+  // Attach clamp-to-x>=0 zoom config:
+  angleChart.options.plugins.zoom = fullscreenZoom(angleChart);
+
+  // Add onZoomComplete and onPanComplete to rescale Y:
+  angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => rescaleY(chart);
+  angleChart.options.plugins.zoom.zoom.onPanComplete = ({ chart }) => rescaleY(chart);
+
+  angleChart.update();
   addResetZoomButton(angleChart, angleCtx.parentElement);
 }
 
@@ -362,7 +479,6 @@ function addResetZoomButton(chart, container) {
 /**** ---------- dbl-click → fullscreen ---------- ****/
 document.querySelectorAll('.chart-container').forEach(container => {
   const canvas = container.querySelector('canvas');
-
   canvas.addEventListener('dblclick', () => {
     if (document.fullscreenElement) {
       document.exitFullscreen();
@@ -371,7 +487,6 @@ document.querySelectorAll('.chart-container').forEach(container => {
     }
   });
 });
-
 </script>
 </body>
 </html>
