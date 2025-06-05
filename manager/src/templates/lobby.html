@@ -237,6 +237,7 @@
 
         // Handle adding a session
         function handleAddSession(event) {
+
             event.preventDefault();
 
             const formData = new FormData(addSessionForm);
@@ -400,6 +401,12 @@
 
         // Handle delete session
         function handleDeleteSession(event) {
+            if(experimentRunning === true){
+                alert('Cannot delete sessions while the experiment is running.');
+                return;
+            }
+
+
             if (event.target.classList.contains('delete-session-btn')) {
                 const sessionId = event.target.dataset.sessionId;
 
@@ -603,6 +610,11 @@
         };
 
         async function runPreset(preset){
+
+            if(experimentRunning === true){
+                alert('Cannot activate preset while the experiment is running.');
+                return;
+            }
 
             // Get the selected preset
             const selectedPreset = presets[preset];
