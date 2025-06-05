@@ -144,6 +144,15 @@
     <div id="modal-overlay" class="modal-overlay" style="display: none;"></div>
 
     <script>
+    class Session {
+        constructor(gameType, duration, syncTolerance, syncWindowLength, skipFeedback) {
+            this.gameType = gameType;
+            this.duration = duration;
+            this.skipFeedback = skipFeedback;
+            this.syncTolerance = syncTolerance
+            this.syncWindowLength = syncWindowLength
+        }
+    }
     document.addEventListener('DOMContentLoaded', function () {
 
         const lobbyId = "{{ lobby_id }}";
@@ -278,7 +287,6 @@
         }
 
 
-
         // Fetch sessions from backend
         function fetchSessions() {
 
@@ -348,62 +356,46 @@
                 session.dbId = ''
             }
 
-            // Fetch the human-readable game type from the server
-            fetch('/game_type_from_name', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ gameType: session.gameType }) // Send the gameType name
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        const humanReadableGameType = data.gameType; // Get the real name from the server
-                        let syncTolerance = null;
-                        let syncWindowLength = null;
-                        switch(humanReadableGameType){
-                            case 'Flower Garden':
-                            case 'Water Ripples':
-                                syncTolerance = session.syncTolerance + ' ms';
-                                syncWindowLength = 'N/A';
-                                break;
-                            case 'Flour Mill':
-                            case 'Wine Glasses':
-                                syncTolerance = session.syncTolerance / 100 + ' hz';
-                                syncWindowLength = session.syncWindowLength + ' ms';
-                                break;
-                        }
-                        const skipFeedback = session.skipFeedback ? 'Yes' : 'No';
-                        // Create and append the row
-                        const row = document.createElement('tr');
-                        row.dataset.sessionId = session.sessionId;
-                        row.innerHTML = `
-                            <td>${humanReadableGameType}</td>
-                            <td>${session.duration} sec</td>
-                            <td>${session.dbId}</td>
-                            <td>${syncTolerance}</td>
-                            <td>${syncWindowLength}</td>
-                            <td>${skipFeedback}</td>
-                            <td>
-                                <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
-                            </td>
-                        `;
-                        if(index === -1){
-                            sessionTableBody.appendChild(row);
-                        } else {
-                            // replace the row at the index
-                            if(sessionTableBody.children[index]){
-                                sessionTableBody.replaceChild(row, sessionTableBody.children[index]);
-                            } else {
-                                sessionTableBody.appendChild(row);
-                            }
-                        }
-                    } else {
-                        console.error('Failed to fetch human-readable game type:', data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching game type:', error);
-                });
+            let humanReadableGameType = session.gameType.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
+            let syncTolerance = null;
+            let syncWindowLength = null;
+            switch(humanReadableGameType){
+                case 'Flower Garden':
+                case 'Water Ripples':
+                    syncTolerance = session.syncTolerance + ' ms';
+                    syncWindowLength = 'N/A';
+                    break;
+                case 'Flour Mill':
+                case 'Wine Glasses':
+                    syncTolerance = session.syncTolerance / 100 + ' hz';
+                    syncWindowLength = session.syncWindowLength + ' ms';
+                    break;
+            }
+            const skipFeedback = session.skipFeedback ? 'Yes' : 'No';
+            // Create and append the row
+            const row = document.createElement('tr');
+            row.dataset.sessionId = session.sessionId;
+            row.innerHTML = `
+                <td>${humanReadableGameType}</td>
+                <td>${session.duration} sec</td>
+                <td>${session.dbId}</td>
+                <td>${syncTolerance}</td>
+                <td>${syncWindowLength}</td>
+                <td>${skipFeedback}</td>
+                <td>
+                    <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
+                </td>
+            `;
+            if(index === -1){
+                sessionTableBody.appendChild(row);
+            } else {
+                // replace the row at the index
+                if(sessionTableBody.children[index]){
+                    sessionTableBody.replaceChild(row, sessionTableBody.children[index]);
+                } else {
+                    sessionTableBody.appendChild(row);
+                }
+            }
         }
 
         // Handle delete session
@@ -597,47 +589,20 @@
         document.getElementById('full-experiment-preset').addEventListener('click', () => { runPreset('full_experiment'); });
         const presets = {
             'warmup': [
-                { gameType: 'Water Ripples', duration: 40, syncTolerance: 100, syncWindowLength: -1, skipFeedback: true },
-                { gameType: 'Wine Glasses', duration: 40, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: true },
-                { gameType: 'Flower Garden', duration: 40, syncTolerance: 100, syncWindowLength: -1, skipFeedback: true },
-                { gameType: 'Flour Mill', duration: 40, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: true }
+                new Session('Water Ripples', 40, 100, -1, true),
+                new Session('Wine Glasses', 40, 10, 1000, true),
+                new Session('Flower Garden', 40, 100, -1, true),
+                new Session('Flour Mill', 40, 10, 1000, true)
             ],
             'full_experiment': [
-                { gameType: 'Water Ripples', duration: 80, syncTolerance: 100, syncWindowLength: -1, skipFeedback: false },
-                { gameType: 'Wine Glasses', duration: 80, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: false },
-                { gameType: 'Flower Garden', duration: 80, syncTolerance: 100, syncWindowLength: -1, skipFeedback: false },
-                { gameType: 'Flour Mill', duration: 80, syncTolerance: 10, syncWindowLength: 1000, skipFeedback: false }
+                new Session('Water Ripples', 80, 100, -1, false),
+                new Session('Wine Glasses', 80, 10, 1000, false),
+                new Session('Flower Garden', 80, 100, -1, false),
+                new Session('Flour Mill', 80, 10, 1000, false)
             ]
         };
 
         async function runPreset(preset){
-            async function addSession(gameType, duration, syncTolerance, syncWindowLength, skipFeedback) {
-                try {
-                    const response = await fetch('/add_session', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            lobby_id: lobbyId,
-                            gameType: gameType,
-                            duration: duration,
-                            syncTolerance: syncTolerance,
-                            syncWindowLength: syncWindowLength,
-                            skipFeedback: skipFeedback
-                        })
-                    });
-
-                    const data = await response.json();
-                    if (data.status === 'success') {
-                        console.log('Session added:', data.session);
-                        appendSessionRow(data.session);
-                    } else {
-                        alert('Failed to add session.');
-                    }
-                } catch (error) {
-                    console.error('Error adding session:', error);
-                    alert('Failed to add session.');
-                }
-            }
 
             // Get the selected preset
             const selectedPreset = presets[preset];
@@ -646,17 +611,73 @@
                 return;
             }
 
+            // remove all existing sessions
+            const existingSessions = sessionTableBody.querySelectorAll('tr');
+            await Promise.all(Array.from(existingSessions).map(row => {
+                    const sessionId = row.dataset.sessionId;
+                    if (sessionId) {
+                        return deleteSession(sessionId);
+                    }
+                    return Promise.resolve();
+                })
+            )
+
             // Loop through the sessions in the preset and add them
             for (const session of selectedPreset) {
-                await addSession(
-                    session.gameType,
-                    session.duration,
-                    session.syncTolerance,
-                    session.syncWindowLength,
-                    session.skipFeedback
-                );
+                await addSession(session);
             }
+
             scrollToBottom()
+        }
+
+        async function addSession(session) {
+            try {
+                const response = await fetch('/add_session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lobby_id: lobbyId,
+                        gameType: session.gameType,
+                        duration: session.duration,
+                        syncTolerance: session.syncTolerance,
+                        syncWindowLength: session.syncWindowLength,
+                        skipFeedback: session.skipFeedback
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    console.log('Session added:', data.session);
+                    appendSessionRow(data.session);
+                } else {
+                    alert('Failed to add session.');
+                }
+            } catch (error) {
+                console.error('Error adding session:', error);
+                alert('Failed to add session.');
+            }
+        }
+
+        function deleteSession(sessionId) {
+            return fetch('/delete_session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lobby_id: lobbyId, session_id: sessionId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const row = document.querySelector(`tr[data-session-id="${sessionId}"]`);
+                        if (row){
+                            row.remove();
+                        } else {
+                            console.error(`Session with ID ${sessionId} not found in the table.`);
+                        }
+                    } else {
+                        alert('Failed to delete session.');
+                    }
+                })
+                .catch(error => console.error('Error deleting session:', error));
         }
 
         function scrollToBottom() {
