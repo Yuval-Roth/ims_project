@@ -26,12 +26,12 @@ body {
     text-align: center;
     font-size: 28px;
     color: #333;
-    margin-bottom: 20px;
     text-transform: uppercase;
+    margin: 0px 20px;
 }
 
 .lobby-content {
-    height: 80vh;  /* Full viewport height */
+    height: 85vh;  /* Full viewport height */
     overflow-y: auto;
     padding-right: 10px; /* Prevent content from being hidden by scrollbar */
     box-sizing: border-box;
