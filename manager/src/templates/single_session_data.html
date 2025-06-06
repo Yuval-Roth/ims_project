@@ -212,7 +212,7 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
       plugins: {
         tooltip: {
           callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
+            label: ctx => ${ctx.dataset.label}: ${ctx.parsed.y}
           }
         }
       }
@@ -317,14 +317,14 @@ if (Object.keys(clickEvents || {}).length) {
 
   const legendSets = [
     {
-      label: `${actors[0] || 'P1'} Click`,
+      label: ${actors[0] || 'P1'} Click,
       showLine: false,
       data: topData.length ? topData : [{ x: 0, y: bandCenter(0) }],
       pointRadius: 0,
       borderColor: COLORS[0]
     },
     {
-      label: `${actors[1] || 'P2'} Click`,
+      label: ${actors[1] || 'P2'} Click,
       showLine: false,
       data: bottomData.length ? bottomData : [{ x: 0, y: bandCenter(1) }],
       pointRadius: 0,
@@ -399,7 +399,7 @@ if (Object.keys(clickEvents || {}).length) {
       },
       plugins: {
         tooltip: {
-          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` }
+          callbacks: { label: ctx => ${ctx.dataset.label}: ${ctx.parsed.y} }
         }
       }
     }
@@ -415,58 +415,7 @@ if (Object.keys(clickEvents || {}).length) {
 }
 
 /**** ---------- ANGLE CHART (shown only when angleData exists) ---------- ****/
-/**** ---------- ANGLE CHART (linear, filtered, in radians) ---------- ****/
 if (angleData && Object.keys(angleData).length) {
-  // 1. Convert degrees → radians and drop points with deg ≥ 600
-  const RAD = Math.PI / 180;
-  const angleDatasets = Object.keys(angleData).map(actor => ({
-    label: actor,
-    data: angleData[actor].timestamps
-      .map((t, i) => {
-        const deg = +angleData[actor].values[i];
-        return deg < 600 ? { x: +t, y: deg * RAD } : null;
-      })
-      .filter(pt => pt !== null),
-    pointRadius: 3,
-    fill: false
-    // no explicit borderColor/backgroundColor → uses Chart.js default
-  }));
-
-  // 2. Create a line chart with the same styling as the others
-  const angleCtx = document.getElementById('angleChart');
-  const angleChart = new Chart(angleCtx, {
-    type: 'line',
-    data: { datasets: angleDatasets },
-    options: {
-      parsing: false,
-      responsive: true,
-      scales: {
-        x: {
-          type: 'linear',
-          title: { display: true, text: 'Time (s)', color: '#333' },
-          grid: { color: 'rgba(0,0,0,0.1)' },
-          ticks: { color: '#333' }
-        },
-        y: {
-          title: { display: true, text: 'Angle (rad)', color: '#333' },
-          grid: { color: 'rgba(0,0,0,0.1)' },
-          ticks: { color: '#333' }
-          // leave min/max unset so rescaleY can adjust dynamically
-        }
-      },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)} rad`
-          }
-        }
-      }
-    }
-  });
-
-  // 3. Attach zoom/pan + clampX + rescaleY
-  angleChart.options.plugins.zoom = fullscreenZoom(angleChart);
-
   function rescaleY(chart) {
     const { min: xMin, max: xMax } = chart.scales.x;
     let yMin = Infinity, yMax = -Infinity;
@@ -481,13 +430,40 @@ if (angleData && Object.keys(angleData).length) {
     });
 
     if (yMin !== Infinity) {
-      const PAD = 0.1; // small padding in radians
-      chart.options.scales.y.min = yMin - PAD;
-      chart.options.scales.y.max = yMax + PAD;
+      const PAD = 5;
+      chart.options.scales.y.min = Math.floor(yMin - PAD);
+      chart.options.scales.y.max = Math.ceil(yMax + PAD);
       chart.update('none');
     }
   }
 
+  const angleCtx = document.getElementById('angleChart');
+  const angleChart = new Chart(angleCtx, {
+    type: 'scatter',
+    data: {
+      datasets: Object.keys(angleData).map(actor => ({
+        label: actor,
+        data: angleData[actor].timestamps.map((t, i) => ({ x: +t, y: +angleData[actor].values[i] })),
+        pointRadius: 3
+      }))
+    },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { title: { display: true, text: 'Angle (°)' }, min: -180, max: 180 }
+      },
+      plugins: {
+        tooltip: { callbacks: { label: ctx => ${ctx.dataset.label}: ${ctx.parsed.y} } }
+      }
+    }
+  });
+
+  // Attach clamp‐aware zoom config
+  angleChart.options.plugins.zoom = fullscreenZoom(angleChart);
+
+  // After zoom/pan, clamp both axes then rescale Y
   angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => {
     clampAxesToZero(chart);
     rescaleY(chart);
@@ -500,7 +476,6 @@ if (angleData && Object.keys(angleData).length) {
   angleChart.update();
   addResetZoomButton(angleChart, angleCtx.parentElement);
 }
-
 
 function addResetZoomButton(chart, container) {
   const btn = document.createElement('button');
