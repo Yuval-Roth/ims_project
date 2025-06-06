@@ -70,6 +70,13 @@ def get_parts():
                 online_participants.append(part)
         print(f"online_participants: {online_participants}")
         return jsonify(online_participants)
+    elif all_participants:
+        all = []
+        for part in all_participants:
+            part = json.loads(part)
+            part['id'] = str(part['pid']).zfill(3)
+            all.append(part)
+        return jsonify(all)
     return jsonify(all_participants)
 
 
@@ -82,7 +89,7 @@ def lobbies_menu():
     if lobbies:
         lobbies = lobbies.lobbies
     else:
-        lobbies = LOBBIES
+        lobbies = []
     return render_template('lobbies.html', lobbies=lobbies)
 
 
