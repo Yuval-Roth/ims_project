@@ -150,7 +150,9 @@ function fullscreenZoom(chartRef) {
     const deltaX = e.clientX - startX;
     const deltaY = e.clientY - startY;
 
-    chartRef.pan({ x: -deltaX, y: -deltaY }, undefined, 'default');
+
+    chartRef.pan({ x: deltaX, y: deltaY }, undefined, 'default');
+
     clampAxesToZero(chartRef);
 
     startX = e.clientX;
@@ -387,7 +389,7 @@ if (Object.keys(clickEvents || {}).length) {
     limits: {
       x: {
         min: 0,
-        max: 60,
+        max: 600,
         minRange: 1,
         maxRange: 60
       },
@@ -443,7 +445,7 @@ else if (frequencyData && Object.keys(frequencyData).length) {
     limits: {
       x: {
         min: 0,
-        max: 60,
+        max: 600,
         minRange: 1,
         maxRange: 60
       },
@@ -462,8 +464,6 @@ else {
   titleEl.textContent = '(No game-specific data)';
 }
 
-/**** ---------- ANGLE CHART (shown only when angleData exists) ---------- ****/
-/****  ---------- ANGLE CHART (…shown only when angleData exists)  ---------- ****/
 /****  ---------- ANGLE CHART (shown only when angleData exists)  ---------- ****/
 if (angleData && Object.keys(angleData).length) {
   // Custom “zoom/pan” helper that only clamps X≥0 and leaves Y unconstrained:
@@ -494,7 +494,8 @@ if (angleData && Object.keys(angleData).length) {
       const deltaY = e.clientY - startY;
 
       // Pan both axes, but we’ll clamp X back to ≥0 below:
-      chartRef.pan({ x: -deltaX, y: -deltaY }, undefined, 'default');
+      chartRef.pan({ x: deltaX, y: deltaY }, undefined, 'default');
+
 
       // Manually clamp X ≥ 0:
       const xScale = chartRef.scales.x;
@@ -579,7 +580,9 @@ if (angleData && Object.keys(angleData).length) {
           y: +angleData[actor].values[i]  // already in [-1, 1]
         })),
         fill: false,
-        pointRadius: 3
+        pointRadius: 0,
+        pointHoverRadius: 3
+
       }))
     },
     options: {
@@ -614,12 +617,25 @@ if (angleData && Object.keys(angleData).length) {
   });
 
   // Attach our custom pan/zoom config that allows negative Y:
-  angleChart.options.plugins.zoom = fullscreenZoomAngle(angleChart);
+  {#angleChart.options.plugins.zoom = fullscreenZoomAngle(angleChart);#}
+    angleChart.options.plugins.zoom = {
+  ...fullscreenZoomAngle(angleChart),
+  limits: {
+    x: {
+      min: 0,
+      max: 600,  // 0–60 seconds
+      minRange: 1,
+      maxRange: 60
+    },
+    y: {
+      min: -2,
+      max: 2,
+      minRange: 0.1,
+      maxRange: 50
+    }
+  }
+};
 
-  // After zoom or pan, only rescale Y; do NOT clamp Y back to zero:
-  {#angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => {#}
-  {#  rescaleY(chart);#}
-  {#};#}
   angleChart.options.plugins.zoom.zoom.onPanComplete  = ({ chart }) => {
     rescaleY(chart);
   };
