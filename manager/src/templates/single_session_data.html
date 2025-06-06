@@ -347,39 +347,67 @@ const fastTicks = {
     const ctx = chart.ctx;
     const xS = chart.scales.x;
     const yS = chart.scales.y;
+
+    // Convert tolerance (ms) → half‐width in seconds
+    const halfSec = (parseFloat(meta.tolerance) || 0) / 1000 / 2;
+
     const actors = Object.keys(clickEvents).sort().slice(0, 2);
 
-    // Draw click‐ticks for each actor
+    // Draw click‐boxes with width = tolerance
     actors.forEach((actor, idx) => {
       if (chart.getDatasetMeta(idx).hidden) return;
-      ctx.strokeStyle = COLORS[idx];
-      ctx.lineWidth = 3;
-      ctx.beginPath();
+      ctx.fillStyle = COLORS[idx];  // blue or red
+
       (clickEvents[actor] || []).forEach(t => {
-        const px = xS.getPixelForValue(+t);
-        ctx.moveTo(px, yS.getPixelForValue(bandMin(idx)));
-        ctx.lineTo(px, yS.getPixelForValue(bandMax(idx)));
+        // Compute data‐unit bounds
+        const tStart = +t - halfSec;
+        const tEnd   = +t + halfSec;
+
+        // Convert to pixel coords
+        const xPxStart = xS.getPixelForValue(tStart);
+        const xPxEnd   = xS.getPixelForValue(tEnd);
+
+        // Vertical pixel bounds for this actor’s band
+        const yTopPx    = yS.getPixelForValue(bandMax(idx));
+        const yBottomPx = yS.getPixelForValue(bandMin(idx));
+        const heightPx  = yBottomPx - yTopPx;
+
+        // Draw filled rectangle spanning [xPxStart, xPxEnd]
+        ctx.fillRect(xPxStart, yTopPx, xPxEnd - xPxStart, heightPx);
       });
-      ctx.stroke();
     });
 
-    // Draw tolerance‐width sync bands instead of a single line
-    if (!chart.getDatasetMeta(2)?.hidden && syncEvents?.length) {
-      // Convert tolerance from milliseconds to seconds, then take half
-      const halfSec = (parseFloat(meta.tolerance) || 0) / 1000 / 2;
+    // Draw sync markers as thin vertical gold lines
+    // Draw sync‐boxes with width = tolerance (gold), but only between the two click‐bands
+if (!chart.getDatasetMeta(2)?.hidden && syncEvents?.length) {
+  ctx.fillStyle = SYNC_COLOR;  // gold color
 
-      ctx.fillStyle = 'rgba(255, 215, 0, 0.2)'; // translucent gold
-      syncEvents.forEach(t => {
-        const startX = xS.getPixelForValue(+t - halfSec);
-        const endX   = xS.getPixelForValue(+t + halfSec);
-        const yTop    = yS.getPixelForValue(bandMax(0));
-        const yBottom = yS.getPixelForValue(bandMin(1));
-        ctx.fillRect(startX, yTop, endX - startX, yBottom - yTop);
-      });
-    }
+  // Convert tolerance (ms) → half‐width in seconds
+  const halfSec = (parseFloat(meta.tolerance) || 0) / 1000 / 2;
+
+  syncEvents.forEach(t => {
+    // Compute data‐unit bounds
+    const tStart = +t - halfSec;
+    const tEnd   = +t + halfSec;
+
+    // Convert to pixel coords
+    const xPxStart = xS.getPixelForValue(tStart);
+    const xPxEnd   = xS.getPixelForValue(tEnd);
+
+    // Vertical pixel bounds exactly matching the click‐bands:
+    const yTopPx    = yS.getPixelForValue(bandMax(0));  // top of blue band
+    const yBottomPx = yS.getPixelForValue(bandMin(1)); // bottom of red band
+    const heightPx  = yBottomPx - yTopPx;
+
+    // Draw gold rectangle spanning [xPxStart, xPxEnd] between the two bands
+    ctx.fillRect(xPxStart, yTopPx, xPxEnd - xPxStart, heightPx);
+  });
+}
+
   }
 };
 Chart.register(fastTicks);
+
 
 
 // Grey sync-interval boxes plugin for frequency view
