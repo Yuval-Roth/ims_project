@@ -416,7 +416,89 @@ if (Object.keys(clickEvents || {}).length) {
 
 /**** ---------- ANGLE CHART (shown only when angleData exists) ---------- ****/
 /****  ---------- ANGLE CHART (…shown only when angleData exists)  ---------- ****/
+/****  ---------- ANGLE CHART (shown only when angleData exists)  ---------- ****/
 if (angleData && Object.keys(angleData).length) {
+  // Custom “zoom/pan” helper that only clamps X≥0 and leaves Y unconstrained:
+  function fullscreenZoomAngle(chartRef) {
+    let isPanning = false;
+    let startX, startY;
+    const canvas = chartRef.canvas;
+
+    canvas.addEventListener('mousedown', e => {
+      if (e.button === 0) {
+        isPanning = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        canvas.style.cursor = 'grabbing';
+      }
+    });
+
+    canvas.addEventListener('mouseup', e => {
+      if (e.button === 0) {
+        isPanning = false;
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!isPanning) return;
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+
+      // Pan both axes, but we’ll clamp X back to ≥0 below:
+      chartRef.pan({ x: -deltaX, y: -deltaY }, undefined, 'default');
+
+      // Manually clamp X ≥ 0:
+      const xScale = chartRef.scales.x;
+      if (xScale.min < 0) {
+        const spanX = xScale.max - xScale.min;
+        xScale.options.min = 0;
+        xScale.options.max = spanX;
+      }
+      // ***Do NOT clamp Y here*** ← allows negative Y
+
+      chartRef.update('none');
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    canvas.addEventListener('wheel', e => {
+      // Ctrl+wheel = zoom Y; otherwise zoom X
+      chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
+    }, { passive: true });
+
+    return {
+      pan: {
+        enabled: false,
+        rangeMin: { x: 0 }  // only X is forced ≥ 0; Y has no minimum
+      },
+      zoom: {
+        wheel: {
+          enabled: true,
+          speed: 0.1,
+          onZoom: ({ chart }) => {
+            // After any wheel‐zoom, clamp X ≥ 0 again:
+            const xS = chart.scales.x;
+            if (xS.min < 0) {
+              const spanX = xS.max - xS.min;
+              xS.options.min = 0;
+              xS.options.max = spanX;
+            }
+            // ***Do NOT clamp Y here*** ← allows negative Y
+          }
+        },
+        pinch: {
+          enabled: true,
+          mode: 'xy'
+        },
+        mode: 'x',
+        limits: {
+          x: { min: 0 } // Y.limits is omitted → negative Y allowed
+        }
+      }
+    };
+  }
+
   function rescaleY(chart) {
     const { min: xMin, max: xMax } = chart.scales.x;
     let yMin = Infinity, yMax = -Infinity;
@@ -431,21 +513,23 @@ if (angleData && Object.keys(angleData).length) {
     });
 
     if (yMin !== Infinity) {
-      const PAD = 5;
-      chart.options.scales.y.min = Math.floor(yMin - PAD);
-      chart.options.scales.y.max = Math.ceil(yMax + PAD);
+      const PAD = 0.1; // small padding around extremes
+      chart.options.scales.y.min = yMin - PAD;
+      chart.options.scales.y.max = yMax + PAD;
       chart.update('none');
     }
   }
 
-  // Build datasets exactly as other line charts:
   const angleCtx = document.getElementById('angleChart');
   const angleChart = new Chart(angleCtx, {
     type: 'line',
     data: {
       datasets: Object.keys(angleData).map(actor => ({
         label: actor,
-        data: angleData[actor].timestamps.map((t, i) => ({ x: +t, y: +angleData[actor].values[i] })),
+        data: angleData[actor].timestamps.map((t, i) => ({
+          x: +t,
+          y: +angleData[actor].values[i]  // already in [-1, 1]
+        })),
         fill: false,
         pointRadius: 3
       }))
@@ -454,29 +538,48 @@ if (angleData && Object.keys(angleData).length) {
       parsing: false,
       responsive: true,
       scales: {
-        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
-        y: { title: { display: true, text: 'Angle (°)' }, min: -180, max: 180 }
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' },
+          {#border: { color: '#007bff' }  // color the X-axis line (blue)#}
+        },
+        y: {
+          title: { display: true, text: 'Angle (unit circle)' },
+          // No 'min' or 'max' here: Chart.js will auto‐scale to include negatives.
+
+          // Color the horizontal grid at y=0 differently:
+          grid: {
+            color: ctx => ctx.tick.value === 0
+              ? 'rgba(255, 0, 0, 1.5)'   // red line at y=0
+              : 'rgba(0, 0, 0, 0.1)'     // default grey for other gridlines
+          }
+        }
       },
       plugins: {
-        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } }
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}`
+          }
+        }
       }
     }
   });
 
-  // Attach the same pan/zoom configuration:
-  angleChart.options.plugins.zoom = fullscreenZoom(angleChart);
-  angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => {
-    clampAxesToZero(chart);
-    rescaleY(chart);
-  };
-  angleChart.options.plugins.zoom.zoom.onPanComplete = ({ chart }) => {
-    clampAxesToZero(chart);
+  // Attach our custom pan/zoom config that allows negative Y:
+  angleChart.options.plugins.zoom = fullscreenZoomAngle(angleChart);
+
+  // After zoom or pan, only rescale Y; do NOT clamp Y back to zero:
+  {#angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => {#}
+  {#  rescaleY(chart);#}
+  {#};#}
+  angleChart.options.plugins.zoom.zoom.onPanComplete  = ({ chart }) => {
     rescaleY(chart);
   };
 
   angleChart.update();
   addResetZoomButton(angleChart, angleCtx.parentElement);
 }
+
 
 function addResetZoomButton(chart, container) {
   const btn = document.createElement('button');
