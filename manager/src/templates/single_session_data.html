@@ -382,12 +382,27 @@ if (Object.keys(clickEvents || {}).length) {
     }
   });
 
-  // Attach clamp‐aware zoom config and add reset button
-  gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
+  gameChart.options.plugins.zoom = {
+    ...fullscreenZoom(gameChart),
+    limits: {
+      x: {
+        min: 0,
+        max: 60,
+        minRange: 1,
+        maxRange: 60
+      },
+      y: {
+        min: 0,
+        max: 1
+      }
+    }
+  };
+
   gameChart.update();
   addResetZoomButton(gameChart, gameCtx.parentElement);
+}
 
-} else if (frequencyData && Object.keys(frequencyData).length) {
+else if (frequencyData && Object.keys(frequencyData).length) {
   titleEl.textContent = 'Finger Frequency & Sync Intervals';
   const freqSets = Object.keys(frequencyData).map(a => ({
     label: a,
@@ -423,12 +438,27 @@ if (Object.keys(clickEvents || {}).length) {
     }
   });
 
-  // Attach clamp‐aware zoom config and add reset button
-  gameChart.options.plugins.zoom = fullscreenZoom(gameChart);
+  gameChart.options.plugins.zoom = {
+    ...fullscreenZoom(gameChart),
+    limits: {
+      x: {
+        min: 0,
+        max: 60,
+        minRange: 1,
+        maxRange: 60
+      },
+      y: {
+        min: 0,
+        max: 10
+      }
+    }
+  };
+
   gameChart.update();
   addResetZoomButton(gameChart, freqCtx.parentElement);
+}
 
-} else {
+else {
   titleEl.textContent = '(No game-specific data)';
 }
 
