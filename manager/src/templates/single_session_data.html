@@ -180,6 +180,7 @@ function fullscreenZoom(chartRef) {
   };
 }
 
+
 function dictToDatasets(dict, extra = {}) {
   return Object.keys(dict).map(actor => ({
     label: actor,
@@ -582,14 +583,33 @@ if (angleData && Object.keys(angleData).length) {
 
 
 function addResetZoomButton(chart, container) {
+  // Capture the initial axis limits once, right now
+  const initial = {
+    xMin: chart.scales.x.min,
+    xMax: chart.scales.x.max,
+    yMin: chart.scales.y.min,
+    yMax: chart.scales.y.max
+  };
+
   const btn = document.createElement('button');
   btn.textContent = 'Reset Zoom';
   btn.className = 'reset-btn';
   btn.addEventListener('click', () => {
+    // 1) Let the zoom plugin reset its internal state
     chart.resetZoom();
+
+    // 2) Explicitly restore the original min/max that clampAxesToZero may have overwritten
+    chart.options.scales.x.min = initial.xMin;
+    chart.options.scales.x.max = initial.xMax;
+    chart.options.scales.y.min = initial.yMin;
+    chart.options.scales.y.max = initial.yMax;
+
+    // 3) Re-draw
+    chart.update();
   });
   container.appendChild(btn);
 }
+
 
 /**** ---------- dbl-click → fullscreen ---------- ****/
 document.querySelectorAll('.chart-container').forEach(container => {
