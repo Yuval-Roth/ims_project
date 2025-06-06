@@ -415,6 +415,7 @@ if (Object.keys(clickEvents || {}).length) {
 }
 
 /**** ---------- ANGLE CHART (shown only when angleData exists) ---------- ****/
+/****  ---------- ANGLE CHART (…shown only when angleData exists)  ---------- ****/
 if (angleData && Object.keys(angleData).length) {
   function rescaleY(chart) {
     const { min: xMin, max: xMax } = chart.scales.x;
@@ -437,13 +438,15 @@ if (angleData && Object.keys(angleData).length) {
     }
   }
 
+  // Build datasets exactly as other line charts:
   const angleCtx = document.getElementById('angleChart');
   const angleChart = new Chart(angleCtx, {
-    type: 'scatter',
+    type: 'line',
     data: {
       datasets: Object.keys(angleData).map(actor => ({
         label: actor,
         data: angleData[actor].timestamps.map((t, i) => ({ x: +t, y: +angleData[actor].values[i] })),
+        fill: false,
         pointRadius: 3
       }))
     },
@@ -460,10 +463,8 @@ if (angleData && Object.keys(angleData).length) {
     }
   });
 
-  // Attach clamp‐aware zoom config
+  // Attach the same pan/zoom configuration:
   angleChart.options.plugins.zoom = fullscreenZoom(angleChart);
-
-  // After zoom/pan, clamp both axes then rescale Y
   angleChart.options.plugins.zoom.zoom.onZoomComplete = ({ chart }) => {
     clampAxesToZero(chart);
     rescaleY(chart);

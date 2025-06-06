@@ -205,33 +205,41 @@ def get_swipe_game_frequency(session_id: str):
         except (ValueError, TypeError) as e:
             Logger.log_error(f"Invalid FREQUENCY data: {ev['data']}  error={e}")
 
-    # angle data
-
+    # --- ANGLE DATA: drop any value == 600, then convert degrees → sin(radians) so y ∈ [-1,1] ---
     for ev in angle_events:
         try:
+            raw_value = float(ev["data"])
+            if raw_value == 600:
+                # skip any outlier or placeholder of 600
+                continue
+
             timestamp_sec = ev["timestamp"] / 1000.0
-            value = float(ev["data"])
+            # convert degrees → radians, then take sine for unit-circle range
+            rad    = math.radians(raw_value)
+            unit_y = math.sin(rad)
+
             angle_data[ev["actor"]]["timestamps"].append(f"{timestamp_sec:.3f}")
-            angle_data[ev["actor"]]["values"].append(value)
+            angle_data[ev["actor"]]["values"].append(unit_y)
         except (ValueError, TypeError) as e:
             Logger.log_error(f"Invalid ANGLE data: {ev['data']}  error={e}")
 
-    # Sort data for each actor by timestamp
+    # --- SORT FREQUENCY DATA BY TIMESTAMP ---
     for actor, data in frequency_data.items():
         combined = list(zip(map(float, data["timestamps"]), data["values"]))
         combined.sort(key=lambda x: x[0])
         data["timestamps"] = [f"{t:.3f}" for t, _ in combined]
-        data["values"] = [v for _, v in combined]
+        data["values"]     = [v for _, v in combined]
 
-    # Sort angle data for each actor by timestamp
+    # --- SORT ANGLE DATA BY TIMESTAMP ---
     for actor, data in angle_data.items():
         combined = list(zip(map(float, data["timestamps"]), data["values"]))
         combined.sort(key=lambda x: x[0])
         data["timestamps"] = [f"{t:.3f}" for t, _ in combined]
-        data["values"] = [v for _, v in combined]
+        data["values"]     = [v for _, v in combined]
 
+    # --- SYNC INTERVALS ---
     sync_start_times = sorted(ev["timestamp"] / 1000.0 for ev in sync_start_events)
-    sync_end_times = sorted(ev["timestamp"] / 1000.0 for ev in sync_end_events)
+    sync_end_times   = sorted(ev["timestamp"] / 1000.0 for ev in sync_end_events)
 
     if len(sync_start_times) != len(sync_end_times):
         Logger.log_error(f"Session {session_id}: Mismatched SYNC_START_TIME and SYNC_END_TIME events")
@@ -239,6 +247,7 @@ def get_swipe_game_frequency(session_id: str):
     sync_intervals = list(zip(sync_start_times, sync_end_times))
 
     return dict(frequency_data), dict(angle_data), sync_intervals
+
 
 
 def get_lobbies_data() -> list[dict]:
