@@ -50,3 +50,49 @@ def get_feedback(sid: str) -> List[dict]:
     except Exception as e:
         Logger.log_error(f"get_feedback – Exception: {e}")
         return []
+
+
+def get_experiment_feedback(exp_id: str) -> List[dict]:
+    """
+    Fetch all feedback for experiment (= lobby) with ID = exp_id.
+    Calls internal /data/experiment/select/feedback endpoint.
+    Returns a list of dictionaries like { "pid": ..., "question": ..., "answer": ... }.
+    """
+    feedback_list: List[dict] = []
+    try:
+        # Build request body
+        body = {"expId": exp_id}
+
+        # Perform authenticated POST to the internal endpoint
+        token = session.get('token', '')
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        response = post_auth(f"{URL}/data/experiment/select/feedback", json=body, headers=headers)
+
+        # Check HTTP status
+        if response.status_code in (200, 201):
+            ser_res = server_response(response)
+            if ser_res.get_success():
+                raw_payload = ser_res.get_payload() or []
+                for item in raw_payload:
+                    try:
+                        # If payload items are JSON‐strings, parse them
+                        feedback_list.append(json.loads(item))
+                    except Exception:
+                        # If already a dict, just append
+                        if isinstance(item, dict):
+                            feedback_list.append(item)
+                return feedback_list
+
+            Logger.log_error(f"get_experiment_feedback – API error: {ser_res.get_message()}")
+            return []
+        else:
+            Logger.log_error(f"get_experiment_feedback – HTTP {response.status_code}")
+            return []
+
+    except Exception as e:
+        Logger.log_error(f"get_experiment_feedback – Exception: {e}")
+        return []
+

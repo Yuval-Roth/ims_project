@@ -37,6 +37,66 @@
       padding: 12px;
       box-sizing: border-box;
     }
+
+      /* ===== Button styling ===== */
+  .btn-feedback {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .btn-feedback:hover {
+    background: #0056b3;
+  }
+
+  /* ===== Modal overlay styling ===== */
+  #feedbackModal {
+    display: none;            /* hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+  #feedbackModal .modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    max-width: 600px;
+    border-radius: 8px;
+    position: relative;
+  }
+  #feedbackModal h2 {
+    margin-top: 0;
+  }
+  #feedbackModal .close-btn {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+  {#    make it left side#}
+
+  }
+  #feedbackModal .qa-item {
+    margin-bottom: 16px;
+  }
+  #feedbackModal .qa-item p.question {
+    font-weight: bold;
+    margin: 0 0 4px 0;
+  }
+  #feedbackModal .qa-item p.answer {
+    margin: 0;
+  }
+
   </style>
 </head>
 <body>
@@ -51,6 +111,14 @@
     <strong>Duration:</strong> {{ metadata.duration }} s |
     <strong>Participants:</strong> {{ metadata.participants|join(' & ') }}
   </p>
+
+  <!-- ===== Show Feedback Button ===== -->
+  <div style="text-align:center; margin: 20px 0;">
+    <button id="openFeedbackBtn" class="btn-feedback">
+      Show Session Feedback
+    </button>
+  </div>
+
 
   <div class="charts-grid">
     <div class="chart-container">
@@ -693,5 +761,124 @@ document.querySelectorAll('.chart-container').forEach(container => {
   });
 });
 </script>
+
+  <!-- ===== Feedback Modal HTML ===== -->
+<div id="feedbackModal">
+  <div class="modal-content" dir="rtl">
+    <button class="close-btn" id="closeFeedbackBtn" style="color:red;">&times;</button>
+    <h2 style="text-align:right;">משוב מפגש</h2>
+
+    <!-- Split sections for each participant -->
+    <div id="feedbackContainer" style="text-align:right;">
+      <h3 id="pid0Name" style="margin-bottom:8px;"></h3>
+      <div id="pid0Container" style="margin-bottom:16px;"></div>
+
+      <h3 id="pid1Name" style="margin-bottom:8px;"></h3>
+      <div id="pid1Container"></div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('feedbackModal');
+    const openBtn = document.getElementById('openFeedbackBtn');
+    const closeBtn = document.getElementById('closeFeedbackBtn');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+
+    openBtn.addEventListener('click', () => {
+      // 1) Clear existing contents:
+      feedbackContainer.innerHTML = '';
+
+      // 2) Fetch the feedback JSON:
+      fetch(`/session_data/feedback?session_id=${encodeURIComponent(meta.sessionId)}`)
+        .then(resp => resp.json())
+        .then(data => {
+          if (!data.success) {
+            // Show an error message in the container
+            feedbackContainer.innerHTML = `<p style="color:red;">שגיאה: ${data.message || 'לא ניתן לטעון משוב'}</p>`;
+            modal.style.display = 'block';
+            return;
+          }
+
+          const payload = data.payload || [];
+          if (payload.length === 0) {
+            // No feedback at all
+            feedbackContainer.innerHTML = '<p>אין משוב זמין למפגש זה.</p>';
+            modal.style.display = 'block';
+            return;
+          }
+
+          // 3) Group items by numeric pid:
+          const grouped = {};
+          payload.forEach(item => {
+            const pid = item.pid;
+            if (!grouped[pid]) {
+              grouped[pid] = [];
+            }
+            grouped[pid].push(item);
+          });
+
+          // 4) For each pid, render a header and its Q&A items:
+          Object.keys(grouped).forEach((pidKey, idx) => {
+  // Look up the name at the same index in meta.participants:
+  const nameList = meta.participants || [];
+  const name = nameList[idx] || `PID ${pidKey}`;
+
+  // Create the <h3> using the actual name:
+  const header = document.createElement('h3');
+  header.textContent = name;
+  header.style.marginBottom = '8px';
+  feedbackContainer.appendChild(header);
+
+  // Render that PID’s Q&A items:
+  grouped[pidKey].forEach(item => {
+    const qaDiv = document.createElement('div');
+    qaDiv.className = 'qa-item';
+
+    const q = document.createElement('p');
+    q.className = 'question';
+    q.textContent = item.question || '(שאלה חסרה)';
+
+    const a = document.createElement('p');
+    a.className = 'answer';
+    a.textContent = item.answer || '(תשובה חסרה)';
+
+    qaDiv.appendChild(q);
+    qaDiv.appendChild(a);
+    feedbackContainer.appendChild(qaDiv);
+  });
+
+  // Separator between participants
+  const separator = document.createElement('hr');
+  separator.style.margin = '16px 0';
+  feedbackContainer.appendChild(separator);
+});
+
+
+          modal.style.display = 'block';
+        })
+        .catch(err => {
+          feedbackContainer.innerHTML = `<p style="color:red;">שגיאת רשת: ${err}</p>`;
+          modal.style.display = 'block';
+        });
+    });
+
+    // Close modal logic:
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+    window.addEventListener('click', e => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+
 </body>
 </html>

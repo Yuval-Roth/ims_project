@@ -513,6 +513,24 @@ def session_feedback():
     })
 
 
+@app.route('/session_data/experiment_feedback', methods=['GET'])
+def experiment_feedback():
+    exp_id = request.args.get('exp_id')
+    if not exp_id:
+        return jsonify({"success": False, "message": "Missing exp_id"}), 400
+
+    try:
+        feedback_list = get_experiment_feedback(exp_id)
+    except Exception as e:
+        Logger.log_error(f"experiment_feedback – Exception: {e}")
+        return jsonify({"success": False, "message": "Internal server error"}), 500
+
+    return jsonify({
+        "success": True,
+        "payload": feedback_list
+    })
+
+
 
 @app.route('/experiment_questions', methods=['GET'])
 def get_experiment_questions_route():
