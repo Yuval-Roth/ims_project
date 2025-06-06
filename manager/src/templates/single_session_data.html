@@ -11,7 +11,10 @@
 
   <!-- Chart.js (core + zoom only) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+{#  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>#}
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+
+
 
   <style>
     .charts-grid {
@@ -115,6 +118,11 @@ function clampAxesToZero(chart) {
   }
   chart.update('none'); // redraw with clamped axes
 }
+// ★ Replace the old fullscreenZoom(...) with this updated version:
+const ZOOM_LIMITS = {
+  x: { min: 0, max: 60 },   // 0–60 seconds
+  y: { min: 40, max: 180 }  // 40–180 BPM
+};
 
 function fullscreenZoom(chartRef) {
   let isPanning = false;
@@ -150,36 +158,28 @@ function fullscreenZoom(chartRef) {
   });
 
   canvas.addEventListener('wheel', e => {
-    // Ctrl+wheel = zoom Y; otherwise zoom X
     chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
   }, { passive: true });
 
   return {
     pan: {
-      enabled: false,
-      rangeMin: { x: 0, y: 0 }
+      enabled: true,
+      mode: 'xy'
     },
     zoom: {
       wheel: {
         enabled: true,
         speed: 0.1,
-        onZoom: ({ chart }) => {
-          clampAxesToZero(chart);
-        }
+        onZoom: ({ chart }) => clampAxesToZero(chart)
       },
       pinch: {
         enabled: true,
         mode: 'xy'
       },
-      mode: 'x',
-      limits: {
-        x: { min: 0 },
-        y: { min: 0 }
-      }
+      mode: 'xy'
     }
   };
 }
-
 
 function dictToDatasets(dict, extra = {}) {
   return Object.keys(dict).map(actor => ({
@@ -220,9 +220,26 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
     }
   });
 
-  chart.options.plugins.zoom = fullscreenZoom(chart);
-  chart.update();
+  // Apply pan/zoom handlers and then separately inject limits
+  chart.options.plugins.zoom = {
+    ...fullscreenZoom(chart),
+    limits: {
+      x: {
+        min: 0,
+        max: 600,
+        minRange: 1,
+        maxRange: 600
+      },
+      y: {
+        min: 0.1,
+        max: 300,
+        minRange: 1,
+        maxRange: 300
+      }
+    }
+  };
 
+  chart.update();
   addResetZoomButton(chart, ctx.parentElement);
 }
 
