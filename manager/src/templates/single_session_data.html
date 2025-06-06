@@ -11,12 +11,92 @@
 
   <!-- Chart.js (core + zoom only) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+{#  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>#}
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+
+
 
   <style>
-    .charts-grid{display:flex;flex-direction:column;gap:50px;align-items:center;margin:40px auto}
-    .chart-container{width:90vw;max-width:1200px;height:420px;position:relative}
-    .chart-container:fullscreen{width:100vw;height:100vh;background:#fff;padding:12px;box-sizing:border-box}
+    .charts-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 50px;
+      align-items: center;
+      margin: 40px auto;
+    }
+    .chart-container {
+      width: 90vw;
+      max-width: 1200px;
+      height: 420px;
+      position: relative;
+    }
+    .chart-container:fullscreen {
+      width: 100vw;
+      height: 100vh;
+      background: #fff;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+      /* ===== Button styling ===== */
+  .btn-feedback {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .btn-feedback:hover {
+    background: #0056b3;
+  }
+
+  /* ===== Modal overlay styling ===== */
+  #feedbackModal {
+    display: none;            /* hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+  #feedbackModal .modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    max-width: 600px;
+    border-radius: 8px;
+    position: relative;
+  }
+  #feedbackModal h2 {
+    margin-top: 0;
+  }
+  #feedbackModal .close-btn {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+  {#    make it left side#}
+
+  }
+  #feedbackModal .qa-item {
+    margin-bottom: 16px;
+  }
+  #feedbackModal .qa-item p.question {
+    font-weight: bold;
+    margin: 0 0 4px 0;
+  }
+  #feedbackModal .qa-item p.answer {
+    margin: 0;
+  }
+
   </style>
 </head>
 <body>
@@ -32,24 +112,48 @@
     <strong>Participants:</strong> {{ metadata.participants|join(' & ') }}
   </p>
 
+  <!-- ===== Show Feedback Button ===== -->
+  <div style="text-align:center; margin: 20px 0;">
+    <button id="openFeedbackBtn" class="btn-feedback">
+      Show Session Feedback
+    </button>
+  </div>
+
+
   <div class="charts-grid">
-    <div class="chart-container"><h3 style="text-align:center;" id="gameChartTitle"></h3><canvas id="gameChart"></canvas></div>
-          {# Angle chart is shown only for swipe-type games where frequency & sync data exist #}
+    <div class="chart-container">
+      <h3 style="text-align:center;" id="gameChartTitle"></h3>
+      <canvas id="gameChart"></canvas>
+      <!-- Reset button will be injected here dynamically -->
+    </div>
     {% if data.angle_data %}
-      <div class="chart-container"><h3 style="text-align:center;">Finger Angle</h3><canvas id="angleChart"></canvas></div>
+      <div class="chart-container">
+        <h3 style="text-align:center;">Finger Angle</h3>
+        <canvas id="angleChart"></canvas>
+      </div>
     {% endif %}
-    <div class="chart-container"><h3 style="text-align:center;">Heart Rate</h3><canvas id="hrChart"></canvas></div>
-    <div class="chart-container"><h3 style="text-align:center;">HR Variation</h3><canvas id="hrvChart"></canvas></div>
-    <div class="chart-container"><h3 style="text-align:center;">Latency</h3><canvas id="latencyChart"></canvas></div>
-    <div class="chart-container"><h3 style="text-align:center;">Jitter</h3><canvas id="jitterChart"></canvas></div>
-
-
+    <div class="chart-container">
+      <h3 style="text-align:center;">Heart Rate</h3>
+      <canvas id="hrChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">HR Variation</h3>
+      <canvas id="hrvChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">Latency</h3>
+      <canvas id="latencyChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">Jitter</h3>
+      <canvas id="jitterChart"></canvas>
+    </div>
   </div>
 </div>
 
 <script>
 /**** ---------- GLOBAL SPEED-UPS ---------- ****/
-Chart.defaults.animation             = false;
+Chart.defaults.animation = false;
 Chart.defaults.elements.line.tension = 0;
 
 /**** ---------- DATA FROM FLASK ---------- ****/
@@ -65,162 +169,493 @@ const syncIntervals = {{ data.sync_intervals|tojson }};
 const angleData     = {{ data.angle_data|tojson }};
 
 /**** ---------- HELPERS ---------- ****/
-function fullscreenZoom(){
+function clampAxesToZero(chart) {
+  // Clamp X-axis
+  const xScale = chart.scales.x;
+  if (xScale.min < 0) {
+    const spanX = xScale.max - xScale.min;
+    xScale.options.min = 0;
+    xScale.options.max = spanX;
+  }
+  // Clamp Y-axis
+  const yScale = chart.scales.y;
+  if (yScale.min < 0) {
+    const spanY = yScale.max - yScale.min;
+    yScale.options.min = 0;
+    yScale.options.max = spanY;
+  }
+  chart.update('none'); // redraw with clamped axes
+}
+// ★ Replace the old fullscreenZoom(...) with this updated version:
+const ZOOM_LIMITS = {
+  x: { min: 0, max: 60 },   // 0–60 seconds
+  y: { min: 40, max: 180 }  // 40–180 BPM
+};
+
+function fullscreenZoom(chartRef) {
+  let isPanning = false;
+  let startX, startY;
+  const canvas = chartRef.canvas;
+
+  canvas.addEventListener('mousedown', e => {
+    if (e.button === 0) {
+      isPanning = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      canvas.style.cursor = 'grabbing';
+    }
+  });
+
+  canvas.addEventListener('mouseup', e => {
+    if (e.button === 0) {
+      isPanning = false;
+      canvas.style.cursor = 'default';
+    }
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (!isPanning) return;
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+
+
+    chartRef.pan({ x: deltaX, y: deltaY }, undefined, 'default');
+
+    clampAxesToZero(chartRef);
+
+    startX = e.clientX;
+    startY = e.clientY;
+  });
+
+  canvas.addEventListener('wheel', e => {
+    chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
+  }, { passive: true });
+
   return {
-    zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'},
-    pan :{enabled:false}
+    pan: {
+      enabled: true,
+      mode: 'xy'
+    },
+    zoom: {
+      wheel: {
+        enabled: true,
+        speed: 0.1,
+        onZoom: ({ chart }) => clampAxesToZero(chart)
+      },
+      pinch: {
+        enabled: true,
+        mode: 'xy'
+      },
+      mode: 'xy'
+    }
   };
 }
-function dictToDatasets(dict, extra={}){
-  return Object.keys(dict).map(actor=>({
-    label:actor,
-    data :dict[actor].timestamps.map((t,i)=>({x:+t, y:+dict[actor].values[i]})),
-    pointRadius:3,
-    fill:false,
+
+function dictToDatasets(dict, extra = {}) {
+  return Object.keys(dict).map(actor => ({
+    label: actor,
+    data: dict[actor].timestamps.map((t, i) => ({ x: +t, y: +dict[actor].values[i] })),
+    pointRadius: 3,
+    fill: false,
     ...extra
   }));
 }
-function makeLineChart(id, datasets, yLabel, yOpts={}){
-  new Chart(document.getElementById(id),{
-    type:'line',
-    data:{datasets},
-    options:{
-      parsing:false,
-      responsive:true,
-      scales:{
-        x:{type:'linear',title:{display:true,text:'Time (s)'}},
-        y:{title:{display:true,text:yLabel},...yOpts}
+
+/**** ---------- GENERIC LINE-CHART BUILDER ---------- ****/
+function makeLineChart(id, datasets, yLabel, yOpts = {}) {
+  const ctx = document.getElementById(id);
+  const chart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' }
+        },
+        y: {
+          title: { display: true, text: yLabel },
+          ...yOpts
+        }
       },
-      plugins:{
-        zoom:fullscreenZoom(),
-        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
+          }
+        }
       }
     }
   });
+
+  // Apply pan/zoom handlers and then separately inject limits
+  chart.options.plugins.zoom = {
+    ...fullscreenZoom(chart),
+    limits: {
+      x: {
+        min: 0,
+        max: 600,
+        minRange: 1,
+        maxRange: 600
+      },
+      y: {
+        min: 0.1,
+        max: 300,
+        minRange: 1,
+        maxRange: 300
+      }
+    }
+  };
+
+  chart.update();
+  addResetZoomButton(chart, ctx.parentElement);
 }
 
 /**** ---------- METRIC CHARTS ---------- ****/
-makeLineChart('hrChart'    , dictToDatasets(heartData) , 'BPM');
-makeLineChart('hrvChart'   , dictToDatasets(hrvData)   , 'ms');
-makeLineChart('latencyChart', dictToDatasets(latencyData,{pointRadius:0,backgroundColor:'rgba(60,150,255,.08)',fill:'origin'}), 'ms');
+makeLineChart('hrChart', dictToDatasets(heartData), 'BPM');
+makeLineChart('hrvChart', dictToDatasets(hrvData), 'ms');
+makeLineChart('latencyChart', dictToDatasets(latencyData), 'ms');
 makeLineChart('jitterChart', dictToDatasets(jitterData), 'ms');
 
 /**** ---------- CLICK-/SYNC OR FREQUENCY VIEW ---------- ****/
-const titleEl    = document.getElementById('gameChartTitle');
-const COLORS     = ['#007bff','#dc3545'];      // P1 blue, P2 red
+const titleEl = document.getElementById('gameChartTitle');
+const COLORS = ['#007bff', '#dc3545'];
 const SYNC_COLOR = '#ffca2c';
 const BAND_SPACING = 0.10;
-const LINE_HALF    = 0.07;
-function bandCenter(idx){return idx===0?0.5-BAND_SPACING:0.5+BAND_SPACING;}
-function bandMin(idx){return bandCenter(idx)-LINE_HALF;}
-function bandMax(idx){return bandCenter(idx)+LINE_HALF;}
+const LINE_HALF = 0.07;
 
-// fast vertical ticks plugin for clicks view
+function bandCenter(idx) {
+  return idx === 0 ? 0.5 - BAND_SPACING : 0.5 + BAND_SPACING;
+}
+function bandMin(idx) {
+  return bandCenter(idx) - LINE_HALF;
+}
+function bandMax(idx) {
+  return bandCenter(idx) + LINE_HALF;
+}
+
+// Fast vertical ticks plugin for clicks view
+// Fast vertical‐ticks plugin with tolerance‐width sync bands
 const fastTicks = {
-  id:'fastTicks',
-  afterDraw(chart){
-    if(chart.canvas.id!=='gameChart') return;
-    if(!clickEvents || !Object.keys(clickEvents).length) return;
-    const actors = Object.keys(clickEvents).sort().slice(0,2);
-    const ctx    = chart.ctx, xS=chart.scales.x, yS=chart.scales.y;
-    actors.forEach((actor,idx)=>{
-      if(chart.getDatasetMeta(idx).hidden) return;
-      ctx.strokeStyle = COLORS[idx]; ctx.lineWidth = 3; ctx.beginPath();
-      (clickEvents[actor]||[]).forEach(t=>{
-        const px=xS.getPixelForValue(+t);
-        ctx.moveTo(px, yS.getPixelForValue(bandMin(idx)));
-        ctx.lineTo(px, yS.getPixelForValue(bandMax(idx)));
+  id: 'fastTicks',
+  afterDraw(chart) {
+    if (chart.canvas.id !== 'gameChart') return;
+    if (!clickEvents || !Object.keys(clickEvents).length) return;
+
+    const ctx = chart.ctx;
+    const xS = chart.scales.x;
+    const yS = chart.scales.y;
+
+    // Convert tolerance (ms) → half‐width in seconds
+    const halfSec = (parseFloat(meta.tolerance) || 0) / 1000 / 2;
+
+    const actors = Object.keys(clickEvents).sort().slice(0, 2);
+
+    // Draw click‐boxes with width = tolerance
+    actors.forEach((actor, idx) => {
+      if (chart.getDatasetMeta(idx).hidden) return;
+      ctx.fillStyle = COLORS[idx];  // blue or red
+
+      (clickEvents[actor] || []).forEach(t => {
+        // Compute data‐unit bounds
+        const tStart = +t - halfSec;
+        const tEnd   = +t + halfSec;
+
+        // Convert to pixel coords
+        const xPxStart = xS.getPixelForValue(tStart);
+        const xPxEnd   = xS.getPixelForValue(tEnd);
+
+        // Vertical pixel bounds for this actor’s band
+        const yTopPx    = yS.getPixelForValue(bandMax(idx));
+        const yBottomPx = yS.getPixelForValue(bandMin(idx));
+        const heightPx  = yBottomPx - yTopPx;
+
+        // Draw filled rectangle spanning [xPxStart, xPxEnd]
+        ctx.fillRect(xPxStart, yTopPx, xPxEnd - xPxStart, heightPx);
       });
-      ctx.stroke();
     });
-    if(!chart.getDatasetMeta(2).hidden && syncEvents?.length){
-      ctx.strokeStyle = SYNC_COLOR; ctx.lineWidth = 2; ctx.beginPath();
-      syncEvents.forEach(t=>{
-        const px=xS.getPixelForValue(+t);
-        ctx.moveTo(px, yS.getPixelForValue(bandMax(0)));
-        ctx.lineTo(px, yS.getPixelForValue(bandMin(1)));
-      });
-      ctx.stroke();
-    }
+
+    // Draw sync markers as thin vertical gold lines
+    // Draw sync‐boxes with width = tolerance (gold), but only between the two click‐bands
+// Draw sync‐boxes that span from (timestamp − tolerance/2) up to the timestamp
+if (!chart.getDatasetMeta(2)?.hidden && syncEvents?.length) {
+  ctx.fillStyle = SYNC_COLOR;  // gold color
+
+  // Convert tolerance (ms) → half‐width in seconds
+  const halfSec = (parseFloat(meta.tolerance) || 0) / 1000 / 2;
+
+  syncEvents.forEach(t => {
+    // Compute data‐unit left bound (tStart) and the sync line at t
+    const tStart = +t - halfSec;
+    const tEnd   = +t;  // stop exactly at the timestamp
+
+    // Convert to pixel coords
+    const xPxStart = xS.getPixelForValue(tStart);
+    const xPxEnd   = xS.getPixelForValue(tEnd);
+
+    // Vertical pixel bounds exactly matching the click‐bands:
+    const yTopPx    = yS.getPixelForValue(bandMax(0));  // top of upper (blue) band
+    const yBottomPx = yS.getPixelForValue(bandMin(1)); // bottom of lower (red) band
+    const heightPx  = yBottomPx - yTopPx;
+
+    // Draw gold rectangle spanning [xPxStart, xPxEnd] (no overflow past t)
+    ctx.fillRect(xPxStart, yTopPx, xPxEnd - xPxStart, heightPx);
+  });
+}
+
+
   }
 };
 Chart.register(fastTicks);
 
-// grey sync-interval boxes for frequency view
+
+
+// Grey sync-interval boxes plugin for frequency view
 const syncBoxes = {
-  id:'syncBoxes',
-  beforeDraw(chart){
-    if(chart.canvas.id!=='gameChart' || chart.config.type!=='line') return;
-    if(!syncIntervals?.length) return;
-    const ctx=chart.ctx, xS=chart.scales.x, yS=chart.scales.y;
-    ctx.save(); ctx.fillStyle='rgba(180,180,180,0.15)';
-    syncIntervals.forEach(([s,e])=>{
-      const x0=xS.getPixelForValue(+s), x1=xS.getPixelForValue(+e);
-      ctx.fillRect(x0,yS.top,x1-x0,yS.bottom-yS.top);
+  id: 'syncBoxes',
+  beforeDraw(chart) {
+    if (chart.canvas.id !== 'gameChart' || chart.config.type !== 'line') return;
+    if (!syncIntervals?.length) return;
+    const ctx = chart.ctx,
+          xS = chart.scales.x,
+          yS = chart.scales.y;
+    ctx.save();
+    ctx.fillStyle = 'rgba(180,180,180,0.15)';
+    syncIntervals.forEach(([s, e]) => {
+      const x0 = xS.getPixelForValue(+s),
+            x1 = xS.getPixelForValue(+e);
+      ctx.fillRect(x0, yS.top, x1 - x0, yS.bottom - yS.top);
     });
     ctx.restore();
   }
 };
 Chart.register(syncBoxes);
 
-/**** ---------- BUILD #gameChart ---------- ****/
-if(Object.keys(clickEvents||{}).length){
+if (Object.keys(clickEvents || {}).length) {
   titleEl.textContent = 'Clicks & Sync Markers';
   const actors = Object.keys(clickEvents).sort();
-  const topData    = (clickEvents[actors[0]]||[]).map(t=>({x:+t,y:bandCenter(0)}));
-  const bottomData = (clickEvents[actors[1]]||[]).map(t=>({x:+t,y:bandCenter(1)}));
-  const syncData   = (syncEvents||[]).map(t=>({x:+t,y:0.5}));
+  const topData    = (clickEvents[actors[0]] || []).map(t => ({ x: +t, y: bandCenter(0) }));
+  const bottomData = (clickEvents[actors[1]] || []).map(t => ({ x: +t, y: bandCenter(1) }));
+  const syncData   = (syncEvents || []).map(t => ({ x: +t, y: 0.5 }));
 
-  const legendSets=[
-    {label:`${actors[0]||'P1'} Click`,showLine:false,data:topData.length?topData:[{x:0,y:bandCenter(0)}],pointRadius:0,borderColor:COLORS[0]},
-    {label:`${actors[1]||'P2'} Click`,showLine:false,data:bottomData.length?bottomData:[{x:0,y:bandCenter(1)}],pointRadius:0,borderColor:COLORS[1]},
-    {label:'Sync',showLine:false,data:syncData.length?syncData:[{x:0,y:0.5}],pointRadius:0,borderColor:SYNC_COLOR}
+  const legendSets = [
+    {
+      label: `${actors[0] || 'P1'} Click`,
+      showLine: false,
+      data: topData.length ? topData : [{ x: 0, y: bandCenter(0) }],
+      pointRadius: 0,
+      borderColor: COLORS[0]
+    },
+    {
+      label: `${actors[1] || 'P2'} Click`,
+      showLine: false,
+      data: bottomData.length ? bottomData : [{ x: 0, y: bandCenter(1) }],
+      pointRadius: 0,
+      borderColor: COLORS[1]
+    },
+    {
+      label: 'Sync',
+      showLine: false,
+      data: syncData.length ? syncData : [{ x: 0, y: 0.5 }],
+      pointRadius: 0,
+      borderColor: SYNC_COLOR
+    }
   ];
 
-  new Chart(document.getElementById('gameChart'),{
-    type:'scatter',
-    data:{datasets:legendSets},
-    options:{
-      parsing:false,
-      responsive:true,
-      scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{display:false,min:0,max:1}},
-      plugins:{zoom:fullscreenZoom(),tooltip:{enabled:false},legend:{labels:{usePointStyle:true}}}
+  const gameCtx = document.getElementById('gameChart');
+  const gameChart = new Chart(gameCtx, {
+    type: 'scatter',
+    data: { datasets: legendSets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' }
+        },
+        y: {
+          display: false,
+          min: 0,
+          max: 1
+        }
+      },
+      plugins: {
+        tooltip: { enabled: false },
+        legend: { labels: { usePointStyle: true } }
+      }
     }
   });
 
-}else if(frequencyData && Object.keys(frequencyData).length){
+  gameChart.options.plugins.zoom = {
+    ...fullscreenZoom(gameChart),
+    limits: {
+      x: {
+        min: 0,
+        max: 600,
+        minRange: 1,
+        maxRange: 60
+      },
+      y: {
+        min: 0,
+        max: 1
+      }
+    }
+  };
+
+  gameChart.update();
+  addResetZoomButton(gameChart, gameCtx.parentElement);
+}
+
+else if (frequencyData && Object.keys(frequencyData).length) {
   titleEl.textContent = 'Finger Frequency & Sync Intervals';
-  const freqSets = Object.keys(frequencyData).map(a=>({
-    label:a,
-    data:frequencyData[a].timestamps.map((t,i)=>{
-      const v=+frequencyData[a].values[i];
-      return {x:+t, y:v===0?null:v};
+  const freqSets = Object.keys(frequencyData).map(a => ({
+    label: a,
+    data: frequencyData[a].timestamps.map((t, i) => {
+      const v = +frequencyData[a].values[i];
+      return { x: +t, y: v === 0 ? null : v };
     }),
-    pointRadius:0, fill:false
+    pointRadius: 0,
+    fill: false
   }));
 
-  new Chart(document.getElementById('gameChart'),{
-    type:'line',
-    data:{datasets:freqSets},
-    options:{
-      parsing:false,
-      responsive:true,
-      scales:{x:{type:'linear',title:{display:true,text:'Time (s)'}},y:{title:{display:true,text:'Hz'}}},
-      plugins:{zoom:fullscreenZoom(),tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}}
+  const freqCtx = document.getElementById('gameChart');
+  const gameChart = new Chart(freqCtx, {
+    type: 'line',
+    data: { datasets: freqSets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' }
+        },
+        y: {
+          title: { display: true, text: 'Hz' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` }
+        }
+      }
     }
   });
-}else{
+
+  gameChart.options.plugins.zoom = {
+    ...fullscreenZoom(gameChart),
+    limits: {
+      x: {
+        min: 0,
+        max: 600,
+        minRange: 1,
+        maxRange: 60
+      },
+      y: {
+        min: 0,
+        max: 10
+      }
+    }
+  };
+
+  gameChart.update();
+  addResetZoomButton(gameChart, freqCtx.parentElement);
+}
+
+else {
   titleEl.textContent = '(No game-specific data)';
 }
 
-/**** ---------- ANGLE CHART (shown only when angleData exists) ---------- ****/
-/* ---------- FINGER ANGLE SCATTER (auto-rescales Y) ---------- */
+/****  ---------- ANGLE CHART (shown only when angleData exists)  ---------- ****/
 if (angleData && Object.keys(angleData).length) {
+  // Custom “zoom/pan” helper that only clamps X≥0 and leaves Y unconstrained:
+  function fullscreenZoomAngle(chartRef) {
+    let isPanning = false;
+    let startX, startY;
+    const canvas = chartRef.canvas;
 
-  /* Recompute Y-range of points that are currently visible on the X-axis */
+    canvas.addEventListener('mousedown', e => {
+      if (e.button === 0) {
+        isPanning = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        canvas.style.cursor = 'grabbing';
+      }
+    });
+
+    canvas.addEventListener('mouseup', e => {
+      if (e.button === 0) {
+        isPanning = false;
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!isPanning) return;
+      const deltaX = e.clientX - startX;
+      const deltaY = e.clientY - startY;
+
+      // Pan both axes, but we’ll clamp X back to ≥0 below:
+      chartRef.pan({ x: deltaX, y: deltaY }, undefined, 'default');
+
+
+      // Manually clamp X ≥ 0:
+      const xScale = chartRef.scales.x;
+      if (xScale.min < 0) {
+        const spanX = xScale.max - xScale.min;
+        xScale.options.min = 0;
+        xScale.options.max = spanX;
+      }
+      // ***Do NOT clamp Y here*** ← allows negative Y
+
+      chartRef.update('none');
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    canvas.addEventListener('wheel', e => {
+      // Ctrl+wheel = zoom Y; otherwise zoom X
+      chartRef.options.plugins.zoom.zoom.mode = e.ctrlKey ? 'y' : 'x';
+    }, { passive: true });
+
+    return {
+      pan: {
+        enabled: false,
+        rangeMin: { x: 0 }  // only X is forced ≥ 0; Y has no minimum
+      },
+      zoom: {
+        wheel: {
+          enabled: true,
+          speed: 0.1,
+          onZoom: ({ chart }) => {
+            // After any wheel‐zoom, clamp X ≥ 0 again:
+            const xS = chart.scales.x;
+            if (xS.min < 0) {
+              const spanX = xS.max - xS.min;
+              xS.options.min = 0;
+              xS.options.max = spanX;
+            }
+            // ***Do NOT clamp Y here*** ← allows negative Y
+          }
+        },
+        pinch: {
+          enabled: true,
+          mode: 'xy'
+        },
+        mode: 'x',
+        limits: {
+          x: { min: 0 } // Y.limits is omitted → negative Y allowed
+        }
+      }
+    };
+  }
+
   function rescaleY(chart) {
-    const {min: xMin, max: xMax} = chart.scales.x;
-    let yMin =  Infinity, yMax = -Infinity;
+    const { min: xMin, max: xMax } = chart.scales.x;
+    let yMin = Infinity, yMax = -Infinity;
 
     chart.data.datasets.forEach(ds => {
       ds.data.forEach(pt => {
@@ -231,55 +666,249 @@ if (angleData && Object.keys(angleData).length) {
       });
     });
 
-    if (yMin !== Infinity) {              // at least one point is visible
-      const PAD = 5;                      // small breathing space
-      chart.options.scales.y.min = Math.floor(yMin - PAD);
-      chart.options.scales.y.max = Math.ceil (yMax + PAD);
-      chart.update('none');               // instant redraw, no animation
+    if (yMin !== Infinity) {
+      const PAD = 0.1; // small padding around extremes
+      chart.options.scales.y.min = yMin - PAD;
+      chart.options.scales.y.max = yMax + PAD;
+      chart.update('none');
     }
   }
 
-  new Chart(document.getElementById('angleChart'), {
-    type : 'scatter',
-    data : {
+  const angleCtx = document.getElementById('angleChart');
+  const angleChart = new Chart(angleCtx, {
+    type: 'line',
+    data: {
       datasets: Object.keys(angleData).map(actor => ({
         label: actor,
-        data : angleData[actor].timestamps.map((t,i)=>({ x:+t, y:+angleData[actor].values[i] })),
-        pointRadius: 3
+        data: angleData[actor].timestamps.map((t, i) => ({
+          x: +t,
+          y: +angleData[actor].values[i]  // already in [-1, 1]
+        })),
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 3
+
       }))
     },
-    options : {
-      parsing   : false,
+    options: {
+      parsing: false,
       responsive: true,
-      scales : {
-        x: { type:'linear', title:{display:true,text:'Time (s)'} },
-        y: { title:{display:true,text:'Angle (°)'}, min:-180, max:180 }
-      },
-      plugins : {
-        zoom : {
-          zoom : {
-            wheel : { enabled:true },
-            pinch : { enabled:true },
-            mode  : 'xy'              // allow horizontal and vertical zoom
-          },
-          pan : {
-            enabled:true,
-            mode   :'xy'
-          },
-          onZoomComplete : ({chart}) => rescaleY(chart),
-          onPanComplete  : ({chart}) => rescaleY(chart)
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'Time (s)' },
+          {#border: { color: '#007bff' }  // color the X-axis line (blue)#}
         },
-        tooltip:{ callbacks:{ label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}` } }
+        y: {
+          title: { display: true, text: 'Angle (unit circle)' },
+          // No 'min' or 'max' here: Chart.js will auto‐scale to include negatives.
+
+          // Color the horizontal grid at y=0 differently:
+          grid: {
+            color: ctx => ctx.tick.value === 0
+              ? 'rgba(255, 0, 0, 1.5)'   // red line at y=0
+              : 'rgba(0, 0, 0, 0.1)'     // default grey for other gridlines
+          }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}`
+          }
+        }
       }
     }
   });
+
+  // Attach our custom pan/zoom config that allows negative Y:
+  {#angleChart.options.plugins.zoom = fullscreenZoomAngle(angleChart);#}
+    angleChart.options.plugins.zoom = {
+  ...fullscreenZoomAngle(angleChart),
+  limits: {
+    x: {
+      min: 0,
+      max: 600,  // 0–60 seconds
+      minRange: 1,
+      maxRange: 60
+    },
+    y: {
+      min: -2,
+      max: 2,
+      minRange: 0.1,
+      maxRange: 50
+    }
+  }
+};
+
+  angleChart.options.plugins.zoom.zoom.onPanComplete  = ({ chart }) => {
+    rescaleY(chart);
+  };
+
+  angleChart.update();
+  addResetZoomButton(angleChart, angleCtx.parentElement);
+}
+
+
+function addResetZoomButton(chart, container) {
+  // Capture the initial axis limits once, right now
+  const initial = {
+    xMin: chart.scales.x.min,
+    xMax: chart.scales.x.max,
+    yMin: chart.scales.y.min,
+    yMax: chart.scales.y.max
+  };
+
+  const btn = document.createElement('button');
+  btn.textContent = 'Reset Zoom';
+  btn.className = 'reset-btn';
+  btn.addEventListener('click', () => {
+    // 1) Let the zoom plugin reset its internal state
+    chart.resetZoom();
+
+    // 2) Explicitly restore the original min/max that clampAxesToZero may have overwritten
+    chart.options.scales.x.min = initial.xMin;
+    chart.options.scales.x.max = initial.xMax;
+    chart.options.scales.y.min = initial.yMin;
+    chart.options.scales.y.max = initial.yMax;
+
+    // 3) Re-draw
+    chart.update();
+  });
+  container.appendChild(btn);
 }
 
 
 /**** ---------- dbl-click → fullscreen ---------- ****/
-document.querySelectorAll('.chart-container').forEach(c=>{
-  c.addEventListener('dblclick',()=>document.fullscreenElement?document.exitFullscreen():c.requestFullscreen());
+document.querySelectorAll('.chart-container').forEach(container => {
+  const canvas = container.querySelector('canvas');
+  canvas.addEventListener('dblclick', () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      container.requestFullscreen();
+    }
+  });
 });
 </script>
+
+  <!-- ===== Feedback Modal HTML ===== -->
+<div id="feedbackModal">
+  <div class="modal-content" dir="rtl">
+    <button class="close-btn" id="closeFeedbackBtn" style="color:red;">&times;</button>
+    <h2 style="text-align:right;">משוב מפגש</h2>
+
+    <!-- Split sections for each participant -->
+    <div id="feedbackContainer" style="text-align:right;">
+      <h3 id="pid0Name" style="margin-bottom:8px;"></h3>
+      <div id="pid0Container" style="margin-bottom:16px;"></div>
+
+      <h3 id="pid1Name" style="margin-bottom:8px;"></h3>
+      <div id="pid1Container"></div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('feedbackModal');
+    const openBtn = document.getElementById('openFeedbackBtn');
+    const closeBtn = document.getElementById('closeFeedbackBtn');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+
+    openBtn.addEventListener('click', () => {
+      // 1) Clear existing contents:
+      feedbackContainer.innerHTML = '';
+
+      // 2) Fetch the feedback JSON:
+      fetch(`/session_data/feedback?session_id=${encodeURIComponent(meta.sessionId)}`)
+        .then(resp => resp.json())
+        .then(data => {
+          if (!data.success) {
+            // Show an error message in the container
+            feedbackContainer.innerHTML = `<p style="color:red;">שגיאה: ${data.message || 'לא ניתן לטעון משוב'}</p>`;
+            modal.style.display = 'block';
+            return;
+          }
+
+          const payload = data.payload || [];
+          if (payload.length === 0) {
+            // No feedback at all
+            feedbackContainer.innerHTML = '<p>אין משוב זמין למפגש זה.</p>';
+            modal.style.display = 'block';
+            return;
+          }
+
+          // 3) Group items by numeric pid:
+          const grouped = {};
+          payload.forEach(item => {
+            const pid = item.pid;
+            if (!grouped[pid]) {
+              grouped[pid] = [];
+            }
+            grouped[pid].push(item);
+          });
+
+          // 4) For each pid, render a header and its Q&A items:
+          Object.keys(grouped).forEach((pidKey, idx) => {
+  // Look up the name at the same index in meta.participants:
+  const nameList = meta.participants || [];
+  const name = nameList[idx] || `PID ${pidKey}`;
+
+  // Create the <h3> using the actual name:
+  const header = document.createElement('h3');
+  header.textContent = name;
+  header.style.marginBottom = '8px';
+  feedbackContainer.appendChild(header);
+
+  // Render that PID’s Q&A items:
+  grouped[pidKey].forEach(item => {
+    const qaDiv = document.createElement('div');
+    qaDiv.className = 'qa-item';
+
+    const q = document.createElement('p');
+    q.className = 'question';
+    q.textContent = item.question || '(שאלה חסרה)';
+
+    const a = document.createElement('p');
+    a.className = 'answer';
+    a.textContent = item.answer || '(תשובה חסרה)';
+
+    qaDiv.appendChild(q);
+    qaDiv.appendChild(a);
+    feedbackContainer.appendChild(qaDiv);
+  });
+
+  // Separator between participants
+  const separator = document.createElement('hr');
+  separator.style.margin = '16px 0';
+  feedbackContainer.appendChild(separator);
+});
+
+
+          modal.style.display = 'block';
+        })
+        .catch(err => {
+          feedbackContainer.innerHTML = `<p style="color:red;">שגיאת רשת: ${err}</p>`;
+          modal.style.display = 'block';
+        });
+    });
+
+    // Close modal logic:
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+    window.addEventListener('click', e => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+
 </body>
 </html>
