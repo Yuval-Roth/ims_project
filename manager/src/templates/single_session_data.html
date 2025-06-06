@@ -379,6 +379,7 @@ const fastTicks = {
 
     // Draw sync markers as thin vertical gold lines
     // Draw sync‐boxes with width = tolerance (gold), but only between the two click‐bands
+// Draw sync‐boxes that span from (timestamp − tolerance/2) up to the timestamp
 if (!chart.getDatasetMeta(2)?.hidden && syncEvents?.length) {
   ctx.fillStyle = SYNC_COLOR;  // gold color
 
@@ -386,23 +387,24 @@ if (!chart.getDatasetMeta(2)?.hidden && syncEvents?.length) {
   const halfSec = (parseFloat(meta.tolerance) || 0) / 1000 / 2;
 
   syncEvents.forEach(t => {
-    // Compute data‐unit bounds
+    // Compute data‐unit left bound (tStart) and the sync line at t
     const tStart = +t - halfSec;
-    const tEnd   = +t + halfSec;
+    const tEnd   = +t;  // stop exactly at the timestamp
 
     // Convert to pixel coords
     const xPxStart = xS.getPixelForValue(tStart);
     const xPxEnd   = xS.getPixelForValue(tEnd);
 
     // Vertical pixel bounds exactly matching the click‐bands:
-    const yTopPx    = yS.getPixelForValue(bandMax(0));  // top of blue band
-    const yBottomPx = yS.getPixelForValue(bandMin(1)); // bottom of red band
+    const yTopPx    = yS.getPixelForValue(bandMax(0));  // top of upper (blue) band
+    const yBottomPx = yS.getPixelForValue(bandMin(1)); // bottom of lower (red) band
     const heightPx  = yBottomPx - yTopPx;
 
-    // Draw gold rectangle spanning [xPxStart, xPxEnd] between the two bands
+    // Draw gold rectangle spanning [xPxStart, xPxEnd] (no overflow past t)
     ctx.fillRect(xPxStart, yTopPx, xPxEnd - xPxStart, heightPx);
   });
 }
+
 
   }
 };
