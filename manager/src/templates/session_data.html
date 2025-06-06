@@ -59,7 +59,7 @@
     rows.forEach(s => {
       const tr = document.createElement('tr');
       tr.onclick = () =>
-      location.href = `/session_data/single?session_id=${s.sessionId}&game_type=${s.sessionType}&participants=${participants}&duration=${s.duration}`;
+      location.href = `/session_data/single?session_id=${s.sessionId}&game_type=${s.sessionType}&participants=${participants}&duration=${s.duration}&tolerance=${s.tolerance ?? ''}`;
 
 
       tr.innerHTML = `

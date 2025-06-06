@@ -7,6 +7,7 @@ from .managers.lobby import *
 from .managers.game import *
 from .managers.operators import *
 from .managers.session_data import *
+from .managers.feedback import *
 from .managers.logger import Logger
 from .ENUMS import *
 import json
@@ -437,6 +438,7 @@ def single_session_data():
     game_type    = request.args.get('game_type', '')
     participants = request.args.get('participants', '')
     duration     = request.args.get('duration', '')
+    tolerance   = request.args.get('tolerance', '')
 
     # ── metrics ──
     heart    = get_heartrate(sid)
@@ -457,7 +459,9 @@ def single_session_data():
         "gameType"    : game_type,
         "participants": [p.strip() for p in participants.split(',') if p],
         "sessionId"   : sid,
-        "duration"    : duration
+        "duration"    : duration,
+        "tolerance"   : tolerance
+
     }
     data = {
         "heart"          : heart,
@@ -486,6 +490,29 @@ def get_all_sessions_route():
         Logger.log_error(f"Error getting all sessions: {e}")
         return jsonify({"status": "error",
                         "message": "Internal server error"}), 500
+
+
+
+@app.route('/session_data/feedback', methods=['GET'])
+def session_feedback():
+    # 1) Get session_id from query string
+    sid = request.args.get('session_id')
+    if not sid:
+        return jsonify({ "success": False, "message": "Missing session_id" }), 400
+
+    # 2) Call internal helper to fetch feedback
+    try:
+        feedback_list = get_feedback(sid)
+    except Exception as e:
+        Logger.log_error(f"session_feedback – Exception: {e}")
+        return jsonify({ "success": False, "message": "Internal server error" }), 500
+
+    return jsonify({
+        "success": True,
+        "payload": feedback_list
+    })
+
+
 
 @app.route('/experiment_questions', methods=['GET'])
 def get_experiment_questions_route():

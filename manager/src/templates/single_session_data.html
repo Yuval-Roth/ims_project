@@ -269,16 +269,19 @@ function bandMax(idx) {
 }
 
 // Fast vertical ticks plugin for clicks view
+// Fast vertical‐ticks plugin with tolerance‐width sync bands
 const fastTicks = {
   id: 'fastTicks',
   afterDraw(chart) {
     if (chart.canvas.id !== 'gameChart') return;
     if (!clickEvents || !Object.keys(clickEvents).length) return;
-    const actors = Object.keys(clickEvents).sort().slice(0, 2);
-    const ctx = chart.ctx,
-          xS = chart.scales.x,
-          yS = chart.scales.y;
 
+    const ctx = chart.ctx;
+    const xS = chart.scales.x;
+    const yS = chart.scales.y;
+    const actors = Object.keys(clickEvents).sort().slice(0, 2);
+
+    // Draw click‐ticks for each actor
     actors.forEach((actor, idx) => {
       if (chart.getDatasetMeta(idx).hidden) return;
       ctx.strokeStyle = COLORS[idx];
@@ -292,20 +295,24 @@ const fastTicks = {
       ctx.stroke();
     });
 
+    // Draw tolerance‐width sync bands instead of a single line
     if (!chart.getDatasetMeta(2)?.hidden && syncEvents?.length) {
-      ctx.strokeStyle = SYNC_COLOR;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
+      // Convert tolerance from milliseconds to seconds, then take half
+      const halfSec = (parseFloat(meta.tolerance) || 0) / 1000 / 2;
+
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.2)'; // translucent gold
       syncEvents.forEach(t => {
-        const px = xS.getPixelForValue(+t);
-        ctx.moveTo(px, yS.getPixelForValue(bandMax(0)));
-        ctx.lineTo(px, yS.getPixelForValue(bandMin(1)));
+        const startX = xS.getPixelForValue(+t - halfSec);
+        const endX   = xS.getPixelForValue(+t + halfSec);
+        const yTop    = yS.getPixelForValue(bandMax(0));
+        const yBottom = yS.getPixelForValue(bandMin(1));
+        ctx.fillRect(startX, yTop, endX - startX, yBottom - yTop);
       });
-      ctx.stroke();
     }
   }
 };
 Chart.register(fastTicks);
+
 
 // Grey sync-interval boxes plugin for frequency view
 const syncBoxes = {
