@@ -212,7 +212,7 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
       plugins: {
         tooltip: {
           callbacks: {
-            label: ctx => ${ctx.dataset.label}: ${ctx.parsed.y}
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}`
           }
         }
       }
@@ -317,14 +317,14 @@ if (Object.keys(clickEvents || {}).length) {
 
   const legendSets = [
     {
-      label: ${actors[0] || 'P1'} Click,
+      label: `${actors[0] || 'P1'} Click`,
       showLine: false,
       data: topData.length ? topData : [{ x: 0, y: bandCenter(0) }],
       pointRadius: 0,
       borderColor: COLORS[0]
     },
     {
-      label: ${actors[1] || 'P2'} Click,
+      label: `${actors[1] || 'P2'} Click`,
       showLine: false,
       data: bottomData.length ? bottomData : [{ x: 0, y: bandCenter(1) }],
       pointRadius: 0,
@@ -399,7 +399,7 @@ if (Object.keys(clickEvents || {}).length) {
       },
       plugins: {
         tooltip: {
-          callbacks: { label: ctx => ${ctx.dataset.label}: ${ctx.parsed.y} }
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` }
         }
       }
     }
@@ -455,7 +455,7 @@ if (angleData && Object.keys(angleData).length) {
         y: { title: { display: true, text: 'Angle (°)' }, min: -180, max: 180 }
       },
       plugins: {
-        tooltip: { callbacks: { label: ctx => ${ctx.dataset.label}: ${ctx.parsed.y} } }
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}` } }
       }
     }
   });
