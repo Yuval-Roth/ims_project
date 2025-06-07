@@ -6,6 +6,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='session_data.css') }}">
+
+    <!-- ============================== -->
+    <!-- 1) Add these lines inside <head> for modal/CSS styling  -->
+    <style>
+      /* Button to open the modal */
+      /* ===== Button styling ===== */
+  .btn-feedback {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+  .btn-feedback:hover {
+    background: #0056b3;
+  }
+
+  /* ===== Modal overlay styling ===== */
+  #feedbackModal {
+    display: none;            /* hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+  #feedbackModal .modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    max-width: 600px;
+    border-radius: 8px;
+    position: relative;
+  }
+  #feedbackModal h2 {
+    margin-top: 0;
+  }
+  #feedbackModal .close-btn {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+  {#    make it left side#}
+
+  }
+  #feedbackModal .qa-item {
+    margin-bottom: 16px;
+  }
+  #feedbackModal .qa-item p.question {
+    font-weight: bold;
+    margin: 0 0 4px 0;
+  }
+  #feedbackModal .qa-item p.answer {
+    margin: 0;
+  }
+
+      /* Modal overlay styling (RTL) */
+      #expFeedbackModal {
+        display: none;            /* hidden by default */
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      #expFeedbackModal .modal-content {
+        background-color: #fff;
+        margin: 5% auto;
+        padding: 20px;
+        max-width: 600px;
+        border-radius: 8px;
+        position: relative;
+        direction: rtl;           /* right‐to‐left text */
+      }
+      #expFeedbackModal h2 {
+        margin-top: 0;
+        text-align: right;
+      }
+      #expFeedbackModal .close-btn {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        background: transparent;
+        border: none;
+        font-size: 1.4rem;
+        color: red;               /* red “×” */
+        cursor: pointer;
+      }
+      #expFeedbackModal .qa-item {
+        margin-bottom: 16px;
+      }
+      #expFeedbackModal .qa-item p.question {
+        font-weight: bold;
+        margin: 0 0 4px 0;
+        text-align: right;
+      }
+      #expFeedbackModal .qa-item p.answer {
+        margin: 0;
+        text-align: right;
+      }
+      #expFeedbackModal hr {
+        margin: 16px 0;
+        border: none;
+        border-top: 1px solid #ccc;
+      }
+    </style>
+    <!-- ============================== -->
 </head>
 <body>
 
@@ -14,6 +132,7 @@
 </a>
 
 <div class="session-container">
+  <!-- 2) Insert “Show Experiment Feedback” button here -->
   <h1 id="title"></h1>
 
   <div class="filters">
@@ -25,6 +144,12 @@
       <option value="FLOUR_MILL">Flour Mill</option>
     </select>
     <button onclick="applyFilters()">Filter</button>
+  </div>
+
+    <div style="text-align:center; margin: 20px 0;">
+    <button id="openFeedbackBtn" class="btn-feedback">
+      Show Experiment Feedback
+    </button>
   </div>
 
   <table id="sessionTable">
@@ -40,15 +165,33 @@
   </table>
 </div>
 
+<!-- 3) Add the Experiment Feedback Modal HTML just before </body> -->
+<div id="feedbackModal">
+  <div class="modal-content" dir="rtl">
+    <button class="close-btn" id="closeFeedbackBtn" style="color:red;">&times;</button>
+    <h2 style="text-align:right;">משוב מפגש</h2>
+
+    <!-- Split sections for each participant -->
+    <div id="feedbackContainer" style="text-align:right;">
+      <h3 id="pid0Name" style="margin-bottom:8px;"></h3>
+      <div id="pid0Container" style="margin-bottom:16px;"></div>
+
+      <h3 id="pid1Name" style="margin-bottom:8px;"></h3>
+      <div id="pid1Container"></div>
+    </div>
+  </div>
+</div>
+
 <script>
-  const urlParams   = new URLSearchParams(window.location.search);
-  const participants = urlParams.get('participants') || '';
+  const urlParams    = new URLSearchParams(window.location.search);
+  const participants = urlParams.get('participants') || ''; // e.g. "Omer,Hila"
+  const namesArr     = participants.split(',').filter(n => n); // [ "Omer", "Hila" ]
 
-  // ⸺ Jinja injects the raw list ⸺
-  const rawSessions = {{ sessions | tojson | safe }};
-  const lobbyId     = "{{ lobby_id }}";
+  // Jinja injects these:
+  const rawSessions  = {{ sessions | tojson | safe }};
+  const lobbyId      = "{{ lobby_id }}";
 
-  // Turn every string into a JS object
+  // Convert any JSON‐string into JS object
   const allSessions = rawSessions.map(s => typeof s === 'string' ? JSON.parse(s) : s);
 
   // ───────────────────────────────────────── table rendering
@@ -59,8 +202,7 @@
     rows.forEach(s => {
       const tr = document.createElement('tr');
       tr.onclick = () =>
-      location.href = `/session_data/single?session_id=${s.sessionId}&game_type=${s.sessionType}&participants=${participants}&duration=${s.duration}`;
-
+        location.href = `/session_data/single?session_id=${s.sessionId}&game_type=${s.sessionType}&participants=${participants}&duration=${s.duration}&tolerance=${s.tolerance ?? ''}`;
 
       tr.innerHTML = `
         <td>${s.sessionId}</td>
@@ -75,13 +217,106 @@
   // ───────────────────────────────────────── filter UI
   function applyFilters() {
     const type = document.getElementById('typeFilter').value;
-    const filtered = type ? allSessions.filter(s => s.sessionType === type) : allSessions;
+    const filtered = type
+      ? allSessions.filter(s => s.sessionType === type)
+      : allSessions;
     renderTable(filtered);
   }
 
   // init
   document.getElementById('title').textContent = `Sessions for Lobby #${lobbyId}`;
   renderTable(allSessions);
+
+  // ─────────────────── Experiment Feedback Modal Logic ───────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    const openBtn = document.getElementById('openFeedbackBtn');
+    const modal         = document.getElementById('feedbackModal');
+    const closeBtn = document.getElementById('closeFeedbackBtn');
+    const container = document.getElementById('feedbackContainer');
+
+
+    openBtn.addEventListener('click', () => {
+      // 1) Clear old feedback
+      container.innerHTML = '';
+
+      // 2) Fetch from our new Flask route
+      fetch(`/session_data/experiment_feedback?exp_id=${encodeURIComponent(lobbyId)}`)
+        .then(resp => resp.json())
+        .then(data => {
+          if (!data.success) {
+            container.innerHTML = `<p style="color:red;">שגיאה: ${data.message || 'לא ניתן לטעון משוב'}</p>`;
+            modal.style.display = 'block';
+            return;
+          }
+
+          const payload = data.payload || [];
+          if (payload.length === 0) {
+            container.innerHTML = '<p>אין משוב זמין לניסוי זה.</p>';
+            modal.style.display = 'block';
+            return;
+          }
+
+          // 3) Group by pid
+          const grouped = {};
+          payload.forEach(item => {
+            const pid = item.pid;
+            if (!grouped[pid]) grouped[pid] = [];
+            grouped[pid].push(item);
+          });
+
+          // 4) For each pidKey, render <h3> with name (or fallback to PID #)
+          Object.keys(grouped).forEach((pidKey, idx) => {
+            // If namesArr[idx] exists, use it; otherwise show “PID <pidKey>”
+            const name = namesArr[idx] || `PID ${pidKey}`;
+
+            const header = document.createElement('h3');
+            header.textContent = name;
+            header.style.marginBottom = '8px';
+            container.appendChild(header);
+
+            // Render each Q&A under this header
+            grouped[pidKey].forEach(item => {
+              const qaDiv = document.createElement('div');
+              qaDiv.className = 'qa-item';
+
+              const q = document.createElement('p');
+              q.className = 'question';
+              q.textContent = item.question || '(שאלה חסרה)';
+
+              const a = document.createElement('p');
+              a.className = 'answer';
+              a.textContent = item.answer || '(תשובה חסרה)';
+
+              qaDiv.appendChild(q);
+              qaDiv.appendChild(a);
+              container.appendChild(qaDiv);
+            });
+
+            // Add a separator between participants, if not the last
+            if (idx < Object.keys(grouped).length - 1) {
+              const hr = document.createElement('hr');
+              container.appendChild(hr);
+            }
+          });
+
+          modal.style.display = 'block';
+        })
+        .catch(err => {
+          container.innerHTML = `<p style="color:red;">שגיאת רשת: ${err}</p>`;
+          modal.style.display = 'block';
+        });
+    });
+
+    // Close the modal on “×” or outside‐click
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+    window.addEventListener('click', e => {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  });
 </script>
 
 </body>
