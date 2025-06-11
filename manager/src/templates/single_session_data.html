@@ -11,10 +11,7 @@
 
   <!-- Chart.js (core + zoom only) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{#  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>#}
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
-
-
 
   <style>
     .charts-grid {
@@ -38,65 +35,94 @@
       box-sizing: border-box;
     }
 
-      /* ===== Button styling ===== */
-  .btn-feedback {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-  .btn-feedback:hover {
-    background: #0056b3;
-  }
+    /* ===== Button styling ===== */
+    .btn-feedback {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .btn-feedback:hover {
+      background: #0056b3;
+    }
 
-  /* ===== Modal overlay styling ===== */
-  #feedbackModal {
-    display: none;            /* hidden by default */
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    background-color: rgba(0, 0, 0, 0.5);
-  }
-  #feedbackModal .modal-content {
-    background-color: #fff;
-    margin: 5% auto;
-    padding: 20px;
-    max-width: 600px;
-    border-radius: 8px;
-    position: relative;
-  }
-  #feedbackModal h2 {
-    margin-top: 0;
-  }
-  #feedbackModal .close-btn {
-    position: absolute;
-    left: 12px;
-    top: 12px;
-    background: transparent;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-  {#    make it left side#}
+    /* ===== Zoom control buttons ===== */
+        /* ===== Zoom control buttons ===== */
+.zoom-controls {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 40px; /* Increased bottom margin from 32px to 40px */
+  justify-content: center;
+  clear: both;
+  position: relative;
+  z-index: 1;
+}
 
-  }
-  #feedbackModal .qa-item {
-    margin-bottom: 16px;
-  }
-  #feedbackModal .qa-item p.question {
-    font-weight: bold;
-    margin: 0 0 4px 0;
-  }
-  #feedbackModal .qa-item p.answer {
-    margin: 0;
-  }
+.zoom-controls .zoom-axis {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px; /* Increased from 8px to 12px */
+}
 
+.zoom-controls button {
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #dd7973;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin: 0;
+  padding: 0;
+}
+
+.zoom-controls button:hover {
+  background: #e2e6ea;
+}
+.chart-container {
+  margin-bottom: 24px; /* Increased from 16px to 24px */
+  padding-bottom: 16px; /* Added padding for extra space */
+}
+
+
+    /* ===== Modal overlay styling ===== */
+    #feedbackModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    #feedbackModal .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      max-width: 600px;
+      border-radius: 8px;
+      position: relative;
+    }
+    #feedbackModal h2 { margin-top: 0; }
+    #feedbackModal .close-btn {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      background: transparent;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    #feedbackModal .qa-item { margin-bottom: 16px; }
+    #feedbackModal .qa-item p.question { font-weight: bold; margin: 0 0 4px 0; }
+    #feedbackModal .qa-item p.answer { margin: 0; }
   </style>
 </head>
 <body>
@@ -751,7 +777,6 @@ if (angleData && Object.keys(angleData).length) {
 
 
 function addResetZoomButton(chart, container) {
-  // Capture the initial axis limits once, right now
   const initial = {
     xMin: chart.scales.x.min,
     xMax: chart.scales.x.max,
@@ -763,19 +788,43 @@ function addResetZoomButton(chart, container) {
   btn.textContent = 'Reset Zoom';
   btn.className = 'reset-btn';
   btn.addEventListener('click', () => {
-    // 1) Let the zoom plugin reset its internal state
     chart.resetZoom();
-
-    // 2) Explicitly restore the original min/max that clampAxesToZero may have overwritten
     chart.options.scales.x.min = initial.xMin;
     chart.options.scales.x.max = initial.xMax;
     chart.options.scales.y.min = initial.yMin;
     chart.options.scales.y.max = initial.yMax;
-
-    // 3) Re-draw
     chart.update();
   });
   container.appendChild(btn);
+  addZoomControls(chart, container);
+}
+
+function addZoomControls(chart, container) {
+  const controlDiv = document.createElement('div');
+  controlDiv.className = 'zoom-controls';
+
+  ['x', 'y'].forEach(axis => {
+    const axisDiv = document.createElement('div');
+    axisDiv.className = 'zoom-axis';
+    const label = document.createElement('span');
+    label.textContent = axis.toUpperCase() + ':';
+    axisDiv.appendChild(label);
+
+    ['in', 'out'].forEach(direction => {
+      const btn = document.createElement('button');
+      btn.textContent = direction === 'in' ? '+' : '−';
+      btn.title = `Zoom ${direction} ${axis}-axis`;
+      btn.addEventListener('click', () => {
+        const factor = direction === 'in' ? 1.1 : 0.9;
+        chart.zoom({ [axis]: factor });
+      });
+      axisDiv.appendChild(btn);
+    });
+
+    controlDiv.appendChild(axisDiv);
+  });
+
+  container.appendChild(controlDiv);
 }
 
 
