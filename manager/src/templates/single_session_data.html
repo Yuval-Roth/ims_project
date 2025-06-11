@@ -563,18 +563,24 @@ else if (frequencyData && Object.keys(frequencyData).length) {
     }
   });
 
+  const xMax = Math.max(
+    ...freqSets.flatMap(ds => ds.data.map(pt => pt.x))
+  );
+    const yMax = Math.max(
+        ...freqSets.flatMap(ds => ds.data.map(pt => pt.y)).filter(v => v !== null)
+    );
   gameChart.options.plugins.zoom = {
     ...fullscreenZoom(gameChart),
     limits: {
       x: {
         min: 0,
-        max: 600,
+        max: 1.5*xMax,
         minRange: 1,
-        maxRange: 60
+        maxRange: 1.5*xMax
       },
       y: {
         min: 0,
-        max: 10
+        max: 1.5*yMax,
       }
     }
   };
@@ -741,20 +747,28 @@ if (angleData && Object.keys(angleData).length) {
 
   // Attach our custom pan/zoom config that allows negative Y:
   {#angleChart.options.plugins.zoom = fullscreenZoomAngle(angleChart);#}
+
+    const xMax = Math.max(
+    ...angleChart.data.datasets.flatMap(ds => ds.data.map(pt => pt.x))
+    );
+    const yMax = Math.max(
+    ...angleChart.data.datasets.flatMap(ds => ds.data.map(pt => pt.y))
+    );
+
     angleChart.options.plugins.zoom = {
   ...fullscreenZoomAngle(angleChart),
   limits: {
     x: {
       min: 0,
-      max: 600,  // 0–60 seconds
+      max: xMax * 2,   // double the max X for zooming out
       minRange: 1,
-      maxRange: 60
+      maxRange: xMax * 2
     },
     y: {
       min: -2,
       max: 2,
       minRange: 0.1,
-      maxRange: 50
+      maxRange: 2 * yMax  // double the max Y for zooming out
     }
   }
 };
