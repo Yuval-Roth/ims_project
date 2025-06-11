@@ -1,6 +1,8 @@
 package com.imsproject.gameserver.dataAccess.models
 
 import com.imsproject.common.gameserver.SessionEvent
+import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.math.exp
 
 data class ParticipantDTO(
@@ -16,7 +18,8 @@ data class ParticipantDTO(
 data class ExperimentDTO(
     val expId: Int?,
     val pid1: Int?,
-    val pid2: Int?
+    val pid2: Int?,
+    val dateTime: LocalDateTime?
 )
 
 data class ExperimentFeedbackDTO(
@@ -132,6 +135,7 @@ data class SessionData(
 
 data class ExperimentWithParticipantNamesDTO(
     val expId: Int,
+    val dateTime: LocalDateTime,
     val participant1Name: String,
     val participant2Name: String
-) //todo: add date?
+)

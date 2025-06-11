@@ -13,12 +13,13 @@ import com.imsproject.gameserver.dataAccess.models.ExperimentWithParticipantName
 import org.springframework.stereotype.Component
 
 @Component
-class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2")) {
+class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2", "date_time")) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): ExperimentDTO {
         return ExperimentDTO(
             expId = resultSet.getInt("exp_id"),
             pid1 = resultSet.getInt("pid1"),
-            pid2 = resultSet.getInt("pid2")
+            pid2 = resultSet.getInt("pid2"),
+            dateTime = resultSet.getLocalDateTime("date_time")
         )
 
     }
@@ -46,6 +47,7 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
     fun selectWithParticipantNames(transactionId: String? = null): List<ExperimentWithParticipantNamesDTO> {
         val query = """
             SELECT e.exp_id AS eid,
+                   e.date_time AS date_time,
                    p1.first_name AS p1_name,
                    p2.first_name AS p2_name
             FROM experiments e
@@ -61,7 +63,8 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
                     ExperimentWithParticipantNamesDTO(
                         expId = resultSet.getInt("eid")!!,
                         participant1Name = resultSet.getString("p1_name")!!,
-                        participant2Name = resultSet.getString("p2_name")!!
+                        participant2Name = resultSet.getString("p2_name")!!,
+                        dateTime = resultSet.getLocalDateTime("date_time")!!
                     )
                 )
             }
