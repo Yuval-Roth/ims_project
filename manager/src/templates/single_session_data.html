@@ -21,11 +21,15 @@
       align-items: center;
       margin: 40px auto;
     }
-    .chart-container {
+        .chart-container {
       width: 90vw;
-      max-width: 1200px;
-      height: 420px;
+      max-width: 1100px;
       position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-container canvas {
+      flex: 0 0 420px; /* keep chart height */
     }
     .chart-container:fullscreen {
       width: 100vw;
@@ -50,45 +54,31 @@
     }
 
     /* ===== Zoom control buttons ===== */
-        /* ===== Zoom control buttons ===== */
 .zoom-controls {
   display: flex;
   gap: 8px;
-  margin: 8px 0 40px; /* Increased bottom margin from 32px to 40px */
+  margin: 16px 0 24px;   /* push away from chart and text */
   justify-content: center;
-  clear: both;
-  position: relative;
-  z-index: 1;
 }
-
 .zoom-controls .zoom-axis {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 12px; /* Increased from 8px to 12px */
 }
-
 .zoom-controls button {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   background: #dd7973;
   cursor: pointer;
   transition: background 0.2s ease;
-  margin: 0;
-  padding: 0;
+  margin: 0;              /* reset default margins */
 }
-
 .zoom-controls button:hover {
   background: #e2e6ea;
 }
-.chart-container {
-  margin-bottom: 24px; /* Increased from 16px to 24px */
-  padding-bottom: 16px; /* Added padding for extra space */
-}
-
 
     /* ===== Modal overlay styling ===== */
     #feedbackModal {
@@ -140,23 +130,19 @@
 
   <!-- ===== Show Feedback Button ===== -->
   <div style="text-align:center; margin: 20px 0;">
-    <button id="openFeedbackBtn" class="btn-feedback">
-      Show Session Feedback
-    </button>
+    <button id="openFeedbackBtn" class="btn-feedback">Show Session Feedback</button>
   </div>
-
 
   <div class="charts-grid">
     <div class="chart-container">
       <h3 style="text-align:center;" id="gameChartTitle"></h3>
       <canvas id="gameChart"></canvas>
-      <!-- Reset button will be injected here dynamically -->
     </div>
     {% if data.angle_data %}
-      <div class="chart-container">
-        <h3 style="text-align:center;">Finger Angle</h3>
-        <canvas id="angleChart"></canvas>
-      </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">Finger Angle</h3>
+      <canvas id="angleChart"></canvas>
+    </div>
     {% endif %}
     <div class="chart-container">
       <h3 style="text-align:center;">Heart Rate</h3>
@@ -176,6 +162,7 @@
     </div>
   </div>
 </div>
+
 
 <script>
 /**** ---------- GLOBAL SPEED-UPS ---------- ****/
