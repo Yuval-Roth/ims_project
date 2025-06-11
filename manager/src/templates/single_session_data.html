@@ -279,7 +279,7 @@ function dictToDatasets(dict, extra = {}) {
 
 /**** ---------- GENERIC LINE-CHART BUILDER ---------- ****/
 function makeLineChart(id, datasets, yLabel, yOpts = {}) {
-  const ctx = document.getElementById(id);
+  const ctx   = document.getElementById(id);
   const chart = new Chart(ctx, {
     type: 'line',
     data: { datasets },
@@ -306,28 +306,39 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
     }
   });
 
-  // Apply pan/zoom handlers and then separately inject limits
+  // first draw
+  chart.update();
+
+  // --- DYNAMIC LIMITS BASED ON DATA MAXIMA ---
+  // flatten all X and Y values from our datasets
+  const xVals = datasets.flatMap(ds => ds.data.map(pt => pt.x));
+  const yVals = datasets.flatMap(ds => ds.data.map(pt => pt.y));
+  const xMax  = Math.max(...xVals, 0);
+  const yMax  = Math.max(...yVals, 0.1);
+
   chart.options.plugins.zoom = {
     ...fullscreenZoom(chart),
     limits: {
       x: {
-        min: 0,
-        max: 600,
+        min:      0,
+        max:      xMax * 2,
         minRange: 1,
-        maxRange: 600
+        maxRange: xMax * 2
       },
       y: {
-        min: 0.1,
-        max: 300,
+        min:      0.1,
+        max:      yMax * 2,
         minRange: 1,
-        maxRange: 300
+        maxRange: yMax * 2
       }
     }
   };
 
+  // re-draw with new limits
   chart.update();
   addResetZoomButton(chart, ctx.parentElement);
 }
+
 
 /**** ---------- METRIC CHARTS ---------- ****/
 makeLineChart('hrChart', dictToDatasets(heartData), 'BPM');
@@ -451,36 +462,18 @@ Chart.register(syncBoxes);
 
 if (Object.keys(clickEvents || {}).length) {
   titleEl.textContent = 'Clicks & Sync Markers';
-  const actors = Object.keys(clickEvents).sort();
+  const actors     = Object.keys(clickEvents).sort();
   const topData    = (clickEvents[actors[0]] || []).map(t => ({ x: +t, y: bandCenter(0) }));
   const bottomData = (clickEvents[actors[1]] || []).map(t => ({ x: +t, y: bandCenter(1) }));
   const syncData   = (syncEvents || []).map(t => ({ x: +t, y: 0.5 }));
 
   const legendSets = [
-    {
-      label: `${actors[0] || 'P1'} Click`,
-      showLine: false,
-      data: topData.length ? topData : [{ x: 0, y: bandCenter(0) }],
-      pointRadius: 0,
-      borderColor: COLORS[0]
-    },
-    {
-      label: `${actors[1] || 'P2'} Click`,
-      showLine: false,
-      data: bottomData.length ? bottomData : [{ x: 0, y: bandCenter(1) }],
-      pointRadius: 0,
-      borderColor: COLORS[1]
-    },
-    {
-      label: 'Sync',
-      showLine: false,
-      data: syncData.length ? syncData : [{ x: 0, y: 0.5 }],
-      pointRadius: 0,
-      borderColor: SYNC_COLOR
-    }
+    { label: `${actors[0] || 'P1'} Click`, showLine: false, data: topData,    pointRadius: 0, borderColor: COLORS[0] },
+    { label: `${actors[1] || 'P2'} Click`, showLine: false, data: bottomData, pointRadius: 0, borderColor: COLORS[1] },
+    { label: 'Sync',                     showLine: false, data: syncData,   pointRadius: 0, borderColor: SYNC_COLOR }
   ];
 
-  const gameCtx = document.getElementById('gameChart');
+  const gameCtx   = document.getElementById('gameChart');
   const gameChart = new Chart(gameCtx, {
     type: 'scatter',
     data: { datasets: legendSets },
@@ -488,35 +481,37 @@ if (Object.keys(clickEvents || {}).length) {
       parsing: false,
       responsive: true,
       scales: {
-        x: {
-          type: 'linear',
-          title: { display: true, text: 'Time (s)' }
-        },
-        y: {
-          display: false,
-          min: 0,
-          max: 1
-        }
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { display: false, min: 0, max: 1 }
       },
       plugins: {
         tooltip: { enabled: false },
-        legend: { labels: { usePointStyle: true } }
+        legend:  { labels: { usePointStyle: true } }
       }
     }
   });
+
+  // compute the true max timestamp across all three series
+  const xMax = Math.max(
+    ...topData   .map(pt => pt.x),
+    ...bottomData.map(pt => pt.x),
+    ...syncData  .map(pt => pt.x)
+  );
 
   gameChart.options.plugins.zoom = {
     ...fullscreenZoom(gameChart),
     limits: {
       x: {
-        min: 0,
-        max: 600,
+        min:      0,
+        max:      xMax * 2,   // ← now dynamic
         minRange: 1,
-        maxRange: 60
+        maxRange: xMax * 2
       },
       y: {
-        min: 0,
-        max: 1
+        min:      0,
+        max:      1,
+        minRange: 0.1,
+        maxRange: 2
       }
     }
   };
@@ -524,6 +519,7 @@ if (Object.keys(clickEvents || {}).length) {
   gameChart.update();
   addResetZoomButton(gameChart, gameCtx.parentElement);
 }
+
 
 else if (frequencyData && Object.keys(frequencyData).length) {
   titleEl.textContent = 'Finger Frequency & Sync Intervals';
