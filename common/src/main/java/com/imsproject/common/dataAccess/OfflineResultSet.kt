@@ -84,7 +84,12 @@ class OfflineResultSet(rs: ResultSet) {
 
     fun getLocalDateTime(columnName: String): LocalDateTime? {
         val obj = getObject(columnName) ?: return null
-        return LocalDateTime.parse(obj as String, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        return when (obj) {
+            is LocalDateTime -> obj
+            is java.sql.Timestamp -> obj.toLocalDateTime()
+            is String -> LocalDateTime.parse(obj, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            else -> throw IllegalArgumentException("Unsupported type for LocalDateTime: ${obj::class.java.name}")
+        }
     }
 
     inline fun <reified T> getEnum(columnName: String): T? {
