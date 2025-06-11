@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
-  <style>
+ <style>
     .charts-grid {
       display: flex;
       flex-direction: column;
@@ -23,10 +23,15 @@
     }
         .chart-container {
       width: 90vw;
-      max-width: 1100px;
+      max-width: 1200px;
       position: relative;
       display: flex;
       flex-direction: column;
+      overflow: hidden; /* hide any overflow beyond container */
+    }
+    .chart-container canvas {
+      flex: 0 0 420px; /* keep chart height */
+      width: 100% !important;
     }
     .chart-container canvas {
       flex: 0 0 420px; /* keep chart height */
@@ -66,18 +71,19 @@
   gap: 4px;
 }
 .zoom-controls button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 32px;
   height: 32px;
   font-size: 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background: #dd7973;
+  background: #f8f9fa;
   cursor: pointer;
   transition: background 0.2s ease;
-  margin: 0;              /* reset default margins */
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .zoom-controls button:hover {
   background: #e2e6ea;
@@ -510,8 +516,8 @@ if (Object.keys(clickEvents || {}).length) {
       y: {
         min:      0,
         max:      1,
-        minRange: 0.1,
-        maxRange: 2
+        minRange: 0.5,
+        maxRange: 1
       }
     }
   };
