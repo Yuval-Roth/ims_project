@@ -11,12 +11,9 @@
 
   <!-- Chart.js (core + zoom only) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{#  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>#}
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
-
-
-  <style>
+ <style>
     .charts-grid {
       display: flex;
       flex-direction: column;
@@ -24,11 +21,20 @@
       align-items: center;
       margin: 40px auto;
     }
-    .chart-container {
+        .chart-container {
       width: 90vw;
       max-width: 1200px;
-      height: 420px;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden; /* hide any overflow beyond container */
+    }
+    .chart-container canvas {
+      flex: 0 0 420px; /* keep chart height */
+      width: 100% !important;
+    }
+    .chart-container canvas {
+      flex: 0 0 420px; /* keep chart height */
     }
     .chart-container:fullscreen {
       width: 100vw;
@@ -38,65 +44,84 @@
       box-sizing: border-box;
     }
 
-      /* ===== Button styling ===== */
-  .btn-feedback {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-  .btn-feedback:hover {
-    background: #0056b3;
-  }
+    /* ===== Button styling ===== */
+    .btn-feedback {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .btn-feedback:hover {
+      background: #0056b3;
+    }
 
-  /* ===== Modal overlay styling ===== */
-  #feedbackModal {
-    display: none;            /* hidden by default */
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    background-color: rgba(0, 0, 0, 0.5);
-  }
-  #feedbackModal .modal-content {
-    background-color: #fff;
-    margin: 5% auto;
-    padding: 20px;
-    max-width: 600px;
-    border-radius: 8px;
-    position: relative;
-  }
-  #feedbackModal h2 {
-    margin-top: 0;
-  }
-  #feedbackModal .close-btn {
-    position: absolute;
-    left: 12px;
-    top: 12px;
-    background: transparent;
-    border: none;
-    font-size: 1.4rem;
-    cursor: pointer;
-  {#    make it left side#}
+    /* ===== Zoom control buttons ===== */
+.zoom-controls {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 24px;   /* push away from chart and text */
+  justify-content: center;
+}
+.zoom-controls .zoom-axis {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.zoom-controls button {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.zoom-controls button:hover {
+  background: #e2e6ea;
+}
 
-  }
-  #feedbackModal .qa-item {
-    margin-bottom: 16px;
-  }
-  #feedbackModal .qa-item p.question {
-    font-weight: bold;
-    margin: 0 0 4px 0;
-  }
-  #feedbackModal .qa-item p.answer {
-    margin: 0;
-  }
-
+    /* ===== Modal overlay styling ===== */
+    #feedbackModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+    #feedbackModal .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      max-width: 600px;
+      border-radius: 8px;
+      position: relative;
+    }
+    #feedbackModal h2 { margin-top: 0; }
+    #feedbackModal .close-btn {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      background: transparent;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+    }
+    #feedbackModal .qa-item { margin-bottom: 16px; }
+    #feedbackModal .qa-item p.question { font-weight: bold; margin: 0 0 4px 0; }
+    #feedbackModal .qa-item p.answer { margin: 0; }
   </style>
 </head>
 <body>
@@ -114,23 +139,19 @@
 
   <!-- ===== Show Feedback Button ===== -->
   <div style="text-align:center; margin: 20px 0;">
-    <button id="openFeedbackBtn" class="btn-feedback">
-      Show Session Feedback
-    </button>
+    <button id="openFeedbackBtn" class="btn-feedback">Show Session Feedback</button>
   </div>
-
 
   <div class="charts-grid">
     <div class="chart-container">
       <h3 style="text-align:center;" id="gameChartTitle"></h3>
       <canvas id="gameChart"></canvas>
-      <!-- Reset button will be injected here dynamically -->
     </div>
     {% if data.angle_data %}
-      <div class="chart-container">
-        <h3 style="text-align:center;">Finger Angle</h3>
-        <canvas id="angleChart"></canvas>
-      </div>
+    <div class="chart-container">
+      <h3 style="text-align:center;">Finger Angle</h3>
+      <canvas id="angleChart"></canvas>
+    </div>
     {% endif %}
     <div class="chart-container">
       <h3 style="text-align:center;">Heart Rate</h3>
@@ -150,6 +171,7 @@
     </div>
   </div>
 </div>
+
 
 <script>
 /**** ---------- GLOBAL SPEED-UPS ---------- ****/
@@ -263,7 +285,7 @@ function dictToDatasets(dict, extra = {}) {
 
 /**** ---------- GENERIC LINE-CHART BUILDER ---------- ****/
 function makeLineChart(id, datasets, yLabel, yOpts = {}) {
-  const ctx = document.getElementById(id);
+  const ctx   = document.getElementById(id);
   const chart = new Chart(ctx, {
     type: 'line',
     data: { datasets },
@@ -290,28 +312,39 @@ function makeLineChart(id, datasets, yLabel, yOpts = {}) {
     }
   });
 
-  // Apply pan/zoom handlers and then separately inject limits
+  // first draw
+  chart.update();
+
+  // --- DYNAMIC LIMITS BASED ON DATA MAXIMA ---
+  // flatten all X and Y values from our datasets
+  const xVals = datasets.flatMap(ds => ds.data.map(pt => pt.x));
+  const yVals = datasets.flatMap(ds => ds.data.map(pt => pt.y));
+  const xMax  = Math.max(...xVals, 0);
+  const yMax  = Math.max(...yVals, 0.1);
+
   chart.options.plugins.zoom = {
     ...fullscreenZoom(chart),
     limits: {
       x: {
-        min: 0,
-        max: 600,
+        min:      0,
+        max:      xMax * 2,
         minRange: 1,
-        maxRange: 600
+        maxRange: xMax * 2
       },
       y: {
-        min: 0.1,
-        max: 300,
+        min:      0.1,
+        max:      yMax * 2,
         minRange: 1,
-        maxRange: 300
+        maxRange: yMax * 2
       }
     }
   };
 
+  // re-draw with new limits
   chart.update();
   addResetZoomButton(chart, ctx.parentElement);
 }
+
 
 /**** ---------- METRIC CHARTS ---------- ****/
 makeLineChart('hrChart', dictToDatasets(heartData), 'BPM');
@@ -435,36 +468,18 @@ Chart.register(syncBoxes);
 
 if (Object.keys(clickEvents || {}).length) {
   titleEl.textContent = 'Clicks & Sync Markers';
-  const actors = Object.keys(clickEvents).sort();
+  const actors     = Object.keys(clickEvents).sort();
   const topData    = (clickEvents[actors[0]] || []).map(t => ({ x: +t, y: bandCenter(0) }));
   const bottomData = (clickEvents[actors[1]] || []).map(t => ({ x: +t, y: bandCenter(1) }));
   const syncData   = (syncEvents || []).map(t => ({ x: +t, y: 0.5 }));
 
   const legendSets = [
-    {
-      label: `${actors[0] || 'P1'} Click`,
-      showLine: false,
-      data: topData.length ? topData : [{ x: 0, y: bandCenter(0) }],
-      pointRadius: 0,
-      borderColor: COLORS[0]
-    },
-    {
-      label: `${actors[1] || 'P2'} Click`,
-      showLine: false,
-      data: bottomData.length ? bottomData : [{ x: 0, y: bandCenter(1) }],
-      pointRadius: 0,
-      borderColor: COLORS[1]
-    },
-    {
-      label: 'Sync',
-      showLine: false,
-      data: syncData.length ? syncData : [{ x: 0, y: 0.5 }],
-      pointRadius: 0,
-      borderColor: SYNC_COLOR
-    }
+    { label: `${actors[0] || 'P1'} Click`, showLine: false, data: topData,    pointRadius: 0, borderColor: COLORS[0] },
+    { label: `${actors[1] || 'P2'} Click`, showLine: false, data: bottomData, pointRadius: 0, borderColor: COLORS[1] },
+    { label: 'Sync',                     showLine: false, data: syncData,   pointRadius: 0, borderColor: SYNC_COLOR }
   ];
 
-  const gameCtx = document.getElementById('gameChart');
+  const gameCtx   = document.getElementById('gameChart');
   const gameChart = new Chart(gameCtx, {
     type: 'scatter',
     data: { datasets: legendSets },
@@ -472,35 +487,37 @@ if (Object.keys(clickEvents || {}).length) {
       parsing: false,
       responsive: true,
       scales: {
-        x: {
-          type: 'linear',
-          title: { display: true, text: 'Time (s)' }
-        },
-        y: {
-          display: false,
-          min: 0,
-          max: 1
-        }
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { display: false, min: 0, max: 1 }
       },
       plugins: {
         tooltip: { enabled: false },
-        legend: { labels: { usePointStyle: true } }
+        legend:  { labels: { usePointStyle: true } }
       }
     }
   });
+
+  // compute the true max timestamp across all three series
+  const xMax = Math.max(
+    ...topData   .map(pt => pt.x),
+    ...bottomData.map(pt => pt.x),
+    ...syncData  .map(pt => pt.x)
+  );
 
   gameChart.options.plugins.zoom = {
     ...fullscreenZoom(gameChart),
     limits: {
       x: {
-        min: 0,
-        max: 600,
+        min:      0,
+        max:      xMax * 2,   // ← now dynamic
         minRange: 1,
-        maxRange: 60
+        maxRange: xMax * 2
       },
       y: {
-        min: 0,
-        max: 1
+        min:      0,
+        max:      1,
+        minRange: 0.5,
+        maxRange: 1
       }
     }
   };
@@ -508,6 +525,7 @@ if (Object.keys(clickEvents || {}).length) {
   gameChart.update();
   addResetZoomButton(gameChart, gameCtx.parentElement);
 }
+
 
 else if (frequencyData && Object.keys(frequencyData).length) {
   titleEl.textContent = 'Finger Frequency & Sync Intervals';
@@ -545,18 +563,24 @@ else if (frequencyData && Object.keys(frequencyData).length) {
     }
   });
 
+  const xMax = Math.max(
+    ...freqSets.flatMap(ds => ds.data.map(pt => pt.x))
+  );
+    const yMax = Math.max(
+        ...freqSets.flatMap(ds => ds.data.map(pt => pt.y)).filter(v => v !== null)
+    );
   gameChart.options.plugins.zoom = {
     ...fullscreenZoom(gameChart),
     limits: {
       x: {
         min: 0,
-        max: 600,
+        max: 1.5*xMax,
         minRange: 1,
-        maxRange: 60
+        maxRange: 1.5*xMax
       },
       y: {
         min: 0,
-        max: 10
+        max: 1.5*yMax,
       }
     }
   };
@@ -723,20 +747,28 @@ if (angleData && Object.keys(angleData).length) {
 
   // Attach our custom pan/zoom config that allows negative Y:
   {#angleChart.options.plugins.zoom = fullscreenZoomAngle(angleChart);#}
+
+    const xMax = Math.max(
+    ...angleChart.data.datasets.flatMap(ds => ds.data.map(pt => pt.x))
+    );
+    const yMax = Math.max(
+    ...angleChart.data.datasets.flatMap(ds => ds.data.map(pt => pt.y))
+    );
+
     angleChart.options.plugins.zoom = {
   ...fullscreenZoomAngle(angleChart),
   limits: {
     x: {
       min: 0,
-      max: 600,  // 0–60 seconds
+      max: xMax * 2,   // double the max X for zooming out
       minRange: 1,
-      maxRange: 60
+      maxRange: xMax * 2
     },
     y: {
       min: -2,
       max: 2,
       minRange: 0.1,
-      maxRange: 50
+      maxRange: 2 * yMax  // double the max Y for zooming out
     }
   }
 };
@@ -751,7 +783,6 @@ if (angleData && Object.keys(angleData).length) {
 
 
 function addResetZoomButton(chart, container) {
-  // Capture the initial axis limits once, right now
   const initial = {
     xMin: chart.scales.x.min,
     xMax: chart.scales.x.max,
@@ -763,19 +794,43 @@ function addResetZoomButton(chart, container) {
   btn.textContent = 'Reset Zoom';
   btn.className = 'reset-btn';
   btn.addEventListener('click', () => {
-    // 1) Let the zoom plugin reset its internal state
     chart.resetZoom();
-
-    // 2) Explicitly restore the original min/max that clampAxesToZero may have overwritten
     chart.options.scales.x.min = initial.xMin;
     chart.options.scales.x.max = initial.xMax;
     chart.options.scales.y.min = initial.yMin;
     chart.options.scales.y.max = initial.yMax;
-
-    // 3) Re-draw
     chart.update();
   });
   container.appendChild(btn);
+  addZoomControls(chart, container);
+}
+
+function addZoomControls(chart, container) {
+  const controlDiv = document.createElement('div');
+  controlDiv.className = 'zoom-controls';
+
+  ['x', 'y'].forEach(axis => {
+    const axisDiv = document.createElement('div');
+    axisDiv.className = 'zoom-axis';
+    const label = document.createElement('span');
+    label.textContent = axis.toUpperCase() + ':';
+    axisDiv.appendChild(label);
+
+    ['in', 'out'].forEach(direction => {
+      const btn = document.createElement('button');
+      btn.textContent = direction === 'in' ? '+' : '−';
+      btn.title = `Zoom ${direction} ${axis}-axis`;
+      btn.addEventListener('click', () => {
+        const factor = direction === 'in' ? 1.1 : 0.9;
+        chart.zoom({ [axis]: factor });
+      });
+      axisDiv.appendChild(btn);
+    });
+
+    controlDiv.appendChild(axisDiv);
+  });
+
+  container.appendChild(controlDiv);
 }
 
 
