@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS Experiments (
     exp_id SERIAL PRIMARY KEY,
     pid1 INT,
     pid2 INT,
+    date_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pid1) REFERENCES Participants(pid),
     FOREIGN KEY (pid2) REFERENCES Participants(pid)
 );
