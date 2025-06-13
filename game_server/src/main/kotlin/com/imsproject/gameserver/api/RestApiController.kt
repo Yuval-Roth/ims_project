@@ -147,6 +147,23 @@ class RestApiController(
         }
     }
 
+    // todo: delete
+    @PostMapping("/data/experiment/{action}")
+    fun dataTest2(
+        @PathVariable action: String,
+        @RequestBody body: String): ResponseEntity<String> {
+        var obj = fromJson<ExperimentDTO>(body)
+
+        when(action) {
+            "insert" -> { daoController.handleInsert(obj) }
+            "delete" -> { daoController.handleDelete(obj) }
+            "update" -> { daoController.handleUpdate(obj) }
+            "select" -> { daoController.handleSelect(obj) }
+        }
+        return Response.getOk().toResponseEntity()
+    }
+
+
     private data class QnA(val question: String, val answer: String)
     private data class ExperimentFeedback(val expId: Int, val pid: Int, val qnas: List<QnA>)
     @PostMapping("/data/experiment/insert/feedback")

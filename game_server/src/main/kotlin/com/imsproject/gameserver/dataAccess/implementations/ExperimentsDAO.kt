@@ -11,6 +11,8 @@ import com.imsproject.common.utils.Response
 import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 import com.imsproject.gameserver.dataAccess.models.ExperimentWithParticipantNamesDTO
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 @Component
 class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>(cursor, "Experiments", ExperimentPK.primaryColumnsList, arrayOf("pid1", "pid2", "date_time")) {
@@ -30,14 +32,14 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
 
     @Throws(DaoException::class)
     override fun insert(obj: ExperimentDTO, transactionId: String?): Int {
-        val values = arrayOf(obj.pid1,obj.pid2)
+        val values = arrayOf(obj.pid1,obj.pid2, obj.dateTime ?: LocalDateTime.now())
         val idColName = primaryKeyColumnNames.joinToString()
         return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: ExperimentDTO, transactionId: String?) {
-        val values = arrayOf(obj.pid1,obj.pid2)
+        val values = arrayOf(obj.pid1,obj.pid2,obj.dateTime)
         val id = obj.expId ?: throw IllegalArgumentException("Lobby ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
         buildQueryAndUpdate(idColName, id, values, transactionId)

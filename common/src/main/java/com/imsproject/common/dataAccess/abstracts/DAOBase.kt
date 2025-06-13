@@ -179,10 +179,10 @@ abstract class DAOBase<T, PK : PrimaryKey> protected constructor(
     }
 
     fun buildQueryAndInsert(idColumnName: String, values: Array<out Any?>, transactionId: String?): Int {
-        val questionmarks = List(nonKeyColumnNames.size) { "?" }.joinToString(", "); //don't ask please
+        val questionmarks = List(nonKeyColumnNames.size) { "?" }.joinToString(", ");
         val insertQuery = "INSERT INTO $tableName (${nonKeyColumnNames.joinToString()}) VALUES (${questionmarks}) RETURNING $idColumnName"
         try {
-            val keysResultSet = cursor.executeInsert(insertQuery,values, transactionId)
+            val keysResultSet = cursor.executeInsert(insertQuery, values, transactionId)
             if(keysResultSet.next()) {
                 val id = keysResultSet.getInt(idColumnName)
                 if(id != null){
