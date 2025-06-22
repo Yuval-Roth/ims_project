@@ -1,0 +1,61 @@
+# Redirect HTTP traffic to HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ims-project.cs.bgu.ac.il;
+
+    # Serve .well-known/acme-challenge before redirecting to HTTPS
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/html;
+        allow all;
+    }
+
+    # Redirect all HTTP traffic to HTTPS
+    if ($host = ims-project.cs.bgu.ac.il) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+}
+
+# HTTPS server block
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+
+    server_name ims-project.cs.bgu.ac.il;
+
+    # SSL certificates
+    ssl_certificate /etc/letsencrypt/live/ims-project.cs.bgu.ac.il/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/ims-project.cs.bgu.ac.il/privkey.pem; # managed by Certbot
+
+    # Improve SSL security
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Root directory
+    root /var/www/html;
+
+    # Add index.php to the list if you are using PHP
+    index index.html index.htm index.nginx-debian.html;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/html;
+        allow all;
+    }
+
+    # Location for serving requests
+    location / {
+        # Proxy requests to Flask application
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Deny access to .htaccess files if present
+    location ~ /\.ht {
+        deny all;
+    }
+
+}
