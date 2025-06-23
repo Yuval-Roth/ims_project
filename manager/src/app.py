@@ -47,6 +47,10 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
+        if username and password:
+            if len(username) > 64 or len(password) > 64:
+                return render_template('login.html')
+
         auth_res = authenticate_basic(username, password)
         if auth_res and auth_res.get_success():
             # Reset failed login attempts for this client IP
@@ -64,18 +68,21 @@ def login():
             # Increment failed login attempts for this client IP
             failed_login_attempts[client_ip] += 1
 
+            flash("Invalid credentials", "error")
+
             # increase the timeout based on the number of failed attempts
             if failed_login_attempts[client_ip] >= 10:
                 Logger.log_info(f"Locking out client {client_ip} for 30 minutes due to too many failed login attempts.")
                 timeouts[client_ip] = datetime.now() + timedelta(minutes=30)
+                return render_template('lockout.html')
             elif failed_login_attempts[client_ip] >= 5:
                 Logger.log_info(f"Locking out client {client_ip} for 10 minutes due to too many failed login attempts.")
                 timeouts[client_ip] = datetime.now() + timedelta(minutes=10)
+                return render_template('lockout.html')
             elif failed_login_attempts[client_ip] >= 3:
                 Logger.log_info(f"Locking out client {client_ip} for 5 minutes due to too many failed login attempts.")
                 timeouts[client_ip] = datetime.now() + timedelta(minutes=5)
-
-            flash("Invalid credentials", "error")
+                return render_template('lockout.html')
 
     return render_template('login.html')
 
