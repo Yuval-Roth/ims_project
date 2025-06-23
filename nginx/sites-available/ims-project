@@ -86,6 +86,8 @@ server {
     ssl_certificate /etc/letsencrypt/live/ims-project.cs.bgu.ac.il/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/ims-project.cs.bgu.ac.il/privkey.pem;
 
+    error_page 497 =200 https://$host:8645$request_uri;
+
     # Location for serving requests
     location / {
         proxy_pass http://127.0.0.1:8085;
