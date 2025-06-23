@@ -97,3 +97,4 @@ database/data/
 *.env
 docker_data/manager
 docker_data/game_server
+*.apk
