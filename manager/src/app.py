@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import requests
@@ -17,6 +18,8 @@ app.secret_key = os.urandom(24)
 
 Logger()
 
+failed_login_attempts = dict()  # Dictionary to track failed login attempts by username
+timeouts = dict() # Dictionary to track timeouts by client IP
 
 @app.route('/')
 def home():
@@ -29,17 +32,49 @@ def home():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+
+    # check if the client is timed out
+    client_ip = request.remote_addr
+    if client_ip in timeouts:
+        timeout = timeouts[client_ip]
+        if datetime.now() < timeout:
+            flash("Too many failed login attempts. Please try again later.", "error")
+            return render_template('lockout.html')
+        else:
+            del timeouts[client_ip]
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
         auth_res = authenticate_basic(username, password)
         if auth_res and auth_res.get_success():
+            # Reset failed login attempts for this client IP
+            if client_ip in failed_login_attempts:
+                del failed_login_attempts[client_ip]
+
             # session.permanent = False  # <- this line ensures session ends on browser close
             session['username'] = username
             session['token'] = auth_res.get_payload()[0]
             return redirect(url_for('main_menu'))
         else:
+            if client_ip not in failed_login_attempts:
+                failed_login_attempts[client_ip] = 0
+
+            # Increment failed login attempts for this client IP
+            failed_login_attempts[client_ip] += 1
+
+            # increase the timeout based on the number of failed attempts
+            if failed_login_attempts[client_ip] >= 10:
+                Logger.log_info(f"Locking out client {client_ip} for 30 minutes due to too many failed login attempts.")
+                timeouts[client_ip] = datetime.now() + timedelta(minutes=30)
+            elif failed_login_attempts[client_ip] >= 5:
+                Logger.log_info(f"Locking out client {client_ip} for 10 minutes due to too many failed login attempts.")
+                timeouts[client_ip] = datetime.now() + timedelta(minutes=10)
+            elif failed_login_attempts[client_ip] >= 3:
+                Logger.log_info(f"Locking out client {client_ip} for 5 minutes due to too many failed login attempts.")
+                timeouts[client_ip] = datetime.now() + timedelta(minutes=5)
+
             flash("Invalid credentials", "error")
 
     return render_template('login.html')
