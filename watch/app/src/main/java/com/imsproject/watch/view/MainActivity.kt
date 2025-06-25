@@ -516,11 +516,12 @@ class MainActivity : ComponentActivity() {
                 )
             }
             Button(
-                colors = if(hrSensorReady) ButtonDefaults.primaryButtonColors()
-                else ButtonDefaults.buttonColors(
-                    backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
-                    contentColor = Color.White
-                ),
+                colors = if (!hrSensorReady && !viewModel.heartRateUnavailable.collectAsState().value)
+                    ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
+                        contentColor = Color.White
+                    )
+                else ButtonDefaults.primaryButtonColors(),
                 onClick = { onReady() },
                 modifier = Modifier
                     .fillMaxWidth(0.55f)

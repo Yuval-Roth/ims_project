@@ -111,6 +111,9 @@ class MainViewModel() : ViewModel() {
     private val _expId = MutableStateFlow<String?>(null)
     val expId : StateFlow<String?> = _expId
 
+    private val _heartRateUnavailable = MutableStateFlow(false)
+    val heartRateUnavailable: StateFlow<Boolean> = _heartRateUnavailable
+
     private var _skipFeedback = false
     private var _sessionId = -1
     var temporaryPlayerId = ""
@@ -128,6 +131,7 @@ class MainViewModel() : ViewModel() {
                 viewModelScope.launch(Dispatchers.Main) {
                     Toast.makeText(context, "Heart rate unavailable", Toast.LENGTH_LONG).show()
                 }
+                _heartRateUnavailable.value = true
             }
         }
         locationSensorsHandler.init(context)
