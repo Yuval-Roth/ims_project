@@ -51,12 +51,19 @@ public class StepDefinitions {
     private final String add_Operator_Password_Textbox = "//*[@id=\"password\"]";
     private final String add_Operator_Save_Button = "//*[@id=\"save-operator-btn\"]";
 
+
     private final String username = "admin";
     private final String password = "pass";
     private final String main_Menu_URL = "https://ims-project.cs.bgu.ac.il/main_menu";
     private final String disconnect_Button = "//*[@id=\"disconnect-btn\"]";
 
+
     private final String lobbies_Button = "/html/body/div/button[1]";
+    private final String create_Lobby_Button = "//*[@id=\"create-lobby-btn\"]";
+    private final String lobby_Participants_Table = "//*[@id='create-lobby-modal']/div/form/div/div[1]/table/tbody/tr";
+    private final String save_Lobby_Button = "//*[@id=\"create-lobby-modal\"]/div/form/div/div[2]/button[2]";
+    private final String remove_Lobby_Buton = "//*[@id=\"delete-lobby-btn\"]";
+
     private final String session_Data_Button = "/html/body/div/button[4]";
 
     private String URL;
@@ -640,4 +647,200 @@ public class StepDefinitions {
         driver.quit();
     }
 
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+    // 7th scenario: Admin creates a lobby.
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+
+    @And("There is a participant with the email {string} and name {string} {string}")
+    public void existsParticipantWithTheEmail(String email, String firstname, String lastname) throws InterruptedException {
+        driver.get(main_Menu_URL);
+        WebElement Participants_Button = driver.findElement(By.xpath(participants_Button));
+        Participants_Button.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        List<WebElement> emailCells = driver.findElements(By.cssSelector(Participants_Table));
+        int result = check_if_exists_record_with_email(emailCells, email);
+        if(result != -1){
+            //choose the specific row at the table
+            emailCells.get(result).click();
+
+            //click on the delete button to remove the user
+            WebElement deleteButton = driver.findElement(By.xpath(Remove_Participant_Button));
+            deleteButton.click();
+
+            //accept the alert
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            wait.until(ExpectedConditions.alertIsPresent());
+            Alert alert = driver.switchTo().alert();
+            alert.accept();
+
+            //accept the second alert
+            WebDriverWait wait2 = new WebDriverWait(driver, Duration.ofSeconds(10));
+            wait2.until(ExpectedConditions.alertIsPresent());
+            Alert alert2 = driver.switchTo().alert();
+            alert2.accept();
+            Thread.sleep(DELAY_BETWEEN_STEPS);
+        }
+        WebElement addParticipantButton = driver.findElement(By.xpath(Add_Participant_Button));
+        addParticipantButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        //add the details of the participant
+        WebElement UserNameButton = driver.findElement(By.xpath(New_Participant_Name_Textbox));
+        UserNameButton.sendKeys(firstname);
+        WebElement LastNameButton = driver.findElement(By.xpath(New_Participant_Last_Name_Textbox));
+        LastNameButton.sendKeys(lastname);
+        WebElement ageButton = driver.findElement(By.xpath(New_Participant_Age_Textbox));
+        ageButton.sendKeys(New_Participant_Age_Value);
+        WebElement phoneButton = driver.findElement(By.xpath(New_Participant_Phone_Number_Textbox));
+        phoneButton.sendKeys(New_Participant_Phone_Number_Value);
+        WebElement emailButton = driver.findElement(By.xpath(New_Participant_Email_Textbox));
+        emailButton.sendKeys(email);
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement saveButton = driver.findElement(By.xpath(Add_Participant_Save_Button));
+        saveButton.click();
+
+        //handles the opened window
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.alertIsPresent());
+        Alert alert = driver.switchTo().alert();
+        alert.accept();
+    }
+
+    @When("Creates a lobby with the participants {string} {string} and {string} {string}")
+    public void createsLobby(String firstname1, String lastname1, String firstname2, String lastname2) throws InterruptedException {
+        driver.get(main_Menu_URL);
+        WebElement lobbiesButton = driver.findElement(By.xpath(lobbies_Button));
+        lobbiesButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement createLobbyButton = driver.findElement(By.xpath(create_Lobby_Button));
+        createLobbyButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        List<WebElement> rows = driver.findElements(By.xpath(lobby_Participants_Table));
+        for (WebElement row : rows) {
+            try {
+                WebElement nameCell = row.findElement(By.xpath("./td[2]"));
+                String name = nameCell.getText().trim();
+
+                if (name.compareTo(firstname1 + " " + lastname1) == 0) {
+                    WebElement checkbox = row.findElement(By.xpath("./td[3]/input[@type='checkbox']"));
+                    if (!checkbox.isSelected()) {
+                        checkbox.click();
+                    }
+                }
+                else if (name.compareTo(firstname2 + " " + lastname2) == 0) {
+                    WebElement checkbox = row.findElement(By.xpath("./td[3]/input[@type='checkbox']"));
+                    if (!checkbox.isSelected()) {
+                        checkbox.click();
+                    }
+                }
+            } catch (Exception e) {
+                fail("can't find the lobby participants table");
+            }
+        }
+
+        WebElement saveLobbyButton = driver.findElement(By.xpath(save_Lobby_Button));
+        saveLobbyButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+    }
+
+    @Then("The lobby with the participants {string} {string} and {string} {string} created successfully")
+    public void lobbyExists(String firstname1, String lastname1, String firstname2, String lastname2) throws InterruptedException {
+        List<WebElement> lobbyCells = driver.findElements(By.cssSelector(Participants_Table));
+        assertNotEquals(lobbyCells.size(), 0);
+        Thread.sleep(2500);
+
+        //remove it for initialize the state of the system
+        lobbyCells.get(lobbyCells.size()-1).click();
+
+        //click on the delete button to remove the user
+        WebElement deleteButton = driver.findElement(By.xpath(remove_Lobby_Buton));
+        deleteButton.click();
+
+        //accept the alert
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait.until(ExpectedConditions.alertIsPresent());
+        Alert alert = driver.switchTo().alert();
+        alert.accept();
+        driver.quit();
+    }
+
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+    // 8th scenario: Admin removes a lobby.
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+
+    @When("Exists a lobby with the participants {string} {string} and {string} {string}")
+    public void lobbyExist(String firstname1, String lastname1, String firstname2, String lastname2) throws InterruptedException {
+        driver.get(main_Menu_URL);
+        WebElement lobbiesButton = driver.findElement(By.xpath(lobbies_Button));
+        lobbiesButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement createLobbyButton = driver.findElement(By.xpath(create_Lobby_Button));
+        createLobbyButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        List<WebElement> rows = driver.findElements(By.xpath(lobby_Participants_Table));
+        for (WebElement row : rows) {
+            try {
+                WebElement nameCell = row.findElement(By.xpath("./td[2]"));
+                String name = nameCell.getText().trim();
+
+                if (name.compareTo(firstname1 + " " + lastname1) == 0) {
+                    WebElement checkbox = row.findElement(By.xpath("./td[3]/input[@type='checkbox']"));
+                    if (!checkbox.isSelected()) {
+                        checkbox.click();
+                    }
+                }
+                else if (name.compareTo(firstname2 + " " + lastname2) == 0) {
+                    WebElement checkbox = row.findElement(By.xpath("./td[3]/input[@type='checkbox']"));
+                    if (!checkbox.isSelected()) {
+                        checkbox.click();
+                    }
+                }
+            } catch (Exception e) {
+                fail("can't find the lobby participants table");
+            }
+        }
+
+        WebElement saveLobbyButton = driver.findElement(By.xpath(save_Lobby_Button));
+        saveLobbyButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+    }
+
+    @Then("The lobby with the participants {string} {string} and {string} {string} can removed successfully")
+    public void removeLobby(String firstname1, String lastname1, String firstname2, String lastname2) throws InterruptedException {
+        List<WebElement> lobbyCells = driver.findElements(By.cssSelector(Participants_Table));
+        assertNotEquals(lobbyCells.size(), 0);
+        Thread.sleep(2500);
+
+        try {
+            //remove it for initialize the state of the system
+            lobbyCells.get(lobbyCells.size() - 1).click();
+
+            //click on the delete button to remove the user
+            WebElement deleteButton = driver.findElement(By.xpath(remove_Lobby_Buton));
+            deleteButton.click();
+
+            //accept the alert
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            wait.until(ExpectedConditions.alertIsPresent());
+            Alert alert = driver.switchTo().alert();
+            alert.accept();
+        }
+        catch (WebDriverException e) {
+            fail("cant find the lobby participants table");
+        }
+        catch (Exception e) {
+            fail("can't find the lobby participants table");
+        }
+        driver.quit();
+    }
 }
