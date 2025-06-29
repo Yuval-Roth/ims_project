@@ -37,3 +37,21 @@ Feature: add and remove participants
     Examples:
       | username | password |
       | tamirosh | Pass1234 |
+
+  Scenario Outline: Operator can see Lobbies and Session Data functionality
+    Given Exists an operator with the username "<username>" and password "<password>"
+    And The operator with the username "<username>" and password "<password>" is logged in
+    When The operator is in the main menu page
+    Then The operator can see the Lobbies and Session Data buttons
+    Examples:
+      | username | password |
+      | tamirosh | Pass1234 |
+
+  Scenario Outline: Operator can't see Participants and Operators functionality
+    Given Exists an operator with the username "<username>" and password "<password>"
+    And The operator with the username "<username>" and password "<password>" is logged in
+    When The operator is in the main menu page
+    Then The operator can't see the Participants and Operators buttons
+    Examples:
+      | username | password |
+      | tamirosh | Pass1234 |

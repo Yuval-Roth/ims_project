@@ -56,6 +56,9 @@ public class StepDefinitions {
     private final String main_Menu_URL = "https://ims-project.cs.bgu.ac.il/main_menu";
     private final String disconnect_Button = "//*[@id=\"disconnect-btn\"]";
 
+    private final String lobbies_Button = "/html/body/div/button[1]";
+    private final String session_Data_Button = "/html/body/div/button[4]";
+
     private String URL;
 
     public StepDefinitions() throws InterruptedException {
@@ -114,7 +117,6 @@ public class StepDefinitions {
 
     @Given("A logged in admin user with username and password")
     public void adminLogin() throws InterruptedException {
-        System.out.println("\nhi1\n");
         driver = new ChromeDriver();
         driver.get(URL);
         Thread.sleep(2500);
@@ -410,12 +412,10 @@ public class StepDefinitions {
     public void thereIsAnOperatorWithTheUsername(String username, String password) throws InterruptedException {
         WebElement Operators_Button = driver.findElement(By.xpath(operators_Button));
         Operators_Button.click();
-        System.out.println("\nhi2\n");
         Thread.sleep(DELAY_BETWEEN_STEPS);
 
         List<WebElement> adminCells = driver.findElements(By.cssSelector(Participants_Table));
         int result = check_if_exists_record_with_email(adminCells, username);
-        System.out.println("\nhi " + Integer.toString(result) + "\n");
         if(result == -1){
             WebElement addOperatorButton = driver.findElement(By.xpath(add_Operator));
             addOperatorButton.click();
@@ -505,6 +505,136 @@ public class StepDefinitions {
             fail();
         }
         catch (Exception ignored) {
+            assertTrue(true);
+        }
+        driver.quit();
+    }
+
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+    // 5th scenario: Operator can see Lobbies and Session Data functionality.
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+
+    @Given("Exists an operator with the username {string} and password {string}")
+    public void existsOperator(String username, String password) throws InterruptedException {
+        driver = new ChromeDriver();
+        driver.get(URL);
+        Thread.sleep(2500);
+
+        WebElement UserNameButton = driver.findElement(By.xpath(Username_Text_Box));
+        UserNameButton.sendKeys(this.username);
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement PasswordButton = driver.findElement(By.xpath(Password_Text_Box));
+        PasswordButton.sendKeys(this.password);
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement loginButton = driver.findElement(By.xpath(LoginButton_In_Login_Page));
+        loginButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement Operators_Button = driver.findElement(By.xpath(operators_Button));
+        Operators_Button.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        List<WebElement> adminCells = driver.findElements(By.cssSelector(Participants_Table));
+        int result = check_if_exists_record_with_email(adminCells, username);
+        if(result == -1){
+            WebElement addOperatorButton = driver.findElement(By.xpath(add_Operator));
+            addOperatorButton.click();
+            Thread.sleep(DELAY_BETWEEN_STEPS);
+
+            //add the details of the operator
+            WebElement userNameButton = driver.findElement(By.xpath(add_Operator_Username_Textbox));
+            userNameButton.sendKeys(username);
+            WebElement passwordButton = driver.findElement(By.xpath(add_Operator_Password_Textbox));
+            passwordButton.sendKeys(password);
+            Thread.sleep(DELAY_BETWEEN_STEPS);
+
+            WebElement saveButton = driver.findElement(By.xpath(add_Operator_Save_Button));
+            saveButton.click();
+
+            //handles the opened window
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+            wait.until(ExpectedConditions.alertIsPresent());
+            Alert alert = driver.switchTo().alert();
+            alert.accept();
+
+            Thread.sleep(DELAY_BETWEEN_STEPS);
+        }
+    }
+
+    @And("The operator with the username {string} and password {string} is logged in")
+    public void operatorLogin(String username, String password) throws InterruptedException {
+        driver.get(main_Menu_URL);
+        try {
+            WebElement disconnectButton = driver.findElement(By.xpath(disconnect_Button));
+            disconnectButton.click();
+        }
+        catch (Exception ignored) {
+
+        }
+        WebElement UserNameButton = driver.findElement(By.xpath(Username_Text_Box));
+        UserNameButton.sendKeys(username);
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement PasswordButton = driver.findElement(By.xpath(Password_Text_Box));
+        PasswordButton.sendKeys(password);
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+
+        WebElement loginButton = driver.findElement(By.xpath(LoginButton_In_Login_Page));
+        loginButton.click();
+        Thread.sleep(DELAY_BETWEEN_STEPS);
+    }
+
+    @When("The operator is in the main menu page")
+    public void operatorIsInMainMenu() throws InterruptedException {
+        driver.get(main_Menu_URL);
+    }
+
+    @Then("The operator can see the Lobbies and Session Data buttons")
+    public void operatorCanSeeTheLobbiesAndSessionData() throws InterruptedException {
+        try {
+            WebElement lobbiesButton = driver.findElement(By.xpath(lobbies_Button));
+            lobbiesButton.click();
+            WebElement sessionDataButton = driver.findElement(By.xpath(session_Data_Button));
+            sessionDataButton.click();
+        }
+        catch (Exception e) {
+            fail("can't find the button");
+        }
+        driver.quit();
+    }
+
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+    // 6th scenario: Operator can't see Participants and Operators functionality.
+    // -----------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
+
+    @Then("The operator can't see the Participants and Operators buttons")
+    public void operatorCantSeeTheParticipantsAndOperators() throws InterruptedException {
+        try {
+            WebElement participantsButton = driver.findElement(By.xpath(participants_Button));
+            participantsButton.click();
+            fail("Can find the participant button");
+        }
+        catch (WebDriverException e) {
+            assertTrue(true);
+        }
+        catch (Exception e) {
+            assertTrue(true);
+        }
+        try {
+            WebElement sessionDataButton = driver.findElement(By.xpath(session_Data_Button));
+            sessionDataButton.click();
+            fail("Can find the session data button");
+        }
+        catch (WebDriverException e) {
+            assertTrue(true);
+        }
+        catch (Exception e) {
             assertTrue(true);
         }
         driver.quit();
