@@ -17,8 +17,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.WebAuthenticationDetails
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+
 
 @EnableWebSecurity
 @Configuration
@@ -45,8 +48,8 @@ class SecurityConfig {
                 private val lockedOutAddresses : MutableMap<String, Job> = ConcurrentHashMap()
 
                 override fun authenticate(authentication: Authentication): Authentication {
-                    val details = authentication.details as WebAuthenticationDetails
-                    val remoteAddress = details.remoteAddress
+                    val attributes = RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes
+                    val remoteAddress = attributes.request.getHeader("X-Real-IP")
 
                     if(lockedOutAddresses.contains(remoteAddress)) {
                         throw BadCredentialsException("Login attempts exceeded, try again later")
