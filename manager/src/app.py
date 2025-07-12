@@ -34,7 +34,7 @@ def home():
 def login():
 
     # check if the client is timed out
-    client_ip = request.remote_addr
+    client_ip = request.headers.get('X-Real-IP')
     if client_ip in timeouts:
         timeout = timeouts[client_ip]
         if datetime.now() < timeout:
@@ -71,17 +71,22 @@ def login():
             flash("Invalid credentials", "error")
 
             # increase the timeout based on the number of failed attempts
-            if failed_login_attempts[client_ip] >= 10:
+            failed_attempts_count = failed_login_attempts[client_ip]
+            if failed_attempts_count > 10 and failed_attempts_count % 2 == 1:
                 Logger.log_info(f"Locking out client {client_ip} for 30 minutes due to too many failed login attempts.")
                 timeouts[client_ip] = datetime.now() + timedelta(minutes=30)
                 return render_template('lockout.html')
-            elif failed_login_attempts[client_ip] >= 5:
+            elif failed_attempts_count == 9:
                 Logger.log_info(f"Locking out client {client_ip} for 10 minutes due to too many failed login attempts.")
                 timeouts[client_ip] = datetime.now() + timedelta(minutes=10)
                 return render_template('lockout.html')
-            elif failed_login_attempts[client_ip] >= 3:
+            elif failed_attempts_count == 7:
                 Logger.log_info(f"Locking out client {client_ip} for 5 minutes due to too many failed login attempts.")
                 timeouts[client_ip] = datetime.now() + timedelta(minutes=5)
+                return render_template('lockout.html')
+            elif failed_attempts_count == 5:
+                Logger.log_info(f"Locking out client {client_ip} for 1 minute due to too many failed login attempts.")
+                timeouts[client_ip] = datetime.now() + timedelta(minutes=1)
                 return render_template('lockout.html')
 
     return render_template('login.html')
