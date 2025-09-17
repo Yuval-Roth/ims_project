@@ -31,6 +31,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.IO
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
@@ -72,11 +73,22 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             return
         }
 
+        if (tutorialMode){
+            showRipple(playerId, System.currentTimeMillis())
+            //TODO: add stuff here as needed
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = super.getCurrentGameTime()
             model.sendUserInput(timestamp,packetTracker.newPacket())
             addEvent(SessionEvent.click(playerId,timestamp))
         }
+    }
+
+    fun tutorialOpponentClick(){
+        if(!tutorialMode) Log.e(TAG, "tutorialOpponentClick: called in non-tutorial mode")
+        showRipple("player2", System.currentTimeMillis())
     }
 
     override fun onCreate(intent: Intent, context: Context) {
@@ -100,6 +112,11 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             return
         }
 
+        if(tutorialMode){
+            // todo: add stuff here as needed
+            return
+        }
+
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
@@ -117,6 +134,12 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
      * handles game actions
      */
     override suspend fun handleGameAction(action: GameAction) {
+
+        if (tutorialMode){
+            Log.e(TAG, "handleGameAction: Received game action in tutorial mode, ignoring it: $action")
+            return
+        }
+
         when (action.type) {
             GameAction.Type.USER_INPUT -> {
                 val actor = action.actor ?: run{

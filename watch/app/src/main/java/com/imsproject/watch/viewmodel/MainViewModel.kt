@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.java_websocket.exceptions.WebsocketNotConnectedException
@@ -27,26 +28,6 @@ private const val TAG = "MainViewModel"
 
 class MainViewModel() : ViewModel() {
 
-
-    /**
-     *  The application flow is the following:
-     *  1. [State.DISCONNECTED] - the initial state when the app is opened
-     *  2. [State.CONNECTING] - the app is trying to connect to the server for the first time
-     *  3. [State.SELECTING_ID] - the user selects an ID to enter with
-     *  4. [State.CONNECTING] - trying to enter with the selected ID
-     *  5. [State.CONNECTED_NOT_IN_LOBBY] - connected to the server, but not in a lobby
-     *  6. [State.CONNECTED_IN_LOBBY] - connected to the server and in a lobby
-     *  7. [State.IN_GAME] - the lobby was set up and the game has started
-     *  8. [State.AFTER_GAME] - the game has ended and we prepare to upload session events
-     *  9. [State.UPLOADING_EVENTS] - uploading session events to the server
-     *  10. [State.AFTER_GAME_QUESTIONS] - finished uploading events, now we ask the user post-game questions
-     *  11. [State.UPLOADING_ANSWERS] - uploading the answers of the post-game questions to the server
-     *  12. [State.EXPERIMENT_QUESTIONS_QR] - if the experiment has ended, we show the QR code to the user
-     *  13. [State.THANKS_FOR_PARTICIPATING] - the user has scanned the QR code and we thank them for participating
-     *
-     *  Note that state 12 and 13 are skipped if the experiment has not ended
-     *  and then after state 11 the app returns to state 6.
-     */
     enum class State {
      // flow states
         DISCONNECTED,

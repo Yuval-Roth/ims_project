@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.IO
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 
@@ -42,14 +43,21 @@ abstract class GameViewModel(
         PLAYING,
         TRYING_TO_RECONNECT,
         ERROR,
-        TERMINATED
+        TERMINATED,
+        TUTORIAL
     }
 
     private val TAG = "$_TAG-${gameType.prettyName()}"
-    val model = if(ACTIVITY_DEBUG_MODE) MainModel(viewModelScope) else MainModel.instance
-    val playerId : String = model.playerId ?: run {
-        Log.e(TAG, "init: missing player ID")
-        "unknown player ID"
+    val model: MainModel by lazy {
+        if(ACTIVITY_DEBUG_MODE) MainModel(viewModelScope) else MainModel.instance
+    }
+    val playerId : String by lazy {
+        if(ACTIVITY_DEBUG_MODE) "debug player"
+        else if(tutorialMode) "tutorial player"
+        else model.playerId ?: run {
+            Log.e(TAG, "init: missing player ID")
+            "unknown player ID"
+        }
     }
 
     protected lateinit var vibrator: Vibrator
@@ -80,9 +88,16 @@ abstract class GameViewModel(
     private var timeServerDelta = 0L
     private var myStartTime = 0L
 
+    var tutorialMode: Boolean = false
+        private set
+
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
+
+    fun tutorialMode(){
+        tutorialMode = true
+    }
 
     open fun onCreate(intent: Intent, context: Context){
 
@@ -91,6 +106,11 @@ abstract class GameViewModel(
 
         if(ACTIVITY_DEBUG_MODE){
             setState(State.PLAYING)
+            return
+        }
+
+        if(tutorialMode){
+            setState(State.TUTORIAL)
             return
         }
 
@@ -292,7 +312,12 @@ abstract class GameViewModel(
         }
     }
 
-    private fun setupListeners() {
+    private fun setState(newState: State){
+        _state.value = newState
+        Log.d(TAG, "set new state: $newState")
+    }
+
+    protected fun setupListeners() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
@@ -324,11 +349,6 @@ abstract class GameViewModel(
                 exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
             }
         }
-    }
-    
-    private fun setState(newState: State){
-        _state.value = newState
-        Log.d(TAG, "set new state: $newState")
     }
 
     private fun clearListeners(){
