@@ -5,16 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.EaseOutCubic
-import androidx.compose.animation.core.EaseOutElastic
-import androidx.compose.animation.core.EaseOutExpo
-import androidx.compose.animation.core.EaseOutQuint
-import androidx.compose.animation.core.EaseOutSine
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,16 +18,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlin.math.abs
 import kotlin.math.hypot
 import kotlinx.coroutines.launch
 
@@ -43,161 +36,149 @@ class SwipeTestingActivity : ComponentActivity() {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 SwipeFillScreen(
                     fillColor = Color(0xFF4CAF50),
-                    minDurationMs = 500,
-                    maxDurationMs = 4000,
-                    dragThresholdDp = 64f,
-                    flickVelocityThresholdPxPerSec = 1600f // ← new: tune to taste
+                    minDurationMs = 600,
+                    maxDurationMs = 1500
                 )
             }
         }
     }
 }
 
-private enum class Direction { LEFT, RIGHT, UP, DOWN, NONE }
+private enum class FillState { ACTIVE, IDLE }
 
 @Composable
 fun SwipeFillScreen(
     fillColor: Color,
     minDurationMs: Int,
-    maxDurationMs: Int,
-    dragThresholdDp: Float,
-    flickVelocityThresholdPxPerSec: Float
+    maxDurationMs: Int
 ) {
     val scope = rememberCoroutineScope()
     val tracker = remember { VelocityTracker() }
-    val density = LocalDensity.current
-    val dragThresholdPx = with(density) { dragThresholdDp.dp.toPx() }
 
-    var direction by remember { mutableStateOf(Direction.NONE) }
-    val progress = remember { Animatable(0f) } // 0f..1f
-
-    // track a single trigger per gesture
-    var triggeredThisGesture by remember { mutableStateOf(false) }
-    var dragStart by remember { mutableStateOf(Offset.Unspecified) }
+    var dirVec by remember { mutableStateOf(Offset(1f, 0f)) } // any-angle direction (unit vector)
+    var state by remember { mutableStateOf(FillState.IDLE) }
+    val progress = remember { Animatable(0f) } // 0..1
 
     fun mapSpeedToDuration(speedPxPerSec: Float): Int {
-        val s = speedPxPerSec.coerceAtLeast(1f)
-        // inverse map: faster speed → shorter duration
-        val raw = (220000f / s) * 5.0f
+        val s = speedPxPerSec.coerceAtLeast(1f)     // avoid div by 0
+        val raw = (220000f / s) * 5.0f              // inverse map: faster → shorter
         return raw.coerceIn(minDurationMs.toFloat(), maxDurationMs.toFloat()).toInt()
     }
 
-    suspend fun startFill(dir: Direction, speed: Float) {
-        direction = dir
+    fun normalize(v: Offset): Offset {
+        val len = hypot(v.x, v.y)
+        return if (len <= 1e-3f) Offset(1f, 0f) else Offset(v.x / len, v.y / len)
+    }
+
+    suspend fun startFill(directionVec: Offset, speed: Float) {
+        dirVec = normalize(directionVec)
+        state = FillState.ACTIVE
         progress.stop()
         progress.snapTo(0f)
         val duration = mapSpeedToDuration(speed)
-        progress.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(durationMillis = duration, easing = EaseOut)
-        )
+        progress.animateTo(1f, tween(durationMillis = duration*4, easing = EaseOut))
+        // optional reset:
+        // state = FillState.IDLE
+        // progress.snapTo(0f)
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
-            .pointerInput(dragThresholdPx, flickVelocityThresholdPxPerSec) {
-                detectDragGestures(
-                    onDragStart = { start ->
-                        tracker.resetTracking()
-                        dragStart = start
-                        triggeredThisGesture = false
-                    },
-                    onDrag = { change: PointerInputChange, _ ->
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    // start tracking when finger goes down
+                    tracker.resetTracking()
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    val pointerId = down.id
+                    tracker.addPosition(down.uptimeMillis, down.position)
+
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change: PointerInputChange =
+                            event.changes.find { it.id == pointerId } ?: break
+
+                        // feed tracker with move samples
                         tracker.addPosition(change.uptimeMillis, change.position)
 
-                        if (!triggeredThisGesture && dragStart.isSpecified) {
-                            val dx = change.position.x - dragStart.x
-                            val dy = change.position.y - dragStart.y
-                            val dist = hypot(dx, dy)
-
-                            if (dist >= dragThresholdPx) {
-                                // Direction from cumulative delta
-                                val dir = when {
-                                    abs(dx) >= abs(dy) && dx > 0 -> Direction.RIGHT
-                                    abs(dx) >= abs(dy) && dx < 0 -> Direction.LEFT
-                                    abs(dy) >  abs(dx) && dy > 0 -> Direction.DOWN
-                                    else                         -> Direction.UP
-                                }
-
-                                val v = tracker.calculateVelocity()
-                                val speed = hypot(v.x, v.y)
-
-                                triggeredThisGesture = true
-                                scope.launch { startFill(dir, speed) }
-                            }
-                        }
-                        change.consume()
-                    },
-                    onDragEnd = {
-                        // Quick flick support: trigger on high velocity even if distance < threshold
-                        if (!triggeredThisGesture) {
+                        if (change.changedToUpIgnoreConsumed()) {
                             val v = tracker.calculateVelocity()
-                            val vx = v.x
-                            val vy = v.y
-                            val speed = hypot(vx, vy)
-
-                            if (speed >= flickVelocityThresholdPxPerSec) {
-                                val dir = when {
-                                    abs(vx) >= abs(vy) && vx > 0 -> Direction.RIGHT
-                                    abs(vx) >= abs(vy) && vx < 0 -> Direction.LEFT
-                                    abs(vy) >  abs(vx) && vy > 0 -> Direction.DOWN
-                                    else                         -> Direction.UP
-                                }
-                                triggeredThisGesture = true
-                                scope.launch { startFill(dir, speed) }
-                            }
+                            val speed = hypot(v.x, v.y)
+                            scope.launch { startFill(Offset(v.x, v.y), speed) }
+                            change.consume()
+                            break
                         }
-                        dragStart = Offset.Unspecified
-                        triggeredThisGesture = false
-                    },
-                    onDragCancel = {
-                        dragStart = Offset.Unspecified
-                        triggeredThisGesture = false
                     }
-                )
+                }
             },
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Drag ~${dragThresholdDp.toInt()}dp OR flick.\nFaster motion → faster fill.",
+            text = "Swipe/drag, then lift.\nVelocity at lift controls fill speed & direction (360°).",
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 24.dp),
             textAlign = TextAlign.Center
         )
 
+        // Any-angle wipe drawing using a half-plane clip
         Canvas(modifier = Modifier.fillMaxSize()) {
-            if (direction == Direction.NONE) return@Canvas
+            if (state == FillState.IDLE) return@Canvas
+
             val w = size.width
             val h = size.height
-            when (direction) {
-                Direction.RIGHT -> {
-                    val fillW = w * progress.value
-                    drawRect(color = fillColor, size = Size(fillW, h))
+            val d = normalize(dirVec)
+
+            fun proj(p: Offset): Float = p.x * d.x + p.y * d.y
+            val rect = listOf(
+                Offset(0f, 0f),
+                Offset(w, 0f),
+                Offset(w, h),
+                Offset(0f, h)
+            )
+            val sMin = rect.minOf { proj(it) }
+            val sMax = rect.maxOf { proj(it) }
+            val c = sMin + progress.value * (sMax - sMin)
+
+            fun clipByHalfPlane(points: List<Offset>): List<Offset> {
+                if (points.isEmpty()) return emptyList()
+                val out = mutableListOf<Offset>()
+                var prev = points.last()
+                var prevIn = proj(prev) <= c
+
+                fun intersect(a: Offset, b: Offset): Offset? {
+                    val ab = Offset(b.x - a.x, b.y - a.y)
+                    val denom = ab.x * d.x + ab.y * d.y
+                    if (kotlin.math.abs(denom) < 1e-6f) return null
+                    val t = ((c - (a.x * d.x + a.y * d.y)) / denom).coerceIn(0f, 1f)
+                    return Offset(a.x + ab.x * t, a.y + ab.y * t)
                 }
-                Direction.LEFT -> {
-                    val fillW = w * progress.value
-                    drawRect(
-                        color = fillColor,
-                        topLeft = Offset(w - fillW, 0f),
-                        size = Size(fillW, h)
-                    )
+
+                for (curr in points) {
+                    val currIn = proj(curr) <= c
+                    if (prevIn && currIn) {
+                        out.add(curr)
+                    } else if (prevIn && !currIn) {
+                        intersect(prev, curr)?.let { out.add(it) }
+                    } else if (!prevIn && currIn) {
+                        intersect(prev, curr)?.let { out.add(it) }
+                        out.add(curr)
+                    }
+                    prev = curr
+                    prevIn = currIn
                 }
-                Direction.DOWN -> {
-                    val fillH = h * progress.value
-                    drawRect(color = fillColor, size = Size(w, fillH))
+                return out
+            }
+
+            val poly = clipByHalfPlane(rect)
+            if (poly.size >= 3) {
+                val path = Path().apply {
+                    moveTo(poly[0].x, poly[0].y)
+                    for (i in 1 until poly.size) lineTo(poly[i].x, poly[i].y)
+                    close()
                 }
-                Direction.UP -> {
-                    val fillH = h * progress.value
-                    drawRect(
-                        color = fillColor,
-                        topLeft = Offset(0f, h - fillH),
-                        size = Size(w, fillH)
-                    )
-                }
-                Direction.NONE -> Unit
+                drawPath(path = path, color = fillColor)
             }
         }
     }
