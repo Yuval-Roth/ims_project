@@ -26,7 +26,6 @@ class FlingTracker {
     fun endFling(): Triple<Float, Float, Float> {
         val endTime = System.nanoTime()
         val deltaTime = (endTime - startTime) / 1_000_000_000f // Convert to seconds
-        println("FlingTracker: deltaTime = $deltaTime seconds")
         val deltaX = endX - startX
         val deltaY = endY - startY
         val distance = kotlin.math.hypot(deltaX, deltaY)
