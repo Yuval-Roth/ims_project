@@ -64,7 +64,11 @@
             android:taskAffinity=""
             android:exported="true"
             android:theme="@style/FlowerGardenActivityTheme" />
-
+        <activity
+            android:name=".view.SwipingVelocityActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:theme="@style/FlowerGardenActivityTheme" />
     </application>
 
 </manifest>
