@@ -59,6 +59,11 @@
             android:taskAffinity=""
             android:exported="true"
             android:theme="@style/FlowerGardenActivityTheme" />
+        <activity
+            android:name=".view.SwipeTestingActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:theme="@style/FlowerGardenActivityTheme" />
 
     </application>
 
