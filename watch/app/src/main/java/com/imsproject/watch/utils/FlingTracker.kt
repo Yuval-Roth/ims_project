@@ -1,7 +1,5 @@
 package com.imsproject.watch.utils
 
-import kotlin.math.min
-
 class FlingTracker {
     private var startX = 0f
     private var startY = 0f
@@ -21,6 +19,7 @@ class FlingTracker {
     }
 
     /**
+     *  Calculates the normalized direction vector (x, y) and velocity (pixels per second)
      *  @return (normalizedX, normalizedY, velocity)
      */
     fun endFling(): Triple<Float, Float, Float> {

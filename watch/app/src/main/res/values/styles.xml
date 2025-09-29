@@ -19,4 +19,7 @@
     <style name="FlowerGardenActivityTheme">
         <item name="android:windowSwipeToDismiss" tools:ignore="WearBackNavigation">false</item>
     </style>
+    <style name="WavesActivityTheme">
+        <item name="android:windowSwipeToDismiss" tools:ignore="WearBackNavigation">false</item>
+    </style>
 </resources>

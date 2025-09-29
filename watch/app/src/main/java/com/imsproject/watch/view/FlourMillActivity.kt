@@ -33,22 +33,18 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
-import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.LIGHT_BROWN_COLOR
-import com.imsproject.watch.SCREEN_RADIUS
-import com.imsproject.watch.viewmodel.FlourMillViewModel
-import com.imsproject.watch.viewmodel.GameViewModel
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Angle
 import com.imsproject.common.utils.UNDEFINED_ANGLE
@@ -56,8 +52,8 @@ import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_ORANGE_COLOR
 import com.imsproject.watch.DEEP_BLUE_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
+import com.imsproject.watch.LIGHT_BROWN_COLOR
 import com.imsproject.watch.LIGHT_ORANGE_COLOR
-import com.imsproject.watch.LOW_LOOP_TRACK
 import com.imsproject.watch.MILL_SOUND_TRACK
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
@@ -69,11 +65,13 @@ import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.utils.FlourPile
 import com.imsproject.watch.utils.WavPlayerException
-import com.imsproject.watch.utils.fastCoerceAtMost
 import com.imsproject.watch.utils.polarToCartesian
+import com.imsproject.watch.viewmodel.FlourMillViewModel
+import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 
 class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {

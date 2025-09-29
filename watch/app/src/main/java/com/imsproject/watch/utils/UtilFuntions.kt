@@ -2,10 +2,8 @@ package com.imsproject.watch.utils
 
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.SCREEN_CENTER
-import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
-import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt

@@ -15,6 +15,7 @@ import com.imsproject.watch.utils.RestApiClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
@@ -30,7 +31,6 @@ import java.net.SocketTimeoutException
 import java.net.URI
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
-import java.util.stream.Collectors
 import kotlin.math.roundToLong
 
 // set these values to run the app locally

@@ -16,8 +16,8 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.ALMOST_WHITE_COLOR
-import com.imsproject.watch.BANANA_YELLOW_COLOR
 import com.imsproject.watch.AMOUNT_OF_FLOWERS
+import com.imsproject.watch.BANANA_YELLOW_COLOR
 import com.imsproject.watch.BROWN_COLOR
 import com.imsproject.watch.BUBBLE_PINK_COLOR
 import com.imsproject.watch.CURRENT_PLAYER_ITEM_ALPHA
@@ -37,6 +37,7 @@ import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -2,7 +2,6 @@ package com.imsproject.watch.view
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.BorderStroke
@@ -41,16 +40,12 @@ import com.imsproject.watch.DARKER_BROWN_COLOR
 import com.imsproject.watch.DARKER_DARKER_BROWN_COLOR
 import com.imsproject.watch.DARK_GREEN_BACKGROUND_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
-import com.imsproject.watch.GRASS_PLANT_FADE_COEFFICIENT
-import com.imsproject.watch.GRASS_PLANT_FADE_THRESHOLD
-import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.GRASS_PLANT_BASE_HEIGHT
 import com.imsproject.watch.GRASS_PLANT_BASE_WIDTH
 import com.imsproject.watch.GRASS_PLANT_STROKE_WIDTH
 import com.imsproject.watch.GRASS_WATER_VISIBILITY_THRESHOLD
+import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_BLUE_COLOR
-import com.imsproject.watch.WATER_DROPLET_FADE_COEFFICIENT
-import com.imsproject.watch.WATER_DROPLET_FADE_THRESHOLD
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
@@ -58,7 +53,6 @@ import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin

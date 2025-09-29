@@ -34,10 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.CYAN_COLOR
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.GLOWING_YELLOW_COLOR
-import com.imsproject.watch.LOW_LOOP_TRACK
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
 import com.imsproject.watch.MY_STROKE_WIDTH
@@ -46,12 +46,10 @@ import com.imsproject.watch.OPPONENT_ARC_SIZE
 import com.imsproject.watch.OPPONENT_ARC_TOP_LEFT
 import com.imsproject.watch.OPPONENT_STROKE_WIDTH
 import com.imsproject.watch.OPPONENT_SWEEP_ANGLE
+import com.imsproject.watch.RUB_LOOP_TRACK
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
-import com.imsproject.common.utils.UNDEFINED_ANGLE
-import com.imsproject.watch.MILL_SOUND_TRACK
-import com.imsproject.watch.RUB_LOOP_TRACK
 import com.imsproject.watch.utils.WavPlayerException
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel

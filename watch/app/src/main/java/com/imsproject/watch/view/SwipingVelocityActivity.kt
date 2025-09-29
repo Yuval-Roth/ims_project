@@ -6,9 +6,16 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -36,7 +43,6 @@ fun SwipeSpeedScreen() {
     var speedPxPerSec by remember { mutableStateOf(0f) }
     var dirX by remember { mutableStateOf(0f) }   // normalized direction x in [-1, 1]
     var dirY by remember { mutableStateOf(0f) }   // normalized direction y in [-1, 1]
-    val density = LocalDensity.current
     val tracker = remember { FlingTracker() }
 
     Box(
@@ -108,7 +114,7 @@ fun SwipeSpeedScreen() {
         }
 
         // Readout
-        val speedDpPerSec = with(density) { speedPxPerSec / density.density }
+        val speedDpPerSec = with(LocalDensity.current) { speedPxPerSec / density }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = buildString {
