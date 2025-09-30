@@ -1,6 +1,7 @@
 package com.imsproject.watch.view
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.Animatable
@@ -37,16 +38,23 @@ import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.initProperties
 import com.imsproject.watch.utils.FlingTracker
 import com.imsproject.watch.utils.OceanWaveEasing
 import com.imsproject.watch.utils.SampledEasing
+import com.imsproject.watch.utils.cartesianToPolar
 import kotlinx.coroutines.launch
 import kotlin.math.exp
 import kotlin.math.hypot
+import kotlin.math.pow
 
 class SwipeTestingActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        initProperties(metrics.bounds.width())
         setContent {
             Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 SwipeFillScreen(
@@ -60,30 +68,6 @@ class SwipeTestingActivity : ComponentActivity() {
 }
 
 private enum class FillState { ACTIVE, IDLE }
-
-// 100 samples from [0,1] with fast start, slow end
-//private val easingSamples = listOf(
-//    0.0f, 0.058952f, 0.114438f, 0.16666f, 0.215812f,
-//    0.262073f, 0.305614f, 0.346594f, 0.385164f, 0.421466f,
-//    0.455634f, 0.487792f, 0.518059f, 0.546546f, 0.573358f,
-//    0.598593f, 0.622345f, 0.644699f, 0.665739f, 0.685542f,
-//    0.70418f, 0.721722f, 0.738233f, 0.753772f, 0.768398f,
-//    0.782164f, 0.79512f, 0.807314f, 0.818792f, 0.829594f,
-//    0.839761f, 0.84933f, 0.858337f, 0.866813f, 0.874792f,
-//    0.882301f, 0.889368f, 0.89602f, 0.902281f, 0.908174f,
-//    0.91372f, 0.91894f, 0.923853f, 0.928477f, 0.932829f,
-//    0.936925f, 0.94078f, 0.944409f, 0.947824f, 0.951039f,
-//    0.954064f, 0.956911f, 0.959591f, 0.962114f, 0.964488f,
-//    0.966722f, 0.968825f, 0.970805f, 0.972668f, 0.974421f,
-//    0.976071f, 0.977625f, 0.979087f, 0.980463f, 0.981758f,
-//    0.982977f, 0.984124f, 0.985204f, 0.98622f, 0.987176f,
-//    0.988076f, 0.988924f, 0.989721f, 0.990472f, 0.991178f,
-//    0.991843f, 0.992469f, 0.993058f, 0.993612f, 0.994134f,
-//    0.994625f, 0.995087f, 0.995522f, 0.995932f, 0.996317f,
-//    0.99668f, 0.997021f, 0.997343f, 0.997645f, 0.99793f,
-//    0.998197f, 0.99845f, 0.998687f, 0.99891f, 0.99912f,
-//    0.999318f, 0.999505f, 0.99968f, 0.999845f, 1.0f
-//)
 
 // 100 samples from [0,1] — gentler start than before (energy = 1.5)
 private val easingSamples = List(100) { i ->
@@ -118,7 +102,7 @@ fun SwipeFillScreen(
             maxDurationMs.toFloat()
         } else {
             val v = 1000f / pxPerSec
-            val duration = maxDurationMs * v
+            val duration = maxDurationMs * v.pow(1.5f)
             duration.coerceIn(minDurationMs.toFloat(), maxDurationMs.toFloat())
         }
         return duration.toInt()
@@ -148,17 +132,23 @@ fun SwipeFillScreen(
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { startOffset ->
-                        tracker.startFling(startOffset.x, startOffset.y)
+                        val x = startOffset.x
+                        val y = startOffset.y
+                        val (distance, _) = cartesianToPolar(x,y)
+                        if (distance > SCREEN_RADIUS * 0.8)
+                            tracker.startFling(x, y)
                     },
                     onDrag = { change: PointerInputChange, _ ->
                         val position = change.position
                         tracker.setOffset(position.x, position.y)
                     },
                     onDragEnd = {
-                        val (nx, ny, speedPxPerSec) = tracker.endFling()
-                        val dpPecSec = speedPxPerSec / density
-                        scope.launch {
-                            startFill(Offset(nx, ny), dpPecSec)
+                        if (tracker.started){
+                            val (nx, ny, speedPxPerSec) = tracker.endFling()
+                            val dpPecSec = speedPxPerSec / density
+                            scope.launch {
+                                startFill(Offset(nx, ny), dpPecSec)
+                            }
                         }
                     },
                     onDragCancel = { }

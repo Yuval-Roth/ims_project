@@ -6,16 +6,21 @@ class FlingTracker {
     private var startTime = 0L
     private var endX = 0f
     private var endY = 0f
+    var started = false
+        private set
 
     fun startFling(x: Float, y: Float) {
         startX = x
         startY = y
         startTime = System.nanoTime()
+        started = true
     }
 
     fun setOffset(x: Float, y: Float) {
-        endX = x
-        endY = y
+        if(started){
+            endX = x
+            endY = y
+        }
     }
 
     /**
@@ -23,14 +28,19 @@ class FlingTracker {
      *  @return (normalizedX, normalizedY, velocity)
      */
     fun endFling(): Triple<Float, Float, Float> {
-        val endTime = System.nanoTime()
-        val deltaTime = (endTime - startTime) / 1_000_000_000f // Convert to seconds
-        val deltaX = endX - startX
-        val deltaY = endY - startY
-        val distance = kotlin.math.hypot(deltaX, deltaY)
-        val velocity = if (deltaTime > 0) distance / deltaTime else 0f // pixels per second
-        val normalizedX = if (distance != 0f) deltaX / distance else 0f
-        val normalizedY = if (distance != 0f) deltaY / distance else 0f
-        return Triple(normalizedX, normalizedY, velocity)
+        if (started){
+            val endTime = System.nanoTime()
+            started = false
+            val deltaTime = (endTime - startTime) / 1_000_000_000f // Convert to seconds
+            val deltaX = endX - startX
+            val deltaY = endY - startY
+            val distance = kotlin.math.hypot(deltaX, deltaY)
+            val velocity = if (deltaTime > 0) distance / deltaTime else 0f // pixels per second
+            val normalizedX = if (distance != 0f) deltaX / distance else 0f
+            val normalizedY = if (distance != 0f) deltaY / distance else 0f
+            return Triple(normalizedX, normalizedY, velocity)
+        } else {
+            return Triple(0f,0f,0f)
+        }
     }
 }
