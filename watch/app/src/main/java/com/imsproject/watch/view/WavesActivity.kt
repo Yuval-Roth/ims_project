@@ -80,6 +80,7 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                                 )
                             ){
                                 wave.topLeft = Offset( -mod*SCREEN_RADIUS * 2 + mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
+                                wave.animationState = value
                             }
                             viewModel.flipTurn()
                         }
