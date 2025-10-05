@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
@@ -26,14 +27,22 @@ import kotlin.math.pow
 
 class WavesViewModel: GameViewModel(GameType.WAVES) {
 
+    enum class AnimationStage {
+        NOT_STARTED,
+        FIRST,
+        SECOND,
+        DONE
+    }
+
     class Wave(
         val color: Color,
         val animationLength: Int,
         val direction: Int
     ){
         var topLeft by mutableStateOf(Offset(-SCREEN_RADIUS, SCREEN_RADIUS))
-        var animationStarted = false
-        var animationState by mutableFloatStateOf(0f)
+        var size by mutableStateOf(Size(SCREEN_RADIUS * 2f, SCREEN_RADIUS * 3f))
+        var animationStage by mutableStateOf(AnimationStage.NOT_STARTED)
+        var animationProgress by mutableFloatStateOf(0f)
     }
 
 //    if (i % 2 == 0) Color(0xFF3B82F6).copy(alpha = 0.8f)
@@ -63,18 +72,18 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
         super.onCreate(intent, context)
 
         if(ACTIVITY_DEBUG_MODE){
-            viewModelScope.launch(Dispatchers.Default) {
-                val direction = -1
-                _turn.collect {
-                    if(it == direction){
-                        delay(500)
-                        val dpPerSec = (500..2500).random().toFloat()
-                        withContext(Dispatchers.Main){
-                            fling(dpPerSec, direction)
-                        }
-                    }
-                }
-            }
+//            viewModelScope.launch(Dispatchers.Default) {
+//                val direction = -1
+//                _turn.collect {
+//                    if(it == direction){
+//                        delay(500)
+//                        val dpPerSec = (500..2500).random().toFloat()
+//                        withContext(Dispatchers.Main){
+//                            fling(dpPerSec, direction)
+//                        }
+//                    }
+//                }
+//            }
             return
         }
     }
@@ -91,8 +100,8 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
         _turn.value = 0
         val animationLength = mapSpeedToDuration(dpPerSec, 1500, 5000)
         val wave = Wave(
-            color = if (direction > 0) Color(0xFF3B82F6).copy(alpha = 0.8f)
-                    else Color(0xFFFFD8D8).copy(alpha = 0.8f),
+            color = if (direction > 0) Color(0xFF3B82F6)
+                    else Color(0xFFFFD8D8),
             animationLength = animationLength,
             direction = direction
         )
