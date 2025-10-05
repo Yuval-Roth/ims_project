@@ -11,21 +11,17 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -36,10 +32,8 @@ import com.imsproject.watch.utils.OceanWaveEasing
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WavesViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlin.math.pow
 
 class WavesActivity: GameActivity(GameType.WAVES) {
 
@@ -65,10 +59,33 @@ class WavesActivity: GameActivity(GameType.WAVES) {
     @Composable
     fun Waves() {
         val density =  LocalDensity.current.density
-        val scope = rememberCoroutineScope()
         val tracker = remember { FlingTracker() }
-        val ovalPositions = remember { mutableStateListOf<MutableState<Offset>>() }
-        val animationDirection by viewModel.animationDirection.collectAsState()
+        val scope = rememberCoroutineScope()
+        val waves = remember { viewModel.waves }
+
+        LaunchedEffect(Unit) {
+            snapshotFlow { viewModel.waves.lastOrNull() }
+                .collect { wave ->
+                    if (wave == null) return@collect
+                    if (! wave.animationStarted){
+                        wave.animationStarted = true
+                        scope.launch(Dispatchers.Main) {
+                            val mod = if (wave.direction > 0) 1f else -1f
+                            val progress = Animatable(0f)
+                            progress.animateTo(
+                                targetValue = 1f,
+                                animationSpec = tween(
+                                    durationMillis = wave.animationLength,
+                                    easing = OceanWaveEasing,
+                                )
+                            ){
+                                wave.topLeft = Offset( -mod*SCREEN_RADIUS * 2 + mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
+                            }
+                            viewModel.flipTurn()
+                        }
+                    }
+                }
+        }
 
         Box(
             modifier = Modifier
@@ -77,11 +94,13 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { startOffset ->
-                            val x = startOffset.x
-                            val y = startOffset.y
-                            val (distance, _) = cartesianToPolar(x,y)
-                            if (distance > SCREEN_RADIUS * 0.8){
-                                tracker.startFling(x, y)
+                            if (viewModel.myDirection == viewModel.turn.value) {
+                                val x = startOffset.x
+                                val y = startOffset.y
+                                val (distance, _) = cartesianToPolar(x, y)
+                                if (distance > SCREEN_RADIUS * 0.8) {
+                                    tracker.startFling(x, y)
+                                }
                             }
                         },
                         onDrag = { change: PointerInputChange, _ ->
@@ -89,27 +108,12 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                             tracker.setOffset(position.x, position.y)
                         },
                         onDragEnd = {
-                            if (tracker.started){
+                            if (tracker.started) {
                                 val (nx, ny, speedPxPerSec) = tracker.endFling()
-                                if(viewModel.myDirection > 0 && nx > 0.5 || viewModel.myDirection < 0 && nx < -0.5){
+                                val myDirection = viewModel.myDirection
+                                if (myDirection * nx > 0) { // fling in my direction
                                     val dpPecSec = speedPxPerSec / density
-                                    val animationLength = mapSpeedToDuration(dpPecSec, 1500, 5000)
-                                    val ovalPosition = mutableStateOf(Offset(-SCREEN_RADIUS, SCREEN_RADIUS))
-                                    val progress = Animatable(0f)
-                                    ovalPositions.add(ovalPosition)
-                                    scope.launch {
-                                        progress.animateTo(
-                                            targetValue = 1f,
-                                            animationSpec = tween(
-                                                durationMillis = animationLength,
-                                                easing = OceanWaveEasing,
-                                            )
-                                        ){
-                                            val mod = if (animationDirection > 0) 1f else -1f
-                                            ovalPosition.value = if (animationDirection != 0) Offset( -mod*SCREEN_RADIUS * 2 + mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
-                                            else Offset(-SCREEN_RADIUS, SCREEN_RADIUS)
-                                        }
-                                    }
+                                    viewModel.fling(dpPecSec, myDirection)
                                 }
                             }
                         },
@@ -119,26 +123,14 @@ class WavesActivity: GameActivity(GameType.WAVES) {
             contentAlignment = Alignment.Center
         ){
             Canvas(modifier = Modifier.fillMaxSize()) {
-                ovalPositions.forEachIndexed { i, ovalPosition ->
+                for (wave in waves) {
                     drawOval(
-                        color = if (i % 2 == 0) Color(0xFF3B82F6).copy(alpha = 0.8f)
-                                else Color(0xFFFFD8D8).copy(alpha = 0.8f),
-                        topLeft = ovalPosition.value,
+                        color = wave.color,
+                        topLeft = wave.topLeft,
                         size = Size(SCREEN_RADIUS * 2f, SCREEN_RADIUS * 3f),
                     )
                 }
             }
         }
-    }
-
-    fun mapSpeedToDuration(pxPerSec: Float, minDurationMs: Int, maxDurationMs: Int): Int {
-        val duration = if (pxPerSec <= 1000f) {
-            maxDurationMs
-        } else {
-            val v = 1000f / pxPerSec
-            val duration = maxDurationMs * v.pow(1.5f)
-            duration.toInt().coerceIn(minDurationMs, maxDurationMs)
-        }
-        return duration
     }
 }
