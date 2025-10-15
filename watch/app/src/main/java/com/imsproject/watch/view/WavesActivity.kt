@@ -19,9 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -29,6 +32,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush.Companion.horizontalGradient
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -39,10 +45,8 @@ import com.imsproject.watch.utils.OceanWaveEasing
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WavesViewModel
-import com.imsproject.watch.viewmodel.WavesViewModel.AnimationStage
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlin.math.max
+import kotlinx.coroutines.android.awaitFrame
+
 
 class WavesActivity: GameActivity(GameType.WAVES) {
 
@@ -144,7 +148,7 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                                 val x = startOffset.x
                                 val y = startOffset.y
                                 val (distance, _) = cartesianToPolar(x, y)
-                                if (distance > SCREEN_RADIUS * 0.8) {
+                                if (distance > SCREEN_RADIUS * 0.7) {
                                     tracker.startFling(x, y)
                                 }
                             }
@@ -168,21 +172,43 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                 },
             contentAlignment = Alignment.Center
         ){
+            WaveWarpBox(
+                amplitudePx = 5f,
+                wavelengthPx = 180f,
+                speedPxPerSec = 60f,
+                phaseOffset = 0f,
+            ) {
+                Canvas(modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = Color.White)
+                ) {
+                    val brush = horizontalGradient(
+                        colors = listOf(
+                            Color.White,
+                            Color(0xFF6BCBFF),
+                            Color.White,
+                        ),
+                        startX = wave.topLeft.x,
+                        endX = wave.topLeft.x + SCREEN_RADIUS*1.15f,
+                    )
+                    drawRect(
+                        brush = brush,
+                        topLeft = wave.topLeft,
+                        size = Size(SCREEN_RADIUS*1.15f,SCREEN_RADIUS * 2),
+                    )
+                }
+            }
             Canvas(modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color.White)
+                .background(color = Color.Transparent)
             ) {
-                if(turn > 0){
 
-                }
-                if(turn < 0){
-
-                }
                 val brush2 = horizontalGradient(
                     colors = listOf(
                         Color.White,
-                        Color(0xBFB5DAFA),
-                        Color(0xBFB5DAFA),
+                        Color(0xFFB1E4FF),
+                        Color(0xFFB1E4FF),
+                        Color(0xFFB1E4FF),
                         Color.White,
                     ),
                     startX = wave.topLeft.x + SCREEN_RADIUS*1.15f*0.25f,
@@ -192,23 +218,81 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                     brush = brush2,
                     topLeft = Offset(wave.topLeft.x+SCREEN_RADIUS*1.15f*0.25f, 0f),
                     size = Size(SCREEN_RADIUS*1.15f*0.5f,SCREEN_RADIUS * 2),
-                )
-                val brush = horizontalGradient(
-                    colors = listOf(
-                        Color.White,
-                        Color(0xFF6BCBFF),
-                        Color.White,
-                    ),
-                    startX = wave.topLeft.x,
-                    endX = wave.topLeft.x + SCREEN_RADIUS*1.15f,
-                )
-                drawRect(
-                    brush = brush,
-                    topLeft = wave.topLeft,
-                    size = Size(SCREEN_RADIUS*1.15f,SCREEN_RADIUS * 2),
-                    blendMode = BlendMode.Multiply
+                    blendMode = BlendMode.ColorBurn
                 )
             }
         }
     }
 }
+
+@Composable
+fun WaveWarpBox(
+    modifier: Modifier = Modifier,
+    amplitudePx: Float,
+    wavelengthPx: Float,
+    speedPxPerSec: Float,
+    phaseOffset: Float = 0f,
+    content: @Composable () -> Unit
+) {
+    // simple time driver
+    var time by remember { mutableStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val nanos = awaitFrame() // suspend until next frame
+            time = nanos / 1_000_000_000f
+        }
+    }
+
+    Box(
+        modifier = modifier.graphicsLayer {
+            compositingStrategy = CompositingStrategy.Offscreen
+
+            // AGSL: horizontal sine displacement based on Y
+            val agsl = """
+                uniform float2 resolution;
+                uniform float amplitude;
+                uniform float wavelength;
+                uniform float omega;
+                uniform float time;
+                uniform float phase;
+                
+                // Declare the child shader with a NON-reserved name
+                uniform shader content;
+                
+                half4 main(float2 fragCoord) {
+                    float2 uv = fragCoord;
+                    float y = uv.y;
+                
+                    float k = 6.28318530718 / wavelength; // 2π/λ
+                    float xOffset = amplitude * sin(k * y - omega * time + phase);
+                
+                    float2 sampleCoord = float2(
+                        clamp(uv.x + xOffset, 0.0, resolution.x - 1.0),
+                        clamp(uv.y, 0.0, resolution.y - 1.0)
+                    );
+                
+                    // Sample via .eval(...)
+                    return content.eval(sampleCoord);
+                }
+
+            """.trimIndent()
+
+            val shader = android.graphics.RuntimeShader(agsl)
+            shader.setFloatUniform("resolution", size.width, size.height)
+            shader.setFloatUniform("amplitude", amplitudePx)
+            shader.setFloatUniform("wavelength", wavelengthPx)
+            val omega = (2f * Math.PI.toFloat()) * (speedPxPerSec / wavelengthPx)
+            shader.setFloatUniform("omega", omega)
+            shader.setFloatUniform("time", time)
+            shader.setFloatUniform("phase", phaseOffset)
+
+            renderEffect = android.graphics.RenderEffect
+                .createRuntimeShaderEffect(shader, "content")
+                .asComposeRenderEffect()
+        }
+    ) {
+        content()
+    }
+}
+
+
