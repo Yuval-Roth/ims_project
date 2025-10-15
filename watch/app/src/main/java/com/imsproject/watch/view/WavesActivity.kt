@@ -90,52 +90,15 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                 )
             ){
                 val x = if (wave.direction > 0) {
-                    -SCREEN_RADIUS*0.7f + SCREEN_RADIUS * 2.4f * value
+                    -SCREEN_RADIUS*0.7f + SCREEN_RADIUS * 2.25f * value
                 } else {
-                    SCREEN_RADIUS * 1.7f - SCREEN_RADIUS * 2.4f * value
+                    SCREEN_RADIUS * 1.55f - SCREEN_RADIUS * 2.25f * value
                 }
                 wave.topLeft = Offset( x, 0f)
                 wave.animationProgress = value
             }
             viewModel.flipTurn()
         }
-
-//        LaunchedEffect(Unit) {
-//            snapshotFlow { viewModel.waves.lastOrNull() }
-//                .collect { wave ->
-//                    if (wave == null) return@collect
-//                    if (wave.animationStage == AnimationStage.NOT_STARTED){
-//                        scope.launch(Dispatchers.Main) {
-//                            wave.animationStage = AnimationStage.FIRST
-//                            val mod = if (wave.direction > 0) 1f else -1f
-//                            val progress = Animatable(0f)
-//                            progress.animateTo(
-//                                targetValue = 1f,
-//                                animationSpec = tween(
-//                                    durationMillis = wave.animationLength,
-//                                    easing = OceanWaveEasing,
-//                                )
-//                            ){
-//                                wave.topLeft = Offset( -mod*(SCREEN_RADIUS * 2) + mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
-//                                wave.animationProgress = value
-//                            }
-//                            wave.animationStage = AnimationStage.SECOND
-//                            progress.animateTo(
-//                                targetValue = 0.1f,
-//                                animationSpec = tween(
-//                                    durationMillis = 200,
-//                                    easing = LinearEasing,
-//                                )
-//                            ){
-//                                wave.topLeft = Offset( mod*SCREEN_RADIUS * 2 + -mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
-//                                wave.animationProgress = value
-//                            }
-//                            viewModel.flipTurn()
-//                            wave.animationStage = AnimationStage.DONE
-//                        }
-//                    }
-//                }
-//        }
 
         Box(
             modifier = Modifier

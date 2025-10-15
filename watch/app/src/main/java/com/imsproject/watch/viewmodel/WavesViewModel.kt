@@ -49,6 +49,7 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
     private lateinit var soundPool: SoundPool
     private var strongWaveSoundId : Int = -1
     private var mediumWaveSoundId: Int = -1
+    private var weakWaveSoundId: Int = -1
 
 
     // ================================================================================ |
@@ -76,6 +77,7 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         strongWaveSoundId = soundPool.load(context, R.raw.wave_strong, 1)
         mediumWaveSoundId = soundPool.load(context,R.raw.wave_medium,1)
+        weakWaveSoundId = soundPool.load(context,R.raw.wave_weak,1)
 
 
         if(ACTIVITY_DEBUG_MODE){
@@ -108,8 +110,9 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
         wave.animationLength = mapSpeedToDuration(dpPerSec, 1500, 5000)
         wave.direction = direction
         when (wave.animationLength){
-            in 1500..2500 -> soundPool.play(strongWaveSoundId,1f,1f,0,0,1f)
-            in 2501..5000 -> soundPool.play(mediumWaveSoundId,1f,1f,0,0,1f)
+            in 1500..2000 -> soundPool.play(strongWaveSoundId,1f,1f,0,0,1f)
+            in 2001..3500 -> soundPool.play(mediumWaveSoundId,1f,1f,0,0,1f)
+            in 3501..5000 -> soundPool.play(weakWaveSoundId,1f,1f,0,0,1f)
         }
     }
 
