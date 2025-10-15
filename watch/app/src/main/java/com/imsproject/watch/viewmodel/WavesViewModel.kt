@@ -2,9 +2,12 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -16,6 +19,7 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -34,26 +38,26 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
         DONE
     }
 
-    class Wave(
-        val color: Color,
-        val animationLength: Int,
-        val direction: Int
-    ){
-        var topLeft by mutableStateOf(Offset(-SCREEN_RADIUS, SCREEN_RADIUS))
-        var size by mutableStateOf(Size(SCREEN_RADIUS * 2f, SCREEN_RADIUS * 3f))
+    class Wave(){
+        var topLeft by mutableStateOf(Offset(-SCREEN_RADIUS * 0.7f, 0f))
         var animationStage by mutableStateOf(AnimationStage.NOT_STARTED)
         var animationProgress by mutableFloatStateOf(0f)
+        var animationLength: Int = 0
+        var direction by mutableIntStateOf(0)
     }
 
 //    if (i % 2 == 0) Color(0xFF3B82F6).copy(alpha = 0.8f)
 //    else Color(0xFFFFD8D8).copy(alpha = 0.8f)
+
+    private lateinit var soundPool: SoundPool
+    private var waveSoundId : Int = -1
 
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    val waves = mutableStateListOf<Wave>()
+    val wave by lazy { Wave() }
 
     var myDirection: Int = 1
         private set
@@ -71,19 +75,22 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent, context)
 
+        soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
+        waveSoundId = soundPool.load(context, R.raw.wave, 1)
+
         if(ACTIVITY_DEBUG_MODE){
-//            viewModelScope.launch(Dispatchers.Default) {
-//                val direction = -1
-//                _turn.collect {
-//                    if(it == direction){
-//                        delay(500)
-//                        val dpPerSec = (500..2500).random().toFloat()
-//                        withContext(Dispatchers.Main){
-//                            fling(dpPerSec, direction)
-//                        }
-//                    }
-//                }
-//            }
+            viewModelScope.launch(Dispatchers.Default) {
+                val direction = -1
+                _turn.collect {
+                    if(it == direction){
+                        delay(500)
+                        val dpPerSec = (500..2500).random().toFloat()
+                        withContext(Dispatchers.Main){
+                            fling(dpPerSec, direction)
+                        }
+                    }
+                }
+            }
             return
         }
     }
@@ -98,23 +105,14 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
 
         oldTurn = _turn.value
         _turn.value = 0
-        val animationLength = mapSpeedToDuration(dpPerSec, 1500, 5000)
-        val wave = Wave(
-            color = if (direction > 0) Color(0xFF3B82F6)
-                    else Color(0xFFFFD8D8),
-            animationLength = animationLength,
-            direction = direction
-        )
-        waves.add(wave)
+        wave.animationLength = mapSpeedToDuration(dpPerSec, 1500, 5000)
+        wave.direction = direction
+        soundPool.play(waveSoundId,1f,1f,0,0,1f)
     }
 
     fun flipTurn(){
         _turn.value = -oldTurn
-
-        // clean up old waves
-        if(waves.size >= 3){
-            waves.removeAt(0)
-        }
+        wave.direction = 0
     }
 
     // ================================================================================ |

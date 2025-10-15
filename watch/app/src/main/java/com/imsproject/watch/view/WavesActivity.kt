@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush.Companion.horizontalGradient
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -69,45 +70,68 @@ class WavesActivity: GameActivity(GameType.WAVES) {
         val density =  LocalDensity.current.density
         val tracker = remember { FlingTracker() }
         val scope = rememberCoroutineScope()
-        val waves = remember { viewModel.waves }
+        val wave = remember { viewModel.wave }
         val turn by viewModel.turn.collectAsState()
 
-        LaunchedEffect(Unit) {
-            snapshotFlow { viewModel.waves.lastOrNull() }
-                .collect { wave ->
-                    if (wave == null) return@collect
-                    if (wave.animationStage == AnimationStage.NOT_STARTED){
-                        scope.launch(Dispatchers.Main) {
-                            wave.animationStage = AnimationStage.FIRST
-                            val mod = if (wave.direction > 0) 1f else -1f
-                            val progress = Animatable(0f)
-                            progress.animateTo(
-                                targetValue = 1f,
-                                animationSpec = tween(
-                                    durationMillis = wave.animationLength,
-                                    easing = OceanWaveEasing,
-                                )
-                            ){
-                                wave.topLeft = Offset( -mod*(SCREEN_RADIUS * 2) + mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
-                                wave.animationProgress = value
-                            }
-                            wave.animationStage = AnimationStage.SECOND
-                            progress.animateTo(
-                                targetValue = 0.1f,
-                                animationSpec = tween(
-                                    durationMillis = 200,
-                                    easing = LinearEasing,
-                                )
-                            ){
-                                wave.topLeft = Offset( mod*SCREEN_RADIUS * 2 + -mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
-                                wave.animationProgress = value
-                            }
-                            viewModel.flipTurn()
-                            wave.animationStage = AnimationStage.DONE
-                        }
-                    }
+        LaunchedEffect(wave.direction) {
+            if(wave.direction == 0) return@LaunchedEffect
+
+            val mod = if (wave.direction > 0) 1f else -1f
+            val progress = Animatable(0f)
+            progress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = wave.animationLength,
+                    easing = OceanWaveEasing,
+                )
+            ){
+                val x = if (wave.direction > 0) {
+                    -SCREEN_RADIUS*0.7f + SCREEN_RADIUS * 2.4f * value
+                } else {
+                    SCREEN_RADIUS * 1.7f - SCREEN_RADIUS * 2.4f * value
                 }
+                wave.topLeft = Offset( x, 0f)
+                wave.animationProgress = value
+            }
+            viewModel.flipTurn()
         }
+
+//        LaunchedEffect(Unit) {
+//            snapshotFlow { viewModel.waves.lastOrNull() }
+//                .collect { wave ->
+//                    if (wave == null) return@collect
+//                    if (wave.animationStage == AnimationStage.NOT_STARTED){
+//                        scope.launch(Dispatchers.Main) {
+//                            wave.animationStage = AnimationStage.FIRST
+//                            val mod = if (wave.direction > 0) 1f else -1f
+//                            val progress = Animatable(0f)
+//                            progress.animateTo(
+//                                targetValue = 1f,
+//                                animationSpec = tween(
+//                                    durationMillis = wave.animationLength,
+//                                    easing = OceanWaveEasing,
+//                                )
+//                            ){
+//                                wave.topLeft = Offset( -mod*(SCREEN_RADIUS * 2) + mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
+//                                wave.animationProgress = value
+//                            }
+//                            wave.animationStage = AnimationStage.SECOND
+//                            progress.animateTo(
+//                                targetValue = 0.1f,
+//                                animationSpec = tween(
+//                                    durationMillis = 200,
+//                                    easing = LinearEasing,
+//                                )
+//                            ){
+//                                wave.topLeft = Offset( mod*SCREEN_RADIUS * 2 + -mod*2*SCREEN_RADIUS*value , -SCREEN_RADIUS * 0.5f)
+//                                wave.animationProgress = value
+//                            }
+//                            viewModel.flipTurn()
+//                            wave.animationStage = AnimationStage.DONE
+//                        }
+//                    }
+//                }
+//        }
 
         Box(
             modifier = Modifier
@@ -144,82 +168,46 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                 },
             contentAlignment = Alignment.Center
         ){
-            Canvas(modifier = Modifier.fillMaxSize()) {
+            Canvas(modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.White)
+            ) {
                 if(turn > 0){
-                    val brush = horizontalGradient(
-                        colors = listOf(
-                            Color(0xFF3B82F6).copy(alpha = 0.0f),
-                            Color(0xFF3B82F6)
-                        ),
-                        startX = -50f,
-                        endX = 45f,
-                    )
-                    drawOval(
-                        brush = brush,
-                        topLeft = Offset(-SCREEN_RADIUS*2f + 45, -SCREEN_RADIUS * 0.5f),
-                        size = Size(SCREEN_RADIUS * 2f, SCREEN_RADIUS * 3f)
-                    )
+
                 }
                 if(turn < 0){
-                    val brush = horizontalGradient(
-                        colors = listOf(
-                            Color(0xFF3B82F6).copy(alpha = 0.0f),
-                            Color(0xFF3B82F6)
-                        ),
-                        startX = size.width+50f,
-                        endX = size.width - 45f,
-                    )
-                    drawOval(
-                        brush = brush,
-                        topLeft = Offset(SCREEN_RADIUS*2f - 45, -SCREEN_RADIUS * 0.5f),
-                        size = Size(SCREEN_RADIUS * 2f, SCREEN_RADIUS * 3f)
-                    )
-                }
 
-                for (wave in waves) {
-                    when (wave.animationStage) {
-                        AnimationStage.FIRST, AnimationStage.NOT_STARTED -> {
-                            val startX = if(wave.direction > 0) -50f else size.width + 50f
-                            val endX = if (wave.direction > 0) max(50f,size.width * wave.animationProgress)
-                                       else (size.width - max(50f,size.width * wave.animationProgress))
-
-                            val brush = horizontalGradient(
-                                colors = listOf(
-                                    wave.color.copy(alpha = 0.0f),
-                                    wave.color
-                                ),
-                                startX = startX,
-                                endX = endX,
-                            )
-                            drawOval(
-                                brush = brush,
-                                topLeft = wave.topLeft,
-                                size = wave.size,
-                            )
-                        }
-                        AnimationStage.SECOND -> {
-                            val brush = horizontalGradient(
-                                colors = listOf(
-                                    wave.color.copy(alpha = 0.0f),
-                                    wave.color
-                                ),
-                                startX = wave.topLeft.x,
-                                endX = size.width,
-                            )
-                            drawOval(
-                                brush = brush,
-                                topLeft = wave.topLeft,
-                                size = wave.size,
-                            )
-//                            drawOval(
-//                                color = wave.color.copy(alpha = 1 - wave.animationProgress),
-//                                topLeft = Offset( size.width-50f,wave.topLeft.y),
-//                                size = wave.size,
-//                            )
-                        }
-                        AnimationStage.DONE -> { /* nothing to draw */ }
-                    }
                 }
+                val brush2 = horizontalGradient(
+                    colors = listOf(
+                        Color.White,
+                        Color(0xBFB5DAFA),
+                        Color(0xBFB5DAFA),
+                        Color.White,
+                    ),
+                    startX = wave.topLeft.x + SCREEN_RADIUS*1.15f*0.25f,
+                    endX = wave.topLeft.x + SCREEN_RADIUS*1.15f*0.75f,
+                )
+                drawRect(
+                    brush = brush2,
+                    topLeft = Offset(wave.topLeft.x+SCREEN_RADIUS*1.15f*0.25f, 0f),
+                    size = Size(SCREEN_RADIUS*1.15f*0.5f,SCREEN_RADIUS * 2),
+                )
+                val brush = horizontalGradient(
+                    colors = listOf(
+                        Color.White,
+                        Color(0xFF6BCBFF),
+                        Color.White,
+                    ),
+                    startX = wave.topLeft.x,
+                    endX = wave.topLeft.x + SCREEN_RADIUS*1.15f,
+                )
+                drawRect(
+                    brush = brush,
+                    topLeft = wave.topLeft,
+                    size = Size(SCREEN_RADIUS*1.15f,SCREEN_RADIUS * 2),
+                    blendMode = BlendMode.Multiply
+                )
             }
         }
     }
