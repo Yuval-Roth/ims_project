@@ -8,12 +8,9 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -50,7 +47,8 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
 //    else Color(0xFFFFD8D8).copy(alpha = 0.8f)
 
     private lateinit var soundPool: SoundPool
-    private var waveSoundId : Int = -1
+    private var strongWaveSoundId : Int = -1
+    private var mediumWaveSoundId: Int = -1
 
 
     // ================================================================================ |
@@ -76,7 +74,9 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
         super.onCreate(intent, context)
 
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
-        waveSoundId = soundPool.load(context, R.raw.wave, 1)
+        strongWaveSoundId = soundPool.load(context, R.raw.wave_strong, 1)
+        mediumWaveSoundId = soundPool.load(context,R.raw.wave_medium,1)
+
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -107,7 +107,10 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
         _turn.value = 0
         wave.animationLength = mapSpeedToDuration(dpPerSec, 1500, 5000)
         wave.direction = direction
-        soundPool.play(waveSoundId,1f,1f,0,0,1f)
+        when (wave.animationLength){
+            in 1500..2500 -> soundPool.play(strongWaveSoundId,1f,1f,0,0,1f)
+            in 2501..5000 -> soundPool.play(mediumWaveSoundId,1f,1f,0,0,1f)
+        }
     }
 
     fun flipTurn(){
