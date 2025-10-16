@@ -75,6 +75,7 @@ class BallsActivity: GameActivity(GameType.UNDEFINED) {
                 ),
                 label = "angle"
             )
+            val currentOpeningAngle = angle - 90f
 
             // visual parameters for the mechanical wheel
             val ringRadius = remember { SCREEN_RADIUS * 0.5f }
@@ -88,27 +89,47 @@ class BallsActivity: GameActivity(GameType.UNDEFINED) {
             val toothAngleOffset = remember { 4f } // visual tuning, change this as needed to align the teeth to the opening
             val toothWidthRads = remember { Math.toRadians(toothWidthDegrees.toDouble()) }
 
+
+            // stationary balls on both sides of the screen
+            val ballRadius = (SCREEN_RADIUS * 0.01f).toInt()
+            val ballRandomOffsetX = (SCREEN_RADIUS * 0.05f).toInt()
+            val ballRandomOffsetY = (SCREEN_RADIUS * 0.08f).toInt()
+            val offsetRangeX = (-ballRandomOffsetX..ballRandomOffsetX)
+            val offsetRangeY = (-ballRandomOffsetY..ballRandomOffsetY)
+            val ballDistanceFromCenter = SCREEN_RADIUS*0.9f
+            // clump of balls on each side in random arrangement
+            val ballsPerClump = 60
+            val leftClumpOffsets = remember {
+                List(ballsPerClump) {
+                    Offset(
+                        x = -ballDistanceFromCenter + offsetRangeX.random(),
+                        y = offsetRangeY.random().toFloat()
+                    )
+                }
+            }
+            val rightClumpOffsets = remember {
+                List(ballsPerClump) {
+                    Offset(
+                        x = ballDistanceFromCenter + offsetRangeX.random(),
+                        y = offsetRangeY.random().toFloat()
+                    )
+                }
+            }
+
             Canvas(modifier = Modifier.fillMaxSize()) {
-
-
+                // mechanical wheel
                 rotate(angle) {
-                    // === Main rotating ring (with the opening) ===
-
+                    // ring
                     drawArc(
                         color = Color.Gray,
                         startAngle = startAngle,
                         sweepAngle = sweepAngle,
                         useCenter = false,
-                        topLeft = Offset(
-                            SCREEN_CENTER.x - ringRadius,
-                            SCREEN_CENTER.y - ringRadius
-                        ),
+                        topLeft = Offset(SCREEN_CENTER.x - ringRadius, SCREEN_CENTER.y - ringRadius),
                         size = Size(ringRadius * 2, ringRadius * 2),
                         style = Stroke(width = ringThickness)
                     )
-
-                    // === Teeth around the ring edge (skipping the opening) ===
-
+                    // teeth
                     for (i in 0 until teethCount) {
                         val toothAngle = startAngle + toothAngleOffset + (i * (sweepAngle / teethCount))
                         val rad = Math.toRadians(toothAngle.toDouble())
@@ -135,7 +156,6 @@ class BallsActivity: GameActivity(GameType.UNDEFINED) {
                             x = SCREEN_CENTER.x + innerRadius * cos(toothWidthOffset).toFloat(),
                             y = SCREEN_CENTER.y + innerRadius * sin(toothWidthOffset).toFloat()
                         )
-
                         val toothPath = Path().apply {
                             moveTo(p1.x, p1.y)
                             lineTo(p2.x, p2.y)
@@ -143,12 +163,27 @@ class BallsActivity: GameActivity(GameType.UNDEFINED) {
                             lineTo(p4.x, p4.y)
                             close()
                         }
-
                         drawPath(
                             path = toothPath,
                             color = Color.Gray
                         )
                     }
+                }
+
+
+                leftClumpOffsets.forEach {
+                    drawCircle(
+                        color = Color(0xFF3B82F6),
+                        radius = ballRadius.toFloat(),
+                        center = Offset(SCREEN_CENTER.x + it.x, SCREEN_CENTER.y + it.y)
+                    )
+                }
+                rightClumpOffsets.forEach {
+                    drawCircle(
+                        color = Color(0xFFFFD8D8),
+                        radius = ballRadius.toFloat(),
+                        center = Offset(SCREEN_CENTER.x + it.x, SCREEN_CENTER.y + it.y)
+                    )
                 }
             }
         }
