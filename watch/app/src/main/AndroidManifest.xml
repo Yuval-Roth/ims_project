@@ -64,6 +64,11 @@
         android:taskAffinity=""
         android:exported="true"
         android:theme="@style/WavesActivityTheme" />
+        <activity
+            android:name=".view.BallsActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:theme="@style/FlowerGardenActivityTheme" />
 
 
         <!-- TODO: remove this -->
