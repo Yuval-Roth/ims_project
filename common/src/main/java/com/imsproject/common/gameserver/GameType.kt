@@ -8,7 +8,8 @@ enum class GameType {
     @SerializedName("wine_glasses")    WINE_GLASSES,
     @SerializedName("flour_mill")      FLOUR_MILL,
     @SerializedName("flower_garden")   FLOWER_GARDEN,
-    @SerializedName("waves")           WAVES
+    @SerializedName("waves")           WAVES,
+    @SerializedName("particles")       PARTICLES
     ;
 
 
@@ -19,6 +20,7 @@ enum class GameType {
         FLOUR_MILL -> "Flour Mill"
         FLOWER_GARDEN -> "Flower Garden"
         WAVES -> "Waves"
+        PARTICLES -> "Particles"
     }
 
     fun hebrewName() = when(this) {
@@ -28,5 +30,6 @@ enum class GameType {
         FLOUR_MILL -> "מטחנת קמח"
         FLOWER_GARDEN -> "גינת פרחים"
         WAVES -> "גלים"
+        PARTICLES -> "חלקיקים"
     }
 }

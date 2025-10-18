@@ -2,25 +2,16 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.SoundPool
 import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.R
-import com.imsproject.watch.viewmodel.WavesViewModel.Wave
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.math.pow
 
-class BallsViewModel: GameViewModel(GameType.UNDEFINED) {
+class ParticlesViewModel: GameViewModel(GameType.PARTICLES) {
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |

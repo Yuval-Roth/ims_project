@@ -7,6 +7,7 @@ import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 /**
  * @return Pair of `<distance,angle>` where angle in the range of (-180,180]
@@ -67,4 +68,8 @@ inline fun Int.fastCoerceIn(min: Int, max: Int) = when {
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun Float.toAngle() = Angle(this)
+
+@Suppress("NOTHING_TO_INLINE")
+inline fun ClosedFloatingPointRange<Float>.random() = Random.nextFloat() * (endInclusive - start) + start
+
 

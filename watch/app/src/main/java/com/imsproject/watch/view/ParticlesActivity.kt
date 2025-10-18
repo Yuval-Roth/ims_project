@@ -23,20 +23,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
-import com.imsproject.watch.viewmodel.BallsViewModel
+import com.imsproject.watch.utils.random
+import com.imsproject.watch.viewmodel.ParticlesViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlin.math.cos
 import kotlin.math.sin
 
-class BallsActivity: GameActivity(GameType.UNDEFINED) {
+class ParticlesActivity: GameActivity(GameType.PARTICLES) {
 
-    val viewModel: BallsViewModel by viewModels<BallsViewModel>()
+    val viewModel: ParticlesViewModel by viewModels<ParticlesViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,17 +52,17 @@ class BallsActivity: GameActivity(GameType.UNDEFINED) {
     override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> Balls()
+            GameViewModel.State.PLAYING -> Particles()
             else -> super.Main()
         }
     }
 
     @Composable
-    fun Balls() {
+    fun Particles() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = DARK_BACKGROUND_COLOR),
+                .background(color = Color.White),
             contentAlignment = Alignment.Center
         ) {
             val infiniteTransition = rememberInfiniteTransition(label = "rotation")
@@ -78,50 +79,91 @@ class BallsActivity: GameActivity(GameType.UNDEFINED) {
             val currentOpeningAngle = angle - 90f
 
             // visual parameters for the mechanical wheel
-            val ringRadius = remember { SCREEN_RADIUS * 0.5f }
-            val ringThickness = remember { SCREEN_RADIUS * 0.08f }
-            val openingAngle = remember { 40f }
-            val sweepAngle = remember { 360f - openingAngle }
-            val teethCount = remember { 12 }
-            val toothDepth = remember { ringThickness * 1.25f }
-            val toothWidthDegrees = remember { sweepAngle / teethCount * 0.7f }  // spacing
-            val startAngle = remember { -90f + openingAngle / 2 }
-            val toothAngleOffset = remember { 4f } // visual tuning, change this as needed to align the teeth to the opening
-            val toothWidthRads = remember { Math.toRadians(toothWidthDegrees.toDouble()) }
+            val ringRadius = SCREEN_RADIUS * 0.5f
+            val ringThickness = SCREEN_RADIUS * 0.08f
+            val openingAngle = 40f
+            val sweepAngle = 360f - openingAngle
+            val teethCount = 12
+            val toothDepth = ringThickness * 1.25f
+            val toothWidthDegrees = sweepAngle / teethCount * 0.7f // spacing
+            val startAngle = -90f + openingAngle / 2
+            val toothAngleOffset = 4f // visual tuning, change this as needed to align the teeth to the opening
+            val toothWidthRads = Math.toRadians(toothWidthDegrees.toDouble())
 
+            // stationary particles on both sides of the screen
+            val particleRadius = (SCREEN_RADIUS * 0.02f)
+            val particleRandomOffsetX = (SCREEN_RADIUS * 0.08f)
+            val particleRandomOffsetY = (SCREEN_RADIUS * 0.08f)
+            val offsetRangeX = -particleRandomOffsetX..particleRandomOffsetX
+            val offsetRangeY = -particleRandomOffsetY..particleRandomOffsetY
+            val particleDistanceFromCenter = SCREEN_RADIUS * 0.88f
+            val cageStrokeWidth = 4f
 
-            // stationary balls on both sides of the screen
-            val ballRadius = (SCREEN_RADIUS * 0.01f).toInt()
-            val ballRandomOffsetX = (SCREEN_RADIUS * 0.05f).toInt()
-            val ballRandomOffsetY = (SCREEN_RADIUS * 0.08f).toInt()
-            val offsetRangeX = (-ballRandomOffsetX..ballRandomOffsetX)
-            val offsetRangeY = (-ballRandomOffsetY..ballRandomOffsetY)
-            val ballDistanceFromCenter = SCREEN_RADIUS*0.9f
-            // clump of balls on each side in random arrangement
-            val ballsPerClump = 60
+            // clump of particles on each side in random arrangement
+            val particlesPerClump = 30
             val leftClumpOffsets = remember {
-                List(ballsPerClump) {
+                List(particlesPerClump) {
                     Offset(
-                        x = -ballDistanceFromCenter + offsetRangeX.random(),
-                        y = offsetRangeY.random().toFloat()
+                        x = -particleDistanceFromCenter + offsetRangeX.random(),
+                        y = offsetRangeY.random()
                     )
                 }
             }
             val rightClumpOffsets = remember {
-                List(ballsPerClump) {
+                List(particlesPerClump) {
                     Offset(
-                        x = ballDistanceFromCenter + offsetRangeX.random(),
-                        y = offsetRangeY.random().toFloat()
+                        x = particleDistanceFromCenter + offsetRangeX.random(),
+                        y = offsetRangeY.random()
                     )
                 }
             }
 
             Canvas(modifier = Modifier.fillMaxSize()) {
+
+                // draw cages for the particles
+                // left side
+                drawLine(
+                    color = Color.Black,
+                    start = Offset(0f , SCREEN_CENTER.y - SCREEN_RADIUS * 0.12f),
+                    end = Offset(SCREEN_CENTER.x - SCREEN_RADIUS * 0.76f , SCREEN_CENTER.y - SCREEN_RADIUS * 0.12f),
+                    strokeWidth = cageStrokeWidth,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = Color.Black,
+                    start = Offset(0f, SCREEN_CENTER.y + SCREEN_RADIUS * 0.12f),
+                    end = Offset(SCREEN_CENTER.x - SCREEN_RADIUS * 0.76f , SCREEN_CENTER.y + SCREEN_RADIUS * 0.12f),
+                    strokeWidth = cageStrokeWidth,
+                    cap = StrokeCap.Round
+                )
+                // right side
+                drawLine(
+                    color = Color.Black,
+                    start = Offset(SCREEN_CENTER.x + SCREEN_RADIUS * 0.76f , SCREEN_CENTER.y - SCREEN_RADIUS * 0.12f),
+                    end = Offset(size.width , SCREEN_CENTER.y - SCREEN_RADIUS * 0.12f),
+                    strokeWidth = cageStrokeWidth,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = Color.Black,
+                    start = Offset(SCREEN_CENTER.x + SCREEN_RADIUS * 0.76f , SCREEN_CENTER.y + SCREEN_RADIUS * 0.12f),
+                    end = Offset(size.width , SCREEN_CENTER.y + SCREEN_RADIUS * 0.12f),
+                    strokeWidth = cageStrokeWidth,
+                    cap = StrokeCap.Round
+                )
+
+                // center expanding circle
+                drawCircle(
+                    color = Color(0xFF9459EE),
+                    radius = SCREEN_RADIUS * 0.075f,
+                    center = SCREEN_CENTER
+                )
+
                 // mechanical wheel
                 rotate(angle) {
                     // ring
                     drawArc(
-                        color = Color.Gray,
+                        color = Color.Black,
                         startAngle = startAngle,
                         sweepAngle = sweepAngle,
                         useCenter = false,
@@ -165,23 +207,22 @@ class BallsActivity: GameActivity(GameType.UNDEFINED) {
                         }
                         drawPath(
                             path = toothPath,
-                            color = Color.Gray
+                            color = Color.Black
                         )
                     }
                 }
 
-
                 leftClumpOffsets.forEach {
                     drawCircle(
-                        color = Color(0xFF3B82F6),
-                        radius = ballRadius.toFloat(),
+                        color = Color(0xFFFF4141),
+                        radius = particleRadius.toFloat(),
                         center = Offset(SCREEN_CENTER.x + it.x, SCREEN_CENTER.y + it.y)
                     )
                 }
                 rightClumpOffsets.forEach {
                     drawCircle(
-                        color = Color(0xFFFFD8D8),
-                        radius = ballRadius.toFloat(),
+                        color = Color(0xFF3B82F6),
+                        radius = particleRadius.toFloat(),
                         center = Offset(SCREEN_CENTER.x + it.x, SCREEN_CENTER.y + it.y)
                     )
                 }
