@@ -5,9 +5,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -19,8 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -33,6 +34,7 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.utils.FlingTracker
@@ -41,8 +43,6 @@ import com.imsproject.watch.viewmodel.PacmanViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.PacmanViewModel.ParticleState
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
@@ -71,43 +71,57 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
 
     @Composable
     fun Pacman() {
+        var rewardAccumulator by remember { mutableFloatStateOf(0f)}
+        var angleFromLastReward by remember { mutableFloatStateOf(0f) }
         val density =  LocalDensity.current.density
         val tracker = remember { FlingTracker() }
         val scope = rememberCoroutineScope()
         val myParticle by viewModel.myParticle.collectAsState()
         val otherParticle by viewModel.otherParticle.collectAsState()
-        val infiniteTransition = rememberInfiniteTransition(label = "rotation")
-        val angle by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 4000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "angle"
-        )
-        val currentOpeningAngle = angle - 90f
-        val pacmanMouthOpeningAnimation by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 66f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 200, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "pacmanMouthOpeningAnimation"
-        )
+        val angleRotationLength = 2000f
+        val angleStep = 360f / (angleRotationLength / 16f)
+        var angle by remember { mutableStateOf(Angle(0f)) }
+        var fedSuccessfully by remember { mutableStateOf(false) }
 
-        // visual parameters for the mechanical wheel
-        val ringRadius = SCREEN_RADIUS * 0.15f
-        val sweepAngle = 360f
-        val startAngle = -90f
+        // visual parameters for the pacman
+        val pacmanRadius = SCREEN_RADIUS * (0.15f + rewardAccumulator * 0.01f)
+        val mouthOpeningAngle = 66f
+        val sweepAngle = 360f - mouthOpeningAngle
+        val startAngle = -90f + mouthOpeningAngle / 2f
 
-        // stationary particle on both sides of the screen
+        // particle visual parameters
         val particleRadius = (SCREEN_RADIUS * 0.02f)
-        val particleDistanceFromCenter = SCREEN_RADIUS * 0.88f
+        val particleColor = Color(0xFFF3D3C3)
+
+        // particle cage visual parameters
         val cageStrokeWidth = 4f
         val cageColor = Color(0xFF0000FF)
-        val particleColor = Color(0xFFF3D3C3)
+
+        LaunchedEffect(Unit){
+            while(true){
+                angle = angle + angleStep
+                if(angle.floatValue.toInt() == 69 || angle.floatValue.toInt() == 114){
+                    if(!fedSuccessfully){
+                        val animation = Animatable(rewardAccumulator)
+                        scope.launch {
+                            animation.animateTo(
+                                targetValue = (rewardAccumulator - 1).coerceAtLeast(0f),
+                                animationSpec = tween(
+                                    durationMillis = 100,
+                                    easing = LinearEasing
+                                )
+                            ){
+                                rewardAccumulator = value
+                            }
+                        }
+                    } else {
+                        fedSuccessfully = false
+                    }
+                }
+
+                delay(16L)
+            }
+        }
 
         // animate new particles
         LaunchedEffect(Unit) {
@@ -147,6 +161,10 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                                         val newX = startX + distance * value
                                         particle.topLeft = Offset(newX, particle.topLeft.y)
                                     }
+                                    if (particle.reward){
+                                        rewardAccumulator += 1
+                                        fedSuccessfully = true
+                                    }
                                     // after animation ends, reset particle
                                     viewModel.resetParticle(particle.direction)
                                 }
@@ -183,7 +201,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                                 val myDirection = viewModel.myDirection
                                 if (myDirection * nx > 0) { // fling in my direction
                                     val dpPecSec = speedPxPerSec / density
-                                    viewModel.fling(dpPecSec, myDirection)
+                                    viewModel.fling(dpPecSec, angle.floatValue)
                                 }
                             }
                         },
@@ -265,29 +283,29 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                 }
 
                 // rotating pacman
-                rotate(angle) {
+                rotate(angle.floatValue + 90f) {
                     // pacman body
                     drawArc(
                         color = Color.Yellow,
-                        startAngle = startAngle + pacmanMouthOpeningAnimation / 2f,
-                        sweepAngle = sweepAngle - pacmanMouthOpeningAnimation,
+                        startAngle = startAngle,
+                        sweepAngle = sweepAngle,
                         useCenter = true,
-                        topLeft = Offset(SCREEN_CENTER.x - ringRadius, SCREEN_CENTER.y - ringRadius),
-                        size = Size(ringRadius * 2, ringRadius * 2),
+                        topLeft = Offset(SCREEN_CENTER.x - pacmanRadius, SCREEN_CENTER.y - pacmanRadius),
+                        size = Size(pacmanRadius * 2, pacmanRadius * 2),
                     )
                     // pacman eye
-                    val eyeOffsetFromCenter = ringRadius * 0.6f
-                    drawCircle(
-                        color = Color.White,
-                        radius = ringRadius * 0.2f,
-                        center = Offset(
-                            x = SCREEN_CENTER.x + eyeOffsetFromCenter * cos(Math.toRadians(180.0).toFloat()),
-                            y = SCREEN_CENTER.y + eyeOffsetFromCenter * sin(Math.toRadians(180.0).toFloat())
-                        )
-                    )
+                    val eyeOffsetFromCenter = pacmanRadius * 0.6f
+//                    drawCircle(
+//                        color = Color.White,
+//                        radius = ringRadius * 0.2f,
+//                        center = Offset(
+//                            x = SCREEN_CENTER.x + eyeOffsetFromCenter * cos(Math.toRadians(180.0).toFloat()),
+//                            y = SCREEN_CENTER.y + eyeOffsetFromCenter * sin(Math.toRadians(180.0).toFloat())
+//                        )
+//                    )
                     drawCircle(
                         color = Color.Black,
-                        radius = ringRadius * 0.1f,
+                        radius = pacmanRadius * 0.1f,
                         center = Offset(
                             x = SCREEN_CENTER.x + eyeOffsetFromCenter * cos(Math.toRadians(180.0).toFloat()),
                             y = SCREEN_CENTER.y + eyeOffsetFromCenter * sin(Math.toRadians(180.0).toFloat())

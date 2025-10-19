@@ -7,13 +7,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
+import com.imsproject.common.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
@@ -40,6 +40,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         var size by mutableStateOf(Size(0f, 0f))
         var animationLength by mutableIntStateOf(-1)
         var state by mutableStateOf(ParticleState.NEW)
+        var reward by mutableStateOf(false)
     }
 
     // ================================================================================ |
@@ -77,12 +78,20 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         }
     }
 
-    fun fling(dpPerSec: Float, direction: Int){
-        require(direction != 0) { "direction must be positive or negative" }
+    fun fling(dpPerSec: Float, currentOpeningAngle: Float) {
         val animationLength = mapSpeedToDuration(pxPerSec = dpPerSec, minDurationMs = 150, maxDurationMs = 750)
+        val degreesPerSecond = 360f / 2000f
+        val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
+        val expectedFinalAngle = (currentOpeningAngle + degreesPerSecond * (animationLength.toFloat())).let {
+            Angle(if (it > 180f) it - 360f else it)
+        }
+        println("PacmanViewModel: fling: currentOpeningAngle=$currentOpeningAngle, expectedFinalAngle=$expectedFinalAngle, targetAngle=$targetAngle")
+        val reward = expectedFinalAngle - targetAngle <= 66f
+
         if (ACTIVITY_DEBUG_MODE){
             val myParticle = _myParticle.value ?: return
             myParticle.animationLength = animationLength
+            myParticle.reward = reward
         }
     }
 
@@ -154,7 +163,6 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         } else {
             val v = 750f / pxPerSec
             val duration = maxDurationMs * v.pow(1.5f)
-            println(duration)
             duration.toInt().coerceIn(minDurationMs, maxDurationMs)
         }
         return duration
