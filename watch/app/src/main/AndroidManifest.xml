@@ -65,7 +65,7 @@
         android:exported="true"
         android:theme="@style/WavesActivityTheme" />
         <activity
-            android:name=".view.ParticlesActivity"
+            android:name=".view.PacmanActivity"
             android:taskAffinity=""
             android:exported="true"
             android:theme="@style/ParticlesActivityTheme" />
