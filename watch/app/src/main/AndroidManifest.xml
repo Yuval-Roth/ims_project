@@ -68,7 +68,7 @@
             android:name=".view.ParticlesActivity"
             android:taskAffinity=""
             android:exported="true"
-            android:theme="@style/FlowerGardenActivityTheme" />
+            android:theme="@style/ParticlesActivityTheme" />
 
 
         <!-- TODO: remove this -->
