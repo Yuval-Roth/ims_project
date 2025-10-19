@@ -45,6 +45,7 @@ import com.imsproject.watch.viewmodel.PacmanViewModel.ParticleState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 class PacmanActivity: GameActivity(GameType.PACMAN) {
@@ -84,7 +85,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
         var fedSuccessfully by remember { mutableStateOf(false) }
 
         // visual parameters for the pacman
-        val pacmanRadius = SCREEN_RADIUS * (0.15f + rewardAccumulator * 0.01f)
+        val pacmanRadius = SCREEN_RADIUS * ((0.15f + rewardAccumulator * 0.01f).coerceAtMost(0.7f))
         val mouthOpeningAngle = 66f
         val sweepAngle = 360f - mouthOpeningAngle
         val startAngle = -90f + mouthOpeningAngle / 2f
@@ -100,8 +101,10 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
         LaunchedEffect(Unit){
             while(true){
                 angle = angle + angleStep
-                if(angle.floatValue.toInt() == 69 || angle.floatValue.toInt() == 114){
+                println(angle.floatValue)
+                if(angle.floatValue.roundToInt() == 69 || angle.floatValue.roundToInt() == -112){
                     if(!fedSuccessfully){
+                        val animationTime = ((112f + mouthOpeningAngle) / 360f) * angleRotationLength
                         val animation = Animatable(rewardAccumulator)
                         scope.launch {
                             animation.animateTo(
@@ -162,7 +165,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                                         particle.topLeft = Offset(newX, particle.topLeft.y)
                                     }
                                     if (particle.reward){
-                                        rewardAccumulator += 1
+                                        rewardAccumulator += 1f
                                         fedSuccessfully = true
                                     }
                                     // after animation ends, reset particle
