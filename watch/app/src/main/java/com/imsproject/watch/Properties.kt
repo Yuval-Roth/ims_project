@@ -8,6 +8,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.imsproject.common.utils.Angle
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
@@ -131,16 +132,21 @@ var OPPONENT_PLAYER_ITEM_ALPHA = 0.9f
 
 // ===================== Pacman ===================== |
 
-const val ANGLE_ROTATION_DURATION = 2500f
+const val ANGLE_ROTATION_DURATION = 2800f
 const val PACMAN_MOUTH_OPENING_ANGLE = 66f
+const val PACMAN_ANGLE_STEP = 360f / (ANGLE_ROTATION_DURATION / 16f)
 const val PACMAN_START_ANGLE = -90f + PACMAN_MOUTH_OPENING_ANGLE / 2f
 const val PACMAN_SWEEP_ANGLE = 360f - PACMAN_MOUTH_OPENING_ANGLE
 const val PARTICLE_CAGE_STROKE_WIDTH = 4f
 const val PACMAN_SHRINK_ANIMATION_DURATION = (((180f - PACMAN_MOUTH_OPENING_ANGLE*2f) / 360f) * ANGLE_ROTATION_DURATION).toInt()
+const val REWARD_SIZE_BONUS = 0.005f
 val PARTICLE_CAGE_COLOR = Color(0xFF0000FF)
 val PARTICLE_COLOR = Color(0xFFF3D3C3)
 var PARTICLE_RADIUS = 0f
 var PARTICLE_DISTANCE_FROM_CENTER = 0f
+var PACMAN_LEFT_ANGLE_THRESHOLD = 0
+var PACMAN_RIGHT_ANGLE_THRESHOLD = 0
+var PACMAN_MAX_SIZE = 0f
 
 // ================== After game questions =============== |
 
@@ -187,6 +193,23 @@ fun initProperties(screenWidth: Int){
     // Pacman
     PARTICLE_RADIUS = SCREEN_RADIUS * 0.02f
     PARTICLE_DISTANCE_FROM_CENTER = SCREEN_RADIUS * 0.88f
+    // build angle thresholds
+    // we do this iteratively because of float precision issues
+    var leftThresholdAccumulator = Angle(0f)
+    while(leftThresholdAccumulator.floatValue >= 0){
+        // get to the left side of the circle
+        leftThresholdAccumulator = leftThresholdAccumulator + PACMAN_ANGLE_STEP
+    }
+    while(leftThresholdAccumulator.floatValue.toInt() <= -180 + PACMAN_MOUTH_OPENING_ANGLE){
+        leftThresholdAccumulator = leftThresholdAccumulator + PACMAN_ANGLE_STEP
+    }
+    var rightThresholdAccumulator = Angle(0f)
+    while(rightThresholdAccumulator.floatValue.toInt() <= PACMAN_MOUTH_OPENING_ANGLE){
+        rightThresholdAccumulator = rightThresholdAccumulator + PACMAN_ANGLE_STEP
+    }
+    PACMAN_LEFT_ANGLE_THRESHOLD = leftThresholdAccumulator.floatValue.toInt()
+    PACMAN_RIGHT_ANGLE_THRESHOLD = rightThresholdAccumulator.floatValue.toInt()
+    PACMAN_MAX_SIZE = SCREEN_RADIUS * 0.7f
 }
 
 

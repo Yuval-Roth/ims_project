@@ -3,10 +3,10 @@ package com.imsproject.watch.viewmodel
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -21,7 +21,6 @@ import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
 import com.imsproject.watch.PARTICLE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.PARTICLE_RADIUS
 import com.imsproject.watch.SCREEN_CENTER
-import com.imsproject.watch.SCREEN_RADIUS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +51,8 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    var angle = mutableStateOf(Angle(0f))
+    var pacmanAngle = mutableStateOf(Angle(0f))
+    val rewardAccumulator = Animatable(0f)
     var myDirection = 1
         private set
     private val _myParticle = MutableStateFlow<Particle?>(null)
@@ -79,7 +79,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){
-                    if(angle.value.floatValue == 0f){
+                    if(pacmanAngle.value.floatValue == 0f){
                         _otherParticle.value?.animationLength = 150
                         _otherParticle.value?.reward = true
                     }
