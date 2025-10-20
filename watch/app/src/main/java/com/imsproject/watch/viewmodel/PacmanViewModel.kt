@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -15,6 +16,10 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.ANGLE_ROTATION_DURATION
+import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
+import com.imsproject.watch.PARTICLE_DISTANCE_FROM_CENTER
+import com.imsproject.watch.PARTICLE_RADIUS
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +52,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
+    var angle = mutableStateOf(Angle(0f))
     var myDirection = 1
         private set
     private val _myParticle = MutableStateFlow<Particle?>(null)
@@ -72,21 +78,23 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
-
+                while(true){
+                    if(angle.value.floatValue == 0f){
+                        _otherParticle.value?.animationLength = 150
+                        _otherParticle.value?.reward = true
+                    }
+                }
             }
             return
         }
     }
 
-    fun fling(dpPerSec: Float, currentOpeningAngle: Float) {
+    fun fling(dpPerSec: Float, currentOpeningAngle: Angle) {
         val animationLength = mapSpeedToDuration(pxPerSec = dpPerSec, minDurationMs = 150, maxDurationMs = 750)
-        val degreesPerSecond = 360f / 2000f
+        val degreesPerMilliSecond = 360f / ANGLE_ROTATION_DURATION
         val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
-        val expectedFinalAngle = (currentOpeningAngle + degreesPerSecond * (animationLength.toFloat())).let {
-            Angle(if (it > 180f) it - 360f else it)
-        }
-        println("PacmanViewModel: fling: currentOpeningAngle=$currentOpeningAngle, expectedFinalAngle=$expectedFinalAngle, targetAngle=$targetAngle")
-        val reward = expectedFinalAngle - targetAngle <= 66f
+        val expectedFinalAngle = currentOpeningAngle + degreesPerMilliSecond * animationLength
+        val reward = expectedFinalAngle - targetAngle <= PACMAN_MOUTH_OPENING_ANGLE
 
         if (ACTIVITY_DEBUG_MODE){
             val myParticle = _myParticle.value ?: return
@@ -146,12 +154,10 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     }
 
     private fun createNewParticle(direction: Int): Particle {
-        val particleRadius = (SCREEN_RADIUS * 0.02f)
-        val particleDistanceFromCenter = SCREEN_RADIUS * 0.88f
         return Particle(
             topLeft = Offset(
-                x = SCREEN_CENTER.x - particleRadius - direction * particleDistanceFromCenter,
-                y = SCREEN_CENTER.y - particleRadius
+                x = SCREEN_CENTER.x - PARTICLE_RADIUS - direction * PARTICLE_DISTANCE_FROM_CENTER,
+                y = SCREEN_CENTER.y - PARTICLE_RADIUS
             ),
             direction = direction
         )

@@ -106,7 +106,6 @@ var OPPONENT_ARC_TOP_LEFT = Offset(0f,0f)
 var OPPONENT_ARC_SIZE = Size(0f,0f)
 
 // =================== General ====================== |
-
 var FREQUENCY_HISTORY_MILLISECONDS = 1000L
 
 // ================= Flower Garden ===================== |
@@ -129,6 +128,19 @@ var GRASS_WATER_ANGLE = 36
 var GRASS_WATER_VISIBILITY_THRESHOLD = 250
 var CURRENT_PLAYER_ITEM_ALPHA = 0.4f
 var OPPONENT_PLAYER_ITEM_ALPHA = 0.9f
+
+// ===================== Pacman ===================== |
+
+const val ANGLE_ROTATION_DURATION = 2500f
+const val PACMAN_MOUTH_OPENING_ANGLE = 66f
+const val PACMAN_START_ANGLE = -90f + PACMAN_MOUTH_OPENING_ANGLE / 2f
+const val PACMAN_SWEEP_ANGLE = 360f - PACMAN_MOUTH_OPENING_ANGLE
+const val PARTICLE_CAGE_STROKE_WIDTH = 4f
+const val PACMAN_SHRINK_ANIMATION_DURATION = (((180f - PACMAN_MOUTH_OPENING_ANGLE*2f) / 360f) * ANGLE_ROTATION_DURATION).toInt()
+val PARTICLE_CAGE_COLOR = Color(0xFF0000FF)
+val PARTICLE_COLOR = Color(0xFFF3D3C3)
+var PARTICLE_RADIUS = 0f
+var PARTICLE_DISTANCE_FROM_CENTER = 0f
 
 // ================== After game questions =============== |
 
@@ -171,6 +183,10 @@ fun initProperties(screenWidth: Int){
 
     //flower garden
     GRASS_WATER_RADIUS = (SCREEN_RADIUS * 2f) / 4f
+
+    // Pacman
+    PARTICLE_RADIUS = SCREEN_RADIUS * 0.02f
+    PARTICLE_DISTANCE_FROM_CENTER = SCREEN_RADIUS * 0.88f
 }
 
 
