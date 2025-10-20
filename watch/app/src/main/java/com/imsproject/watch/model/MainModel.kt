@@ -402,8 +402,8 @@ class MainModel (private val scope : CoroutineScope) {
             connected = false
             stopListeners()
             stopHeartBeat()
-            ws.close()
-            udp.close()
+            if(this::ws.isInitialized){ ws.close() }
+            if (this::udp.isInitialized){ udp.close() }
             clientsClosed = true
             Log.d(TAG, "All resources closed")
         } catch(e: Exception){
@@ -638,9 +638,13 @@ class MainModel (private val scope : CoroutineScope) {
         Log.d(TAG, "Stopping listeners")
         udpMessageListener?.cancel()
         tcpMessageListener?.cancel()
-        ws.onErrorListener = {}
-        ws.interrupt()
-        udp.interrupt()
+        if(this::ws.isInitialized){
+            ws.onErrorListener = {}
+            ws.interrupt()
+        }
+        if (this::udp.isInitialized){
+            udp.interrupt()
+        }
         tcpMessageListener?.join()
         udpMessageListener?.join()
         tcpMessageListener = null
