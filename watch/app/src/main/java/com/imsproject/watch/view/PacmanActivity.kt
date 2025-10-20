@@ -102,8 +102,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                     // reset angle to handle float precision issues
                     pacmanAngle = Angle(0f)
                 }
-                val flooredAngle = pacmanAngle.floatValue.toInt()
-                if(flooredAngle == PACMAN_LEFT_ANGLE_THRESHOLD || flooredAngle == PACMAN_RIGHT_ANGLE_THRESHOLD){
+                if(pacmanAngle.floatValue == PACMAN_LEFT_ANGLE_THRESHOLD || pacmanAngle.floatValue == PACMAN_RIGHT_ANGLE_THRESHOLD){
                     if(!fedSuccessfully){
                         scope.launch {
                             rewardAccumulator.animateTo(

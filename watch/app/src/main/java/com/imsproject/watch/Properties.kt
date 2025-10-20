@@ -139,13 +139,13 @@ const val PACMAN_START_ANGLE = -90f + PACMAN_MOUTH_OPENING_ANGLE / 2f
 const val PACMAN_SWEEP_ANGLE = 360f - PACMAN_MOUTH_OPENING_ANGLE
 const val PARTICLE_CAGE_STROKE_WIDTH = 4f
 const val PACMAN_SHRINK_ANIMATION_DURATION = (((180f - PACMAN_MOUTH_OPENING_ANGLE*2f) / 360f) * ANGLE_ROTATION_DURATION).toInt()
-const val REWARD_SIZE_BONUS = 0.005f
+const val REWARD_SIZE_BONUS = 0.008f
 val PARTICLE_CAGE_COLOR = Color(0xFF0000FF)
 val PARTICLE_COLOR = Color(0xFFF3D3C3)
 var PARTICLE_RADIUS = 0f
 var PARTICLE_DISTANCE_FROM_CENTER = 0f
-var PACMAN_LEFT_ANGLE_THRESHOLD = 0
-var PACMAN_RIGHT_ANGLE_THRESHOLD = 0
+var PACMAN_LEFT_ANGLE_THRESHOLD = 0f
+var PACMAN_RIGHT_ANGLE_THRESHOLD = 0f
 var PACMAN_MAX_SIZE = 0f
 
 // ================== After game questions =============== |
@@ -200,15 +200,15 @@ fun initProperties(screenWidth: Int){
         // get to the left side of the circle
         leftThresholdAccumulator = leftThresholdAccumulator + PACMAN_ANGLE_STEP
     }
-    while(leftThresholdAccumulator.floatValue.toInt() <= -180 + PACMAN_MOUTH_OPENING_ANGLE){
+    while(leftThresholdAccumulator.floatValue <= -180 + PACMAN_MOUTH_OPENING_ANGLE){
         leftThresholdAccumulator = leftThresholdAccumulator + PACMAN_ANGLE_STEP
     }
     var rightThresholdAccumulator = Angle(0f)
-    while(rightThresholdAccumulator.floatValue.toInt() <= PACMAN_MOUTH_OPENING_ANGLE){
+    while(rightThresholdAccumulator.floatValue <= PACMAN_MOUTH_OPENING_ANGLE){
         rightThresholdAccumulator = rightThresholdAccumulator + PACMAN_ANGLE_STEP
     }
-    PACMAN_LEFT_ANGLE_THRESHOLD = leftThresholdAccumulator.floatValue.toInt()
-    PACMAN_RIGHT_ANGLE_THRESHOLD = rightThresholdAccumulator.floatValue.toInt()
+    PACMAN_LEFT_ANGLE_THRESHOLD = leftThresholdAccumulator.floatValue
+    PACMAN_RIGHT_ANGLE_THRESHOLD = rightThresholdAccumulator.floatValue
     PACMAN_MAX_SIZE = SCREEN_RADIUS * 0.7f
 }
 
