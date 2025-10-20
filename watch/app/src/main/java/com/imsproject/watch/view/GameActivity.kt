@@ -37,6 +37,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
     protected fun onCreate(viewModel: GameViewModel) {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val metrics = getSystemService(WindowManager::class.java).currentWindowMetrics
+        viewModel.screenDensity = resources.displayMetrics.density
         initProperties(metrics.bounds.width())
         viewModel.onCreate(intent,applicationContext)
         this.viewModel = viewModel

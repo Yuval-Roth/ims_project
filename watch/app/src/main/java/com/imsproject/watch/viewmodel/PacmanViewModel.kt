@@ -2,6 +2,8 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.SoundPool
 import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.getValue
@@ -17,15 +19,21 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.ANGLE_ROTATION_DURATION
+import com.imsproject.watch.PACMAN_ANGLE_STEP
 import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
+import com.imsproject.watch.PARTICLE_ANIMATION_MAX_DURATION
+import com.imsproject.watch.PARTICLE_ANIMATION_MIN_DURATION
 import com.imsproject.watch.PARTICLE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.PARTICLE_RADIUS
+import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.sql.SQLOutput
 import kotlin.math.pow
 
 class PacmanViewModel: GameViewModel(GameType.PACMAN) {
@@ -47,11 +55,14 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         var reward by mutableStateOf(false)
     }
 
+    private lateinit var soundPool: SoundPool
+    private var flingSoundId : Int = -1
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    var pacmanAngle = mutableStateOf(Angle(0f))
+    var pacmanAngle = MutableStateFlow(Angle(0f))
     val rewardAccumulator = Animatable(0f)
     var myDirection = 1
         private set
@@ -69,19 +80,24 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     override fun onCreate(intent: Intent, context: Context) {
         super.onCreate(intent, context)
 
+        soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
+        flingSoundId = soundPool.load(context, R.raw.pacman_fling, 1)
+
         viewModelScope.launch {
             delay(500L)
             _myParticle.value = createNewParticle(myDirection)
             _otherParticle.value = createNewParticle(-myDirection)
         }
 
-
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
-                while(true){
-                    if(pacmanAngle.value.floatValue == 0f){
-                        _otherParticle.value?.animationLength = 150
-                        _otherParticle.value?.reward = true
+                var acc = Angle(0f)
+                while(acc.floatValue >= 0){ acc = acc + PACMAN_ANGLE_STEP }
+                while(acc.floatValue <= -PACMAN_MOUTH_OPENING_ANGLE){ acc = acc + PACMAN_ANGLE_STEP }
+                val flingAngle = acc.floatValue
+                pacmanAngle.collect {
+                    if(pacmanAngle.value.floatValue == flingAngle){
+                        handleFling(500f, -myDirection, true)
                     }
                 }
             }
@@ -89,17 +105,30 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         }
     }
 
-    fun fling(dpPerSec: Float, currentOpeningAngle: Angle) {
-        val animationLength = mapSpeedToDuration(pxPerSec = dpPerSec, minDurationMs = 150, maxDurationMs = 750)
+    fun fling(dpPerSec: Float) {
+        if (_myParticle.value == null) {
+            return
+        }
+
+        val pxPerSec = dpPerSec * screenDensity
+        val animationLength = mapSpeedToDuration(pxPerSec = pxPerSec)
+        // calculate reward based on expected final angle
         val degreesPerMilliSecond = 360f / ANGLE_ROTATION_DURATION
         val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
-        val expectedFinalAngle = currentOpeningAngle + degreesPerMilliSecond * animationLength
+        val expectedFinalAngle = pacmanAngle.value + degreesPerMilliSecond * animationLength
         val reward = expectedFinalAngle - targetAngle <= PACMAN_MOUTH_OPENING_ANGLE
 
-        if (ACTIVITY_DEBUG_MODE){
-            val myParticle = _myParticle.value ?: return
-            myParticle.animationLength = animationLength
-            myParticle.reward = reward
+        if(ACTIVITY_DEBUG_MODE) {
+            handleFling(dpPerSec, myDirection, reward)
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val timestamp = super.getCurrentGameTime()
+            val data = "${dpPerSec.toInt()},${myDirection},$reward}"
+            val sequenceNumber = packetTracker.newPacket()
+            model.sendUserInput(timestamp, sequenceNumber, data)
+            addEvent(SessionEvent.fling(playerId, timestamp, data))
         }
     }
 
@@ -110,6 +139,10 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         } else {
             _otherParticle.value = newParticle
         }
+    }
+
+    fun playRewardSound() {
+        soundPool.play(flingSoundId, 1f, 1f, 1, 0, 1f)
     }
 
     // ================================================================================ |
@@ -140,7 +173,8 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
                 }
 
                 val arrivedTimestamp = getCurrentGameTime()
-                // TODO: handle data received
+                val (dpPerSec, direction, reward) = data.split(",")
+                handleFling(dpPerSec.toFloat(), direction.toInt(), reward.toBoolean())
 
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
@@ -163,15 +197,28 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         )
     }
 
-    private fun mapSpeedToDuration(pxPerSec: Float, minDurationMs: Int, maxDurationMs: Int): Int {
+    private fun handleFling(dpPerSec: Float, direction: Int, reward: Boolean) {
+        val particle = if (direction == myDirection) {
+            _myParticle.value
+        } else {
+            _otherParticle.value
+        } ?: return
+        val pxPerSec = dpPerSec * screenDensity
+        val animationLength = mapSpeedToDuration(pxPerSec = pxPerSec)
+
+        particle.animationLength = animationLength
+        particle.reward = reward
+    }
+
+    private fun mapSpeedToDuration(pxPerSec: Float): Int {
+        //TODO: fine tune the mapping function
         val duration = if (pxPerSec <= 750f) {
-            maxDurationMs
+            PARTICLE_ANIMATION_MAX_DURATION
         } else {
             val v = 750f / pxPerSec
-            val duration = maxDurationMs * v.pow(1.5f)
-            duration.toInt().coerceIn(minDurationMs, maxDurationMs)
+            PARTICLE_ANIMATION_MAX_DURATION * v.pow(1.5f)
         }
-        return duration
+        return duration.toInt().coerceIn(PARTICLE_ANIMATION_MIN_DURATION, PARTICLE_ANIMATION_MAX_DURATION)
     }
 
     companion object {

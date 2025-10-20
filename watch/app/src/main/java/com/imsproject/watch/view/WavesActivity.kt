@@ -4,11 +4,6 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.EaseInExpo
-import androidx.compose.animation.core.EaseInOutSine
-import androidx.compose.animation.core.EaseInSine
-import androidx.compose.animation.core.EaseOutExpo
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -19,12 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -73,14 +66,12 @@ class WavesActivity: GameActivity(GameType.WAVES) {
     fun Waves() {
         val density =  LocalDensity.current.density
         val tracker = remember { FlingTracker() }
-        val scope = rememberCoroutineScope()
         val wave = remember { viewModel.wave }
         val turn by viewModel.turn.collectAsState()
 
         LaunchedEffect(wave.direction) {
             if(wave.direction == 0) return@LaunchedEffect
 
-            val mod = if (wave.direction > 0) 1f else -1f
             val progress = Animatable(0f)
             progress.animateTo(
                 targetValue = 1f,
@@ -107,7 +98,7 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                 .pointerInput(Unit) {
                     detectDragGestures(
                         onDragStart = { startOffset ->
-                            if (viewModel.myDirection == viewModel.turn.value) {
+                            if (viewModel.myDirection == turn) {
                                 val x = startOffset.x
                                 val y = startOffset.y
                                 val (distance, _) = cartesianToPolar(x, y)
@@ -186,75 +177,71 @@ class WavesActivity: GameActivity(GameType.WAVES) {
             }
         }
     }
-}
-
-@Composable
-fun WaveWarpBox(
-    modifier: Modifier = Modifier,
-    amplitudePx: Float,
-    wavelengthPx: Float,
-    speedPxPerSec: Float,
-    phaseOffset: Float = 0f,
-    content: @Composable () -> Unit
-) {
-    // simple time driver
-    var time by remember { mutableStateOf(0f) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            val nanos = awaitFrame() // suspend until next frame
-            time = nanos / 1_000_000_000f
+    // AGSL: horizontal sine displacement based on Y
+    private val AGSL = """
+        uniform float2 resolution;
+        uniform float amplitude;
+        uniform float wavelength;
+        uniform float omega;
+        uniform float time;
+        uniform float phase;
+        
+        // Declare the child shader with a NON-reserved name
+        uniform shader content;
+        
+        half4 main(float2 fragCoord) {
+            float2 uv = fragCoord;
+            float y = uv.y;
+        
+            float k = 6.28318530718 / wavelength; // 2π/λ
+            float xOffset = amplitude * sin(k * y - omega * time + phase);
+        
+            float2 sampleCoord = float2(
+                clamp(uv.x + xOffset, 0.0, resolution.x - 1.0),
+                clamp(uv.y, 0.0, resolution.y - 1.0)
+            );
+        
+            // Sample via .eval(...)
+            return content.eval(sampleCoord);
         }
-    }
+    """.trimIndent()
 
-    Box(
-        modifier = modifier.graphicsLayer {
-            compositingStrategy = CompositingStrategy.Offscreen
-
-            // AGSL: horizontal sine displacement based on Y
-            val agsl = """
-                uniform float2 resolution;
-                uniform float amplitude;
-                uniform float wavelength;
-                uniform float omega;
-                uniform float time;
-                uniform float phase;
-                
-                // Declare the child shader with a NON-reserved name
-                uniform shader content;
-                
-                half4 main(float2 fragCoord) {
-                    float2 uv = fragCoord;
-                    float y = uv.y;
-                
-                    float k = 6.28318530718 / wavelength; // 2π/λ
-                    float xOffset = amplitude * sin(k * y - omega * time + phase);
-                
-                    float2 sampleCoord = float2(
-                        clamp(uv.x + xOffset, 0.0, resolution.x - 1.0),
-                        clamp(uv.y, 0.0, resolution.y - 1.0)
-                    );
-                
-                    // Sample via .eval(...)
-                    return content.eval(sampleCoord);
-                }
-
-            """.trimIndent()
-
-            val shader = android.graphics.RuntimeShader(agsl)
-            shader.setFloatUniform("resolution", size.width, size.height)
-            shader.setFloatUniform("amplitude", amplitudePx)
-            shader.setFloatUniform("wavelength", wavelengthPx)
-            val omega = (2f * Math.PI.toFloat()) * (speedPxPerSec / wavelengthPx)
-            shader.setFloatUniform("omega", omega)
-            shader.setFloatUniform("time", time)
-            shader.setFloatUniform("phase", phaseOffset)
-
-            renderEffect = android.graphics.RenderEffect
-                .createRuntimeShaderEffect(shader, "content")
-                .asComposeRenderEffect()
-        }
+    @Composable
+    fun WaveWarpBox(
+        modifier: Modifier = Modifier,
+        amplitudePx: Float,
+        wavelengthPx: Float,
+        speedPxPerSec: Float,
+        phaseOffset: Float = 0f,
+        content: @Composable () -> Unit
     ) {
-        content()
+        // simple time driver
+        var time by remember { mutableFloatStateOf(0f) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                val nanos = awaitFrame() // suspend until next frame
+                time = nanos / 1_000_000_000f
+            }
+        }
+
+        Box(
+            modifier = modifier.graphicsLayer {
+                compositingStrategy = CompositingStrategy.Offscreen
+                val shader = android.graphics.RuntimeShader(AGSL)
+                shader.setFloatUniform("resolution", size.width, size.height)
+                shader.setFloatUniform("amplitude", amplitudePx)
+                shader.setFloatUniform("wavelength", wavelengthPx)
+                val omega = (2f * Math.PI.toFloat()) * (speedPxPerSec / wavelengthPx)
+                shader.setFloatUniform("omega", omega)
+                shader.setFloatUniform("time", time)
+                shader.setFloatUniform("phase", phaseOffset)
+                renderEffect = android.graphics.RenderEffect
+                    .createRuntimeShaderEffect(shader, "content")
+                    .asComposeRenderEffect()
+            }
+        ) {
+            content()
+        }
     }
 }
 

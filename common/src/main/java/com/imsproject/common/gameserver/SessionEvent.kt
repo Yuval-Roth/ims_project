@@ -39,6 +39,8 @@ data class SessionEvent internal constructor (
         @SerializedName("touch_point")              TOUCH_POINT,
         @SerializedName("opponent_touch_point")     OPPONENT_TOUCH_POINT,
         @SerializedName("axle_angle")               AXLE_ANGLE,
+        @SerializedName("fling")                    FLING,
+        @SerializedName("opponent_fling")           OPPONENT_FLING,
 
         // SENSOR_DATA
         @SerializedName("heart_rate")               HEART_RATE,
@@ -163,6 +165,18 @@ data class SessionEvent internal constructor (
             timestamp: Long,
             data: String
         ) = SessionEvent(Type.USER_INPUT, Subtype.ANGLE, timestamp, actor, data)
+
+        fun fling(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, Subtype.FLING, timestamp, actor, data)
+
+        fun opponentFling(
+            actor: String,
+            timestamp: Long,
+            data: String
+        ) = SessionEvent(Type.USER_INPUT, Subtype.OPPONENT_FLING, timestamp, actor, data)
 
         // ==================== SENSOR_DATA ==================== |
 

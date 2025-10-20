@@ -54,7 +54,10 @@ import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.viewmodel.PacmanViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.PacmanViewModel.ParticleState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
@@ -84,7 +87,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
     @Composable
     fun Pacman() {
         val rewardAccumulator = viewModel.rewardAccumulator
-        var pacmanAngle by viewModel.pacmanAngle
+        val pacmanAngle = viewModel.pacmanAngle.collectAsState().value
         val density =  LocalDensity.current.density
         val tracker = remember { FlingTracker() }
         val scope = rememberCoroutineScope()
@@ -95,14 +98,15 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
         val pacmanRadius = (SCREEN_RADIUS * (0.15f + rewardAccumulator.value * REWARD_SIZE_BONUS)).fastCoerceAtMost(PACMAN_MAX_SIZE)
 
         LaunchedEffect(Unit){
+            val pacmanAngle = viewModel.pacmanAngle
             // rotate pacman and check for feeding events
             while(true){
-                pacmanAngle = pacmanAngle + PACMAN_ANGLE_STEP
-                if(pacmanAngle.floatValue.toInt() == 0){
+                pacmanAngle.value = pacmanAngle.value + PACMAN_ANGLE_STEP
+                if(pacmanAngle.value.floatValue.toInt() == 0){
                     // reset angle to handle float precision issues
-                    pacmanAngle = Angle(0f)
+                    pacmanAngle.value = Angle(0f)
                 }
-                if(pacmanAngle.floatValue == PACMAN_LEFT_ANGLE_THRESHOLD || pacmanAngle.floatValue == PACMAN_RIGHT_ANGLE_THRESHOLD){
+                if(pacmanAngle.value.floatValue == PACMAN_LEFT_ANGLE_THRESHOLD || pacmanAngle.value.floatValue == PACMAN_RIGHT_ANGLE_THRESHOLD){
                     if(!fedSuccessfully){
                         scope.launch {
                             rewardAccumulator.animateTo(
@@ -148,6 +152,12 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                                 val startX = particle.topLeft.x
                                 val distance = targetX - startX
                                 val positionAnimation = Animatable(0f)
+                                if(particle.reward){
+                                    scope.launch(Dispatchers.Default) {
+                                        delay(particle.animationLength - 250L)
+                                        viewModel.playRewardSound()
+                                    }
+                                }
                                 scope.launch {
                                     positionAnimation.animateTo(
                                         targetValue = 1f,
@@ -196,10 +206,9 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                         onDragEnd = {
                             if (tracker.started) {
                                 val (nx, ny, speedPxPerSec) = tracker.endFling()
-                                val myDirection = viewModel.myDirection
-                                if (myDirection * nx > 0) { // fling in my direction
+                                if (viewModel.myDirection * nx > 0) { // fling in my direction
                                     val dpPecSec = speedPxPerSec / density
-                                    viewModel.fling(dpPecSec, pacmanAngle)
+                                    viewModel.fling(dpPecSec)
                                 }
                             }
                         },
