@@ -135,7 +135,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
 
         viewModelScope.launch(Dispatchers.IO) {
             val timestamp = super.getCurrentGameTime()
-            val data = "${dpPerSec.toInt()},${myDirection},$reward}"
+            val data = "${dpPerSec.toInt()},${myDirection},$reward"
             val sequenceNumber = packetTracker.newPacket()
             model.sendUserInput(timestamp, sequenceNumber, data)
             addEvent(SessionEvent.fling(playerId, timestamp, data))
