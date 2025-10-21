@@ -242,6 +242,11 @@ class MainModel (private val scope : CoroutineScope) {
         sendTcp(request)
     }
 
+    fun sessionSetupComplete() {
+        val request = GameRequest.builder(GameRequest.Type.SESSION_SETUP_COMPLETE).build().toJson()
+        sendTcp(request)
+    }
+
     fun sendUserInput(timestamp: Long, sequenceNumber: Long, data: String? = null) {
         val request = GameAction.builder(GameAction.Type.USER_INPUT)
             .actor(playerId)

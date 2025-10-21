@@ -50,6 +50,7 @@ data class GameRequest (
         @SerializedName("change_sessions_order")    CHANGE_SESSIONS_ORDER,
         @SerializedName("start_experiment")         START_EXPERIMENT,
         @SerializedName("end_experiment")           END_EXPERIMENT,
+        @SerializedName("session_setup_complete")   SESSION_SETUP_COMPLETE
     }
 
     companion object {

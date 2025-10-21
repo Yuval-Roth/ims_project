@@ -33,12 +33,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Angle
-import com.imsproject.watch.ANGLE_ROTATION_DURATION
 import com.imsproject.watch.PACMAN_ANGLE_STEP
 import com.imsproject.watch.PACMAN_LEFT_ANGLE_THRESHOLD
 import com.imsproject.watch.PACMAN_MAX_SIZE
 import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
 import com.imsproject.watch.PACMAN_RIGHT_ANGLE_THRESHOLD
+import com.imsproject.watch.PACMAN_ROTATION_DURATION
 import com.imsproject.watch.PACMAN_SHRINK_ANIMATION_DURATION
 import com.imsproject.watch.PACMAN_START_ANGLE
 import com.imsproject.watch.PACMAN_SWEEP_ANGLE
@@ -55,9 +55,7 @@ import com.imsproject.watch.viewmodel.PacmanViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.PacmanViewModel.ParticleState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin

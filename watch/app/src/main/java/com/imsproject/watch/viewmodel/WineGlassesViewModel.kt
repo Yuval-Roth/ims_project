@@ -110,6 +110,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
+        model.sessionSetupComplete()
     }
 
     fun setTouchPoint(x: Float, y: Float) {

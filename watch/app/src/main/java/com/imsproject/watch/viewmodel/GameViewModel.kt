@@ -153,13 +153,10 @@ abstract class GameViewModel(
                 }
             }
 
-            // =================== game start =================== |
+            // =================== start tracking sensors =================== |
 
             locationSensorsHandler.startTracking(this@GameViewModel)
             heartRateSensorHandler.startTracking(this@GameViewModel)
-            addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
-            Log.d(TAG, "onCreate: session started")
-            setState(State.PLAYING)
         }
     }
 
@@ -216,6 +213,7 @@ abstract class GameViewModel(
 
     protected open suspend fun handleGameRequest(request: GameRequest) {
         when (request.type) {
+            GameRequest.Type.SESSION_SETUP_COMPLETE -> startGame()
             GameRequest.Type.EXIT -> {
                 val errorMessage = request.message ?: ""
                 exitWithError(errorMessage,Result.Code.SERVER_CLOSED_CONNECTION)
@@ -267,6 +265,12 @@ abstract class GameViewModel(
     }
 
     protected open fun setupWavPlayer(){}
+
+    protected open fun startGame() {
+        addEvent(SessionEvent.sessionStarted(playerId,getCurrentGameTime()))
+        Log.d(TAG, "startGame(): session started")
+        setState(State.PLAYING)
+    }
 
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
@@ -327,7 +331,7 @@ abstract class GameViewModel(
             }
         }
     }
-    
+
     private fun setState(newState: State){
         _state.value = newState
         Log.d(TAG, "set new state: $newState")

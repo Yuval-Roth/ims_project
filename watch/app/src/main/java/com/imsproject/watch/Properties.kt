@@ -12,7 +12,7 @@ import com.imsproject.common.utils.Angle
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -132,13 +132,13 @@ var OPPONENT_PLAYER_ITEM_ALPHA = 0.9f
 
 // ===================== Pacman ===================== |
 
-const val ANGLE_ROTATION_DURATION = 2800f
+const val PACMAN_ROTATION_DURATION = 2800f
 const val PACMAN_MOUTH_OPENING_ANGLE = 66f
-const val PACMAN_ANGLE_STEP = 360f / (ANGLE_ROTATION_DURATION / 16f)
+const val PACMAN_ANGLE_STEP = 360f / (PACMAN_ROTATION_DURATION / 16f)
 const val PACMAN_START_ANGLE = -90f + PACMAN_MOUTH_OPENING_ANGLE / 2f
 const val PACMAN_SWEEP_ANGLE = 360f - PACMAN_MOUTH_OPENING_ANGLE
 const val PARTICLE_CAGE_STROKE_WIDTH = 4f
-const val PACMAN_SHRINK_ANIMATION_DURATION = (((180f - PACMAN_MOUTH_OPENING_ANGLE*2f) / 360f) * ANGLE_ROTATION_DURATION).toInt()
+const val PACMAN_SHRINK_ANIMATION_DURATION = (((180f - PACMAN_MOUTH_OPENING_ANGLE*2f) / 360f) * PACMAN_ROTATION_DURATION).toInt()
 const val REWARD_SIZE_BONUS = 0.008f
 val PARTICLE_CAGE_COLOR = Color(0xFF0000FF)
 val PARTICLE_COLOR = Color(0xFFF3D3C3)

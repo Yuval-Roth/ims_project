@@ -107,6 +107,7 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         }
         WATER_RIPPLES_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
         Log.d(TAG, "syncTolerance: $syncTolerance")
+        model.sessionSetupComplete()
     }
 
     // ================================================================================ |

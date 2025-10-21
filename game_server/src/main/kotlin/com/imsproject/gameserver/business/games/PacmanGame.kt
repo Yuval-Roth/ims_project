@@ -5,10 +5,14 @@ import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.utils.toJson
 import com.imsproject.gameserver.business.ClientHandler
 import com.imsproject.gameserver.business.TimeServerService
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
-
-class FlowerGardenGame(
+class PacmanGame(
     lobbyId: String,
     player1: ClientHandler,
     player2: ClientHandler
@@ -32,12 +36,11 @@ class FlowerGardenGame(
         val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
             .sessionId(sessionId.toString())
             .timestamp(timeServerCurr)
-        player1.sendTcp(toSend.data(listOf("water")).build().toJson())
-        player2.sendTcp(toSend.data(listOf("plant")).build().toJson())
+        player1.sendTcp(toSend.data(listOf("left")).build().toJson())
+        player2.sendTcp(toSend.data(listOf("right")).build().toJson())
     }
 
-
     companion object {
-        private val log = LoggerFactory.getLogger(FlowerGardenGame::class.java)
+        private val log = LoggerFactory.getLogger(PacmanGame::class.java)
     }
 }

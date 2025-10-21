@@ -132,6 +132,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
+        model.sessionSetupComplete()
     }
 
     fun setTouchPoint(x: Float, y: Float) {

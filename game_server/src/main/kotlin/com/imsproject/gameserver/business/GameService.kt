@@ -157,6 +157,19 @@ class GameService(
         return games.keys.toList()
     }
 
+    fun clientFinishedSetup(clientHandler: ClientHandler) {
+        log.debug("clientFinishedSetup() with clientId: {}", clientHandler.id)
+
+        // check if client is in a game
+        val game = clientIdToGame[clientHandler.id] ?: run {
+            log.debug("clientFinishedSetup: Client not in game")
+            throw IllegalArgumentException("Client not in game")
+        }
+
+        game.clientFinishedSetup(clientHandler)
+        log.debug("clientFinishedSetup() successful")
+    }
+
     companion object{
         private val log = LoggerFactory.getLogger(GameService::class.java)
     }

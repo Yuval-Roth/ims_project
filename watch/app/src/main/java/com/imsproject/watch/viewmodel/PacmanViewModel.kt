@@ -18,7 +18,8 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.ANGLE_ROTATION_DURATION
+import com.imsproject.watch.PACKAGE_PREFIX
+import com.imsproject.watch.PACMAN_ROTATION_DURATION
 import com.imsproject.watch.PACMAN_ANGLE_STEP
 import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
 import com.imsproject.watch.PARTICLE_ANIMATION_MAX_DURATION
@@ -27,13 +28,13 @@ import com.imsproject.watch.PARTICLE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.PARTICLE_RADIUS
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
+import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.sql.SQLOutput
 import kotlin.math.pow
 
 class PacmanViewModel: GameViewModel(GameType.PACMAN) {
@@ -81,16 +82,14 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         super.onCreate(intent, context)
 
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
-        flingSoundId = soundPool.load(context, R.raw.pacman_fling, 1)
-
-        viewModelScope.launch {
-            delay(500L)
-            _myParticle.value = createNewParticle(myDirection)
-            _otherParticle.value = createNewParticle(-myDirection)
-        }
+        flingSoundId = soundPool.load(context, R.raw.pacman_eat2, 1)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
+                startGame()
+                delay(1000L)
+                _myParticle.value = createNewParticle(myDirection)
+                _otherParticle.value = createNewParticle(-myDirection)
                 var acc = Angle(0f)
                 while(acc.floatValue >= 0){ acc = acc + PACMAN_ANGLE_STEP }
                 while(acc.floatValue <= -PACMAN_MOUTH_OPENING_ANGLE){ acc = acc + PACMAN_ANGLE_STEP }
@@ -103,6 +102,17 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
             }
             return
         }
+        myDirection = intent.getStringExtra("$PACKAGE_PREFIX.additionalData").let {
+            when (it) {
+                "left" -> 1
+                "right" -> -1
+                else -> {
+                    exitWithError("Missing or invalid direction data", Result.Code.BAD_REQUEST)
+                    return
+                }
+            }
+        }
+        model.sessionSetupComplete()
     }
 
     fun fling(dpPerSec: Float) {
@@ -113,7 +123,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         val pxPerSec = dpPerSec * screenDensity
         val animationLength = mapSpeedToDuration(pxPerSec = pxPerSec)
         // calculate reward based on expected final angle
-        val degreesPerMilliSecond = 360f / ANGLE_ROTATION_DURATION
+        val degreesPerMilliSecond = 360f / PACMAN_ROTATION_DURATION
         val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
         val expectedFinalAngle = pacmanAngle.value + degreesPerMilliSecond * animationLength
         val reward = expectedFinalAngle - targetAngle <= PACMAN_MOUTH_OPENING_ANGLE
@@ -133,11 +143,15 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     }
 
     fun resetParticle(direction: Int) {
-        val newParticle = createNewParticle(direction)
-        if (direction == myDirection) {
-            _myParticle.value = newParticle
+        val particle = if (direction == myDirection) {
+            _myParticle
         } else {
-            _otherParticle.value = newParticle
+            _otherParticle
+        }
+        particle.value = null
+        viewModelScope.launch(Dispatchers.Main) {
+            delay((PACMAN_ROTATION_DURATION * PACMAN_MOUTH_OPENING_ANGLE / 360f).toLong())
+            particle.value = createNewParticle(direction)
         }
     }
 
@@ -180,10 +194,19 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
                     packetTracker.receivedOtherPacket(sequenceNumber)
-                    addEvent(SessionEvent.opponentClick(playerId, arrivedTimestamp))
+                    addEvent(SessionEvent.opponentFling(playerId, arrivedTimestamp, data))
                 }
             }
             else -> super.handleGameAction(action)
+        }
+    }
+
+    override fun startGame() {
+        super.startGame()
+        viewModelScope.launch(Dispatchers.Main) {
+            delay(1000L)
+            _myParticle.value = createNewParticle(myDirection)
+            _otherParticle.value = createNewParticle(-myDirection)
         }
     }
 
@@ -216,7 +239,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
             PARTICLE_ANIMATION_MAX_DURATION
         } else {
             val v = 750f / pxPerSec
-            PARTICLE_ANIMATION_MAX_DURATION * v.pow(1.5f)
+            PARTICLE_ANIMATION_MAX_DURATION * v.pow(1.2f)
         }
         return duration.toInt().coerceIn(PARTICLE_ANIMATION_MIN_DURATION, PARTICLE_ANIMATION_MAX_DURATION)
     }
