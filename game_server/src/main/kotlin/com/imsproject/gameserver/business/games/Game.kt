@@ -8,6 +8,7 @@ import com.imsproject.gameserver.business.TimeServerService
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -34,9 +35,11 @@ abstract class Game (
         if (player1Ready && player2Ready) {
             val toSend = GameRequest.builder(GameRequest.Type.SESSION_SETUP_COMPLETE).build().toJson()
             GlobalScope.launch(Dispatchers.IO){
+                delay(1000)
                 player1.sendTcp(toSend)
             }
             GlobalScope.launch(Dispatchers.IO) {
+                delay(1000)
                 player2.sendTcp(toSend)
             }
         }

@@ -183,6 +183,14 @@
                 syncTolerance: null,
                 syncWindowLength: null,
             },
+            'Pacman': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
+            'Waves': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
             'gameTime': null,
             'gameType': 'Water Ripples',
         }
@@ -256,6 +264,11 @@
                 case 'Wine Glasses':
                     syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
                     syncWindowLength = parseInt(formData.get('window'), 10);
+                    break;
+                case 'Pacman':
+                case 'Waves':
+                    syncTolerance = -1;
+                    syncWindowLength = -1;
                     break;
             }
             const payload = {
@@ -372,6 +385,11 @@
                 case 'Wine Glasses':
                     syncTolerance = session.syncTolerance / 100 + ' hz';
                     syncWindowLength = session.syncWindowLength + ' ms';
+                    break;
+                case 'Pacman':
+                case 'Waves':
+                    syncTolerance = 'N/A';
+                    syncWindowLength = 'N/A';
                     break;
             }
             const skipFeedback = session.skipFeedback ? 'Yes' : 'No';
@@ -537,7 +555,8 @@
                 syncToleranceStep: 1,
                 syncToleranceMin: 1,
                 syncWindowLength: -1,
-                windowLengthEnabled: false
+                windowLengthEnabled: false,
+                syncToleranceEnabled: true
             }
             const swipeBased = {
                 syncTolerance: 0.10,
@@ -545,13 +564,25 @@
                 syncToleranceStep: 0.01,
                 syncToleranceMin: 0.01,
                 syncWindowLength: 1000,
-                windowLengthEnabled: true
+                windowLengthEnabled: true,
+                syncToleranceEnabled: true
+            }
+            const flingBased = {
+                syncTolerance: -1,
+                syncToleranceUnit: 'N/A',
+                syncToleranceStep: 1,
+                syncToleranceMin: -1,
+                syncWindowLength: -1,
+                windowLengthEnabled: false,
+                syncToleranceEnabled: false
             }
             const defaultParams = {
                 'Water Ripples': clickBased,
                 'Flower Garden': clickBased,
                 'Flour Mill': swipeBased,
                 'Wine Glasses': swipeBased,
+                'Pacman': flingBased,
+                'Waves': flingBased
             };
 
             function updateDefaultValues() {
@@ -579,6 +610,7 @@
                     syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
                     syncWindowLength.value = lastSyncWindowLength ? lastSyncWindowLength : defaultParams[selectedGame].syncWindowLength;
                     syncWindowLength.disabled = !defaultParams[selectedGame].windowLengthEnabled;
+                    syncToleranceInput.disabled = !defaultParams[selectedGame].syncToleranceEnabled;
                 }
             }
 

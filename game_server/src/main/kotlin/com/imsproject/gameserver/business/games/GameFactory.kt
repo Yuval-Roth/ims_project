@@ -12,6 +12,8 @@ class GameFactory {
             GameType.WINE_GLASSES -> WineGlassesGame(lobbyId, player1Handler, player2Handler)
             GameType.FLOUR_MILL -> FlourMillGame(lobbyId, player1Handler, player2Handler)
             GameType.FLOWER_GARDEN -> FlowerGardenGame(lobbyId, player1Handler, player2Handler)
+            GameType.PACMAN -> PacmanGame(lobbyId, player1Handler, player2Handler)
+            GameType.WAVES -> WavesGame(lobbyId, player1Handler, player2Handler)
             else -> throw IllegalArgumentException("Invalid game type")
         }
     }

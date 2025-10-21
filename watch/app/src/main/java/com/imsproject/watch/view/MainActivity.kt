@@ -87,8 +87,10 @@ import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.utils.QRGenerator
 import com.imsproject.watch.view.contracts.FlourMillResultContract
 import com.imsproject.watch.view.contracts.FlowerGardenResultContract
+import com.imsproject.watch.view.contracts.PacmanResultContract
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.view.contracts.WaterRipplesResultContract
+import com.imsproject.watch.view.contracts.WavesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
@@ -107,6 +109,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var wineGlasses: ActivityResultLauncher<Map<String,Any>>
     private lateinit var flourMill: ActivityResultLauncher<Map<String,Any>>
     private lateinit var flowerGarden: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var pacman: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var waves: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wifiLock: WifiManager.WifiLock
     private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
 
@@ -163,7 +167,8 @@ class MainActivity : ComponentActivity() {
         wineGlasses = registerForActivityResult(WineGlassesResultContract()) { afterGame(it) }
         flourMill = registerForActivityResult(FlourMillResultContract()) { afterGame(it) }
         flowerGarden = registerForActivityResult(FlowerGardenResultContract()) { afterGame(it) }
-
+        pacman = registerForActivityResult(PacmanResultContract()) { afterGame(it) }
+        waves = registerForActivityResult(WavesResultContract()) { afterGame(it) }
     }
 
     private fun setupSensorsPermission() {
@@ -254,6 +259,8 @@ class MainActivity : ComponentActivity() {
                         GameType.WINE_GLASSES -> wineGlasses.launch(input)
                         GameType.FLOUR_MILL -> flourMill.launch(input)
                         GameType.FLOWER_GARDEN -> flowerGarden.launch(input)
+                        GameType.PACMAN -> pacman.launch(input)
+                        GameType.WAVES -> waves.launch(input)
                         else -> {
                             viewModel.fatalError("Unknown game type")
                             ErrorReporter.report(null,"Unknown game type\n${gameType}")

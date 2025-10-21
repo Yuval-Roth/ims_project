@@ -37,10 +37,18 @@ class SessionService(
         val invalidArgs = mutableListOf<String>()
         val errorMsg = "The following params are invalid: "
         if(duration <= 0) invalidArgs.add("duration")
-        if(gameType == GameType.WINE_GLASSES){
-            if(syncWindowLength <= 0) invalidArgs.add("syncWindowLength")
+        when(gameType) {
+            GameType.WINE_GLASSES, GameType.FLOUR_MILL -> {
+                if(syncWindowLength <= 0) invalidArgs.add("syncWindowLength")
+                if(syncTolerance <= 0) invalidArgs.add("syncTolerance")
+            }
+            GameType.WATER_RIPPLES, GameType.FLOWER_GARDEN -> {
+                if(syncTolerance <= 0) invalidArgs.add("syncTolerance")
+            }
+            else -> {
+                // no sync params needed
+            }
         }
-        if(syncTolerance <= 0) invalidArgs.add("syncTolerance")
         if(invalidArgs.isNotEmpty()){
             log.debug("createSession: Invalid arguments: {}",invalidArgs.joinToString())
             throw IllegalArgumentException("$errorMsg ${invalidArgs.joinToString()}")

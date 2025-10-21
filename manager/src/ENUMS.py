@@ -27,6 +27,8 @@ class GAME_TYPE(Enum):
     wine_glasses = 'Wine Glasses'
     flour_mill = 'Flour Mill'
     flower_garden = 'Flower Garden'
+    pacman = 'Pacman'
+    waves = 'Waves'
 
 
 class GAME_REQUEST_TYPE(Enum):
