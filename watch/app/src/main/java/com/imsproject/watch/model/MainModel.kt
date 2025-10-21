@@ -36,7 +36,7 @@ import kotlin.math.roundToLong
 // set these values to run the app locally
 private const val RUNNING_LOCAL : Boolean = true
 private const val RUNNING_ON_EMULATOR : Boolean = false
-private const val COMPUTER_NETWORK_IP = "30.30.1.108"
+private const val COMPUTER_NETWORK_IP = "10.100.102.8"
 
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L

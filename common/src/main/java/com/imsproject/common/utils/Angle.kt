@@ -152,6 +152,16 @@ class Angle(
             }
         }
 
+        fun fromArbitraryAngle(angle: Float): Angle {
+            var adjustedAngle = angle % 360f
+            if (adjustedAngle > 180f) {
+                adjustedAngle -= 360f
+            } else if (adjustedAngle <= -180f) {
+                adjustedAngle += 360f
+            }
+            return Angle(adjustedAngle)
+        }
+
         val undefined: Angle = Angle(UNDEFINED_ANGLE)
     }
 }

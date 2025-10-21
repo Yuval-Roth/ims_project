@@ -20,9 +20,6 @@ class WavesGame(
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {
-            GameAction.Type.SYNC -> {
-
-            }
             GameAction.Type.USER_INPUT -> {
                 sendGameAction(action)
             }

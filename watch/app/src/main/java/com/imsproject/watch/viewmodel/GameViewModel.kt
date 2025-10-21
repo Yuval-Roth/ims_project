@@ -92,6 +92,7 @@ abstract class GameViewModel(
         wavPlayer = WavPlayer(context, viewModelScope)
 
         if(ACTIVITY_DEBUG_MODE){
+            myStartTime = System.currentTimeMillis()
             setState(State.PLAYING)
             return
         }

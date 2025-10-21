@@ -34,10 +34,8 @@ import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.PACMAN_ANGLE_STEP
-import com.imsproject.watch.PACMAN_LEFT_ANGLE_THRESHOLD
 import com.imsproject.watch.PACMAN_MAX_SIZE
 import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
-import com.imsproject.watch.PACMAN_RIGHT_ANGLE_THRESHOLD
 import com.imsproject.watch.PACMAN_ROTATION_DURATION
 import com.imsproject.watch.PACMAN_SHRINK_ANIMATION_DURATION
 import com.imsproject.watch.PACMAN_START_ANGLE
@@ -51,10 +49,13 @@ import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.utils.FlingTracker
 import com.imsproject.watch.utils.cartesianToPolar
+import com.imsproject.watch.utils.closestQuantizedAngle
+import com.imsproject.watch.utils.quantizeAngles
 import com.imsproject.watch.viewmodel.PacmanViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.PacmanViewModel.ParticleState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
@@ -98,13 +99,19 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
         LaunchedEffect(Unit){
             val pacmanAngle = viewModel.pacmanAngle
             // rotate pacman and check for feeding events
+            val quantizedAngles = quantizeAngles(PACMAN_ANGLE_STEP)
+            val leftThreshold = closestQuantizedAngle(180f + PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
+            val rightThreshold = closestQuantizedAngle(PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
             while(true){
-                pacmanAngle.value = pacmanAngle.value + PACMAN_ANGLE_STEP
-                if(pacmanAngle.value.floatValue.toInt() == 0){
-                    // reset angle to handle float precision issues
-                    pacmanAngle.value = Angle(0f)
-                }
-                if(pacmanAngle.value.floatValue == PACMAN_LEFT_ANGLE_THRESHOLD || pacmanAngle.value.floatValue == PACMAN_RIGHT_ANGLE_THRESHOLD){
+                val currentGameTime = viewModel.getCurrentGameTime()
+                val rotationTimePassed = currentGameTime % PACMAN_ROTATION_DURATION
+                val rotationPercentage = rotationTimePassed / PACMAN_ROTATION_DURATION
+                val targetAngle = 360f * rotationPercentage
+                val quantizedTargetAngle = closestQuantizedAngle(targetAngle,PACMAN_ANGLE_STEP, quantizedAngles)
+                pacmanAngle.value = Angle.fromArbitraryAngle(quantizedTargetAngle)
+
+                // check for feeding
+                if(quantizedTargetAngle == leftThreshold || quantizedTargetAngle == rightThreshold){
                     if(!fedSuccessfully){
                         scope.launch {
                             rewardAccumulator.animateTo(
@@ -119,7 +126,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                         fedSuccessfully = false
                     }
                 }
-                delay(16L)
+                awaitFrame()
             }
         }
 
@@ -179,7 +186,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                         ParticleState.MOVING -> { /* do nothing, animation is already running */ }
                     }
                 }
-                delay(16L)
+                awaitFrame()
             }
         }
         Box(
@@ -223,32 +230,32 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                 val OPENING_UPPER_Y = SCREEN_CENTER.y - SCREEN_RADIUS * 0.175f
                 val OPENING_LOWER_Y = SCREEN_CENTER.y + SCREEN_RADIUS * 0.175f
                 // left side
-                val LEFT_INNER_Y = SCREEN_CENTER.x - SCREEN_RADIUS * 0.76f
+                val LEFT_INNER_X = SCREEN_CENTER.x - SCREEN_RADIUS * 0.76f
                 drawLine(
                     color = PARTICLE_CAGE_COLOR,
                     start = Offset(0f , WALLS_UPPER_Y),
-                    end = Offset(LEFT_INNER_Y, WALLS_UPPER_Y),
+                    end = Offset(LEFT_INNER_X, WALLS_UPPER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = PARTICLE_CAGE_COLOR,
-                    start = Offset(LEFT_INNER_Y, WALLS_UPPER_Y),
-                    end = Offset(LEFT_INNER_Y, OPENING_UPPER_Y),
+                    start = Offset(LEFT_INNER_X, WALLS_UPPER_Y),
+                    end = Offset(LEFT_INNER_X, OPENING_UPPER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = PARTICLE_CAGE_COLOR,
                     start = Offset(0f, WALLS_LOWER_Y),
-                    end = Offset(LEFT_INNER_Y, WALLS_LOWER_Y),
+                    end = Offset(LEFT_INNER_X, WALLS_LOWER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = PARTICLE_CAGE_COLOR,
-                    start = Offset(LEFT_INNER_Y, WALLS_LOWER_Y),
-                    end = Offset(LEFT_INNER_Y, OPENING_LOWER_Y),
+                    start = Offset(LEFT_INNER_X, WALLS_LOWER_Y),
+                    end = Offset(LEFT_INNER_X, OPENING_LOWER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )

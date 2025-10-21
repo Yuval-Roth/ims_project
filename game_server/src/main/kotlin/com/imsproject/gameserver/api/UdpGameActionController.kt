@@ -58,7 +58,6 @@ class UdpGameActionController(
             log.debug("Error parsing message: $message\n${e.stackTraceToString()}")
             return
         }
-
         when (action.type) {
             Type.USER_INPUT -> {
                 val client = clientService.getByHostPort(address.toHostPortString())

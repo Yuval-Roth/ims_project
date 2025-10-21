@@ -12,7 +12,7 @@ import com.imsproject.common.utils.Angle
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -146,8 +146,6 @@ const val PARTICLE_ANIMATION_MAX_DURATION = 750
 const val PARTICLE_ANIMATION_MIN_DURATION = 150
 var PARTICLE_RADIUS = 0f
 var PARTICLE_DISTANCE_FROM_CENTER = 0f
-var PACMAN_LEFT_ANGLE_THRESHOLD = 0f
-var PACMAN_RIGHT_ANGLE_THRESHOLD = 0f
 var PACMAN_MAX_SIZE = 0f
 
 // ================== After game questions =============== |
@@ -195,22 +193,6 @@ fun initProperties(screenWidth: Int){
     // Pacman
     PARTICLE_RADIUS = SCREEN_RADIUS * 0.02f
     PARTICLE_DISTANCE_FROM_CENTER = SCREEN_RADIUS * 0.88f
-    // build angle thresholds
-    // we do this iteratively because of float precision issues
-    var leftThresholdAccumulator = Angle(0f)
-    while(leftThresholdAccumulator.floatValue >= 0){
-        // get to the left side of the circle
-        leftThresholdAccumulator = leftThresholdAccumulator + PACMAN_ANGLE_STEP
-    }
-    while(leftThresholdAccumulator.floatValue <= -180 + PACMAN_MOUTH_OPENING_ANGLE){
-        leftThresholdAccumulator = leftThresholdAccumulator + PACMAN_ANGLE_STEP
-    }
-    var rightThresholdAccumulator = Angle(0f)
-    while(rightThresholdAccumulator.floatValue <= PACMAN_MOUTH_OPENING_ANGLE){
-        rightThresholdAccumulator = rightThresholdAccumulator + PACMAN_ANGLE_STEP
-    }
-    PACMAN_LEFT_ANGLE_THRESHOLD = leftThresholdAccumulator.floatValue
-    PACMAN_RIGHT_ANGLE_THRESHOLD = rightThresholdAccumulator.floatValue
     PACMAN_MAX_SIZE = SCREEN_RADIUS * 0.7f
 }
 

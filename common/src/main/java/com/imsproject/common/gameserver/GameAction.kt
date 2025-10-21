@@ -12,8 +12,7 @@ data class GameAction (
         PING,
         PONG,
         USER_INPUT,
-        HEARTBEAT,
-        SYNC
+        HEARTBEAT
     }
 
     override fun toString(): String {

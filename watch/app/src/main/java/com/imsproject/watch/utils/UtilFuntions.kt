@@ -5,6 +5,7 @@ import com.imsproject.watch.SCREEN_CENTER
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -72,4 +73,21 @@ inline fun Float.toAngle() = Angle(this)
 @Suppress("NOTHING_TO_INLINE")
 inline fun ClosedFloatingPointRange<Float>.random() = Random.nextFloat() * (endInclusive - start) + start
 
+@Suppress("NOTHING_TO_INLINE")
+inline fun closestQuantizedAngle(targetAngle:Float, step:Float, quantizedAngles: Array<Float>) : Float {
+    return quantizedAngles[(targetAngle / step).roundToInt()]
+}
+
+/**
+ * Generate quantized angles from 0 (inclusive) to 360 with the given step.
+ */
+fun quantizeAngles(step: Float): Array<Float>{
+    val angles = mutableListOf<Float>()
+    var current = 0f
+    while(current <= 360f){
+        angles.add(current)
+        current = current + step
+    }
+    return angles.toTypedArray()
+}
 
