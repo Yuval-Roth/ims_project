@@ -16,9 +16,14 @@ import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.WAVE_MAX_ANIMATION_DURATION
+import com.imsproject.watch.WAVE_MIN_ANIMATION_DURATION
+import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,23 +33,12 @@ import kotlin.math.pow
 
 class WavesViewModel: GameViewModel(GameType.WAVES) {
 
-    enum class AnimationStage {
-        NOT_STARTED,
-        FIRST,
-        SECOND,
-        DONE
-    }
-
     class Wave(){
         var topLeft by mutableStateOf(Offset(-SCREEN_RADIUS * 0.7f, 0f))
-        var animationStage by mutableStateOf(AnimationStage.NOT_STARTED)
         var animationProgress by mutableFloatStateOf(0f)
         var animationLength: Int = 0
         var direction by mutableIntStateOf(0)
     }
-
-//    if (i % 2 == 0) Color(0xFF3B82F6).copy(alpha = 0.8f)
-//    else Color(0xFFFFD8D8).copy(alpha = 0.8f)
 
     private lateinit var soundPool: SoundPool
     private var strongWaveSoundId : Int = -1
@@ -56,7 +50,7 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    val wave by lazy { Wave() }
+    val wave = Wave()
 
     var myDirection: Int = 1
         private set
@@ -82,37 +76,61 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
-                val direction = -1
                 _turn.collect {
-                    if(it == direction){
+                    if(it == -myDirection){
                         delay(500)
                         val dpPerSec = (500..2500).random().toFloat()
                         withContext(Dispatchers.Main){
-                            fling(dpPerSec, direction)
+                            handleFling(dpPerSec, -myDirection)
                         }
                     }
                 }
             }
             return
         }
+
+        myDirection = intent.getStringExtra("$PACKAGE_PREFIX.additionalData").let {
+            when (it) {
+                "left" -> 1
+                "right" -> -1
+                else -> {
+                    exitWithError("Missing or invalid direction data", Result.Code.BAD_REQUEST)
+                    return
+                }
+            }
+        }
+        model.sessionSetupComplete()
     }
 
-    fun fling(dpPerSec: Float, direction: Int){
+    fun handleFling(dpPerSec: Float, direction: Int){
         if(_turn.value == 0){
             Log.e(TAG, "fling: already animating" )
             return
         }
 
-        require(direction != 0) { "direction must be positive or negative" }
-
         oldTurn = _turn.value
         _turn.value = 0
-        wave.animationLength = mapSpeedToDuration(dpPerSec, 1500, 5000)
+        wave.animationLength = mapSpeedToDuration(dpPerSec)
         wave.direction = direction
         when (wave.animationLength){
             in 1500..2000 -> soundPool.play(strongWaveSoundId,1f,1f,0,0,1f)
             in 2001..3500 -> soundPool.play(mediumWaveSoundId,1f,1f,0,0,1f)
             in 3501..5000 -> soundPool.play(weakWaveSoundId,1f,1f,0,0,1f)
+        }
+    }
+
+    fun fling(dpPerSec: Float){
+
+        if(ACTIVITY_DEBUG_MODE){
+            handleFling(dpPerSec, myDirection)
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val timestamp = super.getCurrentGameTime()
+            val data = "${dpPerSec},$myDirection"
+            model.sendUserInput(timestamp,packetTracker.newPacket(), data)
+            addEvent(SessionEvent.fling(playerId,timestamp, data))
         }
     }
 
@@ -149,26 +167,27 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
                 }
 
                 val arrivedTimestamp = getCurrentGameTime()
-                // TODO: handle data received
+                val (dpPerSec, direction) = data.split(",")
+                handleFling(dpPerSec.toFloat(), direction.toInt())
 
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
                     packetTracker.receivedOtherPacket(sequenceNumber)
-                    addEvent(SessionEvent.opponentClick(playerId, arrivedTimestamp))
+                    addEvent(SessionEvent.opponentFling(playerId, arrivedTimestamp,data))
                 }
             }
             else -> super.handleGameAction(action)
         }
     }
 
-    private fun mapSpeedToDuration(pxPerSec: Float, minDurationMs: Int, maxDurationMs: Int): Int {
+    private fun mapSpeedToDuration(pxPerSec: Float): Int {
         val duration = if (pxPerSec <= 1000f) {
-            maxDurationMs
+            WAVE_MAX_ANIMATION_DURATION
         } else {
             val v = 1000f / pxPerSec
-            val duration = maxDurationMs * v.pow(1.5f)
-            duration.toInt().coerceIn(minDurationMs, maxDurationMs)
+            val duration = WAVE_MAX_ANIMATION_DURATION * v.pow(1.5f)
+            duration.toInt().coerceIn(WAVE_MIN_ANIMATION_DURATION, WAVE_MAX_ANIMATION_DURATION)
         }
         return duration
     }

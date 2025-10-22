@@ -74,6 +74,7 @@ class LobbyService(
                     .duration(lobby.gameDuration)
                     .syncWindowLength(lobby.syncWindowLength)
                     .syncTolerance(lobby.syncTolerance)
+                    .skipFeedback(lobby.skipFeedback)
                     .build().toJson()
             )
         }

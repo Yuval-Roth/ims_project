@@ -12,7 +12,7 @@ import com.imsproject.common.utils.Angle
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -147,6 +147,11 @@ const val PARTICLE_ANIMATION_MIN_DURATION = 150
 var PARTICLE_RADIUS = 0f
 var PARTICLE_DISTANCE_FROM_CENTER = 0f
 var PACMAN_MAX_SIZE = 0f
+
+// =================== Waves ===================== |
+
+const val WAVE_MAX_ANIMATION_DURATION = 5000
+const val WAVE_MIN_ANIMATION_DURATION = 1500
 
 // ================== After game questions =============== |
 

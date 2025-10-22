@@ -114,10 +114,9 @@ class WavesActivity: GameActivity(GameType.WAVES) {
                         onDragEnd = {
                             if (tracker.started) {
                                 val (nx, ny, speedPxPerSec) = tracker.endFling()
-                                val myDirection = viewModel.myDirection
-                                if (myDirection * nx > 0) { // fling in my direction
+                                if (viewModel.myDirection * nx > 0) { // fling in my direction
                                     val dpPecSec = speedPxPerSec / density
-                                    viewModel.fling(dpPecSec, myDirection)
+                                    viewModel.fling(dpPecSec)
                                 }
                             }
                         },
