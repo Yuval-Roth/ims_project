@@ -70,21 +70,6 @@
             android:exported="true"
             android:theme="@style/ParticlesActivityTheme" />
 
-
-        <!-- TODO: remove this -->
-        <activity
-            android:name=".view.SwipeTestingActivity"
-            android:taskAffinity=""
-            android:exported="true"
-            android:theme="@style/FlowerGardenActivityTheme" />
-        <activity
-            android:name=".view.SwipingVelocityActivity"
-            android:taskAffinity=""
-            android:exported="true"
-            android:theme="@style/FlowerGardenActivityTheme" />
-        <!-- TODO: remove this -->
-
-
     </application>
 
 </manifest>
