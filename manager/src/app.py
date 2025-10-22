@@ -495,12 +495,21 @@ def single_session_data():
 
     click_events = sync_events = None
     frequency_data = sync_intervals = None
+    waves_data = None
+    pacman_data = None
     angle_data = None
 
     if game_type in ("WATER_RIPPLES", "FLOWER_GARDEN"):
         click_events, sync_events = get_click_game_sync(sid)
-    else:
+    elif game_type in ("WINE_GLASSES", "FLOUR_MILL"):
         frequency_data, angle_data, sync_intervals = get_swipe_game_frequency(sid)
+    elif game_type == "WAVES":
+        waves_data = get_waves(sid)
+    elif game_type == "PACMAN":
+        pacman_data = get_pacman(sid)
+    else:
+        Logger.log_error(f"Unknown game type in single_session_data: {game_type}")
+
 
     metadata = {
         "gameType"    : game_type,
@@ -519,7 +528,9 @@ def single_session_data():
         "sync_events"    : sync_events,
         "frequency_data" : frequency_data,
         "sync_intervals" : sync_intervals,
-        "angle_data"     : angle_data
+        "angle_data"     : angle_data,
+        "waves_data"     : waves_data,
+        "pacman_data"    : pacman_data
     }
 
     return render_template("single_session_data.html",

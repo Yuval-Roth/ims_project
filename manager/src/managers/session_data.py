@@ -249,6 +249,84 @@ def get_swipe_game_frequency(session_id: str):
     return dict(frequency_data), dict(angle_data), sync_intervals
 
 
+def get_waves(session_id: str):
+    try:
+        fling_events = get_event_data(session_id, type_="USER_INPUT", subtype="FLING")
+        if not fling_events:
+            Logger.log_error(f"Session {session_id}: No FLING events found")
+            return None
+
+        # Sort chronologically
+        fling_events.sort(key=lambda x: x["timestamp"])
+
+        fling_data = defaultdict(lambda: {"timestamps": [], "values": []})
+
+        for ev in fling_events:
+            try:
+                # Split "speed,side" string
+                parts = ev["data"].split(",")
+                speed = float(parts[0].strip())  # dp/sec
+                # side = int(parts[1]) if len(parts) > 1 else None  # optional use later
+
+                timestamp_sec = (ev["timestamp"]) / 1000.0
+                fling_data[ev["actor"]]["timestamps"].append(f"{timestamp_sec:.3f}")
+                fling_data[ev["actor"]]["values"].append(speed)
+            except Exception as e:
+                Logger.log_error(f"Invalid FLING data: {ev.get('data')}  error={e}")
+
+        if not fling_data:
+            Logger.log_error(f"Session {session_id}: Parsed no valid FLING data")
+            return None
+
+        return dict(fling_data) if fling_data else None
+
+    except Exception as e:
+        Logger.log_error(f"get_waves – {e}")
+        return None
+
+
+def get_pacman(session_id: str):
+    try:
+        fling_events = get_event_data(session_id, type_="USER_INPUT", subtype="FLING")
+        if not fling_events:
+            Logger.log_error(f"Session {session_id}: No FLING events found")
+            return None
+
+        fling_events.sort(key=lambda x: x["timestamp"])
+
+        pacman_data = defaultdict(lambda: {"timestamps": [], "speed": [], "reward": []})
+
+        for ev in fling_events:
+            try:
+                parts = ev["data"].split(",")
+                if len(parts) < 3:
+                    raise ValueError("Incomplete PACMAN data")
+
+                speed = float(parts[0].strip())
+                # direction = int(parts[1])  # not used yet
+                reward = parts[2].strip().lower() == "true"
+
+                timestamp_sec = (ev["timestamp"]) / 1000.0
+
+                actor_data = pacman_data[ev["actor"]]
+                actor_data["timestamps"].append(f"{timestamp_sec:.3f}")
+                actor_data["speed"].append(speed)
+                actor_data["reward"].append(reward)
+
+            except Exception as e:
+                Logger.log_error(f"Invalid PACMAN data: {ev.get('data')}  error={e}")
+
+        if not pacman_data:
+            Logger.log_error(f"Session {session_id}: Parsed no valid PACMAN data")
+            return None
+
+        return dict(pacman_data) if pacman_data else None
+
+    except Exception as e:
+        Logger.log_error(f"get_pacman – {e}")
+        return None
+
+
 
 def get_lobbies_data() -> list[dict]:
     try:

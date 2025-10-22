@@ -190,6 +190,9 @@ const syncEvents    = {{ data.sync_events|tojson }};
 const frequencyData = {{ data.frequency_data|tojson }};
 const syncIntervals = {{ data.sync_intervals|tojson }};
 const angleData     = {{ data.angle_data|tojson }};
+const wavesData  = {{ data.waves_data  | tojson | safe }};
+const pacmanData = {{ data.pacman_data | tojson | safe }};
+
 
 /**** ---------- HELPERS ---------- ****/
 function clampAxesToZero(chart) {
@@ -589,6 +592,183 @@ else if (frequencyData && Object.keys(frequencyData).length) {
   gameChart.update();
   addResetZoomButton(gameChart, freqCtx.parentElement);
 }
+
+else if (wavesData && Object.keys(wavesData).length) {
+  titleEl.textContent = 'Waves – Fling Speed';
+
+  // define a color palette (you can replace with your global COLORS array)
+  const COLORS = ['#007bff', '#e74c3c', '#28a745', '#f1c40f'];
+
+  const datasets = Object.keys(wavesData).map((actor, idx) => {
+    const color = COLORS[idx % COLORS.length];
+    return {
+      label: actor,
+      data: wavesData[actor].timestamps.map((t, i) => ({
+        x: +t,
+        y: +wavesData[actor].values[i]
+      })),
+      showLine: false,   // scatter only
+      pointRadius: 4,
+      borderWidth: 0,
+      backgroundColor: color,
+      borderColor: color
+    };
+  });
+
+  const gameCtx = document.getElementById('gameChart');
+  const gameChart = new Chart(gameCtx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { title: { display: true, text: 'Fling Speed (dp/sec)' } }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} dp/s`
+          }
+        },
+        legend: { labels: { usePointStyle: true } }
+      }
+    }
+  });
+
+  const xMax = Math.max(...datasets.flatMap(ds => ds.data.map(pt => pt.x)));
+  const yMax = Math.max(...datasets.flatMap(ds => ds.data.map(pt => pt.y)));
+
+  gameChart.options.plugins.zoom = {
+    ...fullscreenZoom(gameChart),
+    limits: {
+      x: { min: 0, max: 1.5 * xMax, minRange: 0.1, maxRange: 1.5 * xMax },
+      y: { min: 0, max: 1.5 * yMax }
+    }
+  };
+
+  gameChart.update();
+  addResetZoomButton(gameChart, gameCtx.parentElement);
+}
+
+else if (pacmanData && Object.keys(pacmanData).length) {
+  titleEl.textContent = 'Pacman – Speed (Rewards Highlighted)';
+
+  const COLORS = ['#007bff', '#e74c3c', '#28a745', '#f1c40f']; // fallback palette
+
+  // ─────────────── Build datasets ───────────────
+  const datasets = Object.keys(pacmanData).map((actor, idx) => {
+    const base = pacmanData[actor];
+    const baseColor = COLORS[idx % COLORS.length];
+    const borderColor = baseColor.replace(')', ', 0.9)').replace('rgb', 'rgba'); // for glow edges if rgb
+
+    return {
+      label: actor,
+      data: base.timestamps.map((t, i) => ({
+        x: +t,
+        y: +base.speed[i],
+        reward: base.reward[i],
+        actorColor: baseColor
+      })),
+      showLine: false,
+      pointRadius: 6,
+      borderWidth: 1.5,
+      pointStyle: 'circle',
+      backgroundColor: baseColor,
+      borderColor: baseColor
+    };
+  });
+
+  // ─────────────── Register reward plugin ───────────────
+  // ─────────────── Register reward plugin ───────────────
+  Chart.register({
+    id: 'reward',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea } = chart;
+      const { top, bottom, left, right } = chartArea;
+      const radius = 9;   // outline radius
+      const margin = 4;   // buffer for full circle visibility
+
+      ctx.save();
+      // Clip drawing to the chart area
+      ctx.beginPath();
+      ctx.rect(left, top, right - left, bottom - top);
+      ctx.clip();
+
+      chart.data.datasets.forEach((dataset, dsIndex) => {
+        chart.getDatasetMeta(dsIndex).data.forEach((point, i) => {
+          const entry = dataset.data[i];
+          if (!entry.reward) return;
+
+          const { x, y } = point.getProps(['x', 'y'], true);
+
+          // Skip points fully outside (including outline width)
+          if (
+            x < left - radius - margin ||
+            x > right + radius + margin ||
+            y < top - radius - margin ||
+            y > bottom + radius + margin
+          ) return;
+
+          ctx.beginPath();
+          ctx.arc(x, y, radius, 0, 2 * Math.PI);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = entry.actorColor;
+          ctx.stroke();
+        });
+      });
+
+      ctx.restore(); // restore unclipped state
+    }
+  });
+
+  // ─────────────── Create chart ───────────────
+  const gameCtx = document.getElementById('gameChart');
+  const gameChart = new Chart(gameCtx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      parsing: false,
+      responsive: true,
+      scales: {
+        x: { type: 'linear', title: { display: true, text: 'Time (s)' } },
+        y: { title: { display: true, text: 'Speed (dp/sec)' } }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const actor = ctx.dataset.label;
+              const reward = pacmanData[actor].reward[ctx.dataIndex];
+              const speed = ctx.parsed.y.toFixed(1);
+              return reward
+                ? `${actor}: ${speed} dp/s ★`
+                : `${actor}: ${speed} dp/s`;
+            }
+          }
+        },
+        legend: { labels: { usePointStyle: true } }
+      }
+    }
+  });
+
+  // ─────────────── Zoom + Reset ───────────────
+  const xMax = Math.max(...datasets.flatMap(ds => ds.data.map(pt => pt.x)));
+  const yMax = Math.max(...datasets.flatMap(ds => ds.data.map(pt => pt.y)));
+
+  gameChart.options.plugins.zoom = {
+    ...fullscreenZoom(gameChart),
+    limits: {
+      x: { min: 0, max: 1.5 * xMax, minRange: 0.1, maxRange: 1.5 * xMax },
+      y: { min: 0, max: 1.5 * yMax }
+    }
+  };
+
+  gameChart.update();
+  addResetZoomButton(gameChart, gameCtx.parentElement);
+}
+
 
 else {
   titleEl.textContent = '(No game-specific data)';
