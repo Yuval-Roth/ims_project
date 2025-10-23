@@ -28,6 +28,8 @@ import com.imsproject.watch.PARTICLE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.PARTICLE_RADIUS
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
+import com.imsproject.watch.utils.closestQuantizedAngle
+import com.imsproject.watch.utils.quantizeAngles
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -90,12 +92,10 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
                 delay(1000L)
                 _myParticle.value = createNewParticle(myDirection)
                 _otherParticle.value = createNewParticle(-myDirection)
-                var acc = Angle(0f)
-                while(acc.floatValue >= 0){ acc = acc + PACMAN_ANGLE_STEP }
-                while(acc.floatValue <= -PACMAN_MOUTH_OPENING_ANGLE){ acc = acc + PACMAN_ANGLE_STEP }
-                val flingAngle = acc.floatValue
+                val quantizedAngles = quantizeAngles(PACMAN_ANGLE_STEP)
+                val flingAngle = Angle.fromArbitraryAngle(closestQuantizedAngle(360 - PACMAN_MOUTH_OPENING_ANGLE, PACMAN_ANGLE_STEP, quantizedAngles))
                 pacmanAngle.collect {
-                    if(pacmanAngle.value.floatValue == flingAngle){
+                    if(pacmanAngle.value.floatValue == flingAngle.floatValue){
                         handleFling(500f, -myDirection, true)
                     }
                 }

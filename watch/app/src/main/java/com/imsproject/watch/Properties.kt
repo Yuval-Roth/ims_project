@@ -12,7 +12,7 @@ import com.imsproject.common.utils.Angle
 
 const val PACKAGE_PREFIX = "com.imsproject.watch"
 
-const val ACTIVITY_DEBUG_MODE = false // set true to be able run the activity directly from the IDE
+const val ACTIVITY_DEBUG_MODE = true // set true to be able run the activity directly from the IDE
 
 // ============== Screen size related =============== |
 
@@ -66,7 +66,7 @@ var RIPPLE_MAX_SIZE = 0
 
 // ================= Wine Glasses =================== |
 
-var WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = 0.1f
+var WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD = 0.2f
 
 // tracks
 const val LOW_BUILD_IN_TRACK = 0
@@ -77,7 +77,7 @@ const val RUB_LOOP_TRACK = 5
 
 // ================= Flour Mill ===================== |
 
-var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.1f
+var FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = 0.2f
 
 // tracks
 const val MILL_SOUND_TRACK = 0
@@ -94,7 +94,7 @@ var INNER_TOUCH_POINT = 0f
 
 // my arc
 const val MY_STROKE_WIDTH = 15
-const val MY_SWEEP_ANGLE = 45f
+const val MY_SWEEP_ANGLE = 100f
 var MY_RADIUS_OUTER_EDGE = 0f
 var MY_ARC_TOP_LEFT = Offset(0f,0f)
 var MY_ARC_SIZE = Size(0f,0f)

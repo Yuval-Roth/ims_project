@@ -3,6 +3,7 @@ package com.imsproject.watch.viewmodel
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -10,8 +11,10 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Angle
 import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
+import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.INNER_TOUCH_POINT
 import com.imsproject.watch.MILL_SOUND_TRACK
 import com.imsproject.watch.OUTER_TOUCH_POINT
@@ -38,8 +41,11 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    val myArc = Arc()
-    val opponentArc = Arc()
+    var myColor: Color = BLUE_COLOR
+    var opponentColor: Color = GRASS_GREEN_COLOR
+
+    val myArc by lazy { Arc(myColor) }
+    val opponentArc by lazy { Arc(opponentColor) }
     private lateinit var myFrequencyTracker : FrequencyTracker
     @Volatile
     private var opponentFrequency = 0f
@@ -128,10 +134,26 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
             exitWithError("Missing sync window length", Result.Code.BAD_REQUEST)
             return
         }
+        val color = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")
+        when(color) {
+            "blue" -> {
+                myColor = BLUE_COLOR
+                opponentColor = GRASS_GREEN_COLOR
+            }
+            "green" -> {
+                myColor = GRASS_GREEN_COLOR
+                opponentColor = BLUE_COLOR
+            }
+            else -> {
+                exitWithError("Invalid color data", Result.Code.BAD_REQUEST)
+                return
+            }
+        }
         FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD = syncTolerance.toFloat() * 0.01f
         FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
+        Log.d(TAG," color: $color")
         model.sessionSetupComplete()
     }
 

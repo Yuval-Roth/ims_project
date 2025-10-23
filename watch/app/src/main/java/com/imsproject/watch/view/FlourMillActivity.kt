@@ -340,7 +340,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 // draw only if the touch point is within the defined borders
                 if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
                     drawArc(
-                        color = GLOWING_YELLOW_COLOR.copy(alpha = myArc.currentAlpha),
+                        color = myArc.color.copy(alpha = myArc.currentAlpha),
                         startAngle = myArc.startAngle.floatValue,
                         sweepAngle = MY_SWEEP_ANGLE,
                         useCenter = false,
@@ -353,7 +353,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
                 // draw opponent's arc
                 if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
                     drawArc(
-                        color = CYAN_COLOR.copy(alpha = opponentArc.currentAlpha),
+                        color = opponentArc.color.copy(alpha = opponentArc.currentAlpha),
                         startAngle = opponentArc.startAngle.floatValue,
                         sweepAngle = OPPONENT_SWEEP_ANGLE,
                         useCenter = false,

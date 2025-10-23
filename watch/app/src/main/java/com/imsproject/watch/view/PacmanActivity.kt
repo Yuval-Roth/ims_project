@@ -33,6 +33,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Angle
+import com.imsproject.watch.BLUE_COLOR
+import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.PACMAN_ANGLE_STEP
 import com.imsproject.watch.PACMAN_MAX_SIZE
 import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
@@ -232,28 +234,28 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                 // left side
                 val LEFT_INNER_X = SCREEN_CENTER.x - SCREEN_RADIUS * 0.76f
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = BLUE_COLOR,
                     start = Offset(0f , WALLS_UPPER_Y),
                     end = Offset(LEFT_INNER_X, WALLS_UPPER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = BLUE_COLOR,
                     start = Offset(LEFT_INNER_X, WALLS_UPPER_Y),
                     end = Offset(LEFT_INNER_X, OPENING_UPPER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = BLUE_COLOR,
                     start = Offset(0f, WALLS_LOWER_Y),
                     end = Offset(LEFT_INNER_X, WALLS_LOWER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = BLUE_COLOR,
                     start = Offset(LEFT_INNER_X, WALLS_LOWER_Y),
                     end = Offset(LEFT_INNER_X, OPENING_LOWER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
@@ -262,28 +264,28 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                 // right side
                 val RIGHT_INNER_X = SCREEN_CENTER.x + SCREEN_RADIUS * 0.76f
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_UPPER_Y),
                     end = Offset(size.width , WALLS_UPPER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_UPPER_Y),
                     end = Offset(RIGHT_INNER_X, OPENING_UPPER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_LOWER_Y),
                     end = Offset(size.width , WALLS_LOWER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
-                    color = PARTICLE_CAGE_COLOR,
+                    color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_LOWER_Y),
                     end = Offset(RIGHT_INNER_X, OPENING_LOWER_Y),
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,

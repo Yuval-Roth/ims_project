@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastCoerceIn
@@ -19,7 +20,9 @@ import kotlinx.coroutines.delay
 
 private const val DIRECTION_MAX_OFFSET = 1.0f
 
-class Arc{
+class Arc(
+    val color: Color
+){
     var startAngle by mutableStateOf(Angle.Companion.undefined)
     var angleSkew = 0f
     var direction = 0f
