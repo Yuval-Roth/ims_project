@@ -631,15 +631,27 @@
         const presets = {
             'warmup': [
                 new Session('Water Ripples', 40, 100, -1, true),
-                new Session('Wine Glasses', 40, 10, 1000, true),
+                new Session('Wine Glasses', 40, 20, 1000, true),
                 new Session('Flower Garden', 40, 100, -1, true),
-                new Session('Flour Mill', 40, 10, 1000, true)
+                new Session('Flour Mill', 40, 20, 1000, true),
+                new Session('Pacman', 40, -1, -1, true),
+                new Session('Waves', 40, -1, -1, true)
             ],
             'full_experiment': [
                 new Session('Water Ripples', 80, 100, -1, false),
-                new Session('Wine Glasses', 80, 10, 1000, false),
+                new Session('Wine Glasses', 80, 20, 1000, false),
                 new Session('Flower Garden', 80, 100, -1, false),
-                new Session('Flour Mill', 80, 10, 1000, false)
+                new Session('Flour Mill', 80, 20, 1000, false),
+                new Session('Pacman', 80, -1, -1, false),
+                new Session('Waves', 80, -1, -1, false)
+            ],
+            'two_minutes_each': [
+                new Session('Water Ripples', 120, 100, -1, false),
+                new Session('Wine Glasses', 120, 20, 1000, false),
+                new Session('Flower Garden', 120, 100, -1, false),
+                new Session('Flour Mill', 120, 20, 1000, false),
+                new Session('Pacman', 120, -1, -1, false),
+                new Session('Waves', 120, -1, -1, false)
             ]
         };
 
