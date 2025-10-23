@@ -476,7 +476,8 @@
                 toggleGameBtn.classList.remove('warning-button');
                 toggleGameBtn.classList.add('success-button');
                 // Enable the button only if all participants are ready
-                toggleGameBtn.disabled = !(readyCount >= 2 && hasSessions);
+                {#toggleGameBtn.disabled = !(readyCount >= 2 && hasSessions);#}
+                toggleGameBtn.disabled = !hasSessions;
                 addSessionBtn.disabled = false;
             } else {
                 toggleGameBtn.textContent = 'Stop Experiment';
