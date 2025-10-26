@@ -21,7 +21,7 @@ class Lobby(val id: String) {
         private set
     var syncWindowLength: Long = -1
         private set
-    var skipFeedback = false
+    var isWarmup = false
         private set
     var state = LobbyState.WAITING
     var hasSessions = false
@@ -32,7 +32,7 @@ class Lobby(val id: String) {
         gameDuration = sessionDetails.duration
         syncWindowLength = sessionDetails.syncWindowLength
         syncTolerance = sessionDetails.syncTolerance
-        skipFeedback = sessionDetails.skipFeedback
+        isWarmup = sessionDetails.isWarmup
     }
 
     /**

@@ -17,7 +17,7 @@ data class GameRequest (
     val timestamp: String?,
     val syncWindowLength: Long?,
     val syncTolerance: Long?,
-    val skipFeedback: Boolean?
+    val isWarmup: Boolean?
 ){
     enum class Type {
         @SerializedName("ping")                     PING,

@@ -115,7 +115,7 @@ class MainViewModel() : ViewModel() {
     private val _heartRateUnavailable = MutableStateFlow(false)
     val heartRateUnavailable: StateFlow<Boolean> = _heartRateUnavailable
 
-    private var _skipFeedback = false
+    private var _isWarmup = false
     private var _sessionId = -1
     var temporaryPlayerId = ""
 
@@ -197,14 +197,14 @@ class MainViewModel() : ViewModel() {
         _gameType.value = null
         _gameDuration.value = null
         _expId.value = result.expId
-        val skipFeedback = _skipFeedback
+        val isWarmup = _isWarmup
         setupListeners()
         viewModelScope.launch(Dispatchers.IO) {
             when (result.code) {
                 Result.Code.OK -> {
                     setState(State.UPLOADING_EVENTS)
                     if (model.uploadSessionEvents(_sessionId)) {
-                        val nextState = if(!skipFeedback){
+                        val nextState = if(!isWarmup){
                             State.AFTER_GAME
                         } else if(_lobbyId.value != "") {
                             State.CONNECTED_IN_LOBBY
@@ -337,7 +337,7 @@ class MainViewModel() : ViewModel() {
                     _gameType.value = null
                     _gameDuration.value = null
                     _ready.value = false
-                    _skipFeedback = false
+                    _isWarmup = false
 
                     _lobbyId.value = lobbyId
                     if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
@@ -374,14 +374,14 @@ class MainViewModel() : ViewModel() {
                     showError("Failed to configure lobby")
                     return
                 }
-                val skipFeedback = request.skipFeedback ?: run {
-                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing skipQuestions")
+                val isWarmup = request.isWarmup ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing isWarmup")
                     showError("Failed to configure lobby")
                     return
                 }
 
                 withContext(Dispatchers.Main){
-                    _skipFeedback = skipFeedback
+                    _isWarmup = isWarmup
                     _gameType.value = gameType
                     _gameDuration.value = gameDuration
                     _syncWindowLength.value = syncWindowLength

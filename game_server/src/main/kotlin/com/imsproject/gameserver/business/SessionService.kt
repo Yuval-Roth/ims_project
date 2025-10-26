@@ -22,7 +22,7 @@ class SessionService(
         duration: Int,
         syncWindowLength: Long,
         syncTolerance: Long,
-        skipFeedback: Boolean
+        isWarmup: Boolean
     ): String {
         log.debug("createSession() with lobbyId: {}, gameType: {}, duration: {}, syncWindowLength: {}, syncTolerance: {}",
             lobbyId,gameType,duration,syncWindowLength,syncTolerance)
@@ -55,7 +55,7 @@ class SessionService(
         }
 
         val sessionId = sessionIdGenerator.generate()
-        val session = Session(sessionId, gameType, duration, syncWindowLength, syncTolerance, skipFeedback)
+        val session = Session(sessionId, gameType, duration, syncWindowLength, syncTolerance, isWarmup)
         val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
         lobbySessions.add(session)
         if(lobbySessions.size == 1){

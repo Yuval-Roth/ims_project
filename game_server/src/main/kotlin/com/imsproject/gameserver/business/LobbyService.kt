@@ -74,7 +74,7 @@ class LobbyService(
                     .duration(lobby.gameDuration)
                     .syncWindowLength(lobby.syncWindowLength)
                     .syncTolerance(lobby.syncTolerance)
-                    .skipFeedback(lobby.skipFeedback)
+                    .isWarmup(lobby.isWarmup)
                     .build().toJson()
             )
         }
@@ -217,14 +217,7 @@ class LobbyService(
                     .lobbyId(lobbyId)
                     .build().toJson())
             if(lobby.hasSessions){
-                clientHandler.sendTcp(
-                    GameRequest.builder(Type.CONFIGURE_LOBBY)
-                        .gameType(lobby.gameType)
-                        .duration(lobby.gameDuration)
-                        .syncWindowLength(lobby.syncWindowLength)
-                        .syncTolerance(lobby.syncTolerance)
-                        .build().toJson()
-                )
+                sendLobbyConfiguration(clientHandler)
             }
             log.debug("joinLobby() successful")
         } else {
@@ -263,7 +256,7 @@ class LobbyService(
                         .duration(sessionDetails.duration)
                         .syncWindowLength(sessionDetails.syncWindowLength)
                         .syncTolerance(sessionDetails.syncTolerance)
-                        .skipFeedback(sessionDetails.skipFeedback)
+                        .isWarmup(sessionDetails.isWarmup)
                         .build().toJson()
                 )
             }
@@ -298,7 +291,7 @@ class LobbyService(
                 .duration(lobby.gameDuration)
                 .syncWindowLength(lobby.syncWindowLength)
                 .syncTolerance(lobby.syncTolerance)
-                .skipFeedback(lobby.skipFeedback)
+                .isWarmup(lobby.isWarmup)
                 .build().toJson()
         )
         log.debug("sendLobbyConfiguration() successful")

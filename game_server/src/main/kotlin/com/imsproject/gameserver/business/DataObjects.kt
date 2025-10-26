@@ -8,7 +8,7 @@ data class Session(
     val duration: Int,
     val syncWindowLength: Long,
     val syncTolerance: Long,
-    val skipFeedback: Boolean,
+    val isWarmup: Boolean,
     var dbId: Int? = null,
     var state: SessionState = SessionState.NOT_STARTED
 )
