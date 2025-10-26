@@ -214,7 +214,7 @@ def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance:
     body["duration"] = duration
     body["syncTolerance"] = sync_tolerance
     body["syncWindowLength"] = window
-    body["skipFeedback"] = skip_feedback
+    body["isWarmup"] = skip_feedback
     print(f"Creating session with body: {body}")
     try:
         res = post_auth(URL + "/manager", json=body)

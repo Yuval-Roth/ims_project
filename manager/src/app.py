@@ -320,7 +320,7 @@ def add_session():
     duration = data.get('duration')
     sync_tolerance = data.get('syncTolerance')
     sync_window_length = data.get('syncWindowLength')
-    skip_feedback = data.get('skipFeedback')
+    skip_feedback = data.get('isWarmup')
     print(data)
 
     if not (lobby_id and game_type_name and duration and sync_tolerance and sync_window_length and skip_feedback is not None):
@@ -343,7 +343,7 @@ def add_session():
                     "sessionId": session_id,
                     "syncTolerance": sync_tolerance,
                     "syncWindowLength": sync_window_length,
-                    "skipFeedback": skip_feedback
+                    "isWarmup": skip_feedback
                 }
             })
         Logger.log_error(f"Failed to create session for lobby {lobby_id}")
@@ -601,6 +601,55 @@ def get_experiment_questions_route():
 @app.route('/thank_you', methods=['GET'])
 def thank_you_route():
     return render_template('thankyou_page.html')
+
+
+###################### PRESETS ######################
+@app.route('/presets', methods=['GET'])
+def presets_menu():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('presets.html')
+
+
+@app.route('/get_presets', methods=['GET'])
+def get_presets_route():
+    # TODO: Implement API call to backend server
+    # Example:
+    # response = post_auth(URL + "/manager", body)
+    # return jsonify(server_response(response).get_payload())
+    return jsonify({
+        "status": "success",
+        "payload": [
+            {"name": "warmup", "sessions": [
+                {"gameType": "Water Ripples", "duration": 40, "syncTolerance": 100, "syncWindowLength": -1, "isWarmup": True}
+            ]},
+            {"name": "full_experiment", "sessions": [
+                {"gameType": "Waves", "duration": 80, "syncTolerance": -1, "syncWindowLength": -1, "isWarmup": False}
+            ]}
+        ]
+    })
+
+
+@app.route('/add_preset', methods=['POST'])
+def add_preset_route():
+    data = request.json
+    # TODO: Add API call to backend server for creating preset
+    return jsonify({"status": "success", "message": "Preset added"})
+
+
+@app.route('/update_preset', methods=['PUT'])
+def update_preset_route():
+    data = request.json
+    # TODO: Add API call to backend server for updating preset
+    return jsonify({"status": "success", "message": "Preset updated"})
+
+
+@app.route('/delete_preset', methods=['DELETE'])
+def delete_preset_route():
+    data = request.json
+    # TODO: Add API call to backend server for deleting preset
+    return jsonify({"status": "success", "message": "Preset deleted"})
+
 
 if __name__ == '__main__':
     # run on port 80

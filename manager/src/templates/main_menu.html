@@ -13,6 +13,7 @@
         <button onclick="window.location.href='/lobbies'" class="main-menu-button">Lobbies</button>
         <button id="participants-btn" onclick="window.location.href='/participants'" class="main-menu-button">Participants</button>
         <button id="operators-btn" onclick="window.location.href='/operators'" class="main-menu-button">Operators</button>
+        <button id="presets-btn" onclick="window.location.href='/presets'" class="main-menu-button">Presets</button>
         <button onclick="window.location.href='/session_data'" class="main-menu-button">Session Data</button>
         <button id="disconnect-btn" class="main-menu-button">Disconnect</button>
 
@@ -23,6 +24,7 @@
             if (username !== 'admin') {
                 document.getElementById('participants-btn').style.display = 'none';
                 document.getElementById('operators-btn').style.display = 'none';
+                document.getElementById('presets-btn').style.display = 'none';
             }
         });
     </script>

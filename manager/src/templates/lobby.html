@@ -80,7 +80,7 @@
                                     <td>{{ session.duration }}</td>
                                     <td>{{ session.sessionId }}</td>
                                     <td>{{ session.syncTolerance }}</td>
-                                    <td>{{ session.skipFeedback }}</td>
+                                    <td>{{ session.isWarmup }}</td>
                                     <td>{{ session.syncWindowLength }}</td>
                                     <td>
                                         <button class="danger-button delete-session-btn" data-session-id="{{ session.sessionId }}">Delete</button>
@@ -127,8 +127,8 @@
                 <label for="window">Sync Window Length (ms):</label>
                 <input type="number" name="window" id="window" required>
 
-                <label for="skipFeedback">Skip Feedback</label>
-                <select name="skipFeedback" id="skipFeedback" required>
+                <label for="isWarmup">Skip Feedback</label>
+                <select name="isWarmup" id="isWarmup" required>
                     <option value="no">No</option>
                     <option value="yes">Yes</option>
                 </select>
@@ -147,10 +147,10 @@
 
     <script>
     class Session {
-        constructor(gameType, duration, syncTolerance, syncWindowLength, skipFeedback) {
+        constructor(gameType, duration, syncTolerance, syncWindowLength, isWarmup) {
             this.gameType = gameType;
             this.duration = duration;
-            this.skipFeedback = skipFeedback;
+            this.isWarmup = isWarmup;
             this.syncTolerance = syncTolerance
             this.syncWindowLength = syncWindowLength
         }
@@ -277,7 +277,7 @@
                 duration: parseInt(formData.get('duration'), 10),
                 syncTolerance: syncTolerance,
                 syncWindowLength: syncWindowLength,
-                skipFeedback: formData.get('skipFeedback') === 'yes'
+                isWarmup: formData.get('isWarmup') === 'yes'
             };
 
             fetch('/add_session', {
@@ -363,7 +363,7 @@
 
         // Append a session row to the table
         function appendSessionRow(session, index = -1) {
-            if (!session || !session.sessionId || !session.gameType || !session.duration || !session.syncTolerance || !session.syncWindowLength || session.skipFeedback === undefined) {
+            if (!session || !session.sessionId || !session.gameType || !session.duration || !session.syncTolerance || !session.syncWindowLength || session.isWarmup === undefined) {
                 console.warn('Invalid session data:', session);
                 return;
             }
@@ -392,7 +392,7 @@
                     syncWindowLength = 'N/A';
                     break;
             }
-            const skipFeedback = session.skipFeedback ? 'Yes' : 'No';
+            const isWarmup = session.isWarmup ? 'Yes' : 'No';
             // Create and append the row
             const row = document.createElement('tr');
             row.dataset.sessionId = session.sessionId;
@@ -402,7 +402,7 @@
                 <td>${session.dbId}</td>
                 <td>${syncTolerance}</td>
                 <td>${syncWindowLength}</td>
-                <td>${skipFeedback}</td>
+                <td>${isWarmup}</td>
                 <td>
                     <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
                 </td>
@@ -620,10 +620,10 @@
         }
 
         // skip feedback select warning
-        const skipFeedbackSelect = document.getElementById('skipFeedback');
-        skipFeedbackSelect.addEventListener('change', function() {
-            const skipFeedback = skipFeedbackSelect.value === 'yes';
-            skipFeedbackSelect.style.backgroundColor = skipFeedback ? 'red' : 'white';
+        const isWarmupSelect = document.getElementById('isWarmup');
+        isWarmupSelect.addEventListener('change', function() {
+            const isWarmup = isWarmupSelect.value === 'yes';
+            isWarmupSelect.style.backgroundColor = isWarmup ? 'red' : 'white';
         })
 
         // Presets
@@ -700,7 +700,7 @@
                         duration: session.duration,
                         syncTolerance: session.syncTolerance,
                         syncWindowLength: session.syncWindowLength,
-                        skipFeedback: session.skipFeedback
+                        isWarmup: session.isWarmup
                     })
                 });
 
