@@ -1,5 +1,6 @@
 package com.imsproject.gameserver.dataAccess.models
 
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -138,4 +139,18 @@ data class ExperimentWithParticipantNamesDTO(
     val dateTime: LocalDateTime,
     val participant1Name: String,
     val participant2Name: String
+)
+
+data class PresetDTO(
+    val name: String,
+    val sessions: List<PresetSessionDTO>
+)
+
+data class PresetSessionDTO(
+    val index: Int,
+    val duration: Int,
+    val gameType: GameType,
+    val syncTolerance: Int,
+    val syncWindowLength: Int,
+    val isWarmup: Boolean
 )

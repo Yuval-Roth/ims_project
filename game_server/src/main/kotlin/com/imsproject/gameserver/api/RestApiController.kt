@@ -64,6 +64,34 @@ class RestApiController(
     // =========================================================================== |
 
     @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/presets/{action}")
+    fun presets(@PathVariable action: String, @RequestBody body: String): ResponseEntity<String> {
+        return withParsedBody<PresetDTO>(body) { preset ->
+            withErrorHandling("Error handling preset request") {
+                try {
+                    when (action) {
+                        "add" -> {
+
+                        }
+                        "remove" -> {
+
+                        }
+                        "update" -> {
+
+                        }
+                        "get" -> {
+
+                        }
+                        else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
+                    }
+                } catch (e: IllegalArgumentException) {
+                    return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
+                }
+            }
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/operators/{action}")
     fun operators(@PathVariable action: String, @RequestBody body : String): ResponseEntity<String> {
         return withParsedBody<Credentials>(body) { credentials ->
