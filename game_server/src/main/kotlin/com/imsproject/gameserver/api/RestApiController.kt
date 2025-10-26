@@ -8,10 +8,13 @@ import com.imsproject.gameserver.dataAccess.DAOController
 import com.imsproject.gameserver.toResponseEntity
 import com.imsproject.common.utils.fromJson
 import com.imsproject.gameserver.business.GameRequestFacade
+import com.imsproject.gameserver.business.GameService
 import com.imsproject.gameserver.business.ParticipantService
+import com.imsproject.gameserver.business.PresetService
 import com.imsproject.gameserver.business.auth.AuthService
 import com.imsproject.gameserver.business.auth.Credentials
 import com.imsproject.gameserver.dataAccess.implementations.ParticipantsDAO
+import com.imsproject.gameserver.dataAccess.implementations.PresetsDAO
 import com.imsproject.gameserver.dataAccess.models.*
 import com.imsproject.gameserver.runTimed
 import kotlinx.coroutines.CoroutineScope
@@ -33,9 +36,9 @@ class RestApiController(
     private val gameRequestFacade: GameRequestFacade,
     private val authService: AuthService,
     private val participantService: ParticipantService,
+    private val presetService: PresetService,
     private val daoController: DAOController,
-    private val resources: ResourceLoader,
-    private val participantsDAO: ParticipantsDAO
+    private val resources: ResourceLoader
 ) : ErrorController {
 
     @RequestMapping("/login", method = [RequestMethod.POST, RequestMethod.GET])
@@ -64,23 +67,27 @@ class RestApiController(
     // =========================================================================== |
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/presets/{action}")
+    @PostMapping("/presets/{action}")
     fun presets(@PathVariable action: String, @RequestBody body: String): ResponseEntity<String> {
         return withParsedBody<PresetDTO>(body) { preset ->
             withErrorHandling("Error handling preset request") {
                 try {
                     when (action) {
                         "add" -> {
-
+                            presetService.addPreset(preset.name)
+                            Response.getOk().toResponseEntity()
                         }
-                        "remove" -> {
-
+                        "delete" -> {
+                            presetService.deletePreset(preset.name)
+                            Response.getOk().toResponseEntity()
                         }
                         "update" -> {
-
+                            presetService.updatePreset(preset)
+                            Response.getOk().toResponseEntity()
                         }
                         "get" -> {
-
+                            val presets = presetService.getPresets()
+                            Response.getOk(presets).toResponseEntity()
                         }
                         else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
                     }

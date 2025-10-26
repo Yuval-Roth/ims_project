@@ -143,7 +143,7 @@ data class ExperimentWithParticipantNamesDTO(
 
 data class PresetDTO(
     val name: String,
-    val sessions: List<PresetSessionDTO>
+    val sessions: List<PresetSessionDTO>?
 )
 
 data class PresetSessionDTO(
