@@ -22,6 +22,17 @@ def get_game_type_name_from_value(value):
             return game.name  # Return human-readable value
     raise KeyError(f"Invalid game type: {value}")
 
+def get_game_type_value_from_name(name):
+    """
+    Maps the human-readable enum name to its enum value.
+    """
+    for game in GAME_TYPE:
+        if game.name == name:  # Match enum name (e.g., 'water_ripples')
+            return game.value  # Return human-readable value (e.g., 'Water Ripples')
+        if game.value == name:  # Match human-readable value (e.g., 'Water Ripples')
+            return game.value  # Return human-readable value
+    raise KeyError(f"Invalid game type: {name}")
+
 class GAME_TYPE(Enum):
     water_ripples = 'Water Ripples'
     wine_glasses = 'Wine Glasses'

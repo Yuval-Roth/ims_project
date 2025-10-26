@@ -618,7 +618,15 @@ def get_presets_route():
         response = post_auth(f"{URL}/presets/get", {"name": ""})
         parsed = server_response(response)
         if parsed.get_success():
-            return jsonify({"status": "success", "payload": parsed.get_payload()})
+            updated_payload = []
+            payload = parsed.get_payload()
+            for preset in payload:
+                preset = json.loads(preset)
+                for session in preset.get('sessions', []):
+                    backend_game_type = session.get('gameType')
+                    session['gameType'] = get_game_type_value_from_name(backend_game_type)
+                updated_payload.append(preset)
+            return jsonify({"status": "success", "payload": json.dumps(updated_payload)})
         else:
             return jsonify({"status": "error", "message": parsed.get_message()}), 400
     except Exception as e:
@@ -644,11 +652,14 @@ def add_preset_route():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@app.route('/update_preset', methods=['PUT'])
+@app.route('/update_preset', methods=['POST'])
 def update_preset_route():
     """Update an existing preset with new sessions."""
     try:
-        data = request.json or {}
+        data = request.json
+        for session in data.get('sessions', []):
+            backend_game_type = get_game_type_name_from_value(session.get('gameType'))
+            session['gameType'] = backend_game_type
         # Expecting the full PresetDTO:
         # {"name": "warmup", "sessions": [ { "index": 0, "duration": ..., "gameType": ..., ... } ]}
         response = post_auth(f"{URL}/presets/update", data)
@@ -661,7 +672,7 @@ def update_preset_route():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@app.route('/delete_preset', methods=['DELETE'])
+@app.route('/delete_preset', methods=['POST'])
 def delete_preset_route():
     """Delete a preset by name."""
     try:

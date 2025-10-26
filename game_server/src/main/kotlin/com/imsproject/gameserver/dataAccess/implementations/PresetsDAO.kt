@@ -30,8 +30,7 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): PresetDTO {
         val presetSessionDTOs = mutableListOf<PresetSessionDTO>()
         val presetName = resultSet.getString("preset_name")!!
-        resultSet.next() // Move to the first session row
-        while(resultSet.next()) {
+        while(resultSet.next()) { // Move to the first session row
             val session = PresetSessionDTO(
                 index = resultSet.getInt("idx")!!,
                 duration = resultSet.getInt("duration")!!,
@@ -79,7 +78,8 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
             val query = "INSERT INTO presets (preset_name, idx, duration, game_type, sync_tolerance, sync_window_length, is_warmup) VALUES (?,?,?,?,?,?,?)"
             // Insert a first row with index 0 to represent the preset itself
             val firstValue = arrayOf<Any>(obj.name,0,-1,GameType.UNDEFINED.name,-1,-1,false)
-            rowsInserted += cursor.executeWrite(query, firstValue, transactionId)
+            val _transactionId = transactionId ?: cursor.beginTransaction()
+            rowsInserted += cursor.executeWrite(query, firstValue, _transactionId)
             if (obj.sessions != null){
                 for (session in obj.sessions) {
                     val values = arrayOf<Any>(
@@ -91,8 +91,11 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
                         session.syncWindowLength,
                         session.isWarmup
                     )
-                    rowsInserted += cursor.executeWrite(query,values, transactionId)
+                    rowsInserted += cursor.executeWrite(query,values, _transactionId)
                 }
+            }
+            if(transactionId == null){
+                cursor.commit(_transactionId)
             }
         } catch (e: SQLException){
             throw DaoException("Failed to insert preset ${obj.name}", e)
@@ -111,6 +114,7 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
         try{
             delete(PresetPK(obj.name,-1), _transactionId)
             insert(obj, _transactionId)
+            cursor.commit(_transactionId)
         } catch (e: DaoException){
             throw DaoException("Failed to update preset ${obj.name}", e)
         }
@@ -131,7 +135,7 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
             SELECT * FROM $tableName
             WHERE preset_name = ? and idx = 0
         """.trimIndent()
-        val values = arrayOf(key.getValue("name"))
+        val values = arrayOf(key.getValue("preset_name"))
         val resultSet: OfflineResultSet
         try {
             resultSet = cursor.executeRead(selectQuery,  values, transactionId)

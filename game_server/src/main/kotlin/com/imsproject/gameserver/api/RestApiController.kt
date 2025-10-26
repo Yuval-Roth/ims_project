@@ -73,24 +73,16 @@ class RestApiController(
             withErrorHandling("Error handling preset request") {
                 try {
                     when (action) {
-                        "add" -> {
-                            presetService.addPreset(preset.name)
-                            Response.getOk().toResponseEntity()
-                        }
-                        "delete" -> {
-                            presetService.deletePreset(preset.name)
-                            Response.getOk().toResponseEntity()
-                        }
-                        "update" -> {
-                            presetService.updatePreset(preset)
-                            Response.getOk().toResponseEntity()
-                        }
+                        "add" -> presetService.addPreset(preset.name)
+                        "delete" -> presetService.deletePreset(preset.name)
+                        "update" -> presetService.updatePreset(preset)
                         "get" -> {
                             val presets = presetService.getPresets()
-                            Response.getOk(presets).toResponseEntity()
+                            return Response.getOk(presets).toResponseEntity()
                         }
-                        else -> Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
+                        else -> return Response.getError("Invalid action").toResponseEntity(HttpStatus.BAD_REQUEST)
                     }
+                    return Response.getOk().toResponseEntity()
                 } catch (e: IllegalArgumentException) {
                     return Response.getError(e).toResponseEntity(HttpStatus.BAD_REQUEST)
                 }

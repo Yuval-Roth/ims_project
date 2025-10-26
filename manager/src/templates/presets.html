@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch('/get_presets');
         const data = await res.json();
         if (data.status === 'success') {
-            presets = data.payload;
+            presets = JSON.parse(data.payload);
             renderPresets();
         } else {
             presetsWrapper.innerHTML = '<p>Failed to load presets.</p>';
@@ -132,7 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         presets.forEach(preset => {
-            preset = JSON.parse(preset);
             const section = document.createElement('section');
             section.className = 'preset-block';
             let rowsHTML;
@@ -212,6 +211,54 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionModal.style.display = 'none';
         overlay.style.display = 'none';
     }
+
+    // ───────────────────── Handle Session Form Submission (Add Session)
+    sessionForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentPresetName) return;
+
+    // Find the preset to update
+    let preset = presets.find(p => {
+        const parsed = typeof p === 'string' ? JSON.parse(p) : p;
+        return parsed.name === currentPresetName;
+    });
+
+    if (!preset) {
+        alert('Preset not found.');
+        return;
+    }
+
+    // Parse string presets if needed
+    preset = typeof preset === 'string' ? JSON.parse(preset) : preset;
+
+    // Ensure sessions array exists
+    if (!Array.isArray(preset.sessions)) preset.sessions = [];
+
+    // Build session object from form
+    const formData = new FormData(sessionForm);
+    const newSession = {
+        index: preset.sessions.length + 1,
+        gameType: formData.get('gameType'),
+        duration: parseInt(formData.get('duration')),
+        syncTolerance: parseFloat(formData.get('syncTolerance')),
+        syncWindowLength: parseInt(formData.get('window')),
+        isWarmup: formData.get('isWarmup') === 'yes'
+    };
+
+    // Add the new session locally
+    preset.sessions.push(newSession);
+
+    // Send full preset via POST
+    await fetch('/update_preset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(preset)
+    });
+
+    closeAllModals();
+    await fetchPresets();
+});
+
 
     presetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
