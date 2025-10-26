@@ -610,45 +610,75 @@ def presets_menu():
         return redirect(url_for('login'))
     return render_template('presets.html')
 
-
 @app.route('/get_presets', methods=['GET'])
 def get_presets_route():
-    # TODO: Implement API call to backend server
-    # Example:
-    # response = post_auth(URL + "/manager", body)
-    # return jsonify(server_response(response).get_payload())
-    return jsonify({
-        "status": "success",
-        "payload": [
-            {"name": "warmup", "sessions": [
-                {"gameType": "Water Ripples", "duration": 40, "syncTolerance": 100, "syncWindowLength": -1, "isWarmup": True}
-            ]},
-            {"name": "full_experiment", "sessions": [
-                {"gameType": "Waves", "duration": 80, "syncTolerance": -1, "syncWindowLength": -1, "isWarmup": False}
-            ]}
-        ]
-    })
+    """Fetch all presets from backend."""
+    try:
+        # Backend expects: GET /presets/get with an empty JSON body
+        response = post_auth(f"{URL}/presets/get", {"name": ""})
+        parsed = server_response(response)
+        if parsed.get_success():
+            return jsonify({"status": "success", "payload": parsed.get_payload()})
+        else:
+            return jsonify({"status": "error", "message": parsed.get_message()}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/add_preset', methods=['POST'])
 def add_preset_route():
-    data = request.json
-    # TODO: Add API call to backend server for creating preset
-    return jsonify({"status": "success", "message": "Preset added"})
+    """Add a new preset by name."""
+    try:
+        data = request.json or {}
+        # Expecting: {"name": "<presetName>"}
+        if "name" not in data:
+            return jsonify({"status": "error", "message": "Missing preset name"}), 400
+
+        response = post_auth(f"{URL}/presets/add", data)
+        parsed = server_response(response)
+        if parsed.get_success():
+            return jsonify({"status": "success", "message": "Preset added"})
+        else:
+            return jsonify({"status": "error", "message": parsed.get_message()}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/update_preset', methods=['PUT'])
 def update_preset_route():
-    data = request.json
-    # TODO: Add API call to backend server for updating preset
-    return jsonify({"status": "success", "message": "Preset updated"})
+    """Update an existing preset with new sessions."""
+    try:
+        data = request.json or {}
+        # Expecting the full PresetDTO:
+        # {"name": "warmup", "sessions": [ { "index": 0, "duration": ..., "gameType": ..., ... } ]}
+        response = post_auth(f"{URL}/presets/update", data)
+        parsed = server_response(response)
+        if parsed.get_success():
+            return jsonify({"status": "success", "message": "Preset updated"})
+        else:
+            return jsonify({"status": "error", "message": parsed.get_message()}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @app.route('/delete_preset', methods=['DELETE'])
 def delete_preset_route():
-    data = request.json
-    # TODO: Add API call to backend server for deleting preset
-    return jsonify({"status": "success", "message": "Preset deleted"})
+    """Delete a preset by name."""
+    try:
+        data = request.json or {}
+        # Expecting: {"name": "<presetName>"}
+        if "name" not in data:
+            return jsonify({"status": "error", "message": "Missing preset name"}), 400
+
+        response = post_auth(f"{URL}/presets/delete", data)
+        parsed = server_response(response)
+        if parsed.get_success():
+            return jsonify({"status": "success", "message": "Preset deleted"})
+        else:
+            return jsonify({"status": "error", "message": parsed.get_message()}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 if __name__ == '__main__':

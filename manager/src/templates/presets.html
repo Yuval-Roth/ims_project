@@ -132,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         presets.forEach(preset => {
+            if(!preset.sessions) preset.sessions = [];
+            console.log(preset)
             const section = document.createElement('section');
             section.className = 'preset-block';
             section.innerHTML = `

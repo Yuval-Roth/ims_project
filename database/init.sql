@@ -63,4 +63,15 @@ CREATE TABLE IF NOT EXISTS SessionEvents (
 CREATE TABLE IF NOT EXISTS Credentials (
     user_id TEXT PRIMARY KEY,
     password TEXT NOT NULL
-)
+);
+
+CREATE TABLE IF NOT EXISTS Presets (
+    preset_name text,
+    idx integer,
+    duration integer NOT NULL,
+    game_type text NOT NULL,
+    sync_tolerance integer NOT NULL,
+    sync_window_length integer NOT NULL,
+    is_warmup boolean NOT NULL,
+    PRIMARY KEY (preset_name, idx)
+);
