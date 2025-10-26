@@ -132,10 +132,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         presets.forEach(preset => {
-            if(!preset.sessions) preset.sessions = [];
-            console.log(preset)
+            preset = JSON.parse(preset);
             const section = document.createElement('section');
             section.className = 'preset-block';
+            let rowsHTML;
+            if (preset.sessions.length === 0) {
+                rowsHTML = `
+                <tr class="no-sessions-row">
+                    <td colspan="6" style="text-align:center; color:#777; font-style:italic;">
+                        No sessions in this preset
+                    </td>
+                </tr>
+            `;
+            } else {
+                rowsHTML = preset.sessions.map((s, i) => `
+                  <tr data-index="${i}">
+                      <td>${s.gameType}</td>
+                      <td>${s.duration}</td>
+                      <td>${formatSyncTolerance(s)}</td>
+                      <td>${formatSyncWindow(s)}</td>
+                      <td>${s.isWarmup ? 'Yes' : 'No'}</td>
+                      <td><button class="danger-button" data-name="${preset.name}" data-index="${i}" data-action="delete-session">Delete</button></td>
+                  </tr>`).join('')
+            }
             section.innerHTML = `
                 <div class="preset-header">
                     <h2>${preset.name}</h2>
@@ -157,15 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </tr>
                         </thead>
                         <tbody id="tbody-${preset.name}">
-                            ${preset.sessions.map((s, i) => `
-                                <tr data-index="${i}">
-                                    <td>${s.gameType}</td>
-                                    <td>${s.duration}</td>
-                                    <td>${formatSyncTolerance(s)}</td>
-                                    <td>${formatSyncWindow(s)}</td>
-                                    <td>${s.isWarmup ? 'Yes' : 'No'}</td>
-                                    <td><button class="danger-button" data-name="${preset.name}" data-index="${i}" data-action="delete-session">Delete</button></td>
-                                </tr>`).join('')}
+                            ${rowsHTML}
                         </tbody>
                     </table>
                 </div>
@@ -214,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         closeAllModals();
-        fetchPresets();
+        await fetchPresets();
     });
 
     // ───────────────────── Session Modal
