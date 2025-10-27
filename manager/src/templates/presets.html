@@ -292,6 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (action === 'delete-session') {
             const preset = presets.find(p => p.name === name);
             preset.sessions.splice(index, 1);
+            // reindex sessions before sending update
+            preset.sessions.forEach((s, i) => s.index = i + 1);
             await fetch('/update_preset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
