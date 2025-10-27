@@ -235,25 +235,48 @@ button:hover {
     width:25%;
 }
 
-.preset-buttons {
+/* Preset Controls Layout */
+.preset-controls {
     display: flex;
     justify-content: center;
-    width:100%;
-    gap: 15px;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-top: 10px;
 }
 
-.preset-button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 8px;
+/* Dropdown Styling (matches general theme) */
+.preset-select {
+    width: 220px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #ffffff;
+    font-size: 16px;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.preset-button:hover {
+.preset-select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+}
+
+/* Disabled button look */
+#apply-preset-btn:disabled {
+    background-color: #bcd0ef;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Hover and active states for Apply button */
+#apply-preset-btn:not(:disabled):hover {
     background-color: #0056b3;
 }
+
 
 .participants-section {
     width: 25%;

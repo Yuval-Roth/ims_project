@@ -47,10 +47,10 @@
                 <!-- Presets Section -->
                 <section class="presets-section">
                     <h2>Presets</h2>
-                    <div class="preset-buttons">
-                        <button id="warmup-preset" class="preset-button">Warmup</button>
-                        <button id="full-experiment-preset" class="preset-button">Full experiment</button>
-                    </div>
+                        <select id="preset-dropdown" class="styled-select" style="width: 250px;">
+                              <option value="">Select a preset...</option>
+                        </select>
+                        <button id="apply-preset-btn" class="primary-button" disabled>Apply Preset</button>
                 </section>
             </div>
 
@@ -619,43 +619,14 @@
             updateDefaultValues()
         }
 
-        // skip feedback select warning
+        // is warmup select warning
         const isWarmupSelect = document.getElementById('isWarmup');
         isWarmupSelect.addEventListener('change', function() {
             const isWarmup = isWarmupSelect.value === 'yes';
             isWarmupSelect.style.backgroundColor = isWarmup ? 'red' : 'white';
         })
 
-        // Presets
-        document.getElementById('warmup-preset').addEventListener('click', () => { runPreset('warmup'); });
-        document.getElementById('full-experiment-preset').addEventListener('click', () => { runPreset('full_experiment'); });
-        const presets = {
-            'warmup': [
-                new Session('Water Ripples', 40, 100, -1, true),
-                new Session('Wine Glasses', 40, 20, 1000, true),
-                new Session('Flower Garden', 40, 100, -1, true),
-                new Session('Flour Mill', 40, 20, 1000, true),
-                new Session('Pacman', 40, -1, -1, true),
-                new Session('Waves', 40, -1, -1, true)
-            ],
-            'full_experiment': [
-                new Session('Water Ripples', 80, 100, -1, false),
-                new Session('Wine Glasses', 80, 20, 1000, false),
-                new Session('Flower Garden', 80, 100, -1, false),
-                new Session('Flour Mill', 80, 20, 1000, false),
-                new Session('Pacman', 80, -1, -1, false),
-                new Session('Waves', 80, -1, -1, false)
-            ],
-            'two_minutes_each': [
-                new Session('Water Ripples', 120, 100, -1, false),
-                new Session('Wine Glasses', 120, 20, 1000, false),
-                new Session('Flower Garden', 120, 100, -1, false),
-                new Session('Flour Mill', 120, 20, 1000, false),
-                new Session('Pacman', 120, -1, -1, false),
-                new Session('Waves', 120, -1, -1, false)
-            ]
-        };
-
+        const presets_memory = {};
         async function runPreset(preset){
 
             if(experimentRunning === true){
@@ -664,7 +635,7 @@
             }
 
             // Get the selected preset
-            const selectedPreset = presets[preset];
+            const selectedPreset = presets_memory[preset];
             if (!selectedPreset) {
                 console.error('Invalid preset selected:', preset);
                 return;
@@ -682,7 +653,7 @@
             )
 
             // Loop through the sessions in the preset and add them
-            for (const session of selectedPreset) {
+            for (const session of selectedPreset.sessions) {
                 await addSession(session);
             }
 
@@ -754,6 +725,61 @@
         // Initial state fetch on page load
         fetchLobbyState();
         updateCreateSessionParams();
+
+        // ───────────────────── Dynamic Preset Loading ─────────────────────
+        const presetDropdown = document.getElementById('preset-dropdown');
+        const applyPresetBtn = document.getElementById('apply-preset-btn');
+
+        // Fetch presets from backend
+        function fetchPresetsList() {
+            fetch('/get_presets')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const presets =  JSON.parse(data.payload);
+
+                        // Clear existing options
+                        presetDropdown.innerHTML = '<option value="">Select a preset...</option>';
+
+                        // Populate dropdown with preset names
+                        presets.forEach(p => {
+                            presets_memory[p.name] = p;
+                            const option = document.createElement('option');
+                            option.value = p.name;
+                            option.textContent = p.name.replace(/_/g, ' ');
+                            presetDropdown.appendChild(option);
+                        });
+
+                        // Enable dropdown and button
+                        presetDropdown.disabled = false;
+                    } else {
+                        console.error('Failed to fetch presets.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching presets:', err);
+                });
+        }
+
+        // Enable button when a preset is selected
+        presetDropdown.addEventListener('change', () => {
+            applyPresetBtn.disabled = presetDropdown.value === '';
+        });
+
+        // Apply selected preset
+        applyPresetBtn.addEventListener('click', async () => {
+            const presetName = presetDropdown.value;
+            if (!presetName) return;
+
+            if (experimentRunning) {
+                alert('Cannot activate preset while the experiment is running.');
+                return;
+            }
+            await runPreset(presetName);
+        });
+
+        // Initialize presets on page load
+        fetchPresetsList();
     });
     </script>
 </body>
