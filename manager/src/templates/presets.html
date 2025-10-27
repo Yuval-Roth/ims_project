@@ -1,165 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Presets</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='presets.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presets</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='general.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='presets.css') }}">
 </head>
 <body>
-  <!-- Home Button -->
-  <a href="/main_menu" class="home-button">
+<!-- Home Button -->
+<a href="/main_menu" class="home-button">
     <img src="{{ url_for('static', filename='photos/home.png') }}" alt="Home" class="home-icon">
-  </a>
+</a>
 
-  <div class="main-container">
+<div class="main-container">
     <div class="header-bar">
-      <h1>Presets</h1>
+        <h1>Presets</h1>
     </div>
 
     <div class="content-area" id="presets-container">
-      <div id="presets-wrapper" class="presets-wrapper">
-        <p>Loading presets...</p>
-      </div>
-
-      <div class="action-buttons">
-        <button id="add-preset-btn" class="primary-button">Add Preset</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add New Preset Modal -->
-  <div id="preset-name-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h2>Add New Preset</h2>
-      <form id="preset-name-form">
-        <label for="presetName">Preset Name:</label>
-        <input type="text" id="presetName" name="presetName" required placeholder="Enter preset name">
-
-        <div class="modal-actions">
-          <button type="button" id="cancel-preset-btn" class="cancel-button">Cancel</button>
-          <button type="submit" class="primary-button">Create</button>
+        <div id="presets-wrapper" class="presets-wrapper">
+            <p>Loading presets...</p>
         </div>
-      </form>
-    </div>
-  </div>
 
-  <!-- Existing Add/Edit Session Modal -->
-  <div id="session-modal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h2 id="session-modal-title">Add Session</h2>
-      <form id="session-form">
-        <label for="gameType">Game Type:</label>
-        <select id="gameType" name="gameType" class="styled-select" required>
-          <option value="Water Ripples">Water Ripples</option>
-          <option value="Wine Glasses">Wine Glasses</option>
-          <option value="Flour Mill">Flour Mill</option>
-          <option value="Flower Garden">Flower Garden</option>
-          <option value="Pacman">Pacman</option>
-          <option value="Waves">Waves</option>
-        </select>
-
-        <label for="duration">Duration (seconds):</label>
-        <input type="number" id="duration" name="duration" min="1" required>
-
-        <label id="syncToleranceDescription" for="syncTolerance"></label>
-        <input type="number" id="syncTolerance" name="syncTolerance" required>
-
-        <label for="window">Sync Window Length (ms):</label>
-        <input type="number" id="window" name="window" required>
-
-        <label for="isWarmup">Is Warmup:</label>
-        <select id="isWarmup" name="isWarmup" class="styled-select" required>
-          <option value="no">No</option>
-          <option value="yes">Yes</option>
-        </select>
-
-        <div class="modal-actions">
-          <button type="button" id="cancel-modal-btn" class="cancel-button">Cancel</button>
-          <button type="submit" class="primary-button">Add</button>
+        <div class="action-buttons">
+            <button id="add-preset-btn" class="primary-button">Add Preset</button>
         </div>
-      </form>
     </div>
-  </div>
+</div>
 
-  <div id="modal-overlay" class="modal-overlay" style="display:none;"></div>
+<!-- Add New Preset Modal -->
+<div id="preset-name-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h2>Add New Preset</h2>
+        <form id="preset-name-form">
+            <label for="presetName">Preset Name:</label>
+            <input type="text" id="presetName" name="presetName" required placeholder="Enter preset name">
+
+            <div class="modal-actions">
+                <button type="button" id="cancel-preset-btn" class="cancel-button">Cancel</button>
+                <button type="submit" class="primary-button">Create</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Existing Add/Edit Session Modal -->
+<div id="session-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h2 id="session-modal-title">Add Session</h2>
+        <form id="session-form">
+            <label for="gameType">Game Type:</label>
+            <select id="gameType" name="gameType" class="styled-select" required>
+                <option value="Water Ripples">Water Ripples</option>
+                <option value="Wine Glasses">Wine Glasses</option>
+                <option value="Flour Mill">Flour Mill</option>
+                <option value="Flower Garden">Flower Garden</option>
+                <option value="Pacman">Pacman</option>
+                <option value="Waves">Waves</option>
+            </select>
+
+            <label for="duration">Duration (seconds):</label>
+            <input type="number" id="duration" name="duration" min="1" required>
+
+            <label id="syncToleranceDescription" for="syncTolerance"></label>
+            <input type="number" id="syncTolerance" name="syncTolerance" required>
+
+            <label for="window">Sync Window Length (ms):</label>
+            <input type="number" id="window" name="window" required>
+
+            <label for="isWarmup">Is Warmup:</label>
+            <select id="isWarmup" name="isWarmup" class="styled-select" required>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+
+            <div class="modal-actions">
+                <button type="button" id="cancel-modal-btn" class="cancel-button">Cancel</button>
+                <button type="submit" class="primary-button">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-overlay" class="modal-overlay" style="display:none;"></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const presetsWrapper = document.getElementById('presets-wrapper');
-    const addPresetBtn = document.getElementById('add-preset-btn');
-    const presetModal = document.getElementById('preset-name-modal');
-    const presetForm = document.getElementById('preset-name-form');
-    const cancelPresetBtn = document.getElementById('cancel-preset-btn');
-    const overlay = document.getElementById('modal-overlay');
+    document.addEventListener('DOMContentLoaded', () => {
+        const presetsWrapper = document.getElementById('presets-wrapper');
+        const addPresetBtn = document.getElementById('add-preset-btn');
+        const presetModal = document.getElementById('preset-name-modal');
+        const presetForm = document.getElementById('preset-name-form');
+        const cancelPresetBtn = document.getElementById('cancel-preset-btn');
+        const overlay = document.getElementById('modal-overlay');
 
-    const sessionModal = document.getElementById('session-modal');
-    const cancelSessionModalBtn = document.getElementById('cancel-modal-btn');
-    const sessionForm = document.getElementById('session-form');
+        const sessionModal = document.getElementById('session-modal');
+        const cancelSessionModalBtn = document.getElementById('cancel-modal-btn');
+        const sessionForm = document.getElementById('session-form');
 
-    let presets = [];
-    let currentPresetName = null;
+        let presets = [];
+        let currentPresetName = null;
 
-    class Session {
-        constructor(gameType, duration, syncTolerance, syncWindowLength, isWarmup) {
-            this.gameType = gameType;
-            this.duration = duration;
-            this.syncTolerance = syncTolerance;
-            this.syncWindowLength = syncWindowLength;
-            this.isWarmup = isWarmup;
-        }
-    }
-
-    // ───────────────────── Fetch Presets
-    async function fetchPresets() {
-        const res = await fetch('/get_presets');
-        const data = await res.json();
-        if (data.status === 'success') {
-            presets = JSON.parse(data.payload);
-            renderPresets();
-        } else {
-            presetsWrapper.innerHTML = '<p>Failed to load presets.</p>';
-        }
-    }
-
-    // ───────────────────── Render Presets
-    function renderPresets() {
-        presetsWrapper.innerHTML = '';
-        if (!presets || presets.length === 0) {
-            presetsWrapper.innerHTML = '<p>No presets found.</p>';
-            return;
+        class Session {
+            constructor(gameType, duration, syncTolerance, syncWindowLength, isWarmup) {
+                this.gameType = gameType;
+                this.duration = duration;
+                this.syncTolerance = syncTolerance;
+                this.syncWindowLength = syncWindowLength;
+                this.isWarmup = isWarmup;
+            }
         }
 
-        presets.forEach(preset => {
-            const section = document.createElement('section');
-            section.className = 'preset-block';
-            let rowsHTML;
-            if (preset.sessions.length === 0) {
-                rowsHTML = `
+        // ───────────────────── Fetch Presets
+        async function fetchPresets() {
+            const res = await fetch('/get_presets');
+            const data = await res.json();
+            if (data.status === 'success') {
+                presets = JSON.parse(data.payload);
+                renderPresets();
+            } else {
+                presetsWrapper.innerHTML = '<p>Failed to load presets.</p>';
+            }
+        }
+
+        // ───────────────────── Render Presets
+        function renderPresets() {
+            presetsWrapper.innerHTML = '';
+            if (!presets || presets.length === 0) {
+                presetsWrapper.innerHTML = '<p>No presets found.</p>';
+                return;
+            }
+
+            presets.forEach(preset => {
+                const section = document.createElement('section');
+                section.className = 'preset-block';
+                let rowsHTML;
+                if (preset.sessions.length === 0) {
+                    rowsHTML = `
                 <tr class="no-sessions-row">
                     <td colspan="6" style="text-align:center; color:#777; font-style:italic;">
                         No sessions in this preset
                     </td>
                 </tr>
             `;
-            } else {
-                rowsHTML = preset.sessions.map((s, i) => `
+                } else {
+                    rowsHTML = preset.sessions.map((s, i) => `
                   <tr data-index="${i}">
                       <td>${s.gameType}</td>
                       <td>${s.duration}</td>
                       <td>${formatSyncTolerance(s)}</td>
                       <td>${formatSyncWindow(s)}</td>
                       <td>${s.isWarmup ? 'Yes' : 'No'}</td>
-                      <td><button class="danger-button" data-name="${preset.name}" data-index="${i}" data-action="delete-session">Delete</button></td>
+                      <td>
+                        <button class="primary-button" data-name="${preset.name}" data-index="${i}" data-action="edit-session">✏️</button>
+                        <button class="danger-button" data-name="${preset.name}" data-index="${i}" data-action="delete-session">🗑️</button>
+                      </td>
                   </tr>`).join('')
-            }
-            section.innerHTML = `
+                }
+                presetsWrapper.appendChild(section);
+                section.innerHTML = `
                 <div class="preset-header">
                     <h2>${preset.name}</h2>
                     <div class="preset-actions">
-                        <button class="primary-button" data-name="${preset.name}" data-action="add-session">Add Session</button>
-                        <button class="danger-button" data-name="${preset.name}" data-action="delete-preset">Delete Preset</button>
+                        <button class="primary-button" data-name="${preset.name}" data-action="add-session">＋</button>
+                        <button class="danger-button" data-name="${preset.name}" data-action="delete-preset">🗑️</button>
                     </div>
                 </div>
                 <div class="table-container">
@@ -180,39 +184,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     </table>
                 </div>
             `;
-            presetsWrapper.appendChild(section);
+            });
+        }
+
+        // ───────────────────── Formatters
+        function formatSyncTolerance(s) {
+            if (s.syncTolerance === -1) return 'N/A';
+            if (s.gameType === 'Wine Glasses' || s.gameType === 'Flour Mill')
+                return (s.syncTolerance / 100) + ' Hz';
+            return s.syncTolerance + ' ms';
+        }
+
+        function formatSyncWindow(s) {
+            return s.syncWindowLength === -1 ? 'N/A' : s.syncWindowLength + ' ms';
+        }
+
+        // ───────────────────── Preset Modal
+        addPresetBtn.addEventListener('click', () => {
+            presetForm.reset();
+            presetModal.style.display = 'block';
+            overlay.style.display = 'block';
         });
-    }
 
-    // ───────────────────── Formatters
-    function formatSyncTolerance(s) {
-        if (s.syncTolerance === -1) return 'N/A';
-        if (s.gameType === 'Wine Glasses' || s.gameType === 'Flour Mill')
-            return (s.syncTolerance / 100) + ' Hz';
-        return s.syncTolerance + ' ms';
-    }
+        cancelPresetBtn.addEventListener('click', closeAllModals);
+        overlay.addEventListener('click', closeAllModals);
 
-    function formatSyncWindow(s) {
-        return s.syncWindowLength === -1 ? 'N/A' : s.syncWindowLength + ' ms';
-    }
+        function closeAllModals() {
+            sessionForm.dataset.editing = '';
+            document.getElementById('session-modal-title').textContent = 'Add Session';
+            sessionForm.querySelector('button[type="submit"]').textContent = 'Add';
+            presetModal.style.display = 'none';
+            sessionModal.style.display = 'none';
+            overlay.style.display = 'none';
+        }
 
-    // ───────────────────── Preset Modal
-    addPresetBtn.addEventListener('click', () => {
-        presetForm.reset();
-        presetModal.style.display = 'block';
-        overlay.style.display = 'block';
-    });
-
-    cancelPresetBtn.addEventListener('click', closeAllModals);
-    overlay.addEventListener('click', closeAllModals);
-
-    function closeAllModals() {
-        presetModal.style.display = 'none';
-        sessionModal.style.display = 'none';
-        overlay.style.display = 'none';
-    }
-
-    let addSessionValueHistory = {
+        let addSessionValueHistory = {
             'Water Ripples': {
                 syncTolerance: null,
             },
@@ -239,14 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
             'gameType': 'Water Ripples',
         }
 
-    // ───────────────────── Update Session Input Parameters Based on Game Type
-    function updateSessionInputRestrictions() {
-        const gameTypeSelect = document.getElementById('gameType');
-        const syncToleranceInput = document.getElementById('syncTolerance');
-        const syncToleranceDescription = document.getElementById('syncToleranceDescription');
-        const syncWindowInput = document.getElementById('window');
+        // ───────────────────── Update Session Input Parameters Based on Game Type
+        function updateSessionInputRestrictions() {
+            const gameTypeSelect = document.getElementById('gameType');
+            const syncToleranceInput = document.getElementById('syncTolerance');
+            const syncToleranceDescription = document.getElementById('syncToleranceDescription');
+            const syncWindowInput = document.getElementById('window');
 
-        const clickBased = {
+            const clickBased = {
                 syncTolerance: 100,
                 syncToleranceUnit: 'ms',
                 syncToleranceStep: 1,
@@ -274,176 +280,198 @@ document.addEventListener('DOMContentLoaded', () => {
                 syncToleranceEnabled: false
             }
 
-        const defaultParams = {
-            'Water Ripples': clickBased,
-            'Flower Garden': clickBased,
-            'Flour Mill': swipeBased,
-            'Wine Glasses': swipeBased,
-            'Pacman': flingBased,
-            'Waves': flingBased
-        };
+            const defaultParams = {
+                'Water Ripples': clickBased,
+                'Flower Garden': clickBased,
+                'Flour Mill': swipeBased,
+                'Wine Glasses': swipeBased,
+                'Pacman': flingBased,
+                'Waves': flingBased
+            };
 
-        function updateDefaultValues() {
-            const selectedGame = gameTypeSelect.value;
-            const oldGame = addSessionValueHistory["gameType"];
-            switch(oldGame){
+            function updateDefaultValues() {
+                const selectedGame = gameTypeSelect.value;
+                const oldGame = addSessionValueHistory["gameType"];
+                switch (oldGame) {
+                    case 'Flower Garden':
+                    case 'Water Ripples':
+                        addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
+                        break;
+                    case 'Flour Mill':
+                    case 'Wine Glasses':
+                        addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
+                        addSessionValueHistory[oldGame].syncWindowLength = syncWindowInput.value;
+                        break;
+                }
+                addSessionValueHistory["gameType"] = selectedGame;
+                const lastSyncTolerance = addSessionValueHistory[selectedGame].syncTolerance;
+                const lastSyncWindowLength = addSessionValueHistory[selectedGame].syncWindowLength;
+
+                if (defaultParams[selectedGame]) {
+                    syncToleranceInput.value = lastSyncTolerance ? lastSyncTolerance : defaultParams[selectedGame].syncTolerance;
+                    syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
+                    syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
+                    syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
+                    syncWindowInput.value = lastSyncWindowLength ? lastSyncWindowLength : defaultParams[selectedGame].syncWindowLength;
+                    syncWindowInput.disabled = !defaultParams[selectedGame].windowLengthEnabled;
+                    syncToleranceInput.disabled = !defaultParams[selectedGame].syncToleranceEnabled;
+                }
+            }
+
+            // Initialize and bind listener
+            gameTypeSelect.addEventListener('change', updateDefaultValues);
+            updateDefaultValues();
+        }
+
+        // Initialize restrictions once DOM is ready
+        updateSessionInputRestrictions();
+
+
+        function sessionFromFormData(formData) {
+            const gameType = formData.get('gameType');
+            let syncTolerance
+            let syncWindowLength
+            switch (gameType) {
                 case 'Flower Garden':
                 case 'Water Ripples':
-                    addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
+                    syncTolerance = parseInt(formData.get('syncTolerance'), 10);
+                    syncWindowLength = -1;
                     break;
                 case 'Flour Mill':
                 case 'Wine Glasses':
-                    addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
-                    addSessionValueHistory[oldGame].syncWindowLength = syncWindowInput.value;
+                    syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
+                    syncWindowLength = parseInt(formData.get('window'), 10);
+                    break;
+                case 'Pacman':
+                case 'Waves':
+                    syncTolerance = -1;
+                    syncWindowLength = -1;
                     break;
             }
-            addSessionValueHistory["gameType"] = selectedGame;
-            const lastSyncTolerance = addSessionValueHistory[selectedGame].syncTolerance;
-            const lastSyncWindowLength = addSessionValueHistory[selectedGame].syncWindowLength;
-
-            if (defaultParams[selectedGame]) {
-                syncToleranceInput.value = lastSyncTolerance ? lastSyncTolerance : defaultParams[selectedGame].syncTolerance;
-                syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
-                syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
-                syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
-                syncWindowInput.value = lastSyncWindowLength ? lastSyncWindowLength : defaultParams[selectedGame].syncWindowLength;
-                syncWindowInput.disabled = !defaultParams[selectedGame].windowLengthEnabled;
-                syncToleranceInput.disabled = !defaultParams[selectedGame].syncToleranceEnabled;
-            }
+            return {
+                gameType: gameType,
+                duration: parseInt(formData.get('duration'), 10),
+                syncTolerance: syncTolerance,
+                syncWindowLength: syncWindowLength,
+                isWarmup: formData.get('isWarmup') === 'yes'
+            };
         }
 
-        // Initialize and bind listener
-        gameTypeSelect.addEventListener('change', updateDefaultValues);
-        updateDefaultValues();
-    }
+        // ───────────────────── Handle Session Form Submission (Add Session)
+        sessionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentPresetName) return;
 
-    // Initialize restrictions once DOM is ready
-    updateSessionInputRestrictions();
+            const formData = new FormData(sessionForm);
+            const newSession = sessionFromFormData(formData);
+            let preset = presets.find(p => p.name === currentPresetName);
+            if (!preset) return;
+            const editIndex = sessionForm.dataset.editing;
+            if (editIndex !== undefined && editIndex !== '') {
+                // ✅ Edit existing session
+                preset.sessions[editIndex] = { ...newSession, index: parseInt(editIndex) + 1 };
+                delete sessionForm.dataset.editing;
+                document.getElementById('session-modal-title').textContent = 'Add Session';
+                sessionForm.querySelector('button[type="submit"]').textContent = 'Add';
+            } else {
+                // ✅ Add new session
+                newSession.index = preset.sessions.length + 1;
+                preset.sessions.push(newSession);
+            }
 
-
-    // ───────────────────── Handle Session Form Submission (Add Session)
-    sessionForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!currentPresetName) return;
-
-    // Find the preset to update
-    let preset = presets.find(p => {
-        const parsed = typeof p === 'string' ? JSON.parse(p) : p;
-        return parsed.name === currentPresetName;
-    });
-
-    if (!preset) {
-        alert('Preset not found.');
-        return;
-    }
-
-    // Parse string presets if needed
-    preset = typeof preset === 'string' ? JSON.parse(preset) : preset;
-
-    // Ensure sessions array exists
-    if (!Array.isArray(preset.sessions)) preset.sessions = [];
-
-    // Build session object from form
-    const formData = new FormData(sessionForm);
-    const gameType = formData.get('gameType');
-    let syncTolerance
-    let syncWindowLength
-    switch(gameType) {
-        case 'Flower Garden':
-        case 'Water Ripples':
-            syncTolerance = parseInt(formData.get('syncTolerance'), 10);
-            syncWindowLength = -1;
-            break;
-        case 'Flour Mill':
-        case 'Wine Glasses':
-            syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
-            syncWindowLength = parseInt(formData.get('window'), 10);
-            break;
-        case 'Pacman':
-        case 'Waves':
-            syncTolerance = -1;
-            syncWindowLength = -1;
-            break;
-    }
-    const newSession = {
-        index: preset.sessions.length + 1,
-        gameType: gameType,
-        duration: parseInt(formData.get('duration'), 10),
-        syncTolerance: syncTolerance,
-        syncWindowLength: syncWindowLength,
-        isWarmup: formData.get('isWarmup') === 'yes'
-    };
-
-    // Add the new session locally
-    preset.sessions.push(newSession);
-
-    // Send full preset via POST
-    await fetch('/update_preset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preset)
-    });
-
-    closeAllModals();
-    await fetchPresets();
-});
-
-
-    presetForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('presetName').value.trim();
-        if (!name) return;
-
-        await fetch('/add_preset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name })
-        });
-
-        closeAllModals();
-        await fetchPresets();
-    });
-
-    // ───────────────────── Session Modal
-    cancelSessionModalBtn.addEventListener('click', closeAllModals);
-
-    // ───────────────────── Handle Actions
-    presetsWrapper.addEventListener('click', async e => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        const { action, name, index } = btn.dataset;
-
-        if (action === 'add-session') {
-            currentPresetName = name;
-            sessionForm.reset();
-            document.getElementById('session-modal').style.display = 'block';
-            overlay.style.display = 'block';
-            updateSessionInputRestrictions();
-        } else if (action === 'delete-session') {
-            if (!confirm(`Delete session #${parseInt(index) + 1} from preset "${name}"?`)) return;
-            const preset = presets.find(p => p.name === name);
-            preset.sessions.splice(index, 1);
-            // reindex sessions before sending update
-            preset.sessions.forEach((s, i) => s.index = i + 1);
             await fetch('/update_preset', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(preset)
             });
-            await fetchPresets();
-        } else if (action === 'delete-preset') {
-            if (!confirm(`Delete preset "${name}"?`)) return;
-            await fetch('/delete_preset', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name })
-            });
-            await fetchPresets();
-        }
-    });
 
-    fetchPresets();
-});
+            closeAllModals();
+            await fetchPresets();
+        });
+
+
+        presetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('presetName').value.trim();
+            if (!name) return;
+
+            await fetch('/add_preset', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name})
+            });
+
+            closeAllModals();
+            await fetchPresets();
+        });
+
+        // ───────────────────── Session Modal
+        cancelSessionModalBtn.addEventListener('click', closeAllModals);
+
+        // ───────────────────── Handle Actions
+        presetsWrapper.addEventListener('click', async e => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const {action, name, index} = btn.dataset;
+
+            if (action === 'add-session') {
+                currentPresetName = name;
+                sessionForm.reset();
+                document.getElementById('session-modal').style.display = 'block';
+                overlay.style.display = 'block';
+                updateSessionInputRestrictions();
+            } else if (action === 'edit-session') {
+                currentPresetName = name;
+                const preset = presets.find(p => p.name === name);
+                const sessionToEdit = preset.sessions[index];
+
+                // pre-fill form fields
+                document.getElementById('gameType').value = sessionToEdit.gameType;
+                document.getElementById('duration').value = sessionToEdit.duration;
+                document.getElementById('syncTolerance').value =
+                    (sessionToEdit.gameType === 'Wine Glasses' || sessionToEdit.gameType === 'Flour Mill')
+                        ? sessionToEdit.syncTolerance / 100
+                        : sessionToEdit.syncTolerance;
+                document.getElementById('window').value =
+                    sessionToEdit.syncWindowLength === -1 ? '' : sessionToEdit.syncWindowLength;
+                document.getElementById('isWarmup').value = sessionToEdit.isWarmup ? 'yes' : 'no';
+
+                // change modal title & button label
+                document.getElementById('session-modal-title').textContent = 'Edit Session';
+                sessionForm.querySelector('button[type="submit"]').textContent = 'Save';
+
+                // mark which session is being edited
+                sessionForm.dataset.editing = index;
+
+                // show modal
+                sessionModal.style.display = 'block';
+                overlay.style.display = 'block';
+                updateSessionInputRestrictions();
+            } else if (action === 'delete-session') {
+                if (!confirm(`Delete session #${parseInt(index) + 1} from preset "${name}"?`)) return;
+                const preset = presets.find(p => p.name === name);
+                preset.sessions.splice(index, 1);
+                // reindex sessions before sending update
+                preset.sessions.forEach((s, i) => s.index = i + 1);
+                await fetch('/update_preset', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(preset)
+                });
+                await fetchPresets();
+            } else if (action === 'delete-preset') {
+                if (!confirm(`Delete preset "${name}"?`)) return;
+                await fetch('/delete_preset', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name})
+                });
+                await fetchPresets();
+            }
+        });
+
+        fetchPresets();
+    });
 </script>
 </body>
 </html>

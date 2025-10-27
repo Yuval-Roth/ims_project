@@ -134,7 +134,7 @@ body {
 .danger-button,
 .cancel-button {
   border: none;
-  padding: 10px 24px;
+  padding: 10px 15px;
   border-radius: 6px;
   font-size: 15px;
   cursor: pointer;
