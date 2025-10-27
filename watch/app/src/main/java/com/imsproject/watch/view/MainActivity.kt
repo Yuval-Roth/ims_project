@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.os.VibrationEffect
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -12,6 +13,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -46,7 +49,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,24 +61,33 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Picker
 import androidx.wear.compose.material.PickerState
 import androidx.wear.compose.material.rememberPickerState
 import com.imsproject.common.gameserver.GameType
+import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.FIRST_QUESTION
+import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
@@ -95,7 +109,9 @@ import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
@@ -217,8 +233,24 @@ class MainActivity : ComponentActivity() {
                 val hr = sensorHandler.heartRate.collectAsState().value
 //                val ibi = sensorHandler.ibi.collectAsState().value
                 val hrSensorReady = hr != 0
-                ConnectedInLobbyScreen(userId, lobbyId,gameType,gameDuration, ready, hrSensorReady){
-                    viewModel.toggleReady()
+                ConnectedInLobbyScreen(userId, lobbyId)
+            }
+
+            State.WELCOME_SCREEN -> WelcomeScreen {
+                viewModel.toggleReady()
+                viewModel.setState(State.WAITING_FOR_OTHER_PLAYER)
+            }
+
+            State.WAITING_FOR_OTHER_PLAYER -> {
+                LoadingScreen("ממתין לשותף מרוחק...")
+            }
+
+            State.REMOTE_PLAYER_READY -> RemotePlayerReady()
+
+            State.COLOR_CONFIRMATION -> {
+                val myColor = viewModel.myColor.collectAsState().value
+                ColorConfirmationScreen(myColor) {
+
                 }
             }
 
@@ -444,7 +476,7 @@ class MainActivity : ComponentActivity() {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-            ){
+            ) {
                 Spacer(modifier = Modifier.fillMaxHeight(0.3f))
                 RTLText("המזהה שלי: $id")
                 Spacer(modifier = Modifier.fillMaxHeight(0.35f))
@@ -456,12 +488,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun ConnectedInLobbyScreen(
         userId: String,
-        lobbyId: String,
-        gameType: String,
-        gameDuration: String,
-        ready: Boolean,
-        hrSensorReady: Boolean,
-        onReady: () -> Unit
+        lobbyId: String
     ) {
         Column(
             modifier = Modifier
@@ -477,65 +504,234 @@ class MainActivity : ComponentActivity() {
                     .fillMaxHeight(0.8f),
                 horizontalAlignment = Alignment.CenterHorizontally
             ){
-                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-                val white = remember { Color(0xFFFFE095) }
-                val green = remember { Color(0xFF89F55C) }
-                Box(
-                    modifier = Modifier
-                        .background(if (ready) green else white)
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.20f)
-                    ,
-                    contentAlignment = Alignment.Center,
-                ){
-                    RTLText(
-                        text = "סטטוס: "+if (ready) "מוכן" else "לא מוכן",
-                        style = textStyle.copy(color = Color.Black),
-                    )
-                }
-                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-                val halfVisibleText = remember {
-                    TextStyle(
-                        color = Color(0xFF707070),
-                        fontSize = TEXT_SIZE
-                    )
-                }
+                Spacer(modifier = Modifier.fillMaxHeight(0.3f))
                 RTLText(
-                    text = "המזהה שלי: $userId",
-                    style = halfVisibleText,
+                    text = "מזהה משתתף: $userId",
+                    style = textStyle,
                 )
                 Spacer(modifier = Modifier.height(3.dp))
                 RTLText(
                     text = "מזהה לובי: $lobbyId",
-                    style = halfVisibleText,
+                    style = textStyle,
                 )
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.fillMaxHeight(0.3f))
                 RTLText(
-                    text = gameType.ifBlank { "" },
-                    style = halfVisibleText
-                )
-                Spacer(modifier = Modifier.height(3.dp))
-                RTLText(
-                    text = if(gameDuration.isNotBlank()) "$gameDuration שניות" else "",
-                    style = halfVisibleText
+                    text = "ממתין להתחלת הניסוי...",
+                    style = textStyle,
                 )
             }
-            Button(
-                colors = if (!hrSensorReady && !viewModel.heartRateUnavailable.collectAsState().value)
-                    ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
-                        contentColor = Color.White
-                    )
-                else ButtonDefaults.primaryButtonColors(),
-                onClick = { onReady() },
-                modifier = Modifier
-                    .fillMaxWidth(0.55f)
-                    .fillMaxHeight()
+        }
+    }
+
+
+
+//    @Composable
+//    private fun ConnectedInLobbyScreen(
+//        userId: String,
+//        lobbyId: String,
+//        gameType: String,
+//        gameDuration: String,
+//        ready: Boolean,
+//        hrSensorReady: Boolean,
+//        onReady: () -> Unit
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .background(DARK_BACKGROUND_COLOR)
+//                .padding(bottom = (SCREEN_RADIUS * 0.08f).dp),
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            verticalArrangement = Arrangement.Center,
+//        ){
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .fillMaxHeight(0.8f),
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ){
+//                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+//                val white = remember { Color(0xFFFFE095) }
+//                val green = remember { Color(0xFF89F55C) }
+//                Box(
+//                    modifier = Modifier
+//                        .background(if (ready) green else white)
+//                        .fillMaxWidth()
+//                        .fillMaxHeight(0.20f)
+//                    ,
+//                    contentAlignment = Alignment.Center,
+//                ){
+//                    RTLText(
+//                        text = "סטטוס: "+if (ready) "מוכן" else "לא מוכן",
+//                        style = textStyle.copy(color = Color.Black),
+//                    )
+//                }
+//                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+//                val halfVisibleText = remember {
+//                    TextStyle(
+//                        color = Color(0xFF707070),
+//                        fontSize = TEXT_SIZE
+//                    )
+//                }
+//                RTLText(
+//                    text = "המזהה שלי: $userId",
+//                    style = halfVisibleText,
+//                )
+//                Spacer(modifier = Modifier.height(3.dp))
+//                RTLText(
+//                    text = "מזהה לובי: $lobbyId",
+//                    style = halfVisibleText,
+//                )
+//                Spacer(modifier = Modifier.height(3.dp))
+//                RTLText(
+//                    text = gameType.ifBlank { "" },
+//                    style = halfVisibleText
+//                )
+//                Spacer(modifier = Modifier.height(3.dp))
+//                RTLText(
+//                    text = if(gameDuration.isNotBlank()) "$gameDuration שניות" else "",
+//                    style = halfVisibleText
+//                )
+//            }
+//            Button(
+//                colors = if (!hrSensorReady && !viewModel.heartRateUnavailable.collectAsState().value)
+//                    ButtonDefaults.buttonColors(
+//                        backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
+//                        contentColor = Color.White
+//                    )
+//                else ButtonDefaults.primaryButtonColors(),
+//                onClick = { onReady() },
+//                modifier = Modifier
+//                    .fillMaxWidth(0.55f)
+//                    .fillMaxHeight()
+//            ) {
+//                val blackText = remember { textStyle.copy(color = Color.Black) }
+//                RTLText(
+//                    text = if(ready) "השהה התחלה" else "אפשר להתחיל",
+//                    style = blackText,
+//                )
+//            }
+//        }
+//    }
+
+    @Composable
+    fun WelcomeScreen(onClick : () -> Unit) {
+        ButtonedPage(
+            buttonText = "אני מוכנ/ה להתחיל",
+            onClick = onClick,
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                val blackText = remember { textStyle.copy(color = Color.Black) }
+                Spacer(modifier = Modifier.fillMaxHeight(0.5f))
                 RTLText(
-                    text = if(ready) "השהה התחלה" else "אפשר להתחיל",
-                    style = blackText,
+                    text = "ברוכים הבאים לניסוי!",
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun RemotePlayerReady(){
+        Column(
+            modifier = Modifier
+                .background(color = DARK_BACKGROUND_COLOR)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            val currentNumber = remember { MutableStateFlow(4) }
+            var alpha by remember { mutableFloatStateOf(0f) }
+            val countdown = remember { Animatable(4f) }
+            val scope = rememberCoroutineScope()
+            val clickVibration = remember {
+                VibrationEffect.createOneShot(
+                    100, // duration in milliseconds
+                    255  // amplitude (0–255); 255 = strongest
+                )
+            }
+            LaunchedEffect(Unit){
+                scope.launch {
+                    currentNumber.collect {
+                        // vibrate on each number change
+                        viewModel.vibrator.vibrate(clickVibration)
+                    }
+                }
+                countdown.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(
+                        durationMillis = 4000,
+                        easing = LinearEasing
+                    )
+                ) {
+                    currentNumber.value = ceil(value).toInt()
+                    alpha = value - value.toInt()
+                }
+                viewModel.setState(State.COLOR_CONFIRMATION)
+            }
+            Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+            RTLText(
+                text = "שותף מרוחק מוכן.",
+                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
+            )
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+            RTLText(
+                text = "הניסוי יתחיל בעוד:",
+                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
+            )
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+            Text(
+                modifier = Modifier.alpha(alpha),
+                text = currentNumber.collectAsState().value.toString(),
+                style = textStyle.copy(fontSize = TEXT_SIZE * 4f)
+            )
+        }
+    }
+
+    @Composable
+    fun ColorConfirmationScreen(myColor: MainViewModel.PlayerColor, onConfirm: () -> Unit) {
+        ButtonedPage(
+            buttonText = "הבנתי",
+            onClick = onConfirm,
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.fillMaxHeight(0.3f))
+                val myText = buildAnnotatedString {
+                    append("במהלך הניסוי,\n את/ה תהיה השחקן ")
+                    when(myColor) {
+                        MainViewModel.PlayerColor.BLUE ->
+                            withStyle(style = SpanStyle(color = BLUE_COLOR)) {
+                                append("הכחול")
+                            }
+                        MainViewModel.PlayerColor.GREEN ->
+                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR)) {
+                                append("הירוק")
+                            }
+                    }
+                }
+                val otherText = buildAnnotatedString {
+                    append("והשותף יהיה ")
+                    when(myColor) {
+                        MainViewModel.PlayerColor.BLUE ->
+                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR)) {
+                                append("ירוק")
+                            }
+                        MainViewModel.PlayerColor.GREEN ->
+                            withStyle(style = SpanStyle(color = BLUE_COLOR)) {
+                                append("כחול")
+                            }
+                    }
+                }
+                RTLText(
+                    text = myText,
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f),
+                )
+                RTLText(
+                    text = otherText,
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f),
                 )
             }
         }
@@ -589,8 +785,8 @@ class MainActivity : ComponentActivity() {
                         Column(modifier = Modifier
                             .fillMaxSize()
                             .padding(
-                                start = COLUMN_PADDING*0.75f,
-                                end = COLUMN_PADDING*0.75f
+                                start = COLUMN_PADDING * 0.75f,
+                                end = COLUMN_PADDING * 0.75f
                             )
                         ) {
                             Spacer(Modifier.fillMaxHeight(0.35f))
@@ -641,7 +837,7 @@ class MainActivity : ComponentActivity() {
                         Box(modifier = Modifier
                             .fillMaxSize()
                             .padding(
-                                top = COLUMN_PADDING*0.9f,
+                                top = COLUMN_PADDING * 0.9f,
                                 bottom = COLUMN_PADDING * 0.25f
                             ),
                             contentAlignment = Alignment.Center
@@ -816,11 +1012,12 @@ class MainActivity : ComponentActivity() {
             ConnectedInLobbyScreen(
                 userId = "001",
                 lobbyId = "0001",
-                gameType = "אדוות מים",
-                gameDuration = "60",
-                ready = true,
-                hrSensorReady = true,
-            ) { }
+//                gameType = "אדוות מים",
+//                gameDuration = "60",
+//                ready = true,
+//                hrSensorReady = true,
+            )
+//            { }
         }
     }
 

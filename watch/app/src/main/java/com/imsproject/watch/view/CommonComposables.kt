@@ -27,6 +27,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -153,6 +154,18 @@ fun Modifier.verticalColumnScrollbar(
 
 @Composable
 fun RTLText(text: String, modifier: Modifier = Modifier, style: TextStyle = textStyle){
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Text(
+            modifier = modifier,
+            text = text,
+            textAlign = TextAlign.Center,
+            style = style.copy(textDirection = TextDirection.Rtl)
+        )
+    }
+}
+
+@Composable
+fun RTLText(text: AnnotatedString, modifier: Modifier = Modifier, style: TextStyle = textStyle){
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Text(
             modifier = modifier,

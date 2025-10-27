@@ -297,6 +297,42 @@ class LobbyService(
         log.debug("sendLobbyConfiguration() successful")
     }
 
+    fun startExperiment(lobbyId: String) {
+        log.debug("startExperiment() with lobbyId: {}",lobbyId)
+
+        // check that the lobby exists
+        val lobby = lobbies[lobbyId] ?: run{
+            log.debug("startExperiment: Lobby with id $lobbyId not found")
+            throw IllegalArgumentException("Lobby with id $lobbyId not found")
+        }
+        lobby.player1Id?.let { clients.getByClientId(it)?.sendTcp(
+            GameRequest.builder(Type.START_EXPERIMENT).data(listOf("blue")).build().toJson()
+        )}
+        lobby.player2Id?.let { clients.getByClientId(it)?.sendTcp(
+            GameRequest.builder(Type.START_EXPERIMENT).data(listOf("green")).build().toJson()
+        )}
+
+        log.debug("startExperiment() successful")
+    }
+
+    fun signalBothClientsReady(lobbyId: String) {
+        log.debug("signalBothClientsReady() with lobbyId: {}",lobbyId)
+
+        // check that the lobby exists
+        val lobby = lobbies[lobbyId] ?: run{
+            log.debug("signalBothClientsReady: Lobby with id $lobbyId not found")
+            throw IllegalArgumentException("Lobby with id $lobbyId not found")
+        }
+
+        lobby.getPlayers()
+            .map {clients.getByClientId(it)}
+            .forEach {
+                it?.sendTcp(GameRequest.builder(Type.BOTH_CLIENTS_READY).build().toJson())
+            }
+
+        log.debug("signalBothClientsReady() successful")
+    }
+
     companion object {
         private val log = LoggerFactory.getLogger(LobbyService::class.java)
     }

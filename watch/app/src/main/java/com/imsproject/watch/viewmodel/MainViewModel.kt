@@ -1,6 +1,7 @@
 package com.imsproject.watch.viewmodel
 
 import android.content.Context
+import android.os.Vibrator
 import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
@@ -28,26 +29,6 @@ private const val TAG = "MainViewModel"
 
 class MainViewModel() : ViewModel() {
 
-
-    /**
-     *  The application flow is the following:
-     *  1. [State.DISCONNECTED] - the initial state when the app is opened
-     *  2. [State.CONNECTING] - the app is trying to connect to the server for the first time
-     *  3. [State.SELECTING_ID] - the user selects an ID to enter with
-     *  4. [State.CONNECTING] - trying to enter with the selected ID
-     *  5. [State.CONNECTED_NOT_IN_LOBBY] - connected to the server, but not in a lobby
-     *  6. [State.CONNECTED_IN_LOBBY] - connected to the server and in a lobby
-     *  7. [State.IN_GAME] - the lobby was set up and the game has started
-     *  8. [State.AFTER_GAME] - the game has ended and we prepare to upload session events
-     *  9. [State.UPLOADING_EVENTS] - uploading session events to the server
-     *  10. [State.AFTER_GAME_QUESTIONS] - finished uploading events, now we ask the user post-game questions
-     *  11. [State.UPLOADING_ANSWERS] - uploading the answers of the post-game questions to the server
-     *  12. [State.EXPERIMENT_QUESTIONS_QR] - if the experiment has ended, we show the QR code to the user
-     *  13. [State.THANKS_FOR_PARTICIPATING] - the user has scanned the QR code and we thank them for participating
-     *
-     *  Note that state 12 and 13 are skipped if the experiment has not ended
-     *  and then after state 11 the app returns to state 6.
-     */
     enum class State {
      // flow states
         DISCONNECTED,
@@ -55,6 +36,10 @@ class MainViewModel() : ViewModel() {
         SELECTING_ID,
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
+        WELCOME_SCREEN,
+        WAITING_FOR_OTHER_PLAYER,
+        REMOTE_PLAYER_READY,
+        COLOR_CONFIRMATION,
         IN_GAME,
         UPLOADING_EVENTS,
         AFTER_GAME,
@@ -65,9 +50,26 @@ class MainViewModel() : ViewModel() {
         ERROR,
     }
 
+    enum class PlayerColor {
+        BLUE,
+        GREEN;
+
+        companion object {
+            fun fromString(color: String): PlayerColor {
+                return when(color.uppercase()){
+                    "BLUE" -> BLUE
+                    "GREEN" -> GREEN
+                    else -> throw IllegalArgumentException("Unknown color: $color")
+                }
+            }
+        }
+    }
+
     private var model = MainModel(viewModelScope)
     val heartRateSensorHandler = HeartRateSensorHandler.instance
     val locationSensorsHandler = LocationSensorsHandler.instance
+
+    lateinit var vibrator: Vibrator
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -115,6 +117,9 @@ class MainViewModel() : ViewModel() {
     private val _heartRateUnavailable = MutableStateFlow(false)
     val heartRateUnavailable: StateFlow<Boolean> = _heartRateUnavailable
 
+    private val _myColor = MutableStateFlow(PlayerColor.BLUE)
+    val myColor : StateFlow<PlayerColor> = _myColor
+
     private var _isWarmup = false
     private var _sessionId = -1
     var temporaryPlayerId = ""
@@ -124,6 +129,9 @@ class MainViewModel() : ViewModel() {
     // ================================================================================ |
 
     fun onCreate(context: Context){
+
+        vibrator = context.getSystemService(Vibrator::class.java)
+
         heartRateSensorHandler.connect(context){ connected, e ->
             if(connected){
                 heartRateSensorHandler.init()
@@ -348,9 +356,7 @@ class MainViewModel() : ViewModel() {
             GameRequest.Type.LEAVE_LOBBY -> {
                 withContext(Dispatchers.Main) {
                     _lobbyId.value = ""
-                    if(_state.value == State.CONNECTED_IN_LOBBY){
-                        setState(State.CONNECTED_NOT_IN_LOBBY)
-                    }
+                    setState(State.CONNECTED_NOT_IN_LOBBY)
                 }
             }
             GameRequest.Type.CONFIGURE_LOBBY -> {
@@ -388,7 +394,41 @@ class MainViewModel() : ViewModel() {
                     _syncTolerance.value = syncTolerance
                 }
             }
+            GameRequest.Type.START_EXPERIMENT -> {
+                if(_state.value != State.CONNECTED_IN_LOBBY){
+                    Log.e(TAG, "handleGameRequest: START_EXPERIMENT request received while not in the 'CONNECTED_IN_LOBBY' state")
+                    return
+                }
+
+                val color = request.data?.firstOrNull() ?: run {
+                    Log.e(TAG, "handleGameRequest: START_EXPERIMENT request missing color data")
+                    showError("Failed to start experiment")
+                    return
+                }
+
+                withContext(Dispatchers.Main) {
+                    _myColor.value = PlayerColor.fromString(color)
+                    setState(State.WELCOME_SCREEN)
+                }
+            }
+            GameRequest.Type.BOTH_CLIENTS_READY -> {
+                when(_state.value){
+                    State.WAITING_FOR_OTHER_PLAYER -> {
+                        withContext(Dispatchers.Main) {
+                            setState(State.REMOTE_PLAYER_READY)
+                        }
+                    }
+                    else -> {
+                        Log.e(TAG, "handleGameRequest: BOTH_CLIENTS_READY request received in unexpected state: ${_state.value}")
+                        return
+                    }
+                }
+
+            }
+
             GameRequest.Type.START_GAME -> {
+
+                //TODO: allow START_GAME from the correct state
                 if(_state.value != State.CONNECTED_IN_LOBBY){
                     Log.e(TAG, "handleGameRequest: START_GAME request received while not in the 'CONNECTED_IN_LOBBY' state")
                     return
