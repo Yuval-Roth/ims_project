@@ -52,19 +52,35 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
     }
 
     override fun selectAll(transactionId: String?): List<PresetDTO>{
-        val query = """
-            SELECT * FROM presets
-            ORDER BY preset_name,idx ASC;
+        val allNamesQuery = """
+            SELECT DISTINCT preset_name FROM presets
+            ORDER BY preset_name ASC;
         """.trimIndent()
-        val resultSet: OfflineResultSet
+        var resultSet: OfflineResultSet
         try {
-            resultSet = cursor.executeRead(query, transactionId = transactionId)
+            resultSet = cursor.executeRead(allNamesQuery, transactionId = transactionId)
         } catch (e: SQLException) {
             throw DaoException("Failed to select all from table $tableName", e)
         }
-        val objects: MutableList<PresetDTO> = LinkedList()
+        val presetNames = mutableListOf<String>()
         while (resultSet.next()) {
-            objects.add(buildObjectFromResultSet(resultSet))
+            presetNames.add(resultSet.getString("preset_name")!!)
+        }
+        val objects: MutableList<PresetDTO> = LinkedList()
+        for (presetName in presetNames) {
+            val query = """
+            SELECT * FROM presets
+            WHERE preset_name = ?
+            ORDER BY idx ASC;
+        """.trimIndent()
+            try {
+                resultSet = cursor.executeRead(query,arrayOf(presetName),transactionId)
+            } catch (e: SQLException) {
+                throw DaoException("Failed to select all from table $tableName", e)
+            }
+            while (resultSet.next()) {
+                objects.add(buildObjectFromResultSet(resultSet))
+            }
         }
         return objects
     }

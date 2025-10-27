@@ -14,11 +14,12 @@ body {
 .main-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: start;
   min-height: 100vh;
+  height:100%;
   width: 75%;
   padding: 40px 20px;
-  box-sizing: border-box;
+  /*box-sizing: content-box;*/
 }
 
 .header-bar {

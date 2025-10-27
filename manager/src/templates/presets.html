@@ -61,7 +61,7 @@
         </select>
 
         <label for="duration">Duration (seconds):</label>
-        <input type="number" id="duration" name="duration" required>
+        <input type="number" id="duration" name="duration" min="1" required>
 
         <label id="syncToleranceDescription" for="syncTolerance"></label>
         <input type="number" id="syncTolerance" name="syncTolerance" required>
@@ -212,6 +212,115 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.style.display = 'none';
     }
 
+    let addSessionValueHistory = {
+            'Water Ripples': {
+                syncTolerance: null,
+            },
+            'Flower Garden': {
+                syncTolerance: null,
+            },
+            'Flour Mill': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
+            'Wine Glasses': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
+            'Pacman': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
+            'Waves': {
+                syncTolerance: null,
+                syncWindowLength: null,
+            },
+            'gameTime': null,
+            'gameType': 'Water Ripples',
+        }
+
+    // ───────────────────── Update Session Input Parameters Based on Game Type
+    function updateSessionInputRestrictions() {
+        const gameTypeSelect = document.getElementById('gameType');
+        const syncToleranceInput = document.getElementById('syncTolerance');
+        const syncToleranceDescription = document.getElementById('syncToleranceDescription');
+        const syncWindowInput = document.getElementById('window');
+
+        const clickBased = {
+                syncTolerance: 100,
+                syncToleranceUnit: 'ms',
+                syncToleranceStep: 1,
+                syncToleranceMin: 1,
+                syncWindowLength: -1,
+                windowLengthEnabled: false,
+                syncToleranceEnabled: true
+            }
+            const swipeBased = {
+                syncTolerance: 0.10,
+                syncToleranceUnit: 'hz',
+                syncToleranceStep: 0.01,
+                syncToleranceMin: 0.01,
+                syncWindowLength: 1000,
+                windowLengthEnabled: true,
+                syncToleranceEnabled: true
+            }
+            const flingBased = {
+                syncTolerance: -1,
+                syncToleranceUnit: 'N/A',
+                syncToleranceStep: 1,
+                syncToleranceMin: -1,
+                syncWindowLength: -1,
+                windowLengthEnabled: false,
+                syncToleranceEnabled: false
+            }
+
+        const defaultParams = {
+            'Water Ripples': clickBased,
+            'Flower Garden': clickBased,
+            'Flour Mill': swipeBased,
+            'Wine Glasses': swipeBased,
+            'Pacman': flingBased,
+            'Waves': flingBased
+        };
+
+        function updateDefaultValues() {
+            const selectedGame = gameTypeSelect.value;
+            const oldGame = addSessionValueHistory["gameType"];
+            switch(oldGame){
+                case 'Flower Garden':
+                case 'Water Ripples':
+                    addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
+                    break;
+                case 'Flour Mill':
+                case 'Wine Glasses':
+                    addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
+                    addSessionValueHistory[oldGame].syncWindowLength = syncWindowInput.value;
+                    break;
+            }
+            addSessionValueHistory["gameType"] = selectedGame;
+            const lastSyncTolerance = addSessionValueHistory[selectedGame].syncTolerance;
+            const lastSyncWindowLength = addSessionValueHistory[selectedGame].syncWindowLength;
+
+            if (defaultParams[selectedGame]) {
+                syncToleranceInput.value = lastSyncTolerance ? lastSyncTolerance : defaultParams[selectedGame].syncTolerance;
+                syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
+                syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
+                syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
+                syncWindowInput.value = lastSyncWindowLength ? lastSyncWindowLength : defaultParams[selectedGame].syncWindowLength;
+                syncWindowInput.disabled = !defaultParams[selectedGame].windowLengthEnabled;
+                syncToleranceInput.disabled = !defaultParams[selectedGame].syncToleranceEnabled;
+            }
+        }
+
+        // Initialize and bind listener
+        gameTypeSelect.addEventListener('change', updateDefaultValues);
+        updateDefaultValues();
+    }
+
+    // Initialize restrictions once DOM is ready
+    updateSessionInputRestrictions();
+
+
     // ───────────────────── Handle Session Form Submission (Add Session)
     sessionForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -236,12 +345,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Build session object from form
     const formData = new FormData(sessionForm);
+    const gameType = formData.get('gameType');
+    let syncTolerance
+    let syncWindowLength
+    switch(gameType) {
+        case 'Flower Garden':
+        case 'Water Ripples':
+            syncTolerance = parseInt(formData.get('syncTolerance'), 10);
+            syncWindowLength = -1;
+            break;
+        case 'Flour Mill':
+        case 'Wine Glasses':
+            syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
+            syncWindowLength = parseInt(formData.get('window'), 10);
+            break;
+        case 'Pacman':
+        case 'Waves':
+            syncTolerance = -1;
+            syncWindowLength = -1;
+            break;
+    }
     const newSession = {
         index: preset.sessions.length + 1,
-        gameType: formData.get('gameType'),
-        duration: parseInt(formData.get('duration')),
-        syncTolerance: parseFloat(formData.get('syncTolerance')),
-        syncWindowLength: parseInt(formData.get('window')),
+        gameType: gameType,
+        duration: parseInt(formData.get('duration'), 10),
+        syncTolerance: syncTolerance,
+        syncWindowLength: syncWindowLength,
         isWarmup: formData.get('isWarmup') === 'yes'
     };
 
@@ -289,6 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sessionForm.reset();
             document.getElementById('session-modal').style.display = 'block';
             overlay.style.display = 'block';
+            updateSessionInputRestrictions();
         } else if (action === 'delete-session') {
             const preset = presets.find(p => p.name === name);
             preset.sessions.splice(index, 1);
