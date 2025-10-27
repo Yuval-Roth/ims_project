@@ -66,7 +66,7 @@ class RestApiController(
     // ============================= ADMIN ENDPOINTS ============================= |
     // =========================================================================== |
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or #action == 'get'")
     @PostMapping("/presets/{action}")
     fun presets(@PathVariable action: String, @RequestBody body: String): ResponseEntity<String> {
         return withParsedBody<PresetDTO>(body) { preset ->
