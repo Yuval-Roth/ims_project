@@ -420,6 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
             overlay.style.display = 'block';
             updateSessionInputRestrictions();
         } else if (action === 'delete-session') {
+            if (!confirm(`Delete session #${parseInt(index) + 1} from preset "${name}"?`)) return;
             const preset = presets.find(p => p.name === name);
             preset.sessions.splice(index, 1);
             // reindex sessions before sending update
