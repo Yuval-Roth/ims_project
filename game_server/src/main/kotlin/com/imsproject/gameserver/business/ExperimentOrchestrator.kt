@@ -77,6 +77,14 @@ class ExperimentOrchestrator(
         val job = scope.launch {
             lobbyService.startExperiment(lobbyId)
             lobby.experimentRunning = true
+
+            // welcome page ready check
+            while(! lobby.isReady()){
+                delay(1000)
+            }
+            lobbyService.signalBothClientsReady(lobbyId)
+            lobby.resetReady()
+
             val iterator = experimentSessions.iterator()
             while(iterator.hasNext() && isActive) {
                 val session = iterator.next()
@@ -87,18 +95,12 @@ class ExperimentOrchestrator(
                     throw IllegalStateException("Session dbId not found for session in lobby $lobbyId")
                 }
 
-                // welcome page ready check
+                // gesture trial ready check
                 while(! lobby.isReady()){
                     delay(1000)
                 }
                 lobbyService.signalBothClientsReady(lobbyId)
                 lobby.resetReady()
-
-                // color confirmation ready check
-                while(! lobby.isReady()){
-                    delay(1000)
-                }
-                lobbyService.signalBothClientsReady(lobbyId)
 
                 gameService.startGame(lobbyId,sessionId)
                 session.state = SessionState.IN_PROGRESS

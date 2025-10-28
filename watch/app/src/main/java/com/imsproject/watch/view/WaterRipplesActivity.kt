@@ -54,114 +54,113 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
     override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> WaterRipples()
+            GameViewModel.State.PLAYING -> WaterRipples(viewModel)
             else -> super.Main()
-        }
-    }
-
-    @SuppressLint("ReturnFromAwaitPointerEventScope")
-    @Composable
-    fun WaterRipples() {
-        val ripples = remember { viewModel.ripples }
-
-        // this is used only to to trigger recomposition when new ripples are added
-        viewModel.counter.collectAsState().value
-
-        // Box to draw the background
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = DARK_BACKGROUND_COLOR)
-                .shadow(
-                    elevation = (SCREEN_RADIUS * 0.35f).dp,
-                    CircleShape,
-                    spotColor = Color.Cyan.copy(alpha = 0.5f)
-                )
-            ,
-            contentAlignment = Alignment.Center
-        ) {
-
-            // Center button
-            Button(
-                modifier = Modifier
-                    .border(
-                        BorderStroke(2.dp, DARK_BACKGROUND_COLOR.copy(alpha = 0.5f)),
-                        CircleShape
-                    )
-                    .size(WATER_RIPPLES_BUTTON_SIZE.dp)
-
-                    // handle clicks on the center button
-                    .pointerInput(Unit) {
-                        awaitPointerEventScope {
-                            while (true) {
-                                val event = awaitPointerEvent()
-                                if (event.type == PointerEventType.Press) {
-                                    event.changes[0].consume()
-                                    viewModel.click()
-                                }
-                            }
-                        }
-                    },
-                onClick = {}, // no-op, handled by pointerInput.
-                              // We want the action to be on-touch and not on-release
-                              // and the onClick callback is called on-release
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = LIGHT_GRAY_COLOR,
-                    contentColor = Color.Black
-                )
-            ){
-                // empty button content
-            }
-
-            // Draw the ripples
-            Canvas(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                for(ripple in ripples){
-                    val color = ripple.color
-                    val size = ripple.size
-                    val alpha = ripple.currentAlpha
-
-                    drawCircle(
-                        color = color.copy(alpha = alpha),
-                        radius = size,
-                        style = Stroke(width = 4.dp.toPx())
-                    )
-                }
-            }
-        }
-
-        // Ripple animation loop
-        // We set the parameter to Unit because we continuously iterate over the ripples
-        // and we don't need to cancel the LaunchedEffect ever
-        LaunchedEffect(Unit){
-            while(true){
-                val rippleIterator = ripples.iterator()
-                while (rippleIterator.hasNext()) {
-                    val ripple = rippleIterator.next()
-
-                    // remove ripples that are done animating
-                    if(ripple.size >= RIPPLE_MAX_SIZE){
-                        rippleIterator.remove()
-                        continue
-                    }
-
-                    // animation step
-                    ripple.size += ripple.sizeStep
-                    ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
-                        0f
-                    } else {
-                        // Sometimes the step can make the alpha drop below 0 so we coerce it to at least 0
-                        (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
-                    }
-                }
-                delay(16)
-            }
         }
     }
 
     companion object {
         private const val TAG = "WaterRipplesActivity"
+    }
+}
+
+@Composable
+fun WaterRipples(viewModel: WaterRipplesViewModel) {
+    val ripples = remember { viewModel.ripples }
+
+    // this is used only to to trigger recomposition when new ripples are added
+    viewModel.counter.collectAsState().value
+
+    // Box to draw the background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = DARK_BACKGROUND_COLOR)
+            .shadow(
+                elevation = (SCREEN_RADIUS * 0.35f).dp,
+                CircleShape,
+                spotColor = Color.Cyan.copy(alpha = 0.5f)
+            )
+        ,
+        contentAlignment = Alignment.Center
+    ) {
+
+        // Center button
+        Button(
+            modifier = Modifier
+                .border(
+                    BorderStroke(2.dp, DARK_BACKGROUND_COLOR.copy(alpha = 0.5f)),
+                    CircleShape
+                )
+                .size(WATER_RIPPLES_BUTTON_SIZE.dp)
+
+                // handle clicks on the center button
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            if (event.type == PointerEventType.Press) {
+                                event.changes[0].consume()
+                                viewModel.click()
+                            }
+                        }
+                    }
+                },
+            onClick = {}, // no-op, handled by pointerInput.
+            // We want the action to be on-touch and not on-release
+            // and the onClick callback is called on-release
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = LIGHT_GRAY_COLOR,
+                contentColor = Color.Black
+            )
+        ){
+            // empty button content
+        }
+
+        // Draw the ripples
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            for(ripple in ripples){
+                val color = ripple.color
+                val size = ripple.size
+                val alpha = ripple.currentAlpha
+
+                drawCircle(
+                    color = color.copy(alpha = alpha),
+                    radius = size,
+                    style = Stroke(width = 4.dp.toPx())
+                )
+            }
+        }
+    }
+
+    // Ripple animation loop
+    // We set the parameter to Unit because we continuously iterate over the ripples
+    // and we don't need to cancel the LaunchedEffect ever
+    LaunchedEffect(Unit){
+        while(true){
+            val rippleIterator = ripples.iterator()
+            while (rippleIterator.hasNext()) {
+                val ripple = rippleIterator.next()
+
+                // remove ripples that are done animating
+                if(ripple.size >= RIPPLE_MAX_SIZE){
+                    rippleIterator.remove()
+                    continue
+                }
+
+                // animation step
+                ripple.size += ripple.sizeStep
+                ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
+                    0f
+                } else {
+                    // Sometimes the step can make the alpha drop below 0 so we coerce it to at least 0
+                    (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
+                }
+            }
+            delay(16)
+        }
     }
 }
 

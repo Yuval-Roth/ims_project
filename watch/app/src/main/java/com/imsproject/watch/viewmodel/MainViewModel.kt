@@ -38,8 +38,10 @@ class MainViewModel() : ViewModel() {
         CONNECTED_IN_LOBBY,
         WELCOME_SCREEN,
         WAITING_FOR_OTHER_PLAYER,
-        REMOTE_PLAYER_READY,
         COLOR_CONFIRMATION,
+        ACTIVITY_DESCRIPTION,
+        ACTIVITY_REMINDER,
+        GESTURE_PRACTICE,
         IN_GAME,
         UPLOADING_EVENTS,
         AFTER_GAME,
@@ -48,6 +50,7 @@ class MainViewModel() : ViewModel() {
         // error states
         ALREADY_CONNECTED,
         ERROR,
+
     }
 
     enum class PlayerColor {
@@ -119,6 +122,9 @@ class MainViewModel() : ViewModel() {
 
     private val _myColor = MutableStateFlow(PlayerColor.BLUE)
     val myColor : StateFlow<PlayerColor> = _myColor
+
+    private val _activityIndex = MutableStateFlow(1)
+    val activityIndex : StateFlow<Int> = _activityIndex
 
     private var _isWarmup = false
     private var _sessionId = -1
@@ -415,7 +421,7 @@ class MainViewModel() : ViewModel() {
                 when(_state.value){
                     State.WAITING_FOR_OTHER_PLAYER -> {
                         withContext(Dispatchers.Main) {
-                            setState(State.REMOTE_PLAYER_READY)
+                            setState(State.COLOR_CONFIRMATION)
                         }
                     }
                     else -> {

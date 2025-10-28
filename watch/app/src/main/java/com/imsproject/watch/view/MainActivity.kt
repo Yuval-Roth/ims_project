@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
-import android.os.VibrationEffect
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -13,8 +12,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -49,30 +46,25 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -108,10 +100,10 @@ import com.imsproject.watch.view.contracts.WavesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
+import com.imsproject.watch.viewmodel.gesturepractice.WaterRipplesGesturePracticeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
@@ -131,6 +123,10 @@ class MainActivity : ComponentActivity() {
     private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
 
 
+    // Gesture practice view models
+    private val waterRipplesGesturePracticeViewModel by viewModels<WaterRipplesGesturePracticeViewModel>()
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -143,6 +139,12 @@ class MainActivity : ComponentActivity() {
         viewModel.onCreate(applicationContext)
         setContent {
             MaterialTheme {
+                viewModel.setState(State.COLOR_CONFIRMATION)
+                MainViewModel::class.java.getDeclaredField("_gameType").apply {
+                    isAccessible = true
+                    val fieldValue = get(viewModel) as MutableStateFlow<GameType?>
+                    fieldValue.value = GameType.WATER_RIPPLES
+                }
                 Main()
             }
         }
@@ -200,6 +202,9 @@ class MainActivity : ComponentActivity() {
         val loading = viewModel.loading.collectAsState().value
 
         when(state) {
+
+            // ====================== PRE-EXPERIMENT FLOW STATES ====================== |
+
             State.DISCONNECTED ->{
                 BlankScreen()
                 viewModel.connect()
@@ -236,6 +241,8 @@ class MainActivity : ComponentActivity() {
                 ConnectedInLobbyScreen(userId, lobbyId)
             }
 
+            // ====================== EXPERIMENT FLOW STATES ====================== |
+
             State.WELCOME_SCREEN -> WelcomeScreen {
                 viewModel.toggleReady()
                 viewModel.setState(State.WAITING_FOR_OTHER_PLAYER)
@@ -245,11 +252,31 @@ class MainActivity : ComponentActivity() {
                 LoadingScreen("ממתין לשותף מרוחק...")
             }
 
-            State.REMOTE_PLAYER_READY -> RemotePlayerReady()
-
             State.COLOR_CONFIRMATION -> {
                 val myColor = viewModel.myColor.collectAsState().value
                 ColorConfirmationScreen(myColor) {
+                    viewModel.setState(State.ACTIVITY_DESCRIPTION)
+                }
+            }
+
+            State.ACTIVITY_DESCRIPTION -> {
+                val index = viewModel.activityIndex.collectAsState().value
+                val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
+                ActivityDescription(gameType,index) {
+                    viewModel.setState(State.ACTIVITY_REMINDER)
+                }
+            }
+
+            State.ACTIVITY_REMINDER -> {
+                val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
+                ActivityReminder(gameType) {
+                    viewModel.setState(State.GESTURE_PRACTICE)
+                }
+            }
+
+            State.GESTURE_PRACTICE -> {
+                val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
+                GesturePractice(gameType) {
 
                 }
             }
@@ -632,61 +659,61 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun RemotePlayerReady(){
-        Column(
-            modifier = Modifier
-                .background(color = DARK_BACKGROUND_COLOR)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            val currentNumber = remember { MutableStateFlow(4) }
-            var alpha by remember { mutableFloatStateOf(0f) }
-            val countdown = remember { Animatable(4f) }
-            val scope = rememberCoroutineScope()
-            val clickVibration = remember {
-                VibrationEffect.createOneShot(
-                    100, // duration in milliseconds
-                    255  // amplitude (0–255); 255 = strongest
-                )
-            }
-            LaunchedEffect(Unit){
-                scope.launch {
-                    currentNumber.collect {
-                        // vibrate on each number change
-                        viewModel.vibrator.vibrate(clickVibration)
-                    }
-                }
-                countdown.animateTo(
-                    targetValue = 0f,
-                    animationSpec = tween(
-                        durationMillis = 4000,
-                        easing = LinearEasing
-                    )
-                ) {
-                    currentNumber.value = ceil(value).toInt()
-                    alpha = value - value.toInt()
-                }
-                viewModel.setState(State.COLOR_CONFIRMATION)
-            }
-            Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-            RTLText(
-                text = "שותף מרוחק מוכן.",
-                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
-            )
-            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-            RTLText(
-                text = "הניסוי יתחיל בעוד:",
-                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
-            )
-            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-            Text(
-                modifier = Modifier.alpha(alpha),
-                text = currentNumber.collectAsState().value.toString(),
-                style = textStyle.copy(fontSize = TEXT_SIZE * 4f)
-            )
-        }
-    }
+//    @Composable
+//    fun RemotePlayerReady(){
+//        Column(
+//            modifier = Modifier
+//                .background(color = DARK_BACKGROUND_COLOR)
+//                .fillMaxSize(),
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//        ) {
+//            val currentNumber = remember { MutableStateFlow(4) }
+//            var alpha by remember { mutableFloatStateOf(0f) }
+//            val countdown = remember { Animatable(4f) }
+//            val scope = rememberCoroutineScope()
+//            val clickVibration = remember {
+//                VibrationEffect.createOneShot(
+//                    100, // duration in milliseconds
+//                    255  // amplitude (0–255); 255 = strongest
+//                )
+//            }
+//            LaunchedEffect(Unit){
+//                scope.launch {
+//                    currentNumber.collect {
+//                        // vibrate on each number change
+//                        viewModel.vibrator.vibrate(clickVibration)
+//                    }
+//                }
+//                countdown.animateTo(
+//                    targetValue = 0f,
+//                    animationSpec = tween(
+//                        durationMillis = 4000,
+//                        easing = LinearEasing
+//                    )
+//                ) {
+//                    currentNumber.value = ceil(value).toInt()
+//                    alpha = value - value.toInt()
+//                }
+//                viewModel.setState(State.COLOR_CONFIRMATION)
+//            }
+//            Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+//            RTLText(
+//                text = "שותף מרוחק מוכן.",
+//                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
+//            )
+//            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+//            RTLText(
+//                text = "הניסוי יתחיל בעוד:",
+//                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
+//            )
+//            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+//            Text(
+//                modifier = Modifier.alpha(alpha),
+//                text = currentNumber.collectAsState().value.toString(),
+//                style = textStyle.copy(fontSize = TEXT_SIZE * 4f)
+//            )
+//        }
+//    }
 
     @Composable
     fun ColorConfirmationScreen(myColor: MainViewModel.PlayerColor, onConfirm: () -> Unit) {
@@ -698,7 +725,6 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(modifier = Modifier.fillMaxHeight(0.3f))
                 val myText = buildAnnotatedString {
                     append("במהלך הניסוי,\n את/ה תהיה השחקן ")
                     when(myColor) {
@@ -725,6 +751,12 @@ class MainActivity : ComponentActivity() {
                             }
                     }
                 }
+                Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                RTLText(
+                    text = "שותף מרוחק מחובר",
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f, textDecoration = TextDecoration.Underline),
+                )
+                Spacer(modifier = Modifier.fillMaxHeight(0.2f))
                 RTLText(
                     text = myText,
                     style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f),
@@ -733,6 +765,100 @@ class MainActivity : ComponentActivity() {
                     text = otherText,
                     style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f),
                 )
+            }
+        }
+    }
+
+    @Composable
+    fun ActivityDescription(gameType: GameType, activityIndex: Int, onConfirm: () -> Unit) {
+        ButtonedPage(
+            buttonText = "המשך",
+            onClick = onConfirm,
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.fillMaxHeight(0.3f))
+                RTLText(
+                    text = "פעילות #$activityIndex",
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 2f, textDecoration = TextDecoration.Underline),
+                )
+                Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                RTLText(
+                    text = gameType.hebrewName(),
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun ActivityReminder(gameType: GameType, onConfirm: () -> Unit) {
+        ButtonedPage(
+            buttonText = "המשך",
+            onClick = onConfirm,
+        ) {
+            val text = when(gameType){
+                GameType.WATER_RIPPLES -> """
+                    טקסט של אדוות מים
+                """
+                GameType.WINE_GLASSES -> """
+                    טקסט של כוסות יין
+                """
+                GameType.FLOUR_MILL -> """
+                    טקסט של מטחנת קמח
+                """
+                GameType.FLOWER_GARDEN -> """
+                    טקסט של גינת פרחים
+                """
+                GameType.WAVES -> """
+                    טקסט של גלים
+                """
+                GameType.PACMAN -> """
+                    טקסט של פאקמן
+                """
+                else -> throw IllegalStateException("Unknown game type")
+            }.trimIndent()
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+                RTLText(
+                    text = "תזכורת",
+                    style = textStyle.copy(fontSize = TEXT_SIZE, textDecoration = TextDecoration.Underline),
+                )
+                Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                RTLText(text = text)
+            }
+        }
+    }
+
+    @Composable
+    fun GesturePractice(gameType: GameType, onComplete: () -> Unit) {
+        var showOverlay by remember { mutableStateOf(true) }
+        when(gameType) {
+            GameType.WATER_RIPPLES -> {
+                WaterRipples(waterRipplesGesturePracticeViewModel)
+            }
+            else -> {
+                throw IllegalStateException("No gesture practice defined for game type $gameType")
+            }
+        }
+        if(showOverlay){
+            ButtonedPage(
+                buttonText = "המשך",
+                onClick = { showOverlay = false },
+                backgroundColor = Color.Black.copy(alpha = 0.8f)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ){
+                    Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                    RTLText("טקסט שמסביר דברים")
+                }
             }
         }
     }
@@ -971,12 +1097,13 @@ class MainActivity : ComponentActivity() {
         onClick: () -> Unit,
         textModifier: Modifier = Modifier,
         textStyle: TextStyle = com.imsproject.watch.textStyle,
+        backgroundColor: Color = DARK_BACKGROUND_COLOR,
         content: @Composable () -> Unit
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = DARK_BACKGROUND_COLOR)
+                .background(color = backgroundColor)
                 .padding(bottom = (SCREEN_RADIUS * 0.08f).dp)
             ,
             horizontalAlignment = Alignment.CenterHorizontally

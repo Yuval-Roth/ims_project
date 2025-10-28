@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
 
-class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
+open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     class Ripple(
         var color: Color,
@@ -59,14 +59,14 @@ class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     val ripples = ConcurrentLinkedDeque<Ripple>()
 
-    private var _counter = MutableStateFlow(0)
+    protected var _counter = MutableStateFlow(0)
     val counter: StateFlow<Int> = _counter
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    fun click() {
+    open fun click() {
         if(ACTIVITY_DEBUG_MODE){
             showRipple(playerId, System.currentTimeMillis())
             return
