@@ -99,6 +99,7 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
                 }
             }
         }
+        Log.d(TAG, "myDirection = $myDirection")
         model.sessionSetupComplete()
     }
 

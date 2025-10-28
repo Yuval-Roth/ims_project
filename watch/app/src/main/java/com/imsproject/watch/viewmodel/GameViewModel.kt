@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Vibrator
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
@@ -11,6 +12,8 @@ import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
+import com.imsproject.watch.BLUE_COLOR
+import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SERVER_IP

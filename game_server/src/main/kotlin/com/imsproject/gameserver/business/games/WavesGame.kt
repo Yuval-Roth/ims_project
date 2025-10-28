@@ -16,7 +16,7 @@ class WavesGame(
     lobbyId: String,
     player1: ClientHandler,
     player2: ClientHandler
-) : Game(lobbyId, player1, player2) {
+) : Game(lobbyId, player1, player2,listOf("left"),listOf("right")) {
 
     override fun handleGameAction(actor: ClientHandler, action: GameAction) {
         when(action.type) {
@@ -27,17 +27,6 @@ class WavesGame(
                 log.debug("Unexpected action type: {}", action.type)
             }
         }
-    }
-
-    override fun startGame(sessionId: Int) {
-        val timeHandler = TimeServerService.instance
-        val timeServerCurr = timeHandler.timeServerCurrentTimeMillis().toString()
-        localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
-        val toSend = GameRequest.builder(GameRequest.Type.START_GAME)
-            .sessionId(sessionId.toString())
-            .timestamp(timeServerCurr)
-        player1.sendTcp(toSend.data(listOf("left")).build().toJson())
-        player2.sendTcp(toSend.data(listOf("right")).build().toJson())
     }
 
     companion object {

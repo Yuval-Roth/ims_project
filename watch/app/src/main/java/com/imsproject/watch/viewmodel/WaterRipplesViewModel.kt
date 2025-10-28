@@ -17,6 +17,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
+import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.GRAY_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
@@ -39,9 +40,9 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     class Ripple(
         var color: Color,
-        startingAlpha: Float = 1f,
         val timestamp: Long,
-        val actor: String
+        val actor: String,
+        startingAlpha: Float = 1f
     ) {
         var size by mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
         var currentAlpha by mutableFloatStateOf(startingAlpha)
@@ -60,6 +61,10 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     val ripples = ConcurrentLinkedDeque<Ripple>()
 
     protected var _counter = MutableStateFlow(0)
+
+    var myColor: Color = BLUE_COLOR
+    var opponentColor: Color = GRASS_GREEN_COLOR
+
     val counter: StateFlow<Int> = _counter
 
     // ================================================================================ |
@@ -99,7 +104,21 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             }
             return
         }
-
+        val color = intent.getStringExtra("$PACKAGE_PREFIX.additionalData")
+        when(color) {
+            "blue" -> {
+                myColor = BLUE_COLOR
+                opponentColor = GRASS_GREEN_COLOR
+            }
+            "green" -> {
+                myColor = GRASS_GREEN_COLOR
+                opponentColor = BLUE_COLOR
+            }
+            else -> {
+                exitWithError("Invalid color data", Result.Code.BAD_REQUEST)
+                return
+            }
+        }
         val syncTolerance = intent.getLongExtra("$PACKAGE_PREFIX.syncTolerance", -1)
         if (syncTolerance <= 0L) {
             exitWithError("Missing sync tolerance", Result.Code.BAD_REQUEST)
@@ -107,6 +126,7 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         }
         WATER_RIPPLES_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
         Log.d(TAG, "syncTolerance: $syncTolerance")
+        Log.d(TAG, "My color: $myColor")
         model.sessionSetupComplete()
     }
 
@@ -177,10 +197,10 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         else {
             val ripple = if (actor == playerId) {
                 // My click
-                Ripple(BLUE_COLOR, timestamp = timestamp, actor = actor)
+                Ripple(BLUE_COLOR,timestamp,actor)
             } else {
                 // Other player's click
-                Ripple(GRAY_COLOR, 0.5f, timestamp, actor)
+                Ripple(GRAY_COLOR, timestamp, actor, 0.5f)
             }
             ripples.addFirst(ripple)
         }

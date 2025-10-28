@@ -153,7 +153,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
-        Log.d(TAG," color: $color")
+        Log.d(TAG, "My color: $myColor")
         model.sessionSetupComplete()
     }
 

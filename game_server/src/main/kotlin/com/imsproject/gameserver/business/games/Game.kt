@@ -15,7 +15,9 @@ import kotlinx.coroutines.launch
 abstract class Game (
     val lobbyId: String,
     val player1 : ClientHandler,
-    val player2 : ClientHandler
+    val player2 : ClientHandler,
+    private val player1Data: List<String> = listOf("blue"),
+    private val player2Data: List<String> = listOf("green")
 ) {
 
     private var player1Ready = false
@@ -45,16 +47,15 @@ abstract class Game (
         }
     }
 
-    open fun startGame(sessionId: Int) {
+    fun startGame(sessionId: Int){
         val timeHandler = TimeServerService.instance
         timeServerStartTime = timeHandler.timeServerCurrentTimeMillis()
         localStartTime =  System.currentTimeMillis() + timeHandler.timeServerDelta
         val startMessage = GameRequest.builder(GameRequest.Type.START_GAME)
             .timestamp(timeServerStartTime.toString())
             .sessionId(sessionId.toString())
-            .build().toJson()
-        player1.sendTcp(startMessage)
-        player2.sendTcp(startMessage)
+        player1.sendTcp(startMessage.data(player1Data).build().toJson())
+        player2.sendTcp(startMessage.data(player2Data).build().toJson())
     }
 
     open fun endGame(expId: Int? = null, errorMessage: String? = null) {

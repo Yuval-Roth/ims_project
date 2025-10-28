@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
 
-class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
+open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
     enum class ItemType{
         WATER,
@@ -61,7 +61,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
         }
     }
 
-    lateinit var myItemType: ItemType
+    var myItemType: ItemType = ItemType.WATER
 
     // ======================================
     // =========== water droplet ============
@@ -141,7 +141,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
     // ================================================================================ |
 
     //tracks the new taps
-    private var _counter = MutableStateFlow(0)
+    protected var _counter = MutableStateFlow(0)
     val counter: StateFlow<Int> = _counter
 
 
@@ -150,7 +150,7 @@ class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
     // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
-    fun click() {
+    open fun click() {
         if(ACTIVITY_DEBUG_MODE){
             Log.d("", "pressing")
             showItem(playerId, System.currentTimeMillis())

@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -19,6 +20,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +59,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -67,6 +74,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.Icon
@@ -82,6 +90,7 @@ import com.imsproject.watch.FIRST_QUESTION
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.R
+import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SECOND_QUESTION
 import com.imsproject.watch.TEXT_SIZE
@@ -100,10 +109,12 @@ import com.imsproject.watch.view.contracts.WavesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.MainViewModel.State
+import com.imsproject.watch.viewmodel.gesturepractice.FlowerGardenGesturePracticeViewModel
 import com.imsproject.watch.viewmodel.gesturepractice.WaterRipplesGesturePracticeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
@@ -125,6 +136,7 @@ class MainActivity : ComponentActivity() {
 
     // Gesture practice view models
     private val waterRipplesGesturePracticeViewModel by viewModels<WaterRipplesGesturePracticeViewModel>()
+    private val flowerGardenGesturePracticeViewModel by viewModels<FlowerGardenGesturePracticeViewModel>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -136,16 +148,17 @@ class MainActivity : ComponentActivity() {
         setupSensorsPermission()
         setupWifi()
         setupUncaughtExceptionHandler()
-        viewModel.onCreate(applicationContext)
+//        viewModel.onCreate(applicationContext) //TODO: uncomment
         setContent {
             MaterialTheme {
                 viewModel.setState(State.COLOR_CONFIRMATION)
                 MainViewModel::class.java.getDeclaredField("_gameType").apply {
                     isAccessible = true
                     val fieldValue = get(viewModel) as MutableStateFlow<GameType?>
-                    fieldValue.value = GameType.WATER_RIPPLES
+                    fieldValue.value = GameType.FLOWER_GARDEN
                 }
                 Main()
+//                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
         }
     }
@@ -255,6 +268,8 @@ class MainActivity : ComponentActivity() {
             State.COLOR_CONFIRMATION -> {
                 val myColor = viewModel.myColor.collectAsState().value
                 ColorConfirmationScreen(myColor) {
+                    waterRipplesGesturePracticeViewModel.playerColor = myColor
+                    flowerGardenGesturePracticeViewModel.playerColor = myColor
                     viewModel.setState(State.ACTIVITY_DESCRIPTION)
                 }
             }
@@ -719,7 +734,7 @@ class MainActivity : ComponentActivity() {
     fun ColorConfirmationScreen(myColor: MainViewModel.PlayerColor, onConfirm: () -> Unit) {
         ButtonedPage(
             buttonText = "הבנתי",
-            onClick = onConfirm,
+            onClick = onConfirm
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -729,11 +744,11 @@ class MainActivity : ComponentActivity() {
                     append("במהלך הניסוי,\n את/ה תהיה השחקן ")
                     when(myColor) {
                         MainViewModel.PlayerColor.BLUE ->
-                            withStyle(style = SpanStyle(color = BLUE_COLOR)) {
+                            withStyle(style = SpanStyle(color = BLUE_COLOR, textDecoration = TextDecoration.Underline)) {
                                 append("הכחול")
                             }
                         MainViewModel.PlayerColor.GREEN ->
-                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR)) {
+                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR, textDecoration = TextDecoration.Underline)) {
                                 append("הירוק")
                             }
                     }
@@ -742,11 +757,11 @@ class MainActivity : ComponentActivity() {
                     append("והשותף יהיה ")
                     when(myColor) {
                         MainViewModel.PlayerColor.BLUE ->
-                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR)) {
+                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR, textDecoration = TextDecoration.Underline)) {
                                 append("ירוק")
                             }
                         MainViewModel.PlayerColor.GREEN ->
-                            withStyle(style = SpanStyle(color = BLUE_COLOR)) {
+                            withStyle(style = SpanStyle(color = BLUE_COLOR, textDecoration = TextDecoration.Underline)) {
                                 append("כחול")
                             }
                     }
@@ -841,6 +856,9 @@ class MainActivity : ComponentActivity() {
         when(gameType) {
             GameType.WATER_RIPPLES -> {
                 WaterRipples(waterRipplesGesturePracticeViewModel)
+            }
+            GameType.FLOWER_GARDEN -> {
+                FlowerGarden(flowerGardenGesturePracticeViewModel)
             }
             else -> {
                 throw IllegalStateException("No gesture practice defined for game type $gameType")
@@ -1098,6 +1116,7 @@ class MainActivity : ComponentActivity() {
         textModifier: Modifier = Modifier,
         textStyle: TextStyle = com.imsproject.watch.textStyle,
         backgroundColor: Color = DARK_BACKGROUND_COLOR,
+        disableButton: Boolean = false,
         content: @Composable () -> Unit
     ) {
         Column(
@@ -1119,7 +1138,8 @@ class MainActivity : ComponentActivity() {
                 onClick = onClick,
                 modifier = Modifier
                     .fillMaxHeight()
-                    .fillMaxWidth(0.55f)
+                    .fillMaxWidth(0.55f),
+                enabled = !disableButton
             ){
                 RTLText(
                     buttonText,

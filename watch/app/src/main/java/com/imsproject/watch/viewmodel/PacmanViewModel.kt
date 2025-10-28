@@ -112,6 +112,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
                 }
             }
         }
+        Log.d(TAG, "myDirection = $myDirection")
         model.sessionSetupComplete()
     }
 

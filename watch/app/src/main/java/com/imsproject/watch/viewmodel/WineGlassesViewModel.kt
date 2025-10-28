@@ -131,6 +131,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         FREQUENCY_HISTORY_MILLISECONDS = syncWindowLength
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
+        Log.d(TAG, "my color: $myColor")
         model.sessionSetupComplete()
     }
 
