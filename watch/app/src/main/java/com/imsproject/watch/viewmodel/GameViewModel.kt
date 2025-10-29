@@ -62,7 +62,7 @@ abstract class GameViewModel(
     private val heartRateSensorHandler: HeartRateSensorHandler = HeartRateSensorHandler.instance
     private val locationSensorsHandler: LocationSensorsHandler = LocationSensorsHandler.instance
     lateinit var wavPlayer: WavPlayer
-        private set
+        protected set
 
     var screenDensity: Float = -1f
 
@@ -83,7 +83,7 @@ abstract class GameViewModel(
     val expId: StateFlow<String?> = _expId
 
     private var timeServerDelta = 0L
-    private var myStartTime = 0L
+    protected var myStartTime = 0L
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |

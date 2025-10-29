@@ -51,6 +51,7 @@ import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.utils.WavPlayerException
+import com.imsproject.watch.view.WineGlassesActivity.Companion.TAG
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import kotlinx.coroutines.delay
@@ -72,204 +73,203 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
     override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> WineGlasses()
+            GameViewModel.State.PLAYING -> WineGlasses(viewModel)
             else -> super.Main()
         }
     }
 
-    @SuppressLint("ReturnFromAwaitPointerEventScope")
-    @Composable
-    fun WineGlasses() {
-        val myArc = remember { viewModel.myArc }
-        val opponentArc = remember { viewModel.opponentArc }
-        val focusRequester = remember { FocusRequester() }
-        var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
-        var touchingBezel by remember { mutableStateOf(false) }
-        val myReleased by viewModel.released.collectAsState()
-        val opponentReleased by viewModel.opponentReleased.collectAsState()
+    companion object {
+        const val TAG = "WineGlassesActivity"
+    }
+}
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = DARK_BACKGROUND_COLOR)
-                .onRotaryScrollEvent {
-                    touchingBezel = true
-                    true
-                }
-                .focusRequester(focusRequester)
-                .focusable()
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val pointerEvent = awaitPointerEvent()
-                            val inputChange = pointerEvent.changes.first()
-                            inputChange.consume()
-                            touchingBezel = false
-                            when (pointerEvent.type) {
-                                PointerEventType.Move, PointerEventType.Press -> {
-                                    val position = inputChange.position
-                                    viewModel.setTouchPoint(position.x, position.y)
-                                }
-                                PointerEventType.Release -> {
-                                    viewModel.setTouchPoint(-1.0f, -1.0f)
-                                }
+@Composable
+fun WineGlasses(viewModel: WineGlassesViewModel) {
+    val myArc = remember { viewModel.myArc }
+    val opponentArc = remember { viewModel.opponentArc }
+    val focusRequester = remember { FocusRequester() }
+    var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
+    var touchingBezel by remember { mutableStateOf(false) }
+    val myReleased by viewModel.released.collectAsState()
+    val opponentReleased by viewModel.opponentReleased.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = DARK_BACKGROUND_COLOR)
+            .onRotaryScrollEvent {
+                touchingBezel = true
+                true
+            }
+            .focusRequester(focusRequester)
+            .focusable()
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val pointerEvent = awaitPointerEvent()
+                        val inputChange = pointerEvent.changes.first()
+                        inputChange.consume()
+                        touchingBezel = false
+                        when (pointerEvent.type) {
+                            PointerEventType.Move, PointerEventType.Press -> {
+                                val position = inputChange.position
+                                viewModel.setTouchPoint(position.x, position.y)
+                            }
+                            PointerEventType.Release -> {
+                                viewModel.setTouchPoint(-1.0f, -1.0f)
                             }
                         }
                     }
                 }
-            ,
-            contentAlignment = Alignment.Center
-        ) {
-
-            // ================== Scrolling bezel warning ================== |
-
-            LaunchedEffect(Unit){
-                focusRequester.requestFocus()
             }
+        ,
+        contentAlignment = Alignment.Center
+    ) {
 
-            LaunchedEffect(touchingBezel) {
-                if(touchingBezel){
-                    bezelWarningAlpha = 0.0f
-                    while(touchingBezel){
-                        while(bezelWarningAlpha < 0.5f){
-                            bezelWarningAlpha = (bezelWarningAlpha + 0.01f).fastCoerceAtMost(0.5f)
-                            delay(16)
-                        }
-                        while(bezelWarningAlpha > 0.0f){
-                            bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
-                            delay(16)
-                        }
+        // ================== Scrolling bezel warning ================== |
+
+        LaunchedEffect(Unit){
+            focusRequester.requestFocus()
+        }
+
+        LaunchedEffect(touchingBezel) {
+            if(touchingBezel){
+                bezelWarningAlpha = 0.0f
+                while(touchingBezel){
+                    while(bezelWarningAlpha < 0.5f){
+                        bezelWarningAlpha = (bezelWarningAlpha + 0.01f).fastCoerceAtMost(0.5f)
+                        delay(16)
                     }
-                } else {
                     while(bezelWarningAlpha > 0.0f){
                         bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
                 }
-            }
-
-            // ================== Sound effects ================== |
-
-            // play high sound when in sync
-            LaunchedEffect(myReleased){
-                val wavPlayer = viewModel.wavPlayer
-                if(! myReleased) {
-                    var playing = false
-                    var inSync: Boolean
-                    while (true) {
-                        try{
-                            inSync = viewModel.inSync()
-                            if (!playing && inSync) {
-                                wavPlayer.playLooped(RUB_LOOP_TRACK)
-                                playing = true
-                            } else if (playing && !inSync) {
-                                wavPlayer.pause(RUB_LOOP_TRACK)
-                                playing = false
-                            }
-                            delay(16)
-                        } catch(e: WavPlayerException){
-                            Log.e(TAG, "WavPlayer Exception",e)
-                            viewModel.onWavPlayerException()
-                        }
-                    }
-                } else if(wavPlayer.isPlaying(RUB_LOOP_TRACK)) {
-                    wavPlayer.stopFadeOut(RUB_LOOP_TRACK, 20)
-                }
-            }
-
-            //=============== Arc fade animation =============== |
-
-            // arc fade animation - my arc
-
-            LaunchedEffect(myReleased) {
-                if(myReleased){
-                    myArc.fadeOut()
-                    myArc.reset()
-                } else {
-                    myArc.show()
-                }
-            }
-
-            // arc fade animation - opponent's arc
-            LaunchedEffect(opponentReleased) {
-                if(opponentReleased){
-                    opponentArc.fadeOut()
-                } else {
-                    opponentArc.show()
-                }
-            }
-
-            // =============== Draw background ================ |
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(shape = CircleShape)
-                    .background(color = SILVER_COLOR)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(0.8f)
-                    .clip(shape = CircleShape)
-                    .background(color = DARK_BACKGROUND_COLOR)
-                    .shadow((SCREEN_RADIUS * 0.3f).dp, CircleShape, spotColor = Color.Red)
-                    .shadow(
-                        (SCREEN_RADIUS * 0.3f).dp,
-                        CircleShape,
-                        spotColor = Color.Red.copy(alpha = 0.5f)
-                    )
-            )
-
-            // =================== Draw arcs =================== |
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-
-                // draw only if the touch point is within the defined borders
-                if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
-                    drawArc(
-                        color = myArc.color.copy(alpha = myArc.currentAlpha),
-                        startAngle = myArc.startAngle.floatValue,
-                        sweepAngle = MY_SWEEP_ANGLE,
-                        useCenter = false,
-                        topLeft = MY_ARC_TOP_LEFT,
-                        size = MY_ARC_SIZE,
-                        style = Stroke(width = MY_STROKE_WIDTH.dp.toPx())
-                    )
-                }
-
-                // draw opponent's arc
-                if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
-                    drawArc(
-                        color = opponentArc.color.copy(alpha = opponentArc.currentAlpha),
-                        startAngle = opponentArc.startAngle.floatValue,
-                        sweepAngle = OPPONENT_SWEEP_ANGLE,
-                        useCenter = false,
-                        topLeft = OPPONENT_ARC_TOP_LEFT,
-                        size = OPPONENT_ARC_SIZE,
-                        style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
-                    )
-                }
-
-                if(touchingBezel){
-                    drawCircle(
-                        color = Color.Red.copy(alpha = bezelWarningAlpha),
-                        radius = SCREEN_RADIUS,
-                        center = SCREEN_CENTER,
-                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
-                    )
-                    drawCircle(
-                        color = Color.Green.copy(alpha = bezelWarningAlpha),
-                        radius = SCREEN_RADIUS - (SCREEN_RADIUS * 0.3f),
-                        center = SCREEN_CENTER,
-                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
-                    )
+            } else {
+                while(bezelWarningAlpha > 0.0f){
+                    bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
+                    delay(16)
                 }
             }
         }
-    }
 
-    companion object {
-        private const val TAG = "WineGlassesActivity"
+        // ================== Sound effects ================== |
+
+        // play high sound when in sync
+        LaunchedEffect(myReleased){
+            val wavPlayer = viewModel.wavPlayer
+            if(! myReleased) {
+                var playing = false
+                var inSync: Boolean
+                while (true) {
+                    try{
+                        inSync = viewModel.inSync()
+                        if (!playing && inSync) {
+                            wavPlayer.playLooped(RUB_LOOP_TRACK)
+                            playing = true
+                        } else if (playing && !inSync) {
+                            wavPlayer.pause(RUB_LOOP_TRACK)
+                            playing = false
+                        }
+                        delay(16)
+                    } catch(e: WavPlayerException){
+                        Log.e(TAG, "WavPlayer Exception",e)
+                        viewModel.onWavPlayerException()
+                    }
+                }
+            } else if(wavPlayer.isPlaying(RUB_LOOP_TRACK)) {
+                wavPlayer.stopFadeOut(RUB_LOOP_TRACK, 20)
+            }
+        }
+
+        //=============== Arc fade animation =============== |
+
+        // arc fade animation - my arc
+
+        LaunchedEffect(myReleased) {
+            if(myReleased){
+                myArc.fadeOut()
+                myArc.reset()
+            } else {
+                myArc.show()
+            }
+        }
+
+        // arc fade animation - opponent's arc
+        LaunchedEffect(opponentReleased) {
+            if(opponentReleased){
+                opponentArc.fadeOut()
+            } else {
+                opponentArc.show()
+            }
+        }
+
+        // =============== Draw background ================ |
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(shape = CircleShape)
+                .background(color = SILVER_COLOR)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.8f)
+                .clip(shape = CircleShape)
+                .background(color = DARK_BACKGROUND_COLOR)
+                .shadow((SCREEN_RADIUS * 0.3f).dp, CircleShape, spotColor = Color.Red)
+                .shadow(
+                    (SCREEN_RADIUS * 0.3f).dp,
+                    CircleShape,
+                    spotColor = Color.Red.copy(alpha = 0.5f)
+                )
+        )
+
+        // =================== Draw arcs =================== |
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+
+            // draw only if the touch point is within the defined borders
+            if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                drawArc(
+                    color = myArc.color.copy(alpha = myArc.currentAlpha),
+                    startAngle = myArc.startAngle.floatValue,
+                    sweepAngle = MY_SWEEP_ANGLE,
+                    useCenter = false,
+                    topLeft = MY_ARC_TOP_LEFT,
+                    size = MY_ARC_SIZE,
+                    style = Stroke(width = MY_STROKE_WIDTH.dp.toPx())
+                )
+            }
+
+            // draw opponent's arc
+            if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                drawArc(
+                    color = opponentArc.color.copy(alpha = opponentArc.currentAlpha),
+                    startAngle = opponentArc.startAngle.floatValue,
+                    sweepAngle = OPPONENT_SWEEP_ANGLE,
+                    useCenter = false,
+                    topLeft = OPPONENT_ARC_TOP_LEFT,
+                    size = OPPONENT_ARC_SIZE,
+                    style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
+                )
+            }
+
+            if(touchingBezel){
+                drawCircle(
+                    color = Color.Red.copy(alpha = bezelWarningAlpha),
+                    radius = SCREEN_RADIUS,
+                    center = SCREEN_CENTER,
+                    style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
+                )
+                drawCircle(
+                    color = Color.Green.copy(alpha = bezelWarningAlpha),
+                    radius = SCREEN_RADIUS - (SCREEN_RADIUS * 0.3f),
+                    center = SCREEN_CENTER,
+                    style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
+                )
+            }
+        }
     }
 }
 

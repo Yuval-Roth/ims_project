@@ -35,7 +35,7 @@ import kotlin.math.absoluteValue
 
 private const val RADIANS_IN_CIRCLE = 6.283f
 
-class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
+open class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -46,11 +46,11 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
     val myArc by lazy { Arc(myColor) }
     val opponentArc by lazy { Arc(opponentColor) }
-    private lateinit var myFrequencyTracker : FrequencyTracker
+    protected lateinit var myFrequencyTracker : FrequencyTracker
     @Volatile
     private var opponentFrequency = 0f
 
-    private var _released = MutableStateFlow(true)
+    protected var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
 
     private var _opponentReleased = MutableStateFlow(false)
@@ -157,7 +157,7 @@ class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         model.sessionSetupComplete()
     }
 
-    fun setTouchPoint(x: Float, y: Float) {
+    open fun setTouchPoint(x: Float, y: Float) {
         val (distance,rawAngle) = cartesianToPolar(x, y)
         val inBounds = if(x != -1.0f && y != -1.0f){
             distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT

@@ -80,158 +80,164 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
     override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> Pacman()
+            GameViewModel.State.PLAYING -> Pacman(viewModel)
             else -> super.Main()
         }
     }
+}
 
-    @Composable
-    fun Pacman() {
-        val rewardAccumulator = viewModel.rewardAccumulator
-        val pacmanAngle = viewModel.pacmanAngle.collectAsState().value
-        val density =  LocalDensity.current.density
-        val tracker = remember { FlingTracker() }
-        val scope = rememberCoroutineScope()
-        val myParticle by viewModel.myParticle.collectAsState()
-        val otherParticle by viewModel.otherParticle.collectAsState()
-        var fedSuccessfully by remember { mutableStateOf(false) }
+@Composable
+fun Pacman(viewModel: PacmanViewModel) {
+    val animatePacman by viewModel.animatePacman.collectAsState()
+    val showLeftSide by viewModel.showLeftSide.collectAsState()
+    val showRightSide by viewModel.showRightSide.collectAsState()
+    val rewardAccumulator = viewModel.rewardAccumulator
+    val pacmanAngle = viewModel.pacmanAngle.collectAsState().value
+    val density =  LocalDensity.current.density
+    val tracker = remember { FlingTracker() }
+    val scope = rememberCoroutineScope()
+    val myParticle by viewModel.myParticle.collectAsState()
+    val otherParticle by viewModel.otherParticle.collectAsState()
+    var fedSuccessfully by remember { mutableStateOf(false) }
 
-        val pacmanRadius = (SCREEN_RADIUS * (0.15f + rewardAccumulator.value * REWARD_SIZE_BONUS)).fastCoerceAtMost(PACMAN_MAX_SIZE)
+    val pacmanRadius = (SCREEN_RADIUS * (0.15f + rewardAccumulator.value * REWARD_SIZE_BONUS)).fastCoerceAtMost(PACMAN_MAX_SIZE)
 
-        LaunchedEffect(Unit){
-            val pacmanAngle = viewModel.pacmanAngle
-            // rotate pacman and check for feeding events
-            val quantizedAngles = quantizeAngles(PACMAN_ANGLE_STEP)
-            val leftThreshold = closestQuantizedAngle(180f + PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
-            val rightThreshold = closestQuantizedAngle(PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
-            while(true){
-                val currentGameTime = viewModel.getCurrentGameTime()
-                val rotationTimePassed = currentGameTime % PACMAN_ROTATION_DURATION
-                val rotationPercentage = rotationTimePassed / PACMAN_ROTATION_DURATION
-                val targetAngle = 360f * rotationPercentage
-                val quantizedTargetAngle = closestQuantizedAngle(targetAngle,PACMAN_ANGLE_STEP, quantizedAngles)
-                pacmanAngle.value = Angle.fromArbitraryAngle(quantizedTargetAngle)
+    LaunchedEffect(animatePacman){
+        if(!animatePacman) return@LaunchedEffect
+        val pacmanAngle = viewModel.pacmanAngle
+        // rotate pacman and check for feeding events
+        val quantizedAngles = quantizeAngles(PACMAN_ANGLE_STEP)
+        val leftThreshold = closestQuantizedAngle(180f + PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
+        val rightThreshold = closestQuantizedAngle(PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
+        while(true){
+            val currentGameTime = viewModel.getCurrentGameTime()
+            val rotationTimePassed = currentGameTime % PACMAN_ROTATION_DURATION
+            val rotationPercentage = rotationTimePassed / PACMAN_ROTATION_DURATION
+            val targetAngle = 360f * rotationPercentage
+            val quantizedTargetAngle = closestQuantizedAngle(targetAngle,PACMAN_ANGLE_STEP, quantizedAngles)
+            pacmanAngle.value = Angle.fromArbitraryAngle(quantizedTargetAngle)
 
-                // check for feeding
-                if(quantizedTargetAngle == leftThreshold || quantizedTargetAngle == rightThreshold){
-                    if(!fedSuccessfully){
+            // check for feeding
+            if(quantizedTargetAngle == leftThreshold || quantizedTargetAngle == rightThreshold){
+                if(!fedSuccessfully){
+                    scope.launch {
+                        rewardAccumulator.animateTo(
+                            targetValue = (rewardAccumulator.value - 1).coerceAtLeast(0f),
+                            animationSpec = tween(
+                                durationMillis = PACMAN_SHRINK_ANIMATION_DURATION,
+                                easing = LinearEasing
+                            )
+                        )
+                    }
+                } else {
+                    fedSuccessfully = false
+                }
+            }
+            awaitFrame()
+        }
+    }
+
+    // animate new particles
+    LaunchedEffect(Unit) {
+        while(true){
+            for (particle in listOfNotNull(myParticle, otherParticle)) {
+                when(particle.state){
+                    ParticleState.NEW -> {
+                        particle.state = ParticleState.STATIONARY
+                        val sizeAnimation = Animatable(0f)
                         scope.launch {
-                            rewardAccumulator.animateTo(
-                                targetValue = (rewardAccumulator.value - 1).coerceAtLeast(0f),
+                            sizeAnimation.animateTo(
+                                targetValue = PARTICLE_RADIUS * 2,
                                 animationSpec = tween(
-                                    durationMillis = PACMAN_SHRINK_ANIMATION_DURATION,
+                                    durationMillis = 150,
                                     easing = LinearEasing
                                 )
-                            )
+                            ) {
+                                particle.size = Size(value, value)
+                            }
                         }
-                    } else {
-                        fedSuccessfully = false
                     }
-                }
-                awaitFrame()
-            }
-        }
-
-        // animate new particles
-        LaunchedEffect(Unit) {
-            while(true){
-                for (particle in listOfNotNull(myParticle, otherParticle)) {
-                    when(particle.state){
-                        ParticleState.NEW -> {
-                            particle.state = ParticleState.STATIONARY
-                            val sizeAnimation = Animatable(0f)
+                    ParticleState.STATIONARY -> {
+                        if (particle.animationLength > 0) {
+                            particle.state = ParticleState.MOVING
+                            val targetX = SCREEN_CENTER.x - PARTICLE_RADIUS
+                            val startX = particle.topLeft.x
+                            val distance = targetX - startX
+                            val positionAnimation = Animatable(0f)
+                            if(particle.reward){
+                                scope.launch(Dispatchers.Default) {
+                                    delay(particle.animationLength - 250L)
+                                    viewModel.playRewardSound()
+                                }
+                            }
                             scope.launch {
-                                sizeAnimation.animateTo(
-                                    targetValue = PARTICLE_RADIUS * 2,
+                                positionAnimation.animateTo(
+                                    targetValue = 1f,
                                     animationSpec = tween(
-                                        durationMillis = 150,
+                                        durationMillis = particle.animationLength,
                                         easing = LinearEasing
                                     )
                                 ) {
-                                    particle.size = Size(value, value)
+                                    val newX = startX + distance * value
+                                    particle.topLeft = Offset(newX, particle.topLeft.y)
                                 }
+                                if (particle.reward){
+                                    rewardAccumulator.snapTo(rewardAccumulator.targetValue + 1f)
+                                    fedSuccessfully = true
+                                }
+                                // after animation ends, reset particle
+                                viewModel.resetParticle(particle.direction)
                             }
                         }
-                        ParticleState.STATIONARY -> {
-                            if (particle.animationLength > 0) {
-                                particle.state = ParticleState.MOVING
-                                val targetX = SCREEN_CENTER.x - PARTICLE_RADIUS
-                                val startX = particle.topLeft.x
-                                val distance = targetX - startX
-                                val positionAnimation = Animatable(0f)
-                                if(particle.reward){
-                                    scope.launch(Dispatchers.Default) {
-                                        delay(particle.animationLength - 250L)
-                                        viewModel.playRewardSound()
-                                    }
-                                }
-                                scope.launch {
-                                    positionAnimation.animateTo(
-                                        targetValue = 1f,
-                                        animationSpec = tween(
-                                            durationMillis = particle.animationLength,
-                                            easing = LinearEasing
-                                        )
-                                    ) {
-                                        val newX = startX + distance * value
-                                        particle.topLeft = Offset(newX, particle.topLeft.y)
-                                    }
-                                    if (particle.reward){
-                                        rewardAccumulator.snapTo(rewardAccumulator.targetValue + 1f)
-                                        fedSuccessfully = true
-                                    }
-                                    // after animation ends, reset particle
-                                    viewModel.resetParticle(particle.direction)
-                                }
-                            }
-                        }
-                        ParticleState.MOVING -> { /* do nothing, animation is already running */ }
                     }
+                    ParticleState.MOVING -> { /* do nothing, animation is already running */ }
                 }
-                awaitFrame()
             }
+            awaitFrame()
         }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = Color.Black)
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { startOffset ->
-                            val x = startOffset.x
-                            val y = startOffset.y
-                            val (distance, _) = cartesianToPolar(x, y)
-                            val direction = if (x < SCREEN_CENTER.x) 1 else -1
-                            if (viewModel.myDirection == direction && distance > SCREEN_RADIUS * 0.6) {
-                                tracker.startFling(x, y)
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.Black)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { startOffset ->
+                        val x = startOffset.x
+                        val y = startOffset.y
+                        val (distance, _) = cartesianToPolar(x, y)
+                        val direction = if (x < SCREEN_CENTER.x) 1 else -1
+                        if (viewModel.myDirection == direction && distance > SCREEN_RADIUS * 0.6) {
+                            tracker.startFling(x, y)
+                        }
+                    },
+                    onDrag = { change: PointerInputChange, _ ->
+                        val position = change.position
+                        tracker.setOffset(position.x, position.y)
+                    },
+                    onDragEnd = {
+                        if (tracker.started) {
+                            val (nx, ny, speedPxPerSec) = tracker.endFling()
+                            if (viewModel.myDirection * nx > 0) { // fling in my direction
+                                val dpPecSec = speedPxPerSec / density
+                                viewModel.fling(dpPecSec)
                             }
-                        },
-                        onDrag = { change: PointerInputChange, _ ->
-                            val position = change.position
-                            tracker.setOffset(position.x, position.y)
-                        },
-                        onDragEnd = {
-                            if (tracker.started) {
-                                val (nx, ny, speedPxPerSec) = tracker.endFling()
-                                if (viewModel.myDirection * nx > 0) { // fling in my direction
-                                    val dpPecSec = speedPxPerSec / density
-                                    viewModel.fling(dpPecSec)
-                                }
-                            }
-                        },
-                        onDragCancel = { }
-                    )
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
+                        }
+                    },
+                    onDragCancel = { }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
 
-                // draw cages for the particles
-                val WALLS_UPPER_Y = SCREEN_CENTER.y - SCREEN_RADIUS * 0.12f
-                val WALLS_LOWER_Y = SCREEN_CENTER.y + SCREEN_RADIUS * 0.12f
-                val OPENING_UPPER_Y = SCREEN_CENTER.y - SCREEN_RADIUS * 0.175f
-                val OPENING_LOWER_Y = SCREEN_CENTER.y + SCREEN_RADIUS * 0.175f
-                // left side
+            // draw cages for the particles
+            val WALLS_UPPER_Y = SCREEN_CENTER.y - SCREEN_RADIUS * 0.12f
+            val WALLS_LOWER_Y = SCREEN_CENTER.y + SCREEN_RADIUS * 0.12f
+            val OPENING_UPPER_Y = SCREEN_CENTER.y - SCREEN_RADIUS * 0.175f
+            val OPENING_LOWER_Y = SCREEN_CENTER.y + SCREEN_RADIUS * 0.175f
+            // left side
+            if(showLeftSide){
                 val LEFT_INNER_X = SCREEN_CENTER.x - SCREEN_RADIUS * 0.76f
                 drawLine(
                     color = BLUE_COLOR,
@@ -261,7 +267,9 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
-                // right side
+            }
+            // right side
+            if(showRightSide){
                 val RIGHT_INNER_X = SCREEN_CENTER.x + SCREEN_RADIUS * 0.76f
                 drawLine(
                     color = GRASS_GREEN_COLOR,
@@ -291,39 +299,39 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
                     strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
+            }
 
-                // draw particles
-                for (particle in listOfNotNull(myParticle, otherParticle)) {
-                    drawRoundRect(
-                        color = PARTICLE_COLOR,
-                        topLeft = particle.topLeft,
-                        size = particle.size,
-                        cornerRadius = CornerRadius(2f, 2f)
-                    )
-                }
+            // draw particles
+            for (particle in listOfNotNull(myParticle, otherParticle)) {
+                drawRoundRect(
+                    color = PARTICLE_COLOR,
+                    topLeft = particle.topLeft,
+                    size = particle.size,
+                    cornerRadius = CornerRadius(2f, 2f)
+                )
+            }
 
-                // rotating pacman
-                rotate(pacmanAngle.floatValue + 90f) { // 90f offset to align 0 degrees to the right
-                    // pacman body
-                    drawArc(
-                        color = Color.Yellow,
-                        startAngle = PACMAN_START_ANGLE,
-                        sweepAngle = PACMAN_SWEEP_ANGLE,
-                        useCenter = true,
-                        topLeft = Offset(SCREEN_CENTER.x - pacmanRadius, SCREEN_CENTER.y - pacmanRadius),
-                        size = Size(pacmanRadius * 2, pacmanRadius * 2),
+            // rotating pacman
+            rotate(pacmanAngle.floatValue + 90f) { // 90f offset to align 0 degrees to the right
+                // pacman body
+                drawArc(
+                    color = Color.Yellow,
+                    startAngle = PACMAN_START_ANGLE,
+                    sweepAngle = PACMAN_SWEEP_ANGLE,
+                    useCenter = true,
+                    topLeft = Offset(SCREEN_CENTER.x - pacmanRadius, SCREEN_CENTER.y - pacmanRadius),
+                    size = Size(pacmanRadius * 2, pacmanRadius * 2),
+                )
+                // pacman eye
+                val eyeOffsetFromCenter = pacmanRadius * 0.6f
+                drawCircle(
+                    color = Color.Black,
+                    radius = pacmanRadius * 0.1f,
+                    center = Offset(
+                        x = SCREEN_CENTER.x + eyeOffsetFromCenter * cos(Math.toRadians(180.0).toFloat()),
+                        y = SCREEN_CENTER.y + eyeOffsetFromCenter * sin(Math.toRadians(180.0).toFloat())
                     )
-                    // pacman eye
-                    val eyeOffsetFromCenter = pacmanRadius * 0.6f
-                    drawCircle(
-                        color = Color.Black,
-                        radius = pacmanRadius * 0.1f,
-                        center = Offset(
-                            x = SCREEN_CENTER.x + eyeOffsetFromCenter * cos(Math.toRadians(180.0).toFloat()),
-                            y = SCREEN_CENTER.y + eyeOffsetFromCenter * sin(Math.toRadians(180.0).toFloat())
-                        )
-                    )
-                }
+                )
             }
         }
     }

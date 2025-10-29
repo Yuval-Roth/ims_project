@@ -57,127 +57,128 @@ class WavesActivity: GameActivity(GameType.WAVES) {
     override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> Waves()
+            GameViewModel.State.PLAYING -> Waves(viewModel)
             else -> super.Main()
         }
     }
+}
 
-    @Composable
-    fun Waves() {
-        val density =  LocalDensity.current.density
-        val tracker = remember { FlingTracker() }
-        val wave = remember { viewModel.wave }
-        val turn by viewModel.turn.collectAsState()
+@Composable
+fun Waves(viewModel: WavesViewModel) {
+    val density =  LocalDensity.current.density
+    val tracker = remember { FlingTracker() }
+    val wave by viewModel.wave.collectAsState()
+    val turn by viewModel.turn.collectAsState()
 
-        LaunchedEffect(wave.direction) {
-            if(wave.direction == 0) return@LaunchedEffect
+    LaunchedEffect(wave.direction) {
+        if(wave.direction == 0) return@LaunchedEffect
 
-            val progress = Animatable(0f)
-            progress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(
-                    durationMillis = wave.animationLength,
-                    easing = OceanWaveEasing,
-                )
-            ){
-                val x = if (wave.direction > 0) {
-                    -SCREEN_RADIUS*0.7f + SCREEN_RADIUS * 2.25f * value
-                } else {
-                    SCREEN_RADIUS * 1.55f - SCREEN_RADIUS * 2.25f * value
-                }
-                wave.topLeft = Offset( x, 0f)
-                wave.animationProgress = value
-            }
-            viewModel.flipTurn()
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F5F5))
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { startOffset ->
-                            if (viewModel.myDirection == turn) {
-                                val x = startOffset.x
-                                val y = startOffset.y
-                                val (distance, _) = cartesianToPolar(x, y)
-                                if (distance > SCREEN_RADIUS * 0.7) {
-                                    tracker.startFling(x, y)
-                                }
-                            }
-                        },
-                        onDrag = { change: PointerInputChange, _ ->
-                            val position = change.position
-                            tracker.setOffset(position.x, position.y)
-                        },
-                        onDragEnd = {
-                            if (tracker.started) {
-                                val (nx, ny, speedPxPerSec) = tracker.endFling()
-                                if (viewModel.myDirection * nx > 0) { // fling in my direction
-                                    val dpPecSec = speedPxPerSec / density
-                                    viewModel.fling(dpPecSec)
-                                }
-                            }
-                        },
-                        onDragCancel = { }
-                    )
-                },
-            contentAlignment = Alignment.Center
+        val progress = Animatable(0f)
+        progress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = wave.animationLength,
+                easing = OceanWaveEasing,
+            )
         ){
-            WaveWarpBox(
-                amplitudePx = 5f,
-                wavelengthPx = 180f,
-                speedPxPerSec = 60f,
-                phaseOffset = 0f,
-            ) {
-                Canvas(modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = Color.White)
-                ) {
-                    val brush = horizontalGradient(
-                        colors = listOf(
-                            Color.White,
-                            Color(0xFF6BCBFF),
-                            Color.White,
-                        ),
-                        startX = wave.topLeft.x,
-                        endX = wave.topLeft.x + SCREEN_RADIUS*1.15f,
-                    )
-                    drawRect(
-                        brush = brush,
-                        topLeft = wave.topLeft,
-                        size = Size(SCREEN_RADIUS*1.15f,SCREEN_RADIUS * 2),
-                    )
-                }
+            val x = if (wave.direction > 0) {
+                -SCREEN_RADIUS*0.7f + SCREEN_RADIUS * 2.25f * value
+            } else {
+                SCREEN_RADIUS * 1.55f - SCREEN_RADIUS * 2.25f * value
             }
+            wave.topLeft = Offset( x, 0f)
+            wave.animationProgress = value
+        }
+        viewModel.flipTurn()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F5))
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart = { startOffset ->
+                        if (viewModel.myDirection == turn) {
+                            val x = startOffset.x
+                            val y = startOffset.y
+                            val (distance, _) = cartesianToPolar(x, y)
+                            if (distance > SCREEN_RADIUS * 0.7) {
+                                tracker.startFling(x, y)
+                            }
+                        }
+                    },
+                    onDrag = { change: PointerInputChange, _ ->
+                        val position = change.position
+                        tracker.setOffset(position.x, position.y)
+                    },
+                    onDragEnd = {
+                        if (tracker.started) {
+                            val (nx, ny, speedPxPerSec) = tracker.endFling()
+                            if (viewModel.myDirection * nx > 0) { // fling in my direction
+                                val dpPecSec = speedPxPerSec / density
+                                viewModel.fling(dpPecSec)
+                            }
+                        }
+                    },
+                    onDragCancel = { }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ){
+        WaveWarpBox(
+            amplitudePx = 5f,
+            wavelengthPx = 180f,
+            speedPxPerSec = 60f,
+            phaseOffset = 0f,
+        ) {
             Canvas(modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color.Transparent)
+                .background(color = Color.White)
             ) {
-
-                val brush2 = horizontalGradient(
+                val brush = horizontalGradient(
                     colors = listOf(
                         Color.White,
-                        Color(0xFFB1E4FF),
-                        Color(0xFFB1E4FF),
-                        Color(0xFFB1E4FF),
+                        Color(0xFF6BCBFF),
                         Color.White,
                     ),
-                    startX = wave.topLeft.x + SCREEN_RADIUS*1.15f*0.25f,
-                    endX = wave.topLeft.x + SCREEN_RADIUS*1.15f*0.75f,
+                    startX = wave.topLeft.x,
+                    endX = wave.topLeft.x + SCREEN_RADIUS*1.15f,
                 )
                 drawRect(
-                    brush = brush2,
-                    topLeft = Offset(wave.topLeft.x+SCREEN_RADIUS*1.15f*0.25f, 0f),
-                    size = Size(SCREEN_RADIUS*1.15f*0.5f,SCREEN_RADIUS * 2),
-                    blendMode = BlendMode.ColorBurn
+                    brush = brush,
+                    topLeft = wave.topLeft,
+                    size = Size(SCREEN_RADIUS*1.15f,SCREEN_RADIUS * 2),
                 )
             }
         }
+        Canvas(modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.Transparent)
+        ) {
+
+            val brush2 = horizontalGradient(
+                colors = listOf(
+                    Color.White,
+                    Color(0xFFB1E4FF),
+                    Color(0xFFB1E4FF),
+                    Color(0xFFB1E4FF),
+                    Color.White,
+                ),
+                startX = wave.topLeft.x + SCREEN_RADIUS*1.15f*0.25f,
+                endX = wave.topLeft.x + SCREEN_RADIUS*1.15f*0.75f,
+            )
+            drawRect(
+                brush = brush2,
+                topLeft = Offset(wave.topLeft.x+SCREEN_RADIUS*1.15f*0.25f, 0f),
+                size = Size(SCREEN_RADIUS*1.15f*0.5f,SCREEN_RADIUS * 2),
+                blendMode = BlendMode.ColorBurn
+            )
+        }
     }
-    // AGSL: horizontal sine displacement based on Y
-    private val AGSL = """
+}
+// AGSL: horizontal sine displacement based on Y
+private val AGSL = """
         uniform float2 resolution;
         uniform float amplitude;
         uniform float wavelength;
@@ -205,42 +206,41 @@ class WavesActivity: GameActivity(GameType.WAVES) {
         }
     """.trimIndent()
 
-    @Composable
-    fun WaveWarpBox(
-        modifier: Modifier = Modifier,
-        amplitudePx: Float,
-        wavelengthPx: Float,
-        speedPxPerSec: Float,
-        phaseOffset: Float = 0f,
-        content: @Composable () -> Unit
-    ) {
-        // simple time driver
-        var time by remember { mutableFloatStateOf(0f) }
-        LaunchedEffect(Unit) {
-            while (true) {
-                val nanos = awaitFrame() // suspend until next frame
-                time = nanos / 1_000_000_000f
-            }
+@Composable
+fun WaveWarpBox(
+    modifier: Modifier = Modifier,
+    amplitudePx: Float,
+    wavelengthPx: Float,
+    speedPxPerSec: Float,
+    phaseOffset: Float = 0f,
+    content: @Composable () -> Unit
+) {
+    // simple time driver
+    var time by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val nanos = awaitFrame() // suspend until next frame
+            time = nanos / 1_000_000_000f
         }
+    }
 
-        Box(
-            modifier = modifier.graphicsLayer {
-                compositingStrategy = CompositingStrategy.Offscreen
-                val shader = android.graphics.RuntimeShader(AGSL)
-                shader.setFloatUniform("resolution", size.width, size.height)
-                shader.setFloatUniform("amplitude", amplitudePx)
-                shader.setFloatUniform("wavelength", wavelengthPx)
-                val omega = (2f * Math.PI.toFloat()) * (speedPxPerSec / wavelengthPx)
-                shader.setFloatUniform("omega", omega)
-                shader.setFloatUniform("time", time)
-                shader.setFloatUniform("phase", phaseOffset)
-                renderEffect = android.graphics.RenderEffect
-                    .createRuntimeShaderEffect(shader, "content")
-                    .asComposeRenderEffect()
-            }
-        ) {
-            content()
+    Box(
+        modifier = modifier.graphicsLayer {
+            compositingStrategy = CompositingStrategy.Offscreen
+            val shader = android.graphics.RuntimeShader(AGSL)
+            shader.setFloatUniform("resolution", size.width, size.height)
+            shader.setFloatUniform("amplitude", amplitudePx)
+            shader.setFloatUniform("wavelength", wavelengthPx)
+            val omega = (2f * Math.PI.toFloat()) * (speedPxPerSec / wavelengthPx)
+            shader.setFloatUniform("omega", omega)
+            shader.setFloatUniform("time", time)
+            shader.setFloatUniform("phase", phaseOffset)
+            renderEffect = android.graphics.RenderEffect
+                .createRuntimeShaderEffect(shader, "content")
+                .asComposeRenderEffect()
         }
+    ) {
+        content()
     }
 }
 

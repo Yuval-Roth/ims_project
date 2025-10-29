@@ -70,6 +70,7 @@ import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.utils.FlourPile
 import com.imsproject.watch.utils.WavPlayerException
 import com.imsproject.watch.utils.polarToCartesian
+import com.imsproject.watch.view.FlourMillActivity.Companion.TAG
 import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
@@ -90,349 +91,349 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
     override fun Main(){
         val state by viewModel.state.collectAsState()
         when(state){
-            GameViewModel.State.PLAYING -> FlourMill()
+            GameViewModel.State.PLAYING -> FlourMill(viewModel)
             else -> super.Main()
         }
     }
 
-    @Composable
-    fun FlourMill() {
-        // flour related
-        var flourImageBitmap = remember<ImageBitmap?> { null }
-        if(flourImageBitmap == null) { flourImageBitmap = ImageBitmap.imageResource(id = R.drawable.flour) }
-        val scaledFlourWidth = remember { (flourImageBitmap.width * 0.15f).toInt() }
-        val scaledFlourHeight = remember { (flourImageBitmap.height * 0.15f).toInt() }
-        val flourPile = remember { FlourPile() }
-        val fallingFlour = remember { mutableStateListOf<MutableFloatState>() }
+    companion object {
+        const val TAG = "FlourMillActivity"
+    }
+}
 
-        // arc related
-        val myArc = remember { viewModel.myArc }
-        val opponentArc = remember { viewModel.opponentArc }
-        val myReleased by viewModel.released.collectAsState()
-        val opponentReleased by viewModel.opponentReleased.collectAsState()
+@Composable
+fun FlourMill(viewModel: FlourMillViewModel) {
+    // flour related
+    var flourImageBitmap = remember<ImageBitmap?> { null }
+    if(flourImageBitmap == null) { flourImageBitmap = ImageBitmap.imageResource(id = R.drawable.flour) }
+    val scaledFlourWidth = remember { (flourImageBitmap.width * 0.15f).toInt() }
+    val scaledFlourHeight = remember { (flourImageBitmap.height * 0.15f).toInt() }
+    val flourPile = remember { FlourPile() }
+    val fallingFlour = remember { mutableStateListOf<MutableFloatState>() }
 
-        // wheel related
-        var currentWheelAngle by remember { mutableStateOf(viewModel.targetWheelAngle.value) }
-        var angleChangeSum = remember { 0f }
+    // arc related
+    val myArc = remember { viewModel.myArc }
+    val opponentArc = remember { viewModel.opponentArc }
+    val myReleased by viewModel.released.collectAsState()
+    val opponentReleased by viewModel.opponentReleased.collectAsState()
 
-        // bezel warning related
-        val focusRequester = remember { FocusRequester() }
-        var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
-        var touchingBezel by remember { mutableStateOf(false) }
+    // wheel related
+    var currentWheelAngle by remember { mutableStateOf(viewModel.targetWheelAngle.value) }
+    var angleChangeSum = remember { 0f }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .onRotaryScrollEvent {
-                    touchingBezel = true
-                    true
-                }
-                .focusRequester(focusRequester)
-                .focusable()
-                .pointerInput(Unit) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val pointerEvent = awaitPointerEvent()
-                            val inputChange = pointerEvent.changes.first()
-                            inputChange.consume()
-                            touchingBezel = false
-                            when (pointerEvent.type) {
-                                PointerEventType.Press, PointerEventType.Move -> {
-                                    val position = inputChange.position
-                                    viewModel.setTouchPoint(position.x, position.y)
-                                }
+    // bezel warning related
+    val focusRequester = remember { FocusRequester() }
+    var bezelWarningAlpha by remember { mutableFloatStateOf(0.0f) }
+    var touchingBezel by remember { mutableStateOf(false) }
 
-                                PointerEventType.Release -> {
-                                    viewModel.setTouchPoint(-1.0f, -1.0f)
-                                }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onRotaryScrollEvent {
+                touchingBezel = true
+                true
+            }
+            .focusRequester(focusRequester)
+            .focusable()
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val pointerEvent = awaitPointerEvent()
+                        val inputChange = pointerEvent.changes.first()
+                        inputChange.consume()
+                        touchingBezel = false
+                        when (pointerEvent.type) {
+                            PointerEventType.Press, PointerEventType.Move -> {
+                                val position = inputChange.position
+                                viewModel.setTouchPoint(position.x, position.y)
+                            }
+
+                            PointerEventType.Release -> {
+                                viewModel.setTouchPoint(-1.0f, -1.0f)
                             }
                         }
                     }
                 }
-            ,
-            contentAlignment = Alignment.Center
-
-        ){
-
-            // ================== Scrolling bezel warning ================== |
-
-            LaunchedEffect(Unit){
-                focusRequester.requestFocus()
             }
+        ,
+        contentAlignment = Alignment.Center
 
-            LaunchedEffect(touchingBezel) {
-                if(touchingBezel){
-                    bezelWarningAlpha = 0.0f
-                    while(touchingBezel){
-                        while(bezelWarningAlpha < 0.5f){
-                            bezelWarningAlpha = (bezelWarningAlpha + 0.01f).fastCoerceAtMost(0.5f)
-                            delay(16)
-                        }
-                        while(bezelWarningAlpha > 0.0f){
-                            bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
-                            delay(16)
-                        }
+    ){
+
+        // ================== Scrolling bezel warning ================== |
+
+        LaunchedEffect(Unit){
+            focusRequester.requestFocus()
+        }
+
+        LaunchedEffect(touchingBezel) {
+            if(touchingBezel){
+                bezelWarningAlpha = 0.0f
+                while(touchingBezel){
+                    while(bezelWarningAlpha < 0.5f){
+                        bezelWarningAlpha = (bezelWarningAlpha + 0.01f).fastCoerceAtMost(0.5f)
+                        delay(16)
                     }
-                } else {
                     while(bezelWarningAlpha > 0.0f){
                         bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
                         delay(16)
                     }
                 }
-            }
-
-            // ================== Sound effects ================== |
-
-            // play high sound when in sync
-            LaunchedEffect(myReleased){
-                val sound = viewModel.wavPlayer
-                if(! myReleased) {
-                    var playing = false
-                    var inSync: Boolean
-                    while (true) {
-                        try{
-                            inSync = viewModel.inSync
-                            if (!playing && inSync) {
-                                sound.playLooped(MILL_SOUND_TRACK)
-                                playing = true
-                            } else if (playing && !inSync) {
-                                sound.pause(MILL_SOUND_TRACK)
-                                playing = false
-                            }
-                            delay(16)
-                        } catch(e: WavPlayerException){
-                            Log.e(TAG, "WavPlayer Exception",e)
-                            viewModel.onWavPlayerException()
-                        }
-                    }
-                } else if(sound.isPlaying(MILL_SOUND_TRACK)) {
-                    sound.stopFadeOut(MILL_SOUND_TRACK, 20)
-                }
-            }
-
-            //=============== Arc fade animation =============== |
-
-            // arc fade animation - my arc
-
-            LaunchedEffect(myReleased) {
-                if(myReleased){
-                    myArc.fadeOut()
-                    myArc.reset()
-                } else {
-                    myArc.show()
-                }
-            }
-
-            // arc fade animation - opponent's arc
-            LaunchedEffect(opponentReleased) {
-                if(opponentReleased){
-                    opponentArc.fadeOut()
-                } else {
-                    opponentArc.show()
-                }
-            }
-
-            // =============== Wheel rotation ================= |
-
-            LaunchedEffect(Unit) {
-                while(true){
-                    val targetAngle = viewModel.targetWheelAngle.value
-                    if(targetAngle != currentWheelAngle){
-                        val direction = if(Angle.isClockwise(currentWheelAngle,targetAngle)) 1 else -1
-                        val diff = targetAngle - currentWheelAngle
-                        if(diff < 1f) {
-                            currentWheelAngle = targetAngle
-                            angleChangeSum += diff
-                        } else if (1f <= diff && diff < 4f) {
-                            currentWheelAngle += 1f * direction
-                            angleChangeSum += 1f
-                        } else if(4f <= diff && diff < 8f) {
-                            currentWheelAngle += 2f * direction
-                            angleChangeSum += 2f
-                        } else if(8f <= diff && diff < 16f) {
-                            currentWheelAngle += 4f * direction
-                            angleChangeSum += 4f
-                        } else {
-                            currentWheelAngle += 8f * direction
-                            angleChangeSum += 8f
-                        }
-                        if(angleChangeSum > 360f) {
-                            angleChangeSum -= 360f
-                            fallingFlour.add(mutableFloatStateOf(0.46f))
-                            viewModel.addEvent(SessionEvent.flourDropped(viewModel.playerId, viewModel.getCurrentGameTime()))
-                        }
-                    }
+            } else {
+                while(bezelWarningAlpha > 0.0f){
+                    bezelWarningAlpha = (bezelWarningAlpha - 0.01f).fastCoerceAtLeast(0.0f)
                     delay(16)
                 }
             }
+        }
 
-            // =============== Falling flour ================= |
+        // ================== Sound effects ================== |
 
-            LaunchedEffect(Unit) {
-                while(true){
-                    for(relativeRadius in fallingFlour){
-                        relativeRadius.floatValue += 0.015f
-                        if(relativeRadius.floatValue > 0.71f){
-                            fallingFlour.remove(relativeRadius)
-                            if(!flourPile.isFull()){
-                                flourPile.addNext()
-                            }
+        // play high sound when in sync
+        LaunchedEffect(myReleased){
+            val sound = viewModel.wavPlayer
+            if(! myReleased) {
+                var playing = false
+                var inSync: Boolean
+                while (true) {
+                    try{
+                        inSync = viewModel.inSync
+                        if (!playing && inSync) {
+                            sound.playLooped(MILL_SOUND_TRACK)
+                            playing = true
+                        } else if (playing && !inSync) {
+                            sound.pause(MILL_SOUND_TRACK)
+                            playing = false
                         }
+                        delay(16)
+                    } catch(e: WavPlayerException){
+                        Log.e(TAG, "WavPlayer Exception",e)
+                        viewModel.onWavPlayerException()
                     }
-                    delay(16)
                 }
+            } else if(sound.isPlaying(MILL_SOUND_TRACK)) {
+                sound.stopFadeOut(MILL_SOUND_TRACK, 20)
             }
+        }
 
-            // ================== Draw the screen ================== |
+        //=============== Arc fade animation =============== |
 
-            Box(
-                modifier = Modifier.Companion
-                    .fillMaxSize()
-                    .background(color = SILVER_COLOR)
-            )
-            Box( // ground
-                modifier = Modifier.Companion
-                    .fillMaxSize(0.8f)
-                    .clip(shape = CircleShape)
-                    .background(color = LIGHT_BROWN_COLOR)
-            )
-            Image(
-                painter = painterResource(id = R.drawable.mill),
-                contentDescription = null,
-                modifier = Modifier
-                    .size((SCREEN_RADIUS * 0.5f).dp),
-                contentScale = ContentScale.FillBounds
-            )
+        // arc fade animation - my arc
 
-            val (x,y) = remember { polarToCartesian(SCREEN_RADIUS * 0.75f, 90.0) }
-            Canvas(modifier = Modifier.fillMaxSize()){
+        LaunchedEffect(myReleased) {
+            if(myReleased){
+                myArc.fadeOut()
+                myArc.reset()
+            } else {
+                myArc.show()
+            }
+        }
 
-                // draw the falling flour
+        // arc fade animation - opponent's arc
+        LaunchedEffect(opponentReleased) {
+            if(opponentReleased){
+                opponentArc.fadeOut()
+            } else {
+                opponentArc.show()
+            }
+        }
+
+        // =============== Wheel rotation ================= |
+
+        LaunchedEffect(Unit) {
+            while(true){
+                val targetAngle = viewModel.targetWheelAngle.value
+                if(targetAngle != currentWheelAngle){
+                    val direction = if(Angle.isClockwise(currentWheelAngle,targetAngle)) 1 else -1
+                    val diff = targetAngle - currentWheelAngle
+                    if(diff < 1f) {
+                        currentWheelAngle = targetAngle
+                        angleChangeSum += diff
+                    } else if (1f <= diff && diff < 4f) {
+                        currentWheelAngle += 1f * direction
+                        angleChangeSum += 1f
+                    } else if(4f <= diff && diff < 8f) {
+                        currentWheelAngle += 2f * direction
+                        angleChangeSum += 2f
+                    } else if(8f <= diff && diff < 16f) {
+                        currentWheelAngle += 4f * direction
+                        angleChangeSum += 4f
+                    } else {
+                        currentWheelAngle += 8f * direction
+                        angleChangeSum += 8f
+                    }
+                    if(angleChangeSum > 360f) {
+                        angleChangeSum -= 360f
+                        fallingFlour.add(mutableFloatStateOf(0.46f))
+                        viewModel.addEvent(SessionEvent.flourDropped(viewModel.playerId, viewModel.getCurrentGameTime()))
+                    }
+                }
+                delay(16)
+            }
+        }
+
+        // =============== Falling flour ================= |
+
+        LaunchedEffect(Unit) {
+            while(true){
                 for(relativeRadius in fallingFlour){
-                    val (x,y) = polarToCartesian(SCREEN_RADIUS * relativeRadius.floatValue, 90.0)
-                    drawImage(
-                        image = flourImageBitmap,
-                        dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-                        dstOffset = IntOffset(x.toInt(), y.toInt()),
-                    )
-                }
-
-                // draw the flour pile
-                var rowSize = 13
-                for(i in 0 until 6){
-                    for (j in 0 until rowSize) {
-                        if (flourPile.get(i, j)) {
-                            drawImage(
-                                image = flourImageBitmap,
-                                dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
-                                dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + (j - (rowSize / 2)) * 7, y.toInt() - scaledFlourHeight / 2 - i * 3),
-                            )
+                    relativeRadius.floatValue += 0.015f
+                    if(relativeRadius.floatValue > 0.71f){
+                        fallingFlour.remove(relativeRadius)
+                        if(!flourPile.isFull()){
+                            flourPile.addNext()
                         }
                     }
-                    rowSize -= 2
                 }
+                delay(16)
+            }
+        }
 
-                // draw the wheel
-                rotate(currentWheelAngle.floatValue, pivot = SCREEN_CENTER) {
-                    drawWheel()
-                }
+        // ================== Draw the screen ================== |
 
-                // draw only if the touch point is within the defined borders
-                if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
-                    drawArc(
-                        color = myArc.color.copy(alpha = myArc.currentAlpha),
-                        startAngle = myArc.startAngle.floatValue,
-                        sweepAngle = MY_SWEEP_ANGLE,
-                        useCenter = false,
-                        topLeft = MY_ARC_TOP_LEFT,
-                        size = MY_ARC_SIZE,
-                        style = Stroke(width = MY_STROKE_WIDTH.dp.toPx())
-                    )
-                }
+        Box(
+            modifier = Modifier.Companion
+                .fillMaxSize()
+                .background(color = SILVER_COLOR)
+        )
+        Box( // ground
+            modifier = Modifier.Companion
+                .fillMaxSize(0.8f)
+                .clip(shape = CircleShape)
+                .background(color = LIGHT_BROWN_COLOR)
+        )
+        Image(
+            painter = painterResource(id = R.drawable.mill),
+            contentDescription = null,
+            modifier = Modifier
+                .size((SCREEN_RADIUS * 0.5f).dp),
+            contentScale = ContentScale.FillBounds
+        )
 
-                // draw opponent's arc
-                if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
-                    drawArc(
-                        color = opponentArc.color.copy(alpha = opponentArc.currentAlpha),
-                        startAngle = opponentArc.startAngle.floatValue,
-                        sweepAngle = OPPONENT_SWEEP_ANGLE,
-                        useCenter = false,
-                        topLeft = OPPONENT_ARC_TOP_LEFT,
-                        size = OPPONENT_ARC_SIZE,
-                        style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
-                    )
-                }
+        val (x,y) = remember { polarToCartesian(SCREEN_RADIUS * 0.75f, 90.0) }
+        Canvas(modifier = Modifier.fillMaxSize()){
 
-                // draw the bezel warning
-                if(touchingBezel){
-                    drawCircle(
-                        color = Color.Red.copy(alpha = bezelWarningAlpha),
-                        radius = SCREEN_RADIUS,
-                        center = SCREEN_CENTER,
-                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
-                    )
-                    drawCircle(
-                        color = Color.Green.copy(alpha = bezelWarningAlpha),
-                        radius = SCREEN_RADIUS - (SCREEN_RADIUS * 0.3f),
-                        center = SCREEN_CENTER,
-                        style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
-                    )
+            // draw the falling flour
+            for(relativeRadius in fallingFlour){
+                val (x,y) = polarToCartesian(SCREEN_RADIUS * relativeRadius.floatValue, 90.0)
+                drawImage(
+                    image = flourImageBitmap,
+                    dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+                    dstOffset = IntOffset(x.toInt(), y.toInt()),
+                )
+            }
+
+            // draw the flour pile
+            var rowSize = 13
+            for(i in 0 until 6){
+                for (j in 0 until rowSize) {
+                    if (flourPile.get(i, j)) {
+                        drawImage(
+                            image = flourImageBitmap,
+                            dstSize = IntSize(scaledFlourWidth, scaledFlourHeight),
+                            dstOffset = IntOffset(x.toInt() - scaledFlourWidth / 2 + (j - (rowSize / 2)) * 7, y.toInt() - scaledFlourHeight / 2 - i * 3),
+                        )
+                    }
                 }
+                rowSize -= 2
+            }
+
+            // draw the wheel
+            rotate(currentWheelAngle.floatValue, pivot = SCREEN_CENTER) {
+                drawWheel()
+            }
+
+            // draw only if the touch point is within the defined borders
+            if (myArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                drawArc(
+                    color = myArc.color.copy(alpha = myArc.currentAlpha),
+                    startAngle = myArc.startAngle.floatValue,
+                    sweepAngle = MY_SWEEP_ANGLE,
+                    useCenter = false,
+                    topLeft = MY_ARC_TOP_LEFT,
+                    size = MY_ARC_SIZE,
+                    style = Stroke(width = MY_STROKE_WIDTH.dp.toPx())
+                )
+            }
+
+            // draw opponent's arc
+            if (opponentArc.startAngle.floatValue != UNDEFINED_ANGLE) {
+                drawArc(
+                    color = opponentArc.color.copy(alpha = opponentArc.currentAlpha),
+                    startAngle = opponentArc.startAngle.floatValue,
+                    sweepAngle = OPPONENT_SWEEP_ANGLE,
+                    useCenter = false,
+                    topLeft = OPPONENT_ARC_TOP_LEFT,
+                    size = OPPONENT_ARC_SIZE,
+                    style = Stroke(width = OPPONENT_STROKE_WIDTH.dp.toPx())
+                )
+            }
+
+            // draw the bezel warning
+            if(touchingBezel){
+                drawCircle(
+                    color = Color.Red.copy(alpha = bezelWarningAlpha),
+                    radius = SCREEN_RADIUS,
+                    center = SCREEN_CENTER,
+                    style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
+                )
+                drawCircle(
+                    color = Color.Green.copy(alpha = bezelWarningAlpha),
+                    radius = SCREEN_RADIUS - (SCREEN_RADIUS * 0.3f),
+                    center = SCREEN_CENTER,
+                    style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx())
+                )
             }
         }
     }
+}
 
-    fun DrawScope.drawWheel() {
-        // draw the spokes
-        var angle = Angle(45f)
-        repeat(4) {
-            val (x1, y1) = polarToCartesian(SCREEN_RADIUS * 0.10f, angle)
-            val (x2, y2) = polarToCartesian(SCREEN_RADIUS * 0.56f, angle)
-            drawLine(
-                color = DEEP_BLUE_COLOR,
-                start = Offset(x1, y1),
-                end = Offset(x2, y2),
-                strokeWidth = (SCREEN_RADIUS * 0.04f).dp.toPx()
-            )
-            drawLine(
-                color = DARK_ORANGE_COLOR,
-                start = Offset(x1, y1),
-                end = Offset(x2, y2),
-                strokeWidth = (SCREEN_RADIUS * 0.02f).dp.toPx()
-            )
-            angle += 90f
-        }
-
-        // outer circle
-        drawCircle(
+fun DrawScope.drawWheel() {
+    // draw the spokes
+    var angle = Angle(45f)
+    repeat(4) {
+        val (x1, y1) = polarToCartesian(SCREEN_RADIUS * 0.10f, angle)
+        val (x2, y2) = polarToCartesian(SCREEN_RADIUS * 0.56f, angle)
+        drawLine(
             color = DEEP_BLUE_COLOR,
-            radius = SCREEN_RADIUS * 0.6f,
-            center = SCREEN_CENTER,
-            style = Stroke(width = (SCREEN_RADIUS * 0.045f).dp.toPx())
+            start = Offset(x1, y1),
+            end = Offset(x2, y2),
+            strokeWidth = (SCREEN_RADIUS * 0.04f).dp.toPx()
         )
-        drawCircle(
-            color = LIGHT_ORANGE_COLOR,
-            radius = SCREEN_RADIUS * 0.6f,
-            center = SCREEN_CENTER,
-            style = Stroke(width = (SCREEN_RADIUS * 0.025f).dp.toPx())
+        drawLine(
+            color = DARK_ORANGE_COLOR,
+            start = Offset(x1, y1),
+            end = Offset(x2, y2),
+            strokeWidth = (SCREEN_RADIUS * 0.02f).dp.toPx()
         )
-
-        // inner circle
-        drawCircle(
-            color = DEEP_BLUE_COLOR,
-            radius = SCREEN_RADIUS * 0.08f,
-            center = SCREEN_CENTER,
-            style = Stroke(width = (SCREEN_RADIUS * 0.05f).dp.toPx())
-        )
-        drawCircle(
-            color = LIGHT_ORANGE_COLOR,
-            radius = SCREEN_RADIUS * 0.08f,
-            center = SCREEN_CENTER,
-            style = Stroke(width = (SCREEN_RADIUS * 0.03f).dp.toPx())
-        )
+        angle += 90f
     }
 
-    companion object {
-        private const val TAG = "FlourMillActivity"
-    }
+    // outer circle
+    drawCircle(
+        color = DEEP_BLUE_COLOR,
+        radius = SCREEN_RADIUS * 0.6f,
+        center = SCREEN_CENTER,
+        style = Stroke(width = (SCREEN_RADIUS * 0.045f).dp.toPx())
+    )
+    drawCircle(
+        color = LIGHT_ORANGE_COLOR,
+        radius = SCREEN_RADIUS * 0.6f,
+        center = SCREEN_CENTER,
+        style = Stroke(width = (SCREEN_RADIUS * 0.025f).dp.toPx())
+    )
+
+    // inner circle
+    drawCircle(
+        color = DEEP_BLUE_COLOR,
+        radius = SCREEN_RADIUS * 0.08f,
+        center = SCREEN_CENTER,
+        style = Stroke(width = (SCREEN_RADIUS * 0.05f).dp.toPx())
+    )
+    drawCircle(
+        color = LIGHT_ORANGE_COLOR,
+        radius = SCREEN_RADIUS * 0.08f,
+        center = SCREEN_CENTER,
+        style = Stroke(width = (SCREEN_RADIUS * 0.03f).dp.toPx())
+    )
 }

@@ -31,31 +31,39 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.pow
 
-class WavesViewModel: GameViewModel(GameType.WAVES) {
+open class WavesViewModel: GameViewModel(GameType.WAVES) {
 
-    class Wave(){
-        var topLeft by mutableStateOf(Offset(-SCREEN_RADIUS * 0.7f, 0f))
+    class Wave(
+        startingDirection: Int = 1
+    ){
+        var topLeft by mutableStateOf(
+            when(startingDirection){
+                1 -> Offset(-SCREEN_RADIUS * 0.7f, 0f)
+                -1 -> Offset(SCREEN_RADIUS * 1.55f, 0f)
+                else -> throw IllegalArgumentException("Invalid starting direction for Wave: $startingDirection")
+            }
+        )
         var animationProgress by mutableFloatStateOf(0f)
         var animationLength: Int = 0
         var direction by mutableIntStateOf(0)
     }
 
-    private lateinit var soundPool: SoundPool
-    private var strongWaveSoundId : Int = -1
-    private var mediumWaveSoundId: Int = -1
-    private var weakWaveSoundId: Int = -1
+    protected lateinit var soundPool: SoundPool
+    protected var strongWaveSoundId : Int = -1
+    protected var mediumWaveSoundId: Int = -1
+    protected var weakWaveSoundId: Int = -1
 
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    val wave = Wave()
+    val wave = MutableStateFlow(Wave())
 
     var myDirection: Int = 1
-        private set
+        protected set
 
-    private val _turn = MutableStateFlow(1)
+    protected val _turn = MutableStateFlow(1)
     val turn: StateFlow<Int> = _turn
     private var oldTurn = 1
 
@@ -111,16 +119,16 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
 
         oldTurn = _turn.value
         _turn.value = 0
-        wave.animationLength = mapSpeedToDuration(dpPerSec)
-        wave.direction = direction
-        when (wave.animationLength){
+        wave.value.animationLength = mapSpeedToDuration(dpPerSec)
+        wave.value.direction = direction
+        when (wave.value.animationLength){
             in 1500..2000 -> soundPool.play(strongWaveSoundId,1f,1f,0,0,1f)
             in 2001..3500 -> soundPool.play(mediumWaveSoundId,1f,1f,0,0,1f)
             in 3501..5000 -> soundPool.play(weakWaveSoundId,1f,1f,0,0,1f)
         }
     }
 
-    fun fling(dpPerSec: Float){
+    open fun fling(dpPerSec: Float){
 
         if(ACTIVITY_DEBUG_MODE){
             handleFling(dpPerSec, myDirection)
@@ -137,7 +145,7 @@ class WavesViewModel: GameViewModel(GameType.WAVES) {
 
     fun flipTurn(){
         _turn.value = -oldTurn
-        wave.direction = 0
+        wave.value.direction = 0
     }
 
     // ================================================================================ |

@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
-class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
+open class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -43,11 +43,11 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
 
     val myArc by lazy { Arc(myColor) }
     val opponentArc by lazy { Arc(opponentColor) }
-    private lateinit var myFrequencyTracker : FrequencyTracker
+    protected lateinit var myFrequencyTracker : FrequencyTracker
     @Volatile
     private var opponentFrequency = 0f
 
-    private var _released = MutableStateFlow(true)
+    protected var _released = MutableStateFlow(true)
     val released : StateFlow<Boolean> = _released
 
     private var _opponentReleased = MutableStateFlow(false)
@@ -135,7 +135,7 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         model.sessionSetupComplete()
     }
 
-    fun setTouchPoint(x: Float, y: Float) {
+    open fun setTouchPoint(x: Float, y: Float) {
         val (distance,rawAngle) = cartesianToPolar(x, y)
         val inBounds = if(x != -1.0f && y != -1.0f){
             distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
@@ -166,12 +166,15 @@ class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         }
     }
 
-    fun inSync() = (
-            !released.value && !opponentReleased.value
-            && (myFrequencyTracker.frequency - opponentFrequency)
-                .absoluteValue < WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
-    ).also { inSync = it }
-
+    fun inSync(): Boolean {
+        val myFreq = myFrequencyTracker.frequency
+        val oppFreq = opponentFrequency
+        val inSync = !released.value && !opponentReleased.value
+                && myFreq != 0f && oppFreq != 0f
+                && (myFreq - oppFreq).absoluteValue < WINE_GLASSES_SYNC_FREQUENCY_THRESHOLD
+        this.inSync = inSync
+        return inSync
+    }
 
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |

@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.pow
 
-class PacmanViewModel: GameViewModel(GameType.PACMAN) {
+open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
 
     enum class ParticleState {
         NEW,
@@ -58,8 +58,17 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         var reward by mutableStateOf(false)
     }
 
-    private lateinit var soundPool: SoundPool
-    private var flingSoundId : Int = -1
+    protected val _animatePacman = MutableStateFlow(true)
+    val animatePacman : StateFlow<Boolean> = _animatePacman
+
+    protected val _showLeftSide = MutableStateFlow(true)
+    val showLeftSide : StateFlow<Boolean> = _showLeftSide
+
+    protected val _showRightSide = MutableStateFlow(true)
+    val showRightSide : StateFlow<Boolean> = _showRightSide
+
+    protected lateinit var soundPool: SoundPool
+    protected var flingSoundId : Int = -1
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -68,11 +77,11 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     var pacmanAngle = MutableStateFlow(Angle(0f))
     val rewardAccumulator = Animatable(0f)
     var myDirection = 1
-        private set
-    private val _myParticle = MutableStateFlow<Particle?>(null)
+        protected set
+    protected val _myParticle = MutableStateFlow<Particle?>(null)
     val myParticle: StateFlow<Particle?> = _myParticle
 
-    private val _otherParticle = MutableStateFlow<Particle?>(null)
+    protected val _otherParticle = MutableStateFlow<Particle?>(null)
     val otherParticle: StateFlow<Particle?> = _otherParticle
 
     // ================================================================================ |
@@ -116,7 +125,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         model.sessionSetupComplete()
     }
 
-    fun fling(dpPerSec: Float) {
+    open fun fling(dpPerSec: Float) {
         if (_myParticle.value == null) {
             return
         }
@@ -211,7 +220,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         }
     }
 
-    private fun createNewParticle(direction: Int): Particle {
+    protected fun createNewParticle(direction: Int): Particle {
         return Particle(
             topLeft = Offset(
                 x = SCREEN_CENTER.x - PARTICLE_RADIUS - direction * PARTICLE_DISTANCE_FROM_CENTER,
@@ -221,7 +230,7 @@ class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         )
     }
 
-    private fun handleFling(dpPerSec: Float, direction: Int, reward: Boolean) {
+    protected fun handleFling(dpPerSec: Float, direction: Int, reward: Boolean) {
         val particle = if (direction == myDirection) {
             _myParticle.value
         } else {
