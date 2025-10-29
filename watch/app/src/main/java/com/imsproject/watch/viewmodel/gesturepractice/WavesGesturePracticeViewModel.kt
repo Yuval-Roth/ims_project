@@ -19,9 +19,17 @@ import com.imsproject.watch.viewmodel.PacmanViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import com.imsproject.watch.viewmodel.WavesViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class WavesGesturePracticeViewModel() :  WavesViewModel() {
+
+    private val _done = MutableStateFlow(false)
+    val done: StateFlow<Boolean> = _done
+
+    private var counter = 0
 
     fun init(context: android.content.Context, playerColor: MainViewModel.PlayerColor) {
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
@@ -45,5 +53,13 @@ class WavesGesturePracticeViewModel() :  WavesViewModel() {
 
     override fun fling(dpPerSec: Float) {
         handleFling(dpPerSec, myDirection)
+
+        counter++
+        if(counter == 3){
+            viewModelScope.launch {
+                delay(1000)
+                _done.value = true
+            }
+        }
     }
 }

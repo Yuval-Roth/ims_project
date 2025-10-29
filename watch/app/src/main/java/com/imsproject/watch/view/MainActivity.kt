@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.os.VibrationEffect
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -12,6 +13,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -46,6 +49,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -57,6 +61,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -109,6 +114,7 @@ import com.imsproject.watch.viewmodel.gesturepractice.WineGlassesGesturePractice
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
@@ -146,16 +152,22 @@ class MainActivity : ComponentActivity() {
         setupSensorsPermission()
         setupWifi()
         setupUncaughtExceptionHandler()
-//        viewModel.onCreate(applicationContext) //TODO: uncomment
+        viewModel.onCreate(applicationContext) //TODO: uncomment
         setContent {
             MaterialTheme {
-                viewModel.setState(State.COLOR_CONFIRMATION)
-                MainViewModel::class.java.getDeclaredField("_gameType").apply {
-                    isAccessible = true
-                    val fieldValue = get(viewModel) as MutableStateFlow<GameType?>
-                    fieldValue.value = GameType.FLOUR_MILL
-                }
+//                viewModel.setState(State.COLOR_CONFIRMATION)
+//                MainViewModel::class.java.getDeclaredField("_isWarmup").apply {
+//                    isAccessible = true
+//                    val fieldValue = get(viewModel) as MutableStateFlow<Boolean>
+//                    fieldValue.value = false
+//                }
+//                MainViewModel::class.java.getDeclaredField("_gameType").apply {
+//                    isAccessible = true
+//                    val fieldValue = get(viewModel) as MutableStateFlow<GameType?>
+//                    fieldValue.value = GameType.PACMAN
+//                }
                 Main()
+//                CountdownToGame(true,5) { }
 //                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
         }
@@ -256,10 +268,10 @@ class MainActivity : ComponentActivity() {
 
             State.WELCOME_SCREEN -> WelcomeScreen {
                 viewModel.toggleReady()
-                viewModel.setState(State.WAITING_FOR_OTHER_PLAYER)
+                viewModel.setState(State.WAITING_FOR_WELCOME_SCREEN_NEXT)
             }
 
-            State.WAITING_FOR_OTHER_PLAYER -> {
+            State.WAITING_FOR_WELCOME_SCREEN_NEXT, State.WAITING_FOR_GESTURE_PRACTICE_FINISH -> {
                 LoadingScreen("ממתין לשותף מרוחק...")
             }
 
@@ -279,8 +291,14 @@ class MainActivity : ComponentActivity() {
             State.ACTIVITY_DESCRIPTION -> {
                 val index = viewModel.activityIndex.collectAsState().value
                 val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
+                val warmup = viewModel.isWarmup.collectAsState().value
                 ActivityDescription(gameType,index) {
-                    viewModel.setState(State.ACTIVITY_REMINDER)
+                    if(warmup){
+                        viewModel.setState(State.ACTIVITY_REMINDER)
+                    } else {
+                        viewModel.setState(State.WAITING_FOR_WELCOME_SCREEN_NEXT)
+                        viewModel.toggleReady()
+                    }
                 }
             }
 
@@ -294,9 +312,20 @@ class MainActivity : ComponentActivity() {
             State.GESTURE_PRACTICE -> {
                 val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
                 GesturePractice(gameType) {
-
+                    viewModel.setState(State.WAITING_FOR_GESTURE_PRACTICE_FINISH)
+                    viewModel.toggleReady()
                 }
             }
+
+            State.COUNTDOWN_TO_GAME -> {
+                val warmup = viewModel.isWarmup.collectAsState().value
+                CountdownToGame(warmup,20) {
+                    viewModel.setState(State.LOADING_GAME)
+                    viewModel.toggleReady()
+                }
+            }
+
+            State.LOADING_GAME -> LoadingScreen("טוען פעילות...")
 
             State.IN_GAME -> {
                 BlankScreen()
@@ -855,14 +884,35 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun GesturePractice(gameType: GameType, onComplete: () -> Unit) {
         var showOverlay by remember { mutableStateOf(true) }
+        var done: Boolean
         when(gameType) {
-            GameType.WATER_RIPPLES -> WaterRipples(waterRipplesGesturePracticeViewModel)
-            GameType.FLOWER_GARDEN -> FlowerGarden(flowerGardenGesturePracticeViewModel)
-            GameType.WINE_GLASSES -> WineGlasses(wineGlassesGesturePracticeViewModel)
-            GameType.FLOUR_MILL -> FlourMill(flourMillGesturePracticeViewModel)
-            GameType.PACMAN -> Pacman(pacmanGesturePracticeViewModel)
-            GameType.WAVES -> Waves(wavesGesturePracticeViewModel)
-            else -> throw IllegalStateException("No gesture practice defined for game type $gameType")
+            GameType.WATER_RIPPLES -> {
+                done = waterRipplesGesturePracticeViewModel.done.collectAsState().value
+                WaterRipples(waterRipplesGesturePracticeViewModel)
+            }
+            GameType.FLOWER_GARDEN -> {
+                done = flowerGardenGesturePracticeViewModel.done.collectAsState().value
+                FlowerGarden(flowerGardenGesturePracticeViewModel)
+            }
+            GameType.WINE_GLASSES -> {
+                done = wineGlassesGesturePracticeViewModel.done.collectAsState().value
+                WineGlasses(wineGlassesGesturePracticeViewModel)
+            }
+            GameType.FLOUR_MILL -> {
+                done = flourMillGesturePracticeViewModel.done.collectAsState().value
+                FlourMill(flourMillGesturePracticeViewModel)
+            }
+            GameType.PACMAN -> {
+                done = pacmanGesturePracticeViewModel.done.collectAsState().value
+                Pacman(pacmanGesturePracticeViewModel)
+            }
+            GameType.WAVES -> {
+                done = wavesGesturePracticeViewModel.done.collectAsState().value
+                Waves(wavesGesturePracticeViewModel)
+            }
+            else -> {
+                throw IllegalStateException("No gesture practice defined for game type $gameType")
+            }
         }
         if(showOverlay){
             ButtonedPage(
@@ -879,6 +929,75 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        if(done){
+            ButtonedPage(
+                buttonText = "המשך",
+                onClick = onComplete,
+                backgroundColor = Color.Black.copy(alpha = 0.8f)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ){
+                    Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                    RTLText("טקסט סוף אימון")
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun CountdownToGame(warmup: Boolean, countDownFrom: Int, onComplete: () -> Unit) {
+        Column(
+            modifier = Modifier
+                .background(color = DARK_BACKGROUND_COLOR)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            val currentNumber = remember { MutableStateFlow(countDownFrom) }
+            var alpha by remember { mutableFloatStateOf(1f) }
+            val countdown = remember { Animatable(countDownFrom.toFloat()) }
+            val scope = rememberCoroutineScope()
+            val clickVibration = remember {
+                VibrationEffect.createOneShot(
+                    100, // duration in milliseconds
+                    255  // amplitude (0–255); 255 = strongest
+                )
+            }
+            LaunchedEffect(Unit){
+                scope.launch {
+                    currentNumber.collect {
+                        // vibrate on each number change
+                        if(it <= 5){
+                            viewModel.vibrator.vibrate(clickVibration)
+                        }
+                    }
+                }
+                countdown.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(
+                        durationMillis = countDownFrom * 1000,
+                        easing = LinearEasing
+                    )
+                ) {
+                    currentNumber.value = ceil(value).toInt()
+                    alpha = value - value.toInt()
+                }
+                onComplete()
+            }
+            Spacer(modifier = Modifier.fillMaxHeight(0.3f))
+            RTLText(
+                text = if(warmup) "מיד מתחילים סבב אימון" else "מיד מתחילים סבב ניסוי",
+                style = textStyle.copy(fontSize = TEXT_SIZE * 1.25f),
+            )
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+            Text(
+                modifier = Modifier.alpha(alpha),
+                text = currentNumber.collectAsState().value.toString(),
+                style = textStyle.copy(fontSize = TEXT_SIZE * 4f)
+            )
+        }
+
     }
 
     @Composable

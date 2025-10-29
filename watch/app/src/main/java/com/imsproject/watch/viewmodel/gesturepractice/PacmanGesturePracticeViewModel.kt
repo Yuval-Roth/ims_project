@@ -23,9 +23,16 @@ import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class PacmanGesturePracticeViewModel() : PacmanViewModel() {
+
+    private val _done = MutableStateFlow(false)
+    val done: StateFlow<Boolean> = _done
+
+    private var counter = 0
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
@@ -51,9 +58,18 @@ class PacmanGesturePracticeViewModel() : PacmanViewModel() {
     }
 
     override fun fling(dpPerSec: Float) {
+        if(_done.value) return
         if (_myParticle.value == null) {
             return
         }
         handleFling(dpPerSec, myDirection, false)
+
+        counter++
+        if(counter == 3){
+            viewModelScope.launch {
+                delay(1000)
+                _done.value = true
+            }
+        }
     }
 }

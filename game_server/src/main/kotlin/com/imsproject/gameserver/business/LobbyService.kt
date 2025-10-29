@@ -315,6 +315,24 @@ class LobbyService(
         log.debug("startExperiment() successful")
     }
 
+    fun endExperiment(lobbyId: String) {
+        log.debug("endExperiment() with lobbyId: {}",lobbyId)
+
+        // check that the lobby exists
+        val lobby = lobbies[lobbyId] ?: run{
+            log.debug("endExperiment: Lobby with id $lobbyId not found")
+            throw IllegalArgumentException("Lobby with id $lobbyId not found")
+        }
+
+        lobby.getPlayers()
+            .map {clients.getByClientId(it)}
+            .forEach {
+                it?.sendTcp(GameRequest.builder(Type.END_EXPERIMENT).build().toJson())
+            }
+
+        log.debug("endExperiment() successful")
+    }
+
     fun signalBothClientsReady(lobbyId: String) {
         log.debug("signalBothClientsReady() with lobbyId: {}",lobbyId)
 

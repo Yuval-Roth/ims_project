@@ -91,44 +91,6 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
         }
     }
 
-    @Composable
-    private fun LoadingScreen(text: String) {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    CircularProgressIndicator(
-                        strokeWidth = (SCREEN_RADIUS * 0.04f).dp,
-                        modifier = Modifier.size((SCREEN_RADIUS *0.4f).dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    RTLText(text)
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun BlankScreen() {
-        MaterialTheme {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DARK_BACKGROUND_COLOR),
-                contentAlignment = Alignment.Center
-            ){
-
-            }
-        }
-    }
-
     companion object {
         private const val _TAG = "GameActivity"
     }

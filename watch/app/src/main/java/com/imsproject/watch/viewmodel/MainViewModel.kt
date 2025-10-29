@@ -37,11 +37,14 @@ class MainViewModel() : ViewModel() {
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
         WELCOME_SCREEN,
-        WAITING_FOR_OTHER_PLAYER,
+        WAITING_FOR_WELCOME_SCREEN_NEXT,
+        COUNTDOWN_TO_GAME,
+        LOADING_GAME,
         COLOR_CONFIRMATION,
         ACTIVITY_DESCRIPTION,
         ACTIVITY_REMINDER,
         GESTURE_PRACTICE,
+        WAITING_FOR_GESTURE_PRACTICE_FINISH,
         IN_GAME,
         UPLOADING_EVENTS,
         AFTER_GAME,
@@ -126,9 +129,26 @@ class MainViewModel() : ViewModel() {
     private val _activityIndex = MutableStateFlow(1)
     val activityIndex : StateFlow<Int> = _activityIndex
 
-    private var _isWarmup = false
+    private val _isWarmup = MutableStateFlow(false)
+    val isWarmup : StateFlow<Boolean> = _isWarmup
+
     private var _sessionId = -1
     var temporaryPlayerId = ""
+
+    private var oldGameType: GameType? = null
+    private var gameTypeChanged = false
+    init {
+        viewModelScope.launch {
+            _gameType.collect { newGameType ->
+                if(newGameType != oldGameType){
+                    gameTypeChanged = true
+                    oldGameType = newGameType
+                }
+            }
+        }
+    }
+
+    private var experimentRunning = false
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -211,7 +231,7 @@ class MainViewModel() : ViewModel() {
         _gameType.value = null
         _gameDuration.value = null
         _expId.value = result.expId
-        val isWarmup = _isWarmup
+        val isWarmup = _isWarmup.value
         setupListeners()
         viewModelScope.launch(Dispatchers.IO) {
             when (result.code) {
@@ -351,7 +371,7 @@ class MainViewModel() : ViewModel() {
                     _gameType.value = null
                     _gameDuration.value = null
                     _ready.value = false
-                    _isWarmup = false
+                    _isWarmup.value = false
 
                     _lobbyId.value = lobbyId
                     if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
@@ -393,7 +413,7 @@ class MainViewModel() : ViewModel() {
                 }
 
                 withContext(Dispatchers.Main){
-                    _isWarmup = isWarmup
+                    _isWarmup.value = isWarmup
                     _gameType.value = gameType
                     _gameDuration.value = gameDuration
                     _syncWindowLength.value = syncWindowLength
@@ -413,15 +433,36 @@ class MainViewModel() : ViewModel() {
                 }
 
                 withContext(Dispatchers.Main) {
+                    experimentRunning = true
                     _myColor.value = PlayerColor.fromString(color)
                     setState(State.WELCOME_SCREEN)
                 }
             }
+            GameRequest.Type.END_EXPERIMENT -> {
+                if(!experimentRunning){
+                    Log.e(TAG, "handleGameRequest: END_EXPERIMENT request received while no experiment is running")
+                    return
+                }
+                experimentRunning = false
+                withContext(Dispatchers.Main) {
+                    val nextState = if(_lobbyId.value != ""){
+                        State.CONNECTED_IN_LOBBY
+                    } else {
+                        State.CONNECTED_NOT_IN_LOBBY
+                    }
+                    setState(nextState)
+                }
+            }
             GameRequest.Type.BOTH_CLIENTS_READY -> {
                 when(_state.value){
-                    State.WAITING_FOR_OTHER_PLAYER -> {
+                    State.WAITING_FOR_WELCOME_SCREEN_NEXT -> {
                         withContext(Dispatchers.Main) {
                             setState(State.COLOR_CONFIRMATION)
+                        }
+                    }
+                    State.WAITING_FOR_GESTURE_PRACTICE_FINISH -> {
+                        withContext(Dispatchers.Main) {
+                            setState(State.COUNTDOWN_TO_GAME)
                         }
                     }
                     else -> {

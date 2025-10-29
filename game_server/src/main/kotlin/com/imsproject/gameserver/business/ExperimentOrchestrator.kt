@@ -96,6 +96,15 @@ class ExperimentOrchestrator(
                 }
 
                 // gesture trial ready check
+                if(lobby.isWarmup){
+                    while(! lobby.isReady()){
+                        delay(1000)
+                    }
+                    lobbyService.signalBothClientsReady(lobbyId)
+                    lobby.resetReady()
+                }
+
+                // countdown ready check
                 while(! lobby.isReady()){
                     delay(1000)
                 }
@@ -139,6 +148,7 @@ class ExperimentOrchestrator(
         if(lobby.state == LobbyState.PLAYING){
             gameService.endGame(lobbyId)
         }
+        lobbyService.endExperiment(lobbyId)
         if(lobby.hasSessions){
             val currentSession = sessionService.getSessions(lobbyId).first()
             if(currentSession.state == SessionState.IN_PROGRESS){
