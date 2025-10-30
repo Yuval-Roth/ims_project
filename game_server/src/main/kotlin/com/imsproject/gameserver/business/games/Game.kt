@@ -58,12 +58,11 @@ abstract class Game (
         player2.sendTcp(startMessage.data(player2Data).build().toJson())
     }
 
-    open fun endGame(expId: Int? = null, errorMessage: String? = null) {
+    open fun endGame(errorMessage: String? = null) {
         // Send exit message
         val exitMessage = GameRequest.builder(GameRequest.Type.END_GAME)
             .apply {
                 errorMessage?.also { message(it) }
-                expId?.also { data(listOf(it.toString())) }
             }
             .success(errorMessage == null)
             .build().toJson()

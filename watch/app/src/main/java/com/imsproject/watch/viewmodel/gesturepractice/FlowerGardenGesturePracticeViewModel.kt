@@ -40,4 +40,11 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel() {
         }
     }
 
+    fun reset(){
+        _done.value = false
+        _counter.value = 0
+        waterDropletSets.clear()
+        grassPlantSets.clear()
+    }
+
 }

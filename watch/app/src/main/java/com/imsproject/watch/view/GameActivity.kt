@@ -79,7 +79,6 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
                     .build().sanitize(intent) {
                         Log.d(TAG, it)
                 }
-                intent.putExtra("$PACKAGE_PREFIX.expId", viewModel.expId.collectAsState().value)
                 intent.putExtra("$PACKAGE_PREFIX.error", viewModel.error.collectAsState().value)
                 setResult(result.ordinal,intent)
                 finish()

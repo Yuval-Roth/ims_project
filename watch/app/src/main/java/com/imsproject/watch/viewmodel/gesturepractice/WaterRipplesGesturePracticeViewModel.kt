@@ -44,4 +44,10 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel() {
         }
     }
 
+    fun reset(){
+        _done.value = false
+        _counter.value = 0
+        ripples.clear()
+    }
+
 }

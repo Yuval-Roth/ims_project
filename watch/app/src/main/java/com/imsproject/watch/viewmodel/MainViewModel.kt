@@ -18,12 +18,14 @@ import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.java_websocket.exceptions.WebsocketNotConnectedException
+import kotlin.math.exp
 
 private const val TAG = "MainViewModel"
 
@@ -40,6 +42,7 @@ class MainViewModel() : ViewModel() {
         WAITING_FOR_WELCOME_SCREEN_NEXT,
         COUNTDOWN_TO_GAME,
         LOADING_GAME,
+        AFTER_GAME_WAITING,
         COLOR_CONFIRMATION,
         ACTIVITY_DESCRIPTION,
         ACTIVITY_REMINDER,
@@ -47,7 +50,7 @@ class MainViewModel() : ViewModel() {
         WAITING_FOR_GESTURE_PRACTICE_FINISH,
         IN_GAME,
         UPLOADING_EVENTS,
-        AFTER_GAME,
+        AFTER_GAME_QUESTIONS,
         AFTER_EXPERIMENT,
 
         // error states
@@ -136,19 +139,30 @@ class MainViewModel() : ViewModel() {
     var temporaryPlayerId = ""
 
     private var oldGameType: GameType? = null
+
+    /**
+     * Resets when queried.
+     */
     private var gameTypeChanged = false
+        get() {
+            val value = field
+            field = false // reset the flag
+            return value
+        }
     init {
         viewModelScope.launch {
             _gameType.collect { newGameType ->
-                if(newGameType != oldGameType){
+                Log.d(TAG, "gameType collector: Game type changed from $oldGameType to $newGameType")
+                if (oldGameType != null && newGameType != null) {
                     gameTypeChanged = true
-                    oldGameType = newGameType
                 }
+                oldGameType = newGameType
             }
         }
     }
 
     private var experimentRunning = false
+    private var lobbyConfigured = false
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -228,9 +242,7 @@ class MainViewModel() : ViewModel() {
         Log.d(TAG, "afterGame: $result")
         _ready.value = false
         _timeServerStartTime.value = -1
-        _gameType.value = null
         _gameDuration.value = null
-        _expId.value = result.expId
         val isWarmup = _isWarmup.value
         setupListeners()
         viewModelScope.launch(Dispatchers.IO) {
@@ -238,14 +250,11 @@ class MainViewModel() : ViewModel() {
                 Result.Code.OK -> {
                     setState(State.UPLOADING_EVENTS)
                     if (model.uploadSessionEvents(_sessionId)) {
-                        val nextState = if(!isWarmup){
-                            State.AFTER_GAME
-                        } else if(_lobbyId.value != "") {
-                            State.CONNECTED_IN_LOBBY
+                        if(!isWarmup){
+                            setState(State.AFTER_GAME_QUESTIONS)
                         } else {
-                            State.CONNECTED_NOT_IN_LOBBY
+                            prepareNextSession()
                         }
-                        setState(nextState)
                     } else {
                         fatalError("Failed to upload session events")
                     }
@@ -265,6 +274,8 @@ class MainViewModel() : ViewModel() {
 
     fun endExperiment() {
         _expId.value = null
+        _gameType.value = null
+        _activityIndex.value = 1
         val nextState = if(_lobbyId.value == ""){
             State.CONNECTED_NOT_IN_LOBBY
         } else {
@@ -300,6 +311,7 @@ class MainViewModel() : ViewModel() {
 
     fun toggleReady() {
         viewModelScope.launch(Dispatchers.IO) {
+            Log.d(TAG, "toggling ready")
             model.toggleReady()
             _ready.value = !_ready.value
         }
@@ -322,15 +334,8 @@ class MainViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if(model.uploadAfterGameQuestions(_sessionId, *QnAs)){
                 _sessionId = -1
-                val nextState = if(_expId.value != null){
-                    State.AFTER_EXPERIMENT
-                } else if(_lobbyId.value != ""){
-                    State.CONNECTED_IN_LOBBY
-                } else {
-                    State.CONNECTED_NOT_IN_LOBBY
-                }
+                prepareNextSession()
                 _loading.value = false
-                setState(nextState)
             } else {
                 fatalError("Failed to upload answers")
             }
@@ -352,6 +357,7 @@ class MainViewModel() : ViewModel() {
             GameRequest.Type.PONG -> {}
             GameRequest.Type.HEARTBEAT -> {}
             GameRequest.Type.EXIT -> {
+                Log.d(TAG, "handleGameRequest: EXIT received")
                 fatalError(request.message ?: "Connection closed by server")
             }
 
@@ -367,8 +373,8 @@ class MainViewModel() : ViewModel() {
                 }
 
                 withContext(Dispatchers.Main) {
+                    Log.d(TAG, "handleGameRequest: JOIN_LOBBY received")
                     // reset data just in case
-                    _gameType.value = null
                     _gameDuration.value = null
                     _ready.value = false
                     _isWarmup.value = false
@@ -381,8 +387,11 @@ class MainViewModel() : ViewModel() {
             }
             GameRequest.Type.LEAVE_LOBBY -> {
                 withContext(Dispatchers.Main) {
+                    Log.d(TAG, "handleGameRequest: LEAVE_LOBBY received")
                     _lobbyId.value = ""
-                    setState(State.CONNECTED_NOT_IN_LOBBY)
+                    if(_state.value != State.AFTER_EXPERIMENT){
+                        setState(State.CONNECTED_NOT_IN_LOBBY)
+                    }
                 }
             }
             GameRequest.Type.CONFIGURE_LOBBY -> {
@@ -413,11 +422,20 @@ class MainViewModel() : ViewModel() {
                 }
 
                 withContext(Dispatchers.Main){
+                    Log.d(TAG, """
+                        CONFIGURE_LOBBY received:
+                            gameType: $gameType
+                            gameDuration: $gameDuration
+                            syncWindowLength: $syncWindowLength
+                            syncTolerance: $syncTolerance
+                            isWarmup: $isWarmup
+                    """.trimIndent())
                     _isWarmup.value = isWarmup
                     _gameType.value = gameType
                     _gameDuration.value = gameDuration
                     _syncWindowLength.value = syncWindowLength
                     _syncTolerance.value = syncTolerance
+                    lobbyConfigured = true
                 }
             }
             GameRequest.Type.START_EXPERIMENT -> {
@@ -433,54 +451,52 @@ class MainViewModel() : ViewModel() {
                 }
 
                 withContext(Dispatchers.Main) {
+                    Log.d(TAG, "handleGameRequest: START_EXPERIMENT received")
                     experimentRunning = true
                     _myColor.value = PlayerColor.fromString(color)
                     setState(State.WELCOME_SCREEN)
                 }
             }
             GameRequest.Type.END_EXPERIMENT -> {
-                if(!experimentRunning){
-                    Log.e(TAG, "handleGameRequest: END_EXPERIMENT request received while no experiment is running")
+                val expId = request.data?.firstOrNull() ?: run {
+                    Log.e(TAG, "handleGameRequest: END_EXPERIMENT request missing expId data")
+                    showError("Failed to end experiment, missing experiment id")
                     return
                 }
-                experimentRunning = false
+                val errorMessage = request.message
+                if(errorMessage != null){
+                    fatalError("Experiment ended with error: $errorMessage")
+                    return
+                }
                 withContext(Dispatchers.Main) {
-                    val nextState = if(_lobbyId.value != ""){
-                        State.CONNECTED_IN_LOBBY
-                    } else {
-                        State.CONNECTED_NOT_IN_LOBBY
+                    Log.d(TAG, "handleGameRequest: END_EXPERIMENT received")
+                    if(!experimentRunning){
+                        Log.e(TAG, "handleGameRequest: END_EXPERIMENT request received while no experiment is running")
+                        return@withContext
                     }
-                    setState(nextState)
+                    _expId.value = expId
+                    experimentRunning = false
                 }
             }
             GameRequest.Type.BOTH_CLIENTS_READY -> {
-                when(_state.value){
-                    State.WAITING_FOR_WELCOME_SCREEN_NEXT -> {
-                        withContext(Dispatchers.Main) {
+                withContext(Dispatchers.Main) {
+                    Log.d(TAG, "handleGameRequest: BOTH_CLIENTS_READY received")
+                    when(_state.value){
+                        State.WAITING_FOR_WELCOME_SCREEN_NEXT -> {
                             setState(State.COLOR_CONFIRMATION)
                         }
-                    }
-                    State.WAITING_FOR_GESTURE_PRACTICE_FINISH -> {
-                        withContext(Dispatchers.Main) {
+                        State.WAITING_FOR_GESTURE_PRACTICE_FINISH -> {
                             setState(State.COUNTDOWN_TO_GAME)
                         }
-                    }
-                    else -> {
-                        Log.e(TAG, "handleGameRequest: BOTH_CLIENTS_READY request received in unexpected state: ${_state.value}")
-                        return
+                        else -> {
+                            Log.e(TAG, "handleGameRequest: BOTH_CLIENTS_READY request received in unexpected state: ${_state.value}")
+                            return@withContext
+                        }
                     }
                 }
-
             }
 
             GameRequest.Type.START_GAME -> {
-
-                //TODO: allow START_GAME from the correct state
-                if(_state.value != State.CONNECTED_IN_LOBBY){
-                    Log.e(TAG, "handleGameRequest: START_GAME request received while not in the 'CONNECTED_IN_LOBBY' state")
-                    return
-                }
-
                 val _sessionId = request.sessionId?.toInt() ?: run{
                     Log.e(TAG, "handleGameRequest: START_GAME request missing sessionId")
                     fatalError("Failed to start game: missing session id")
@@ -493,9 +509,16 @@ class MainViewModel() : ViewModel() {
                 }
 
                 withContext(Dispatchers.Main) {
+                    Log.d(TAG, "handleGameRequest: START_GAME received")
+                    //TODO: allow START_GAME from the correct state
+                    if(_state.value != State.LOADING_GAME){
+                        Log.e(TAG, "handleGameRequest: START_GAME request received while not in the 'LOADING_GAME' state")
+                        return@withContext
+                    }
                     this@MainViewModel._sessionId = _sessionId
                     _timeServerStartTime.value = timeServerStartTime
                     _additionalData.value = request.data?.joinToString(";") ?: ""
+                    lobbyConfigured = false
                     setState(State.IN_GAME)
                 }
             }
@@ -505,6 +528,33 @@ class MainViewModel() : ViewModel() {
                         "request type: ${request.type}\n"+
                         "request content:\n$request"
                 showError(errorMsg)
+            }
+        }
+    }
+
+    private fun prepareNextSession(){
+        setState(State.AFTER_GAME_WAITING)
+        viewModelScope.launch(Dispatchers.Main){
+            Log.d(TAG, "prepareNextSession: listener started")
+            while(!lobbyConfigured && experimentRunning){
+                delay(100)
+            }
+            if (! experimentRunning) {
+                Log.d(TAG, "prepareNextSession: experiment ended")
+                if (_expId.value != null) {
+                    Log.d(TAG, "prepareNextSession: moving to AFTER_EXPERIMENT state")
+                    setState(State.AFTER_EXPERIMENT)
+                }
+                return@launch
+            }
+
+            if(gameTypeChanged){
+                Log.d(TAG, "prepareNextSession: game type changed")
+                _activityIndex.value += 1
+                setState(State.ACTIVITY_DESCRIPTION)
+            } else {
+                Log.d(TAG, "prepareNextSession: game type did not change")
+                setState(State.COUNTDOWN_TO_GAME)
             }
         }
     }

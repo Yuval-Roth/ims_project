@@ -26,6 +26,7 @@ class Lobby(val id: String) {
     var state = LobbyState.WAITING
     var hasSessions = false
     var experimentRunning = false
+    var expId: Int? = null
 
     fun configure(sessionDetails: Session) {
         gameType = sessionDetails.gameType

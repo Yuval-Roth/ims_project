@@ -132,6 +132,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var waves: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wifiLock: WifiManager.WifiLock
     private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
+    private var viewModelsInitialized = false
 
 
     // Gesture practice view models
@@ -170,6 +171,17 @@ class MainActivity : ComponentActivity() {
 //                CountdownToGame(true,5) { }
 //                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
+        }
+    }
+
+    private fun resetGesturePracticeViewModels(){
+        if(viewModelsInitialized){
+            waterRipplesGesturePracticeViewModel.reset()
+            flowerGardenGesturePracticeViewModel.reset()
+            wineGlassesGesturePracticeViewModel.reset()
+            flourMillGesturePracticeViewModel.reset()
+            pacmanGesturePracticeViewModel.reset()
+            wavesGesturePracticeViewModel.reset()
         }
     }
 
@@ -267,8 +279,9 @@ class MainActivity : ComponentActivity() {
             // ====================== EXPERIMENT FLOW STATES ====================== |
 
             State.WELCOME_SCREEN -> WelcomeScreen {
-                viewModel.toggleReady()
+                resetGesturePracticeViewModels()
                 viewModel.setState(State.WAITING_FOR_WELCOME_SCREEN_NEXT)
+                viewModel.toggleReady()
             }
 
             State.WAITING_FOR_WELCOME_SCREEN_NEXT, State.WAITING_FOR_GESTURE_PRACTICE_FINISH -> {
@@ -278,12 +291,15 @@ class MainActivity : ComponentActivity() {
             State.COLOR_CONFIRMATION -> {
                 val playerColor = viewModel.myColor.collectAsState().value
                 ColorConfirmationScreen(playerColor) {
-                    waterRipplesGesturePracticeViewModel.init(applicationContext,playerColor)
-                    flowerGardenGesturePracticeViewModel.init(applicationContext,playerColor)
-                    wineGlassesGesturePracticeViewModel.init(applicationContext,playerColor)
-                    flourMillGesturePracticeViewModel.init(applicationContext,playerColor)
-                    pacmanGesturePracticeViewModel.init(applicationContext,playerColor)
-                    wavesGesturePracticeViewModel.init(applicationContext,playerColor)
+                    if(!viewModelsInitialized) {
+                        waterRipplesGesturePracticeViewModel.init(applicationContext, playerColor)
+                        flowerGardenGesturePracticeViewModel.init(applicationContext, playerColor)
+                        wineGlassesGesturePracticeViewModel.init(applicationContext, playerColor)
+                        flourMillGesturePracticeViewModel.init(applicationContext, playerColor)
+                        pacmanGesturePracticeViewModel.init(applicationContext, playerColor)
+                        wavesGesturePracticeViewModel.init(applicationContext, playerColor)
+                        viewModelsInitialized = true
+                    }
                     viewModel.setState(State.ACTIVITY_DESCRIPTION)
                 }
             }
@@ -296,7 +312,7 @@ class MainActivity : ComponentActivity() {
                     if(warmup){
                         viewModel.setState(State.ACTIVITY_REMINDER)
                     } else {
-                        viewModel.setState(State.WAITING_FOR_WELCOME_SCREEN_NEXT)
+                        viewModel.setState(State.LOADING_GAME)
                         viewModel.toggleReady()
                     }
                 }
@@ -319,7 +335,7 @@ class MainActivity : ComponentActivity() {
 
             State.COUNTDOWN_TO_GAME -> {
                 val warmup = viewModel.isWarmup.collectAsState().value
-                CountdownToGame(warmup,20) {
+                CountdownToGame(warmup,5) {
                     viewModel.setState(State.LOADING_GAME)
                     viewModel.toggleReady()
                 }
@@ -376,7 +392,9 @@ class MainActivity : ComponentActivity() {
 
             State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
 
-            State.AFTER_GAME -> AfterGame()
+            State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()
+
+            State.AFTER_GAME_WAITING -> LoadingScreen("טוען...")
 
             State.AFTER_EXPERIMENT -> {
                 val userId = viewModel.playerId.collectAsState().value
@@ -1001,7 +1019,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AfterGame() {
+    fun AfterGameQuestions() {
         val pageCount = remember { 2 }
         val scope = rememberCoroutineScope()
         var firstSliderValue by remember { mutableFloatStateOf(1f) }

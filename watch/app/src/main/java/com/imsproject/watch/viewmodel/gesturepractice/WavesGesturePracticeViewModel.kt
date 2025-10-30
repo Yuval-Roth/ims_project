@@ -62,4 +62,9 @@ class WavesGesturePracticeViewModel() :  WavesViewModel() {
             }
         }
     }
+
+    fun reset(){
+        counter = 0
+        _done.value = false
+    }
 }

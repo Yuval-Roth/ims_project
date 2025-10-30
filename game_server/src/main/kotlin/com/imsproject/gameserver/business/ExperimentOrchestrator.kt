@@ -7,7 +7,6 @@ import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.concurrent.Executors
-import kotlin.math.exp
 
 @Service
 class ExperimentOrchestrator(
@@ -74,59 +73,74 @@ class ExperimentOrchestrator(
             }
         }
 
+        log.debug("Launching experiment job for lobby $lobbyId")
         val job = scope.launch {
-            lobbyService.startExperiment(lobbyId)
-            lobby.experimentRunning = true
+            try{
+                lobby.resetReady()
+                log.debug("Experiment job started for lobby $lobbyId. Thread: ${Thread.currentThread().name}")
+                lobbyService.startExperiment(lobbyId)
+                lobby.experimentRunning = true
+                lobby.expId = expId
 
-            // welcome page ready check
-            while(! lobby.isReady()){
-                delay(1000)
-            }
-            lobbyService.signalBothClientsReady(lobbyId)
-            lobby.resetReady()
-
-            val iterator = experimentSessions.iterator()
-            while(iterator.hasNext() && isActive) {
-                val session = iterator.next()
-                lobbyService.configureLobby(lobbyId, session)
-                val sessionId = session.dbId ?: run {
-                    // should not happen
-                    log.error("startExperiment: Session dbId not found for session in lobby $lobbyId")
-                    throw IllegalStateException("Session dbId not found for session in lobby $lobbyId")
-                }
-
-                // gesture trial ready check
-                if(lobby.isWarmup){
-                    while(! lobby.isReady()){
-                        delay(1000)
-                    }
-                    lobbyService.signalBothClientsReady(lobbyId)
-                    lobby.resetReady()
-                }
-
-                // countdown ready check
+                // welcome page ready check
                 while(! lobby.isReady()){
                     delay(1000)
                 }
                 lobbyService.signalBothClientsReady(lobbyId)
                 lobby.resetReady()
 
-                gameService.startGame(lobbyId,sessionId)
-                session.state = SessionState.IN_PROGRESS
-                delay(session.duration.toLong()*1000)
-                gameService.endGame(lobbyId, if(! iterator.hasNext()) expId else null)
-                val updatedSessionDTO = SessionDTO(sessionId = sessionId, state = SessionState.COMPLETED.name)
-                daoController.handleUpdate(updatedSessionDTO)
-                sessionService.removeSession(lobbyId, session.sessionId)
+                val iterator = experimentSessions.iterator()
+                while(iterator.hasNext() && isActive) {
+                    val session = iterator.next()
+                    lobbyService.configureLobby(lobbyId, session)
+                    val sessionId = session.dbId ?: run {
+                        // should not happen
+                        log.error("startExperiment: Session dbId not found for session in lobby $lobbyId")
+                        throw IllegalStateException("Session dbId not found for session in lobby $lobbyId")
+                    }
+
+                    // gesture trial ready check
+                    if(lobby.isWarmup){
+                        while(! lobby.isReady()){
+                            delay(1000)
+                        }
+                        lobbyService.signalBothClientsReady(lobbyId)
+                        lobby.resetReady()
+                    }
+
+                    // countdown ready check
+                    while(! lobby.isReady()){
+                        delay(1000)
+                    }
+
+                    gameService.startGame(lobbyId,sessionId)
+                    lobby.resetReady()
+                    session.state = SessionState.IN_PROGRESS
+                    delay(session.duration.toLong()*1000)
+                    gameService.endGame(lobbyId)
+                    val updatedSessionDTO = SessionDTO(sessionId = sessionId, state = SessionState.COMPLETED.name)
+                    daoController.handleUpdate(updatedSessionDTO)
+                    sessionService.removeSession(lobbyId, session.sessionId)
+                }
+                lobbyService.endExperiment(lobbyId)
+                lobbyService.removeLobby(lobby.id)
+
+            } catch (e: Exception){
+                log.error("Experiment job for lobby $lobbyId failed with exception: ${e.message}",e)
+                scope.launch {
+                    try{
+                        stopExperiment(lobbyId, "Experiment failed with exception: ${e.message}")
+                    } catch (ex: Exception){
+                        log.error("Failed to stop experiment for lobby $lobbyId after exception: ${ex.message}",ex)
+                    }
+                }
             }
-            lobbyService.removeLobby(lobby.id)
-            lobby.experimentRunning = false
         }
         ongoingExperiments[lobbyId] = job
         log.debug("startExperiment() successful")
     }
 
-    fun stopExperiment(lobbyId: String) {
+    fun stopExperiment(lobbyId: String, errorMessage: String? = null) {
         log.debug("stopExperiment() with lobbyId: {}",lobbyId)
 
         val lobby = lobbyService[lobbyId] ?: run{
@@ -139,16 +153,18 @@ class ExperimentOrchestrator(
             throw IllegalArgumentException("No experiment found for lobby $lobbyId")
         }
 
+        log.debug("Cancelling experiment job for lobby $lobbyId")
         job.cancel()
         runBlocking {
             job.join()
         }
+        log.debug("Experiment job for lobby $lobbyId cancelled")
         ongoingExperiments.remove(lobbyId)
         lobby.experimentRunning = false
         if(lobby.state == LobbyState.PLAYING){
             gameService.endGame(lobbyId)
         }
-        lobbyService.endExperiment(lobbyId)
+        lobbyService.endExperiment(lobbyId, errorMessage)
         if(lobby.hasSessions){
             val currentSession = sessionService.getSessions(lobbyId).first()
             if(currentSession.state == SessionState.IN_PROGRESS){

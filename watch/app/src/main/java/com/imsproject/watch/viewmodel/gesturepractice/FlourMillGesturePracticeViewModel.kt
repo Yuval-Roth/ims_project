@@ -75,4 +75,14 @@ class FlourMillGesturePracticeViewModel() : FlourMillViewModel() {
             lastAngle = Angle.undefined
         }
     }
+
+    fun reset(){
+        _done.value = false
+        lastAngle = Angle.undefined
+        accumulator = 0f
+        doneTriggered = false
+        myFrequencyTracker.reset()
+        myArc.reset()
+        _released.value = true
+    }
 }

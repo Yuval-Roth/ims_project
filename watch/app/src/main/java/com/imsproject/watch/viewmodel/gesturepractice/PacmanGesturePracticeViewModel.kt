@@ -72,4 +72,9 @@ class PacmanGesturePracticeViewModel() : PacmanViewModel() {
             }
         }
     }
+
+    fun reset(){
+        _done.value = false
+        counter = 0
+    }
 }

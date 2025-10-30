@@ -315,7 +315,7 @@ class LobbyService(
         log.debug("startExperiment() successful")
     }
 
-    fun endExperiment(lobbyId: String) {
+    fun endExperiment(lobbyId: String, errorMessage: String? = null) {
         log.debug("endExperiment() with lobbyId: {}",lobbyId)
 
         // check that the lobby exists
@@ -324,10 +324,15 @@ class LobbyService(
             throw IllegalArgumentException("Lobby with id $lobbyId not found")
         }
 
+        lobby.experimentRunning = false
+
         lobby.getPlayers()
             .map {clients.getByClientId(it)}
             .forEach {
-                it?.sendTcp(GameRequest.builder(Type.END_EXPERIMENT).build().toJson())
+                it?.sendTcp(GameRequest.builder(Type.END_EXPERIMENT)
+                    .data(listOf(lobby.expId.toString()))
+                    .also { req -> errorMessage?.let { msg -> req.message(msg) } }
+                    .build().toJson())
             }
 
         log.debug("endExperiment() successful")
