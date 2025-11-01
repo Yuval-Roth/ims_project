@@ -17,7 +17,6 @@ import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +24,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.java_websocket.exceptions.WebsocketNotConnectedException
-import kotlin.math.exp
 
 private const val TAG = "MainViewModel"
 
@@ -52,10 +50,10 @@ class MainViewModel() : ViewModel() {
         UPLOADING_EVENTS,
         AFTER_GAME_QUESTIONS,
         AFTER_EXPERIMENT,
-
+        THANKS_FOR_PARTICIPATING,
         // error states
         ALREADY_CONNECTED,
-        ERROR,
+        ERROR
 
     }
 

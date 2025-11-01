@@ -123,7 +123,6 @@ class ExperimentOrchestrator(
                     sessionService.removeSession(lobbyId, session.sessionId)
                 }
                 lobbyService.endExperiment(lobbyId)
-                lobbyService.removeLobby(lobby.id)
 
             } catch (e: Exception){
                 log.error("Experiment job for lobby $lobbyId failed with exception: ${e.message}",e)

@@ -156,7 +156,7 @@ class MainActivity : ComponentActivity() {
         viewModel.onCreate(applicationContext) //TODO: uncomment
         setContent {
             MaterialTheme {
-//                viewModel.setState(State.COLOR_CONFIRMATION)
+//                viewModel.setState(State.AFTER_EXPERIMENT)
 //                MainViewModel::class.java.getDeclaredField("_isWarmup").apply {
 //                    isAccessible = true
 //                    val fieldValue = get(viewModel) as MutableStateFlow<Boolean>
@@ -167,7 +167,13 @@ class MainActivity : ComponentActivity() {
 //                    val fieldValue = get(viewModel) as MutableStateFlow<GameType?>
 //                    fieldValue.value = GameType.PACMAN
 //                }
+//                MainViewModel::class.java.getDeclaredField("_expId").apply {
+//                    isAccessible = true
+//                    val fieldValue = get(viewModel) as MutableStateFlow<String?>
+//                    fieldValue.value = "exp123"
+//                }
                 Main()
+//                AfterExperiment("exp123","123")
 //                CountdownToGame(true,5) { }
 //                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
@@ -401,6 +407,8 @@ class MainActivity : ComponentActivity() {
                 val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("expId is null")
                 AfterExperiment(expId,userId)
             }
+
+            State.THANKS_FOR_PARTICIPATING -> ThanksForParticipating()
 
             State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "No error message"
@@ -1081,21 +1089,23 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun AfterExperiment(expId: String, userId: String) {
-        val pageCount = remember { 3 }
+        val pageCount = remember { 2 }
         val scope = rememberCoroutineScope()
         val pagerState = rememberPagerState(pageCount = { pageCount })
+        var disableButton by remember { mutableStateOf(false) }
         ButtonedPage(
-            buttonText = if(pagerState.settledPage == pageCount -1) "סיום" else "המשך",
+            buttonText = if(pagerState.targetPage == pageCount -1) "סיום" else "המשך",
             onClick = {
                 scope.launch {
                     val nextPage = pagerState.currentPage + 1
                     if(nextPage < pageCount){
                         pagerState.animateScrollToPage(nextPage)
                     } else {
-                        viewModel.endExperiment()
+                        viewModel.setState(State.THANKS_FOR_PARTICIPATING)
                     }
                 }
-            }
+            },
+            disableButton = disableButton
         ) {
             VerticalPager(
                 state = pagerState,
@@ -1115,6 +1125,11 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     1 -> {
+                        LaunchedEffect(expId) {
+                            disableButton = true
+                            delay(3000)
+                            disableButton = false
+                        }
                         Box(modifier = Modifier
                             .fillMaxSize()
                             .padding(
@@ -1126,19 +1141,31 @@ class MainActivity : ComponentActivity() {
                             ExperimentQuestionsQRCode(userId,expId,Modifier.size((SCREEN_RADIUS*0.8f).dp))
                         }
                     }
-                    2 -> {
-                        Column(modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                start = COLUMN_PADDING,
-                                end = COLUMN_PADDING
-                            )
-                        ) {
-                            Spacer(Modifier.fillMaxHeight(0.5f))
-                            RTLText("תודה על השתתפותך בניסוי ! ")
-                        }
-                    }
                 }
+            }
+        }
+    }
+
+    @Composable
+    fun ThanksForParticipating(){
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DARK_BACKGROUND_COLOR),
+            contentAlignment = Alignment.Center
+        ){
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = COLUMN_PADDING,
+                    end = COLUMN_PADDING
+                ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(Modifier.fillMaxHeight(0.4f))
+                RTLText("תודה על השתתפותך בניסוי ! ")
+                Spacer(Modifier.fillMaxHeight(0.1f))
+                RTLText("נא להחזיר את השעון לנסיין")
             }
         }
     }
