@@ -167,7 +167,7 @@ class GameServiceTest {
         gameService.onClientDisconnect(mockClientHandler1)
 
         // then nothing happens
-        verify(gameService, never()).endGame(anyParam(), anyOrNull(), anyParam())
+        verify(gameService, never()).endGame(anyParam(), anyOrNull())
     }
 
     @ParameterizedTest
@@ -178,7 +178,7 @@ class GameServiceTest {
         val clientIdToGame : MutableMap<String, Game> = getField(gameService, "clientIdToGame")
         // disable endGame method call, we are only interested that it was called
         // we don't want to test the endGame method here
-        doNothing().whenever(gameService).endGame(anyParam(),anyOrNull(),anyParam())
+        doNothing().whenever(gameService).endGame(anyParam(),anyOrNull())
 
         // given a client is in a game
         games[LOBBY_ID] = mockGame
@@ -189,7 +189,7 @@ class GameServiceTest {
         gameService.onClientDisconnect(mockClientHandler1)
 
         // then he is removed from lobby and game is ended
-        verify(gameService, times(1)).endGame(anyParam(), anyOrNull(),notNull())
+        verify(gameService, times(1)).endGame(anyParam(), anyOrNull())
     }
 
     // ============================================================================== |

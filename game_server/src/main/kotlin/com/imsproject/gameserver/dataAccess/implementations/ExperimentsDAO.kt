@@ -32,14 +32,14 @@ class ExperimentsDAO(cursor: SQLExecutor) : DAOBase<ExperimentDTO, ExperimentPK>
 
     @Throws(DaoException::class)
     override fun insert(obj: ExperimentDTO, transactionId: String?): Int {
-        val values = arrayOf(obj.pid1,obj.pid2, obj.dateTime ?: LocalDateTime.now())
+        val values = arrayOf<Any?>(obj.pid1,obj.pid2, obj.dateTime ?: LocalDateTime.now())
         val idColName = primaryKeyColumnNames.joinToString()
         return buildQueryAndInsert(idColName, values, transactionId)
     }
 
     @Throws(DaoException::class)
     override fun update(obj: ExperimentDTO, transactionId: String?) {
-        val values = arrayOf(obj.pid1,obj.pid2,obj.dateTime)
+        val values = arrayOf<Any?>(obj.pid1,obj.pid2,obj.dateTime)
         val id = obj.expId ?: throw IllegalArgumentException("Lobby ID must not be null")
         val idColName = primaryKeyColumnNames.joinToString()
         buildQueryAndUpdate(idColName, id, values, transactionId)

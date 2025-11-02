@@ -55,7 +55,7 @@ class SessionServiceTest {
             /* nothing to do */
 
         // when createSession is called
-        val id = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // then the session should be created successfully
         val session = sessionService.getSessions(LOBBY1_ID)
@@ -74,17 +74,17 @@ class SessionServiceTest {
         assertThrows<IllegalArgumentException> {
 
             // when createSession is called
-            sessionService.createSession(lobbyId, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+            sessionService.createSession(lobbyId, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
         }
     }
 
     @Test
     fun `createSession() - GIVEN existing lobby with sessions WHEN createSession is called THEN new session should be added to lobby`() {
         // given existing lobby with sessions
-        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // when createSession is called
-        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // then new session should be added to lobby
         val sessions = assertNotNull(sessionService.getSessions(LOBBY1_ID))
@@ -102,7 +102,7 @@ class SessionServiceTest {
         assertThrows<IllegalArgumentException> {
 
             // when createSession is called
-            sessionService.createSession(LOBBY1_ID, GAME_TYPE1, invalidDuration, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+            sessionService.createSession(LOBBY1_ID, GAME_TYPE1, invalidDuration, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
         }
     }
 
@@ -115,7 +115,7 @@ class SessionServiceTest {
         assertThrows<IllegalArgumentException> {
 
             // when createSession is called
-            sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, invalidSyncWindowLength, SYNC_TOLERANCE,false)
+            sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, invalidSyncWindowLength, SYNC_TOLERANCE,false,5)
         }
     }
 
@@ -128,7 +128,7 @@ class SessionServiceTest {
         assertThrows<IllegalArgumentException> {
 
             // when createSession is called
-            sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, invalidSyncTolerance,false)
+            sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, invalidSyncTolerance,false,5)
         }
     }
 
@@ -139,8 +139,8 @@ class SessionServiceTest {
     @Test
     fun `removeSession() - GIVEN lobby with sessions WHEN removeSession is called THEN session should be removed successfully`() {
         // given existing session in lobby
-        val sessionId = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
-        val session2Id = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val sessionId = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
+        val session2Id = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // when removeSession is called
         sessionService.removeSession(LOBBY1_ID, sessionId)
@@ -170,7 +170,7 @@ class SessionServiceTest {
         val sessionId = "non-existing-sessionId"
 
         // given existing lobby with session
-        sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
@@ -187,8 +187,8 @@ class SessionServiceTest {
     @Test
     fun `getSessions() - GIVEN existing lobby with sessions WHEN getSessions is called THEN all sessions should be returned`() {
         // given existing lobby with sessions
-        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
-        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
+        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // when getSessions is called
         val sessions = sessionService.getSessions(LOBBY1_ID)
@@ -231,9 +231,9 @@ class SessionServiceTest {
     @Test
     fun `changeSessionsOrder() - GIVEN valid lobby and session order WHEN changeSessionsOrder is called THEN sessions should be reordered successfully`() {
         // given valid lobby and session order
-        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
-        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
-        val id3 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
+        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
+        val id3 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // when changeSessionsOrder is called
         sessionService.changeSessionsOrder(LOBBY1_ID, listOf(id2, id1, id3))
@@ -262,8 +262,8 @@ class SessionServiceTest {
     @Test
     fun `changeSessionsOrder() - GIVEN different number of session IDs WHEN changeSessionsOrder is called THEN an exception should be thrown`() {
         // given different number of session IDs
-        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
-        sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
+        sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
@@ -276,8 +276,8 @@ class SessionServiceTest {
     @Test
     fun `changeSessionsOrder() - GIVEN session IDs not in lobby WHEN changeSessionsOrder is called THEN an exception should be thrown`() {
         // given session IDs not in lobby
-        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
-        sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
+        sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // then an exception should be thrown
         assertThrows<IllegalArgumentException> {
@@ -290,8 +290,8 @@ class SessionServiceTest {
     @Test
     fun `changeSessionsOrder() - GIVEN correct session order WHEN changeSessionsOrder is called THEN the order should be maintained`() {
         // given correct session order
-        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
-        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false)
+        val id1 = sessionService.createSession(LOBBY1_ID, GAME_TYPE1, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
+        val id2 = sessionService.createSession(LOBBY1_ID, GAME_TYPE2, SESSION_DURATION, SYNC_WINDOW_LENGTH, SYNC_TOLERANCE,false,5)
 
         // when changeSessionsOrder is called
         sessionService.changeSessionsOrder(LOBBY1_ID, listOf(id1, id2))
