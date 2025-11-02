@@ -20,7 +20,7 @@ class ExperimentOrchestrator(
     init{
         gameService.onMalformedGameTermination = { lobbyId ->
             log.debug("onMalformedGameTermination() with lobbyId: {}",lobbyId)
-            stopExperiment(lobbyId)
+            stopExperiment(lobbyId,"Game terminated due to malformed data from client")
         }
     }
 
@@ -130,11 +130,15 @@ class ExperimentOrchestrator(
 
             } catch (e: Exception){
                 log.error("Experiment job for lobby $lobbyId failed with exception: ${e.message}",e)
-                scope.launch {
-                    try{
-                        stopExperiment(lobbyId, "Experiment failed with exception: ${e.message}")
-                    } catch (ex: Exception){
-                        log.error("Failed to stop experiment for lobby $lobbyId after exception: ${ex.message}",ex)
+                if(e is CancellationException){
+                    log.debug("Experiment job for lobby $lobbyId exiting")
+                } else {
+                    scope.launch {
+                        try{
+                            stopExperiment(lobbyId, "Experiment failed with exception: ${e.message}")
+                        } catch (ex: Exception){
+                            log.error("Failed to stop experiment for lobby $lobbyId after exception: ${ex.message}",ex)
+                        }
                     }
                 }
             }
@@ -143,7 +147,7 @@ class ExperimentOrchestrator(
         log.debug("startExperiment() successful")
     }
 
-    fun stopExperiment(lobbyId: String, errorMessage: String? = null) {
+    fun stopExperiment(lobbyId: String, errorMessage: String? = null, force: Boolean = false) {
         log.debug("stopExperiment() with lobbyId: {}",lobbyId)
 
         val lobby = lobbyService[lobbyId] ?: run{
@@ -167,7 +171,7 @@ class ExperimentOrchestrator(
         if(lobby.state == LobbyState.PLAYING){
             gameService.endGame(lobbyId)
         }
-        lobbyService.endExperiment(lobbyId, errorMessage)
+        lobbyService.endExperiment(lobbyId, errorMessage, force)
         if(lobby.hasSessions){
             val currentSession = sessionService.getSessions(lobbyId).first()
             if(currentSession.state == SessionState.IN_PROGRESS){

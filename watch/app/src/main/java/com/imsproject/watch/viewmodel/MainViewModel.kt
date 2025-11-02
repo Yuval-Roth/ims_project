@@ -473,17 +473,29 @@ class MainViewModel() : ViewModel() {
                     showError("Failed to end experiment, missing experiment id")
                     return
                 }
-                val errorMessage = request.message
-                if(errorMessage != null){
-                    fatalError("Experiment ended with error: $errorMessage")
+                val force = request.force ?: run {
+                    Log.e(TAG, "handleGameRequest: END_EXPERIMENT request missing force data")
+                    showError("Failed to end experiment, missing force flag")
                     return
                 }
+                val errorMessage = request.message
                 withContext(Dispatchers.Main) {
                     Log.d(TAG, "handleGameRequest: END_EXPERIMENT received")
                     if(!experimentRunning){
                         Log.e(TAG, "handleGameRequest: END_EXPERIMENT request received while no experiment is running")
                         return@withContext
                     }
+
+                    if (force) {
+                        Log.d(TAG,"Experiment ended forcefully by server")
+                        setState(State.CONNECTED_IN_LOBBY)
+                        experimentRunning = false
+                        return@withContext
+                    } else if(errorMessage != null) {
+                        fatalError("Experiment ended with error: $errorMessage")
+                        return@withContext
+                    }
+
                     _expId.value = expId
                     experimentRunning = false
                 }

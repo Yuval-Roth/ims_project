@@ -298,7 +298,7 @@ class LobbyService(
         log.debug("startExperiment() successful")
     }
 
-    fun endExperiment(lobbyId: String, errorMessage: String? = null) {
+    fun endExperiment(lobbyId: String, errorMessage: String? = null, force: Boolean = true) {
         log.debug("endExperiment() with lobbyId: {}",lobbyId)
 
         // check that the lobby exists
@@ -314,6 +314,7 @@ class LobbyService(
             .forEach {
                 it?.sendTcp(GameRequest.builder(Type.END_EXPERIMENT)
                     .data(listOf(lobby.expId.toString()))
+                    .force(force)
                     .also { req -> errorMessage?.let { msg -> req.message(msg) } }
                     .build().toJson())
             }

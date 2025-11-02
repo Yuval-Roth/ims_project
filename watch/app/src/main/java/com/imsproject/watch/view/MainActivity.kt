@@ -765,22 +765,28 @@ class MainActivity : ComponentActivity() {
         ) {
             val text = when(gameType){
                 GameType.WATER_RIPPLES -> """
-                    טקסט של אדוות מים
+                    בפעילות זו לחיצות משותפות
+                    יצרו אדוות מים וצליל
                 """
                 GameType.WINE_GLASSES -> """
-                    טקסט של כוסות יין
+                    בפעילות זו סיבוב משותף
+                    על שפת השעון יצור צליל תהודה
                 """
                 GameType.FLOUR_MILL -> """
-                    טקסט של מטחנת קמח
+                    בפעילות זו סיבוב משותף
+                    של ציר המטחנה יצור קמח
                 """
                 GameType.FLOWER_GARDEN -> """
-                    טקסט של גינת פרחים
+                     בפעילות זו לחיצות משותפות
+ ישתלו פרחים                    
                 """
                 GameType.WAVES -> """
-                    טקסט של גלים
+                    בפעילות זו נמסור גלים
+                    מצד לצד לסירוגין
                 """
                 GameType.PACMAN -> """
-                    טקסט של פאקמן
+                    בפעילות זו הכנסת שמש
+                    ומים לסירוגין יצמיחו עץ
                 """
                 else -> throw IllegalStateException("Unknown game type")
             }.trimIndent()
@@ -833,6 +839,21 @@ class MainActivity : ComponentActivity() {
             }
         }
         if(showOverlay){
+            val text = when(gameType){
+                GameType.WATER_RIPPLES,GameType.FLOWER_GARDEN -> """
+                    נסו ללחוץ - 
+                    ההקשה מתבצעת במרכז המסך
+                """
+                GameType.WINE_GLASSES, GameType.FLOUR_MILL -> """
+                    נסו לסובב - 
+                    הסיבוב מתבצע קרוב למסגרת של השעון
+                """
+                GameType.WAVES,GameType.PACMAN -> """
+                    נסו להעיף - 
+                    פעולת ההעפה מתבצעת ממסגרת השעון פנימה
+                """
+                else -> throw IllegalStateException("Unknown game type")
+            }.trimIndent()
             ButtonedPage(
                 buttonText = "המשך",
                 onClick = { showOverlay = false },
@@ -843,7 +864,7 @@ class MainActivity : ComponentActivity() {
                     contentAlignment = Alignment.Center
                 ){
                     Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-                    RTLText("טקסט שמסביר דברים")
+                    RTLText(text)
                 }
             }
         }
@@ -858,7 +879,10 @@ class MainActivity : ComponentActivity() {
                     contentAlignment = Alignment.Center
                 ){
                     Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-                    RTLText("טקסט סוף אימון")
+                    RTLText("""
+                        כל הכבוד!
+                        נחכה לשותף ונתחיל בסבב אימון
+                    """.trimIndent())
                 }
             }
         }
