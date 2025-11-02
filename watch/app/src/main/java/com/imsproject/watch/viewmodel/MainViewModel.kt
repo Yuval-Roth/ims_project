@@ -38,6 +38,7 @@ class MainViewModel() : ViewModel() {
         CONNECTED_NOT_IN_LOBBY,
         CONNECTED_IN_LOBBY,
         WELCOME_SCREEN,
+        SENSOR_CHECK,
         WAITING_FOR_WELCOME_SCREEN_NEXT,
         COUNTDOWN_TO_GAME,
         LOADING_GAME,

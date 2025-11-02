@@ -85,6 +85,7 @@ import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.FIRST_QUESTION
 import com.imsproject.watch.GRASS_GREEN_COLOR
+import com.imsproject.watch.GREEN_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
@@ -156,7 +157,7 @@ class MainActivity : ComponentActivity() {
         viewModel.onCreate(applicationContext) //TODO: uncomment
         setContent {
             MaterialTheme {
-//                viewModel.setState(State.AFTER_EXPERIMENT)
+//                viewModel.setState(State.SENSOR_CHECK)
 //                MainViewModel::class.java.getDeclaredField("_isWarmup").apply {
 //                    isAccessible = true
 //                    val fieldValue = get(viewModel) as MutableStateFlow<Boolean>
@@ -286,8 +287,18 @@ class MainActivity : ComponentActivity() {
 
             State.WELCOME_SCREEN -> WelcomeScreen {
                 resetGesturePracticeViewModels()
-                viewModel.setState(State.WAITING_FOR_WELCOME_SCREEN_NEXT)
-                viewModel.toggleReady()
+                viewModel.setState(State.SENSOR_CHECK)
+            }
+
+            State.SENSOR_CHECK -> {
+                val sensorHandler = viewModel.heartRateSensorHandler
+                val hr = sensorHandler.heartRate.collectAsState().value
+//                val ibi = sensorHandler.ibi.collectAsState().value
+                val hrSensorReady = hr != 0
+                SensorCheck(hrSensorReady){
+                    viewModel.setState(State.WAITING_FOR_WELCOME_SCREEN_NEXT)
+                    viewModel.toggleReady()
+                }
             }
 
             State.WAITING_FOR_WELCOME_SCREEN_NEXT, State.WAITING_FOR_GESTURE_PRACTICE_FINISH, State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION -> {
@@ -623,96 +634,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
-
-//    @Composable
-//    private fun ConnectedInLobbyScreen(
-//        userId: String,
-//        lobbyId: String,
-//        gameType: String,
-//        gameDuration: String,
-//        ready: Boolean,
-//        hrSensorReady: Boolean,
-//        onReady: () -> Unit
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(DARK_BACKGROUND_COLOR)
-//                .padding(bottom = (SCREEN_RADIUS * 0.08f).dp),
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Center,
-//        ){
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .fillMaxHeight(0.8f),
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ){
-//                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-//                val white = remember { Color(0xFFFFE095) }
-//                val green = remember { Color(0xFF89F55C) }
-//                Box(
-//                    modifier = Modifier
-//                        .background(if (ready) green else white)
-//                        .fillMaxWidth()
-//                        .fillMaxHeight(0.20f)
-//                    ,
-//                    contentAlignment = Alignment.Center,
-//                ){
-//                    RTLText(
-//                        text = "סטטוס: "+if (ready) "מוכן" else "לא מוכן",
-//                        style = textStyle.copy(color = Color.Black),
-//                    )
-//                }
-//                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-//                val halfVisibleText = remember {
-//                    TextStyle(
-//                        color = Color(0xFF707070),
-//                        fontSize = TEXT_SIZE
-//                    )
-//                }
-//                RTLText(
-//                    text = "המזהה שלי: $userId",
-//                    style = halfVisibleText,
-//                )
-//                Spacer(modifier = Modifier.height(3.dp))
-//                RTLText(
-//                    text = "מזהה לובי: $lobbyId",
-//                    style = halfVisibleText,
-//                )
-//                Spacer(modifier = Modifier.height(3.dp))
-//                RTLText(
-//                    text = gameType.ifBlank { "" },
-//                    style = halfVisibleText
-//                )
-//                Spacer(modifier = Modifier.height(3.dp))
-//                RTLText(
-//                    text = if(gameDuration.isNotBlank()) "$gameDuration שניות" else "",
-//                    style = halfVisibleText
-//                )
-//            }
-//            Button(
-//                colors = if (!hrSensorReady && !viewModel.heartRateUnavailable.collectAsState().value)
-//                    ButtonDefaults.buttonColors(
-//                        backgroundColor = Color(0xFF707070).copy(alpha=0.5f),
-//                        contentColor = Color.White
-//                    )
-//                else ButtonDefaults.primaryButtonColors(),
-//                onClick = { onReady() },
-//                modifier = Modifier
-//                    .fillMaxWidth(0.55f)
-//                    .fillMaxHeight()
-//            ) {
-//                val blackText = remember { textStyle.copy(color = Color.Black) }
-//                RTLText(
-//                    text = if(ready) "השהה התחלה" else "אפשר להתחיל",
-//                    style = blackText,
-//                )
-//            }
-//        }
-//    }
-
     @Composable
     fun WelcomeScreen(onClick : () -> Unit) {
         ButtonedPage(
@@ -732,61 +653,31 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//    @Composable
-//    fun RemotePlayerReady(){
-//        Column(
-//            modifier = Modifier
-//                .background(color = DARK_BACKGROUND_COLOR)
-//                .fillMaxSize(),
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//        ) {
-//            val currentNumber = remember { MutableStateFlow(4) }
-//            var alpha by remember { mutableFloatStateOf(0f) }
-//            val countdown = remember { Animatable(4f) }
-//            val scope = rememberCoroutineScope()
-//            val clickVibration = remember {
-//                VibrationEffect.createOneShot(
-//                    100, // duration in milliseconds
-//                    255  // amplitude (0–255); 255 = strongest
-//                )
-//            }
-//            LaunchedEffect(Unit){
-//                scope.launch {
-//                    currentNumber.collect {
-//                        // vibrate on each number change
-//                        viewModel.vibrator.vibrate(clickVibration)
-//                    }
-//                }
-//                countdown.animateTo(
-//                    targetValue = 0f,
-//                    animationSpec = tween(
-//                        durationMillis = 4000,
-//                        easing = LinearEasing
-//                    )
-//                ) {
-//                    currentNumber.value = ceil(value).toInt()
-//                    alpha = value - value.toInt()
-//                }
-//                viewModel.setState(State.COLOR_CONFIRMATION)
-//            }
-//            Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-//            RTLText(
-//                text = "שותף מרוחק מוכן.",
-//                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
-//            )
-//            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-//            RTLText(
-//                text = "הניסוי יתחיל בעוד:",
-//                style = textStyle.copy(fontSize = TEXT_SIZE * 1.5f),
-//            )
-//            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-//            Text(
-//                modifier = Modifier.alpha(alpha),
-//                text = currentNumber.collectAsState().value.toString(),
-//                style = textStyle.copy(fontSize = TEXT_SIZE * 4f)
-//            )
-//        }
-//    }
+    @Composable
+    fun SensorCheck(hrSensorReady: Boolean, onConfirm: () -> Unit){
+        val ready = hrSensorReady || viewModel.heartRateUnavailable.collectAsState().value
+        ButtonedPage(
+            buttonText = "המשך",
+            onClick = onConfirm,
+            disableButton = !ready
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                val text = buildAnnotatedString {
+                    append("בודק מנח שעון על היד...\n\n")
+                    if(ready){
+                        withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR)){
+                            append("תקין!")
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.fillMaxHeight(0.3f))
+                RTLText(text)
+            }
+        }
+    }
 
     @Composable
     fun ColorConfirmationScreen(myColor: MainViewModel.PlayerColor, onConfirm: () -> Unit) {
