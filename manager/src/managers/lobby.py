@@ -206,7 +206,7 @@ def get_sessions(lobby_id: str):
         Logger.log_error(f"Failed to get sessions, {e}")
         return None
 
-def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance: int, window: int, skip_feedback: bool):
+def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance: int, window: int, is_warmup: bool, countdown_timer: int):
     """
     Creates a new session in the specified lobby.
     """
@@ -214,7 +214,8 @@ def create_session(lobby_id: str, game_type: str, duration: int, sync_tolerance:
     body["duration"] = duration
     body["syncTolerance"] = sync_tolerance
     body["syncWindowLength"] = window
-    body["isWarmup"] = skip_feedback
+    body["isWarmup"] = is_warmup
+    body["countdownTimer"] = countdown_timer
     print(f"Creating session with body: {body}")
     try:
         res = post_auth(URL + "/manager", json=body)

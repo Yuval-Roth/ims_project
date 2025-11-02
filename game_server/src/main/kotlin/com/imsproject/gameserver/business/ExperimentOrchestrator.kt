@@ -1,5 +1,6 @@
 package com.imsproject.gameserver.business
 
+import com.imsproject.common.gameserver.GameType
 import com.imsproject.gameserver.business.lobbies.LobbyState
 import com.imsproject.gameserver.dataAccess.DAOController import com.imsproject.gameserver.dataAccess.models.ExperimentDTO
 import com.imsproject.gameserver.dataAccess.models.SessionDTO
@@ -89,9 +90,12 @@ class ExperimentOrchestrator(
                 lobbyService.signalBothClientsReady(lobbyId)
                 lobby.resetReady()
 
+                var lastGameType: GameType? = null
                 val iterator = experimentSessions.iterator()
                 while(iterator.hasNext() && isActive) {
                     val session = iterator.next()
+                    val gameTypeChanged = session.gameType != lastGameType
+                    lastGameType = session.gameType
                     lobbyService.configureLobby(lobbyId, session)
                     val sessionId = session.dbId ?: run {
                         // should not happen
@@ -100,7 +104,7 @@ class ExperimentOrchestrator(
                     }
 
                     // gesture trial ready check
-                    if(lobby.isWarmup){
+                    if(lobby.isWarmup || gameTypeChanged){
                         while(! lobby.isReady()){
                             delay(1000)
                         }

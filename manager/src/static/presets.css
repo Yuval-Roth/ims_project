@@ -207,6 +207,8 @@ body {
   padding: 30px;
   width: 500px;
   max-width: 95%;
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
 .modal-content {

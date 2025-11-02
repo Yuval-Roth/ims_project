@@ -111,14 +111,15 @@ final class GameRequestFacade(
     }
 
     private fun handleCreateSession(request: GameRequest) : String {
-        return requireParams(request, "lobbyId", "duration", "gameType", "syncWindowLength", "syncTolerance","isWarmup") {
+        return requireParams(request, "lobbyId", "duration", "gameType", "syncWindowLength", "syncTolerance","isWarmup","countdownTimer") {
             val lobbyId = request.lobbyId!!
             val duration = request.duration!!
             val gameType = request.gameType!!
             val syncWindowLength = request.syncWindowLength!!
             val syncTolerance = request.syncTolerance!!
             val isWarmup = request.isWarmup!!
-            sessions.createSession(lobbyId, gameType, duration, syncWindowLength, syncTolerance, isWarmup)
+            val countdownTimer = request.countdownTimer!!
+            sessions.createSession(lobbyId, gameType, duration, syncWindowLength, syncTolerance, isWarmup, countdownTimer)
         }
     }
 

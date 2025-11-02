@@ -24,7 +24,8 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
         "game_type",
         "sync_tolerance",
         "sync_window_length",
-        "is_warmup"
+        "is_warmup",
+        "countdown_timer"
     )
 ) {
     override fun buildObjectFromResultSet(resultSet: OfflineResultSet): PresetDTO {
@@ -37,7 +38,8 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
                 gameType = GameType.valueOf(resultSet.getString("game_type")!!),
                 syncTolerance = resultSet.getInt("sync_tolerance")!!,
                 syncWindowLength = resultSet.getInt("sync_window_length")!!,
-                isWarmup = resultSet.getBoolean("is_warmup")!!
+                isWarmup = resultSet.getBoolean("is_warmup")!!,
+                countdownTimer = resultSet.getInt("countdown_timer")!!
             )
             presetSessionDTOs.add(session)
         }
@@ -91,9 +93,9 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
     ): Int {
         var rowsInserted = 0
         try {
-            val query = "INSERT INTO presets (preset_name, idx, duration, game_type, sync_tolerance, sync_window_length, is_warmup) VALUES (?,?,?,?,?,?,?)"
+            val query = "INSERT INTO presets (preset_name, idx, duration, game_type, sync_tolerance, sync_window_length, is_warmup, countdown_timer) VALUES (?,?,?,?,?,?,?,?)"
             // Insert a first row with index 0 to represent the preset itself
-            val firstValue = arrayOf<Any>(obj.name,0,-1,GameType.UNDEFINED.name,-1,-1,false)
+            val firstValue = arrayOf<Any>(obj.name,0,-1,GameType.UNDEFINED.name,-1,-1,false,-1)
             val _transactionId = transactionId ?: cursor.beginTransaction()
             rowsInserted += cursor.executeWrite(query, firstValue, _transactionId)
             if (obj.sessions != null){
@@ -105,7 +107,8 @@ class PresetsDAO(cursor: SQLExecutor): DAOBase<PresetDTO, PresetPK>(
                         session.gameType.name,
                         session.syncTolerance,
                         session.syncWindowLength,
-                        session.isWarmup
+                        session.isWarmup,
+                        session.countdownTimer
                     )
                     rowsInserted += cursor.executeWrite(query,values, _transactionId)
                 }

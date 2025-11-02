@@ -70,7 +70,8 @@
                                     <th>Session ID</th>
                                     <th>Sync Tolerance</th>
                                     <th>Sync Window</th>
-                                    <th>Skip Feedback</th>
+                                    <th>Is Warmup</th>
+                                    <th>Count Down</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -81,9 +82,10 @@
                                     <td>{{ session.duration }}</td>
                                     <td>{{ session.sessionId }}</td>
                                     <td>{{ session.syncTolerance }}</td>
-                                    <td>{{ session.isWarmup }}</td>
                                     <td>{{ session.syncWindowLength }}</td>
-                                    <td>
+                                    <td>{{ session.isWarmup }}</td>
+                                    <td>{{ session.countdownTimer }}</td>
+                                  <td>
                                         <button class="danger-button delete-session-btn" data-session-id="{{ session.sessionId }}">Delete</button>
                                     </td>
                                 </tr>
@@ -128,11 +130,15 @@
                 <label for="window">Sync Window Length (ms):</label>
                 <input type="number" name="window" id="window" required>
 
-                <label for="isWarmup">Skip Feedback</label>
+                <label for="isWarmup">Is Warmup</label>
                 <select name="isWarmup" id="isWarmup" required>
                     <option value="no">No</option>
                     <option value="yes">Yes</option>
                 </select>
+
+                <label for="countdownTimer">Countdown Timer (seconds):</label>
+                <input type="number" name="countdownTimer" id="countdownTimer" min="0" value="5" required>
+
 
                 <div class="modal-actions" style="display:flex; justify-content: center; gap: 30px;">
                     <button type="button" id="cancel-modal-btn" class="cancel-button" style="width:150px">Cancel</button>
@@ -148,12 +154,13 @@
 
     <script>
     class Session {
-        constructor(gameType, duration, syncTolerance, syncWindowLength, isWarmup) {
+        constructor(gameType, duration, syncTolerance, syncWindowLength, isWarmup, countdownTimer) {
             this.gameType = gameType;
             this.duration = duration;
             this.isWarmup = isWarmup;
-            this.syncTolerance = syncTolerance
-            this.syncWindowLength = syncWindowLength
+            this.syncTolerance = syncTolerance;
+            this.syncWindowLength = syncWindowLength;
+            this.countdownTimer = countdownTimer;
         }
     }
     document.addEventListener('DOMContentLoaded', function () {
@@ -278,7 +285,8 @@
                 duration: parseInt(formData.get('duration'), 10),
                 syncTolerance: syncTolerance,
                 syncWindowLength: syncWindowLength,
-                isWarmup: formData.get('isWarmup') === 'yes'
+                isWarmup: formData.get('isWarmup') === 'yes',
+                countdownTimer: parseInt(formData.get('countdownTimer'), 10),
             };
 
             fetch('/add_session', {
@@ -394,6 +402,7 @@
                     break;
             }
             const isWarmup = session.isWarmup ? 'Yes' : 'No';
+            const countdownTimer = session.countdownTimer + ' sec';
             // Create and append the row
             const row = document.createElement('tr');
             row.dataset.sessionId = session.sessionId;
@@ -404,8 +413,9 @@
                 <td>${syncTolerance}</td>
                 <td>${syncWindowLength}</td>
                 <td>${isWarmup}</td>
+                <td>${countdownTimer}</td>
                 <td>
-                    <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">Delete</button>
+                    <button class="danger-button delete-session-btn" data-session-id="${session.sessionId}">🗑️</button>
                 </td>
             `;
             if(index === -1){
@@ -550,7 +560,6 @@
             const syncToleranceDescription = document.getElementById('syncToleranceDescription');
             const syncWindowLength = document.getElementById('window');
 
-            // Define default values for each game type
             const clickBased = {
                 syncTolerance: 100,
                 syncToleranceUnit: 'ms',
@@ -589,6 +598,8 @@
 
             function updateDefaultValues() {
                 const selectedGame = gameTypeSelect.value;
+
+                // store last used values for the previous game
                 const oldGame = addSessionValueHistory["gameType"];
                 switch(oldGame){
                     case 'Flower Garden':
@@ -602,6 +613,8 @@
                         break;
                 }
                 addSessionValueHistory["gameType"] = selectedGame;
+
+                // retrieve values for the current game
                 const lastSyncTolerance = addSessionValueHistory[selectedGame].syncTolerance;
                 const lastSyncWindowLength = addSessionValueHistory[selectedGame].syncWindowLength;
 
@@ -672,7 +685,8 @@
                         duration: session.duration,
                         syncTolerance: session.syncTolerance,
                         syncWindowLength: session.syncWindowLength,
-                        isWarmup: session.isWarmup
+                        isWarmup: session.isWarmup,
+                        countdownTimer: session.countdownTimer,
                     })
                 });
 

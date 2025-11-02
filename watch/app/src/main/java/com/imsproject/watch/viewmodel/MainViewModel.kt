@@ -17,6 +17,7 @@ import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +47,7 @@ class MainViewModel() : ViewModel() {
         ACTIVITY_REMINDER,
         GESTURE_PRACTICE,
         WAITING_FOR_GESTURE_PRACTICE_FINISH,
+        WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION,
         IN_GAME,
         UPLOADING_EVENTS,
         AFTER_GAME_QUESTIONS,
@@ -133,6 +135,9 @@ class MainViewModel() : ViewModel() {
     private val _isWarmup = MutableStateFlow(false)
     val isWarmup : StateFlow<Boolean> = _isWarmup
 
+    private val _countdownTimer = MutableStateFlow(-1)
+    val countdownTimer : StateFlow<Int> = _countdownTimer
+
     private var _sessionId = -1
     var temporaryPlayerId = ""
 
@@ -144,7 +149,6 @@ class MainViewModel() : ViewModel() {
     private var gameTypeChanged = false
         get() {
             val value = field
-            field = false // reset the flag
             return value
         }
     init {
@@ -209,6 +213,7 @@ class MainViewModel() : ViewModel() {
                     temporaryPlayerId = selectedId
                     return@launch
                 } catch (_: ParticipantNotFoundException){
+                    _loading.value = false
                     showError("Participant not found")
                     return@launch
                 }
@@ -418,6 +423,11 @@ class MainViewModel() : ViewModel() {
                     showError("Failed to configure lobby")
                     return
                 }
+                val countdownTimer = request.countdownTimer ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing countdownTimer")
+                    showError("Failed to configure lobby")
+                    return
+                }
 
                 withContext(Dispatchers.Main){
                     Log.d(TAG, """
@@ -433,6 +443,7 @@ class MainViewModel() : ViewModel() {
                     _gameDuration.value = gameDuration
                     _syncWindowLength.value = syncWindowLength
                     _syncTolerance.value = syncTolerance
+                    _countdownTimer.value = countdownTimer
                     lobbyConfigured = true
                 }
             }
@@ -483,7 +494,7 @@ class MainViewModel() : ViewModel() {
                         State.WAITING_FOR_WELCOME_SCREEN_NEXT -> {
                             setState(State.COLOR_CONFIRMATION)
                         }
-                        State.WAITING_FOR_GESTURE_PRACTICE_FINISH -> {
+                        State.WAITING_FOR_GESTURE_PRACTICE_FINISH, State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION -> {
                             setState(State.COUNTDOWN_TO_GAME)
                         }
                         else -> {
@@ -508,7 +519,6 @@ class MainViewModel() : ViewModel() {
 
                 withContext(Dispatchers.Main) {
                     Log.d(TAG, "handleGameRequest: START_GAME received")
-                    //TODO: allow START_GAME from the correct state
                     if(_state.value != State.LOADING_GAME){
                         Log.e(TAG, "handleGameRequest: START_GAME request received while not in the 'LOADING_GAME' state")
                         return@withContext

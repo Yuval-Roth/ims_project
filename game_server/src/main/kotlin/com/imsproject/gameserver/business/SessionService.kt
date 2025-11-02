@@ -3,7 +3,6 @@ package com.imsproject.gameserver.business
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.SimpleIdGenerator
 import org.slf4j.LoggerFactory
-import org.springframework.stereotype.Component
 import org.springframework.stereotype.Service
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -22,7 +21,8 @@ class SessionService(
         duration: Int,
         syncWindowLength: Long,
         syncTolerance: Long,
-        isWarmup: Boolean
+        isWarmup: Boolean,
+        countdownTimer: Int
     ): String {
         log.debug("createSession() with lobbyId: {}, gameType: {}, duration: {}, syncWindowLength: {}, syncTolerance: {}",
             lobbyId,gameType,duration,syncWindowLength,syncTolerance)
@@ -36,6 +36,7 @@ class SessionService(
 
         val invalidArgs = mutableListOf<String>()
         val errorMsg = "The following params are invalid: "
+        if(countdownTimer < 0) invalidArgs.add("countdownTimer")
         if(duration <= 0) invalidArgs.add("duration")
         when(gameType) {
             GameType.WINE_GLASSES, GameType.FLOUR_MILL -> {
@@ -55,7 +56,7 @@ class SessionService(
         }
 
         val sessionId = sessionIdGenerator.generate()
-        val session = Session(sessionId, gameType, duration, syncWindowLength, syncTolerance, isWarmup)
+        val session = Session(sessionId, gameType, duration, syncWindowLength, syncTolerance, isWarmup,countdownTimer)
         val lobbySessions = lobbyIdToSessions.computeIfAbsent(lobbyId){ ConcurrentLinkedDeque() }
         lobbySessions.add(session)
         if(lobbySessions.size == 1){

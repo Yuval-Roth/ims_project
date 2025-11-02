@@ -73,5 +73,6 @@ CREATE TABLE IF NOT EXISTS Presets (
     sync_tolerance integer NOT NULL,
     sync_window_length integer NOT NULL,
     is_warmup boolean NOT NULL,
+    countdown_timer integer NOT NULL,
     PRIMARY KEY (preset_name, idx)
 );

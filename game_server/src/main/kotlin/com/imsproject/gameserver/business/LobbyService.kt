@@ -68,15 +68,7 @@ class LobbyService(
         )
         if(lobby.hasSessions){
             log.debug("onClientConnect: Sending configure lobby message")
-            clientHandler.sendTcp(
-                GameRequest.builder(Type.CONFIGURE_LOBBY)
-                    .gameType(lobby.gameType)
-                    .duration(lobby.gameDuration)
-                    .syncWindowLength(lobby.syncWindowLength)
-                    .syncTolerance(lobby.syncTolerance)
-                    .isWarmup(lobby.isWarmup)
-                    .build().toJson()
-            )
+            sendLobbyConfiguration(clientHandler)
         }
 
         log.debug("onClientConnect() successful")
@@ -249,17 +241,7 @@ class LobbyService(
         // Notify the clients
         lobby.getPlayers()
             .map {clients.getByClientId(it)}
-            .forEach {
-                it?.sendTcp(
-                    GameRequest.builder(Type.CONFIGURE_LOBBY)
-                        .gameType(sessionDetails.gameType)
-                        .duration(sessionDetails.duration)
-                        .syncWindowLength(sessionDetails.syncWindowLength)
-                        .syncTolerance(sessionDetails.syncTolerance)
-                        .isWarmup(sessionDetails.isWarmup)
-                        .build().toJson()
-                )
-            }
+            .forEach { it?.also { sendLobbyConfiguration(it) } }
 
         log.debug("configureLobby() successful")
     }
@@ -292,6 +274,7 @@ class LobbyService(
                 .syncWindowLength(lobby.syncWindowLength)
                 .syncTolerance(lobby.syncTolerance)
                 .isWarmup(lobby.isWarmup)
+                .countdownTimer(lobby.countdownTimer)
                 .build().toJson()
         )
         log.debug("sendLobbyConfiguration() successful")

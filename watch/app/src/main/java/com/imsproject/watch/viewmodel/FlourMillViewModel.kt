@@ -81,6 +81,7 @@ open class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
                 val myFrequency = myFrequencyTracker.frequency
                 val opponentFrequency = opponentFrequency
                 if(!released.value && !opponentReleased.value
+                    && (myFrequency > 0f && opponentFrequency > 0f)
                     && (myFrequency - opponentFrequency).absoluteValue < FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD) {
                     val avgFrequency = (myFrequency + opponentFrequency) / 2f
                     val angleChange = RADIANS_IN_CIRCLE * avgFrequency

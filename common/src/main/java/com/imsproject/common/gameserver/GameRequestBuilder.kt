@@ -15,6 +15,7 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     private var syncWindowLength: Long? = null
     private var syncTolerance: Long? = null
     private var isWarmup: Boolean? = null
+    private var countdownTimer: Int? = null
 
     fun playerId(playerId: String) = apply { this.playerId = playerId }
     fun lobbyId(lobbyId: String) = apply { this.lobbyId = lobbyId }
@@ -29,7 +30,8 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     fun syncWindowLength(syncWindowLength: Long) = apply { this.syncWindowLength = syncWindowLength }
     fun syncTolerance(syncTolerance: Long) = apply { this.syncTolerance = syncTolerance }
     fun isWarmup(isWarmup: Boolean) = apply { this.isWarmup = isWarmup }
+    fun countdownTimer(countdownTimer: Int) = apply { this.countdownTimer = countdownTimer }
 
 
-    fun build() = GameRequest(type,playerId,lobbyId,gameType,success,message,duration,sessionId,sessionIds,data,timestamp,syncWindowLength,syncTolerance,isWarmup)
+    fun build() = GameRequest(type,playerId,lobbyId,gameType,success,message,duration,sessionId,sessionIds,data,timestamp,syncWindowLength,syncTolerance,isWarmup,countdownTimer)
 }

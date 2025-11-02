@@ -23,6 +23,9 @@ class Lobby(val id: String) {
         private set
     var isWarmup = false
         private set
+    var countdownTimer: Int = 0
+        private set
+
     var state = LobbyState.WAITING
     var hasSessions = false
     var experimentRunning = false
@@ -34,6 +37,7 @@ class Lobby(val id: String) {
         syncWindowLength = sessionDetails.syncWindowLength
         syncTolerance = sessionDetails.syncTolerance
         isWarmup = sessionDetails.isWarmup
+        countdownTimer = sessionDetails.countdownTimer
     }
 
     /**

@@ -9,6 +9,7 @@ data class Session(
     val syncWindowLength: Long,
     val syncTolerance: Long,
     val isWarmup: Boolean,
+    val countdownTimer: Int,
     var dbId: Int? = null,
     var state: SessionState = SessionState.NOT_STARTED
 )

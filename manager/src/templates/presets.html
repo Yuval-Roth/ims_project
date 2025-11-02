@@ -75,6 +75,10 @@
                 <option value="yes">Yes</option>
             </select>
 
+            <label for="countdownTimer">Countdown Timer (seconds):</label>
+            <input type="number" id="countdownTimer" name="countdownTimer" min="0" value="5" required>
+
+
             <div class="modal-actions">
                 <button type="button" id="cancel-modal-btn" class="cancel-button">Cancel</button>
                 <button type="submit" class="primary-button">Add</button>
@@ -151,6 +155,7 @@
                       <td>${formatSyncTolerance(s)}</td>
                       <td>${formatSyncWindow(s)}</td>
                       <td>${s.isWarmup ? 'Yes' : 'No'}</td>
+                      <td>${s.countdownTimer}</td>
                       <td>
                         <button class="primary-button" data-name="${preset.name}" data-index="${i}" data-action="edit-session">✏️</button>
                         <button class="danger-button" data-name="${preset.name}" data-index="${i}" data-action="delete-session">🗑️</button>
@@ -175,6 +180,7 @@
                                 <th>Sync Tolerance</th>
                                 <th>Sync Window</th>
                                 <th>Is Warmup</th>
+                                <th>Count Down</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -353,7 +359,8 @@
                 duration: parseInt(formData.get('duration'), 10),
                 syncTolerance: syncTolerance,
                 syncWindowLength: syncWindowLength,
-                isWarmup: formData.get('isWarmup') === 'yes'
+                isWarmup: formData.get('isWarmup') === 'yes',
+                countdownTimer: parseInt(formData.get('countdownTimer'), 10)
             };
         }
 

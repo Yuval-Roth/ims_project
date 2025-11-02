@@ -290,7 +290,7 @@ class MainActivity : ComponentActivity() {
                 viewModel.toggleReady()
             }
 
-            State.WAITING_FOR_WELCOME_SCREEN_NEXT, State.WAITING_FOR_GESTURE_PRACTICE_FINISH -> {
+            State.WAITING_FOR_WELCOME_SCREEN_NEXT, State.WAITING_FOR_GESTURE_PRACTICE_FINISH, State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION -> {
                 LoadingScreen("ממתין לשותף מרוחק...")
             }
 
@@ -318,7 +318,7 @@ class MainActivity : ComponentActivity() {
                     if(warmup){
                         viewModel.setState(State.ACTIVITY_REMINDER)
                     } else {
-                        viewModel.setState(State.LOADING_GAME)
+                        viewModel.setState(State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION)
                         viewModel.toggleReady()
                     }
                 }
@@ -341,7 +341,8 @@ class MainActivity : ComponentActivity() {
 
             State.COUNTDOWN_TO_GAME -> {
                 val warmup = viewModel.isWarmup.collectAsState().value
-                CountdownToGame(warmup,5) {
+                val countdownTimer = viewModel.countdownTimer.collectAsState().value
+                CountdownToGame(warmup,countdownTimer) {
                     viewModel.setState(State.LOADING_GAME)
                     viewModel.toggleReady()
                 }

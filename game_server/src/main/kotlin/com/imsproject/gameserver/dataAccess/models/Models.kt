@@ -152,5 +152,6 @@ data class PresetSessionDTO(
     val gameType: GameType,
     val syncTolerance: Int,
     val syncWindowLength: Int,
-    val isWarmup: Boolean
+    val isWarmup: Boolean,
+    val countdownTimer: Int
 )

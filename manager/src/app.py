@@ -320,10 +320,11 @@ def add_session():
     duration = data.get('duration')
     sync_tolerance = data.get('syncTolerance')
     sync_window_length = data.get('syncWindowLength')
-    skip_feedback = data.get('isWarmup')
+    is_warmup = data.get('isWarmup')
+    countdown_timer = data.get('countdownTimer')
     print(data)
 
-    if not (lobby_id and game_type_name and duration and sync_tolerance and sync_window_length and skip_feedback is not None):
+    if not (lobby_id and game_type_name and duration and sync_tolerance and sync_window_length and is_warmup is not None and countdown_timer):
         Logger.log_error(f"Invalid data: {data}")
         return jsonify({"status": "error", "message": "Invalid data"}), 400
 
@@ -332,7 +333,7 @@ def add_session():
         game_type = get_game_type_name_from_value(game_type_name)
 
         # Process and create the session (example function call)
-        session_id = create_session(lobby_id, game_type, duration, sync_tolerance, sync_window_length,skip_feedback)
+        session_id = create_session(lobby_id, game_type, duration, sync_tolerance, sync_window_length,is_warmup,countdown_timer)
 
         if session_id:
             return jsonify({
@@ -343,7 +344,8 @@ def add_session():
                     "sessionId": session_id,
                     "syncTolerance": sync_tolerance,
                     "syncWindowLength": sync_window_length,
-                    "isWarmup": skip_feedback
+                    "isWarmup": is_warmup,
+                    "countdownTimer": countdown_timer
                 }
             })
         Logger.log_error(f"Failed to create session for lobby {lobby_id}")
