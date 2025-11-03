@@ -365,6 +365,7 @@ class MainViewModel() : ViewModel() {
                     _gameDuration.value = null
                     _ready.value = false
                     _isWarmup.value = false
+                    _gameType.value = null
 
                     _lobbyId.value = lobbyId
                     if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
@@ -450,6 +451,7 @@ class MainViewModel() : ViewModel() {
                     Log.d(TAG, "handleGameRequest: START_EXPERIMENT received")
                     experimentRunning = true
                     _myColor.value = PlayerColor.fromString(color)
+                    _expId.value = null
                     setState(State.WELCOME_SCREEN)
                 }
             }
