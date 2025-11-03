@@ -23,7 +23,9 @@ abstract class Game (
     private var player1Ready = false
     private var player2Ready = false
     var localStartTime = -1L
+        private set
     var timeServerStartTime = -1L
+        private set
 
     abstract fun handleGameAction(actor: ClientHandler, action: GameAction)
 

@@ -55,7 +55,7 @@ abstract class GameViewModel(
         "unknown player ID"
     }
 
-    protected lateinit var vibrator: Vibrator
+    lateinit var vibrator: Vibrator
         private set
     protected val packetTracker = PacketTracker()
     private lateinit var latencyTracker : LatencyTracker
@@ -102,7 +102,13 @@ abstract class GameViewModel(
             clearEvents() // clear any events from previous sessions
 
             // clock setup
-            val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1)
+            val timeServerStartTime = intent.getLongExtra("$PACKAGE_PREFIX.timeServerStartTime",-1).also {
+                if(it <= 0){
+                    Log.e(TAG, "onCreate: missing time server start time")
+                    exitWithError("Missing time server start time", Result.Code.BAD_REQUEST)
+                    return@launch
+                }
+            }
             withContext(Dispatchers.IO){
                 timeServerDelta = model.calculateTimeServerDelta()
             }

@@ -177,6 +177,10 @@
         let sessionsDragged = false;
         let experimentRunning = false;
         let addSessionValueHistory = {
+            'Recess': {
+                syncTolerance: null,
+                syncWindowLength: null
+            },
             'Water Ripples': {
                 syncTolerance: null,
             },
@@ -185,22 +189,27 @@
             },
             'Flour Mill': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
             },
             'Wine Glasses': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
             },
             'Pacman': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
             },
             'Waves': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
+            },
+            'Tree': {
+                syncTolerance: null,
+                syncWindowLength: null
             },
             'gameTime': null,
             'gameType': 'Water Ripples',
+            'countdownTimer': null,
         }
 
         // Show modal
@@ -273,8 +282,10 @@
                     syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
                     syncWindowLength = parseInt(formData.get('window'), 10);
                     break;
+                case 'Recess':
                 case 'Pacman':
                 case 'Waves':
+                case 'Tree':
                     syncTolerance = -1;
                     syncWindowLength = -1;
                     break;
@@ -395,8 +406,10 @@
                     syncTolerance = session.syncTolerance / 100 + ' hz';
                     syncWindowLength = session.syncWindowLength + ' ms';
                     break;
+                case 'Recess':
                 case 'Pacman':
                 case 'Waves':
+                case 'Tree':
                     syncTolerance = 'N/A';
                     syncWindowLength = 'N/A';
                     break;
@@ -558,8 +571,17 @@
             const gameTypeSelect = document.getElementById('gameType');
             const syncToleranceInput = document.getElementById('syncTolerance');
             const syncToleranceDescription = document.getElementById('syncToleranceDescription');
-            const syncWindowLength = document.getElementById('window');
+            const syncWindowLengthInput = document.getElementById('window');
 
+            const recess = {
+                syncTolerance: -1,
+                syncToleranceUnit: 'N/A',
+                syncToleranceStep: 1,
+                syncToleranceMin: -1,
+                syncWindowLength: -1,
+                windowLengthEnabled: false,
+                syncToleranceEnabled: false
+            }
             const clickBased = {
                 syncTolerance: 100,
                 syncToleranceUnit: 'ms',
@@ -588,6 +610,7 @@
                 syncToleranceEnabled: false
             }
             const defaultParams = {
+                'Recess': recess,
                 'Water Ripples': clickBased,
                 'Flower Garden': clickBased,
                 'Flour Mill': swipeBased,
@@ -609,7 +632,7 @@
                     case 'Flour Mill':
                     case 'Wine Glasses':
                         addSessionValueHistory[oldGame].syncTolerance = syncToleranceInput.value;
-                        addSessionValueHistory[oldGame].syncWindowLength = syncWindowLength.value;
+                        addSessionValueHistory[oldGame].syncWindowLength = syncWindowLengthInput.value;
                         break;
                 }
                 addSessionValueHistory["gameType"] = selectedGame;
@@ -623,8 +646,8 @@
                     syncToleranceDescription.textContent = `Sync Tolerance (${defaultParams[selectedGame].syncToleranceUnit}):`;
                     syncToleranceInput.step = defaultParams[selectedGame].syncToleranceStep;
                     syncToleranceInput.min = defaultParams[selectedGame].syncToleranceMin;
-                    syncWindowLength.value = lastSyncWindowLength ? lastSyncWindowLength : defaultParams[selectedGame].syncWindowLength;
-                    syncWindowLength.disabled = !defaultParams[selectedGame].windowLengthEnabled;
+                    syncWindowLengthInput.value = lastSyncWindowLength ? lastSyncWindowLength : defaultParams[selectedGame].syncWindowLength;
+                    syncWindowLengthInput.disabled = !defaultParams[selectedGame].windowLengthEnabled;
                     syncToleranceInput.disabled = !defaultParams[selectedGame].syncToleranceEnabled;
                 }
             }

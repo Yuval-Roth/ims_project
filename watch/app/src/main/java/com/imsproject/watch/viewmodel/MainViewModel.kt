@@ -49,6 +49,7 @@ class MainViewModel() : ViewModel() {
         GESTURE_PRACTICE,
         WAITING_FOR_GESTURE_PRACTICE_FINISH,
         WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION,
+        WAITING_FOR_RECESS,
         IN_GAME,
         UPLOADING_EVENTS,
         AFTER_GAME_QUESTIONS,
@@ -235,9 +236,12 @@ class MainViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             when (result.code) {
                 Result.Code.OK -> {
-                    setState(State.UPLOADING_EVENTS)
-                    if (model.uploadSessionEvents(_sessionId)) {
-                        if(!isWarmup){
+                    if(result.uploadEvents){
+                        setState(State.UPLOADING_EVENTS)
+                    }
+                    val uploadSuccess = !result.uploadEvents || model.uploadSessionEvents(_sessionId)
+                    if (uploadSuccess) {
+                        if(!isWarmup && result.uploadEvents){
                             setState(State.AFTER_GAME_QUESTIONS)
                         } else {
                             prepareNextSession()
@@ -430,9 +434,13 @@ class MainViewModel() : ViewModel() {
                     _syncTolerance.value = syncTolerance
                     _countdownTimer.value = countdownTimer
                     lobbyConfigured = true
-                    Log.d(TAG, "Configure lobby: Game type changed from $oldGameType to $gameType")
-                    gameTypeChanged = oldGameType != gameType
-                    oldGameType = gameType
+                    if(gameType != GameType.RECESS){
+                        Log.d(TAG, "Configure lobby: Game type changed from $oldGameType to $gameType")
+                        gameTypeChanged = oldGameType != gameType
+                        oldGameType = gameType
+                    } else {
+                        gameTypeChanged = false
+                    }
                 }
             }
             GameRequest.Type.START_EXPERIMENT -> {
@@ -452,6 +460,7 @@ class MainViewModel() : ViewModel() {
                     experimentRunning = true
                     _myColor.value = PlayerColor.fromString(color)
                     _expId.value = null
+                    _activityIndex.value = 1
                     setState(State.WELCOME_SCREEN)
                 }
             }
@@ -497,6 +506,10 @@ class MainViewModel() : ViewModel() {
                         }
                         State.WAITING_FOR_GESTURE_PRACTICE_FINISH, State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION -> {
                             setState(State.COUNTDOWN_TO_GAME)
+                        }
+                        State.WAITING_FOR_RECESS -> {
+                            setState(State.LOADING_GAME)
+                            toggleReady()
                         }
                         else -> {
                             Log.e(TAG, "handleGameRequest: BOTH_CLIENTS_READY request received in unexpected state: ${_state.value}")
@@ -562,6 +575,12 @@ class MainViewModel() : ViewModel() {
                         setState(State.CONNECTED_IN_LOBBY)
                     }
                 }
+                return@launch
+            }
+
+            if(_gameType.value == GameType.RECESS){
+                setState(State.WAITING_FOR_RECESS)
+                toggleReady()
                 return@launch
             }
 

@@ -40,6 +40,8 @@ class GAME_TYPE(Enum):
     flower_garden = 'Flower Garden'
     pacman = 'Pacman'
     waves = 'Waves'
+    tree = 'Tree'
+    recess = 'Recess'
 
 
 class GAME_REQUEST_TYPE(Enum):

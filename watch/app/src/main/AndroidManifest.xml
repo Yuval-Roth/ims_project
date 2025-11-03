@@ -68,7 +68,12 @@
             android:name=".view.PacmanActivity"
             android:taskAffinity=""
             android:exported="true"
-            android:theme="@style/ParticlesActivityTheme" />
+            android:theme="@style/PacmanActivityTheme" />
+        <activity
+            android:name=".view.RecessActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:theme="@style/RecessActivityTheme" />
 
     </application>
 

@@ -100,6 +100,7 @@ import com.imsproject.watch.utils.QRGenerator
 import com.imsproject.watch.view.contracts.FlourMillResultContract
 import com.imsproject.watch.view.contracts.FlowerGardenResultContract
 import com.imsproject.watch.view.contracts.PacmanResultContract
+import com.imsproject.watch.view.contracts.RecessResultContract
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.view.contracts.WavesResultContract
@@ -131,6 +132,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var flowerGarden: ActivityResultLauncher<Map<String,Any>>
     private lateinit var pacman: ActivityResultLauncher<Map<String,Any>>
     private lateinit var waves: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var recess: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wifiLock: WifiManager.WifiLock
     private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
     private var viewModelsInitialized = false
@@ -229,6 +231,7 @@ class MainActivity : ComponentActivity() {
         flowerGarden = registerForActivityResult(FlowerGardenResultContract()) { afterGame(it) }
         pacman = registerForActivityResult(PacmanResultContract()) { afterGame(it) }
         waves = registerForActivityResult(WavesResultContract()) { afterGame(it) }
+        recess = registerForActivityResult(RecessResultContract()) { afterGame(it) }
     }
 
     private fun setupSensorsPermission() {
@@ -301,7 +304,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            State.WAITING_FOR_WELCOME_SCREEN_NEXT, State.WAITING_FOR_GESTURE_PRACTICE_FINISH, State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION -> {
+            State.WAITING_FOR_WELCOME_SCREEN_NEXT,
+            State.WAITING_FOR_GESTURE_PRACTICE_FINISH,
+            State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION,
+            State.WAITING_FOR_RECESS -> {
                 LoadingScreen("ממתין לשותף מרוחק...")
             }
 
@@ -388,6 +394,7 @@ class MainActivity : ComponentActivity() {
                     viewModel.clearListeners()
 
                     val input = mutableMapOf<String,Any>(
+                        "gameDuration" to (viewModel.gameDuration.value ?: -1),
                         "timeServerStartTime" to viewModel.gameStartTime.value,
                         "additionalData" to viewModel.additionalData.value,
                         "syncTolerance" to (viewModel.syncTolerance.value ?: -1L),
@@ -400,6 +407,7 @@ class MainActivity : ComponentActivity() {
                         GameType.FLOWER_GARDEN -> flowerGarden.launch(input)
                         GameType.PACMAN -> pacman.launch(input)
                         GameType.WAVES -> waves.launch(input)
+                        GameType.RECESS -> recess.launch(input)
                         else -> {
                             viewModel.fatalError("Unknown game type")
                             ErrorReporter.report(null,"Unknown game type\n${gameType}")
@@ -1054,6 +1062,13 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ThanksForParticipating(){
+        LaunchedEffect(Unit) {
+            val inLobby = viewModel.lobbyId.value != ""
+            if(! inLobby){
+                delay(5000)
+                viewModel.setState(State.CONNECTED_NOT_IN_LOBBY)
+            }
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()

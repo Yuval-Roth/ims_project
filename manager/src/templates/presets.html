@@ -58,6 +58,8 @@
                 <option value="Flower Garden">Flower Garden</option>
                 <option value="Pacman">Pacman</option>
                 <option value="Waves">Waves</option>
+                <option value="Tree">Tree</option>
+                <option value="Recess">Recess</option>
             </select>
 
             <label for="duration">Duration (seconds):</label>
@@ -225,6 +227,10 @@
         }
 
         let addSessionValueHistory = {
+            'Recess' : {
+                syncTolerance: null,
+                syncWindowLength: null
+            },
             'Water Ripples': {
                 syncTolerance: null,
             },
@@ -233,19 +239,23 @@
             },
             'Flour Mill': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
             },
             'Wine Glasses': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
             },
             'Pacman': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
             },
             'Waves': {
                 syncTolerance: null,
-                syncWindowLength: null,
+                syncWindowLength: null
+            },
+            'Tree': {
+                syncTolerance: null,
+                syncWindowLength: null
             },
             'gameTime': null,
             'gameType': 'Water Ripples',
@@ -258,6 +268,15 @@
             const syncToleranceDescription = document.getElementById('syncToleranceDescription');
             const syncWindowInput = document.getElementById('window');
 
+            const recess = {
+                syncTolerance: -1,
+                syncToleranceUnit: 'N/A',
+                syncToleranceStep: 1,
+                syncToleranceMin: -1,
+                syncWindowLength: -1,
+                windowLengthEnabled: false,
+                syncToleranceEnabled: false
+            }
             const clickBased = {
                 syncTolerance: 100,
                 syncToleranceUnit: 'ms',
@@ -287,12 +306,14 @@
             }
 
             const defaultParams = {
+                'Recess': recess,
                 'Water Ripples': clickBased,
                 'Flower Garden': clickBased,
                 'Flour Mill': swipeBased,
                 'Wine Glasses': swipeBased,
                 'Pacman': flingBased,
-                'Waves': flingBased
+                'Waves': flingBased,
+                'Tree': flingBased
             };
 
             function updateDefaultValues() {
@@ -332,7 +353,6 @@
         // Initialize restrictions once DOM is ready
         updateSessionInputRestrictions();
 
-
         function sessionFromFormData(formData) {
             const gameType = formData.get('gameType');
             let syncTolerance
@@ -348,8 +368,10 @@
                     syncTolerance = Math.floor(parseFloat(formData.get('syncTolerance')) * 100);
                     syncWindowLength = parseInt(formData.get('window'), 10);
                     break;
+                case 'Recess':
                 case 'Pacman':
                 case 'Waves':
+                case 'Tree':
                     syncTolerance = -1;
                     syncWindowLength = -1;
                     break;
@@ -423,10 +445,8 @@
 
             if (action === 'add-session') {
                 currentPresetName = name;
-                sessionForm.reset();
                 document.getElementById('session-modal').style.display = 'block';
                 overlay.style.display = 'block';
-                updateSessionInputRestrictions();
             } else if (action === 'edit-session') {
                 currentPresetName = name;
                 const preset = presets.find(p => p.name === name);

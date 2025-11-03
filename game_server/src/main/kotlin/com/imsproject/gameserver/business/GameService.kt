@@ -109,7 +109,7 @@ class GameService(
         log.debug("endGame() successful")
     }
 
-    fun startGame(lobbyId: String, sessionId: Int) {
+    fun startGame(lobbyId: String, sessionId: Int): Long {
         log.debug("startGame() with lobbyId: {}", lobbyId)
 
         // Check if the lobby exists
@@ -149,8 +149,8 @@ class GameService(
 
         // game.startGame() notifies the clients
         game.startGame(sessionId)
-
         log.debug("startGame() successful")
+        return game.localStartTime
     }
 
     fun getLobbiesWithRunningGames() : List<String> {

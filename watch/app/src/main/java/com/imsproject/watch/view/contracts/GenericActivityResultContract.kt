@@ -18,18 +18,20 @@ abstract class GenericActivityResultContract : ActivityResultContract<Map<String
         val additionalData = input["additionalData"] as String
         val syncTolerance = input["syncTolerance"] as Long
         val syncWindowLength = input["syncWindowLength"] as Long
+        val gameDuration = input["gameDuration"] as Int
         intent.putExtra("$PACKAGE_PREFIX.timeServerStartTime", serverStartTime)
         intent.putExtra("$PACKAGE_PREFIX.additionalData", additionalData)
         intent.putExtra("$PACKAGE_PREFIX.syncTolerance", syncTolerance)
         intent.putExtra("$PACKAGE_PREFIX.syncWindowLength", syncWindowLength)
+        intent.putExtra("$PACKAGE_PREFIX.gameDuration", gameDuration)
         return intent
     }
 
     override fun parseResult(resultCode: Int, intent: Intent?): Result {
         return Result(
             Result.Code.entries[resultCode],
-            intent?.getStringExtra("$PACKAGE_PREFIX.error"),
-            intent?.getStringExtra("$PACKAGE_PREFIX.expId")
+            intent?.getBooleanExtra("$PACKAGE_PREFIX.uploadEvents",true) ?: true,
+            intent?.getStringExtra("$PACKAGE_PREFIX.error")
         )
     }
 }

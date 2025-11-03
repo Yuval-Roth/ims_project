@@ -1,6 +1,6 @@
 package com.imsproject.watch.view.contracts
 
-data class Result(val code: Code, val errorMessage: String?, val expId: String?) {
+data class Result(val code: Code, val uploadEvents: Boolean, val errorMessage: String?) {
     enum class Code {
         OK,
         CONNECTION_LOST,

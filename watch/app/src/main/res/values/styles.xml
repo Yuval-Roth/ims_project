@@ -22,7 +22,10 @@
     <style name="WavesActivityTheme">
         <item name="android:windowSwipeToDismiss" tools:ignore="WearBackNavigation">false</item>
     </style>
-    <style name="ParticlesActivityTheme">
+    <style name="PacmanActivityTheme">
+        <item name="android:windowSwipeToDismiss" tools:ignore="WearBackNavigation">false</item>
+    </style>
+    <style name="RecessActivityTheme">
         <item name="android:windowSwipeToDismiss" tools:ignore="WearBackNavigation">false</item>
     </style>
 </resources>

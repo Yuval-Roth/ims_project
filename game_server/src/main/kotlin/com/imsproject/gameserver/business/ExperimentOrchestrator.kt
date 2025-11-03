@@ -118,10 +118,11 @@ class ExperimentOrchestrator(
                         delay(1000)
                     }
 
-                    gameService.startGame(lobbyId,sessionId)
+                    val localStartTime = gameService.startGame(lobbyId,sessionId)
                     lobby.resetReady()
                     session.state = SessionState.IN_PROGRESS
-                    delay(session.duration.toLong()*1000)
+                    val sleepTime = session.duration*1000 - (System.currentTimeMillis() - localStartTime)
+                    delay(sleepTime)
                     gameService.endGame(lobbyId)
                     val updatedSessionDTO = SessionDTO(sessionId = sessionId, state = SessionState.COMPLETED.name)
                     daoController.handleUpdate(updatedSessionDTO)
