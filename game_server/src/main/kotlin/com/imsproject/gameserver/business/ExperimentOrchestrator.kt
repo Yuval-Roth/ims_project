@@ -94,8 +94,18 @@ class ExperimentOrchestrator(
                 val iterator = experimentSessions.iterator()
                 while(iterator.hasNext() && isActive) {
                     val session = iterator.next()
-                    val gameTypeChanged = session.gameType != lastGameType
-                    lastGameType = session.gameType
+
+                    // implementation of gameTypeChanged must be kept in sync with
+                    // GameRequest.Type.CONFIGURE_LOBBY handling in the watch
+                    val gameTypeChanged: Boolean
+                    if(session.gameType != GameType.RECESS){
+                        gameTypeChanged = lastGameType != session.gameType
+                        lastGameType = session.gameType
+                    } else {
+                        gameTypeChanged = false
+                    }
+                    // end of implementation sync
+
                     lobbyService.configureLobby(lobbyId, session)
                     val sessionId = session.dbId ?: run {
                         // should not happen
@@ -103,9 +113,11 @@ class ExperimentOrchestrator(
                         throw IllegalStateException("Session dbId not found for session in lobby $lobbyId")
                     }
 
-                    // We want to have a ready check at the end of the gesture trial
-                    // or at the end of the activity description if the lobby is not warmup
-                    if(lobby.isWarmup || gameTypeChanged){
+                    // We want to have a ready check at the following scenarios:
+                    // 1. at the end of the gesture trial (lobby.isWarmup)
+                    // 2. at the end of the activity description if the lobby is not warmup (gameTypeChanged)
+                    // 3. if the lobby is in recess (gameType == RECESS)
+                    if(lobby.isWarmup || gameTypeChanged || session.gameType == GameType.RECESS){
                         while(! lobby.isReady()){
                             delay(1000)
                         }

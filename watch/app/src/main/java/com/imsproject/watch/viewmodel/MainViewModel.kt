@@ -434,6 +434,9 @@ class MainViewModel() : ViewModel() {
                     _syncTolerance.value = syncTolerance
                     _countdownTimer.value = countdownTimer
                     lobbyConfigured = true
+
+                    // Implementation of gameTypeChanged must be kept in sync with the implementation
+                    // in ExperimentOrchestrator in the server
                     if(gameType != GameType.RECESS){
                         Log.d(TAG, "Configure lobby: Game type changed from $oldGameType to $gameType")
                         gameTypeChanged = oldGameType != gameType
@@ -441,6 +444,7 @@ class MainViewModel() : ViewModel() {
                     } else {
                         gameTypeChanged = false
                     }
+                    // end of implementation sync
                 }
             }
             GameRequest.Type.START_EXPERIMENT -> {
