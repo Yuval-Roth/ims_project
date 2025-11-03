@@ -1,6 +1,7 @@
 package com.imsproject.watch.viewmodel.gesturepractice
 
 import android.content.Context
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.BLUE_COLOR
@@ -10,6 +11,7 @@ import com.imsproject.watch.OUTER_TOUCH_POINT
 import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.cartesianToPolar
+import com.imsproject.watch.view.FlourMill
 import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
@@ -17,14 +19,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class FlourMillGesturePracticeViewModel() : FlourMillViewModel() {
+class FlourMillGesturePracticeViewModel() : FlourMillViewModel(), GesturePracticeViewModel {
 
     private val _done = MutableStateFlow(false)
-    val done: StateFlow<Boolean> = _done
+    override val done: StateFlow<Boolean> = _done
 
     private var lastAngle = Angle.undefined
     private var accumulator: Float = 0f
     private var doneTriggered = false
+    private var running = false
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         wavPlayer = WavPlayer(context, viewModelScope)
@@ -45,7 +48,7 @@ class FlourMillGesturePracticeViewModel() : FlourMillViewModel() {
     }
 
     override fun setTouchPoint(x: Float, y: Float) {
-        if(_done.value) return
+        if(_done.value || !running) return
         val (distance,rawAngle) = cartesianToPolar(x, y)
         val inBounds = if(x != -1.0f && y != -1.0f){
             distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
@@ -76,7 +79,12 @@ class FlourMillGesturePracticeViewModel() : FlourMillViewModel() {
         }
     }
 
-    fun reset(){
+    override fun start(){
+        running = true
+    }
+
+    override fun reset(){
+        running = false
         _done.value = false
         lastAngle = Angle.undefined
         accumulator = 0f
@@ -84,5 +92,10 @@ class FlourMillGesturePracticeViewModel() : FlourMillViewModel() {
         myFrequencyTracker.reset()
         myArc.reset()
         _released.value = true
+    }
+
+    @Composable
+    override fun RunGesturePractice() {
+        FlourMill(this)
     }
 }

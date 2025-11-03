@@ -1,9 +1,11 @@
 package com.imsproject.watch.viewmodel.gesturepractice
 
 import android.content.Context
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
+import com.imsproject.watch.view.WaterRipples
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.ItemType
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
@@ -12,10 +14,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel() {
+class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GesturePracticeViewModel {
 
     private val _done = MutableStateFlow(false)
-    val done: StateFlow<Boolean> = _done
+    override val done: StateFlow<Boolean> = _done
+
+    private var running = false
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         when(playerColor) {
@@ -31,7 +35,7 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel() {
     }
 
     override fun click() {
-        if(_done.value) return
+        if(_done.value || !running) return
         val ripple = Ripple(myColor,System.currentTimeMillis(),playerId)
         ripples.addFirst(ripple)
         _counter.value++
@@ -44,10 +48,20 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel() {
         }
     }
 
-    fun reset(){
+    override fun start(){
+        running = true
+    }
+
+    override fun reset(){
+        running = false
         _done.value = false
         _counter.value = 0
         ripples.clear()
+    }
+
+    @Composable
+    override fun RunGesturePractice() {
+        WaterRipples(this)
     }
 
 }

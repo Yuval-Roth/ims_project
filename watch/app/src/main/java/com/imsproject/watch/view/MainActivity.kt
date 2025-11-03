@@ -777,8 +777,8 @@ class MainActivity : ComponentActivity() {
                     של ציר המטחנה יצור קמח
                 """
                 GameType.FLOWER_GARDEN -> """
-                     בפעילות זו לחיצות משותפות
- ישתלו פרחים                    
+                    בפעילות זו לחיצות משותפות
+                    ישתלו פרחים
                 """
                 GameType.WAVES -> """
                     בפעילות זו נמסור גלים
@@ -809,35 +809,17 @@ class MainActivity : ComponentActivity() {
     fun GesturePractice(gameType: GameType, onComplete: () -> Unit) {
         var showOverlay by remember { mutableStateOf(true) }
         var done: Boolean
-        when(gameType) {
-            GameType.WATER_RIPPLES -> {
-                done = waterRipplesGesturePracticeViewModel.done.collectAsState().value
-                WaterRipples(waterRipplesGesturePracticeViewModel)
-            }
-            GameType.FLOWER_GARDEN -> {
-                done = flowerGardenGesturePracticeViewModel.done.collectAsState().value
-                FlowerGarden(flowerGardenGesturePracticeViewModel)
-            }
-            GameType.WINE_GLASSES -> {
-                done = wineGlassesGesturePracticeViewModel.done.collectAsState().value
-                WineGlasses(wineGlassesGesturePracticeViewModel)
-            }
-            GameType.FLOUR_MILL -> {
-                done = flourMillGesturePracticeViewModel.done.collectAsState().value
-                FlourMill(flourMillGesturePracticeViewModel)
-            }
-            GameType.PACMAN -> {
-                done = pacmanGesturePracticeViewModel.done.collectAsState().value
-                Pacman(pacmanGesturePracticeViewModel)
-            }
-            GameType.WAVES -> {
-                done = wavesGesturePracticeViewModel.done.collectAsState().value
-                Waves(wavesGesturePracticeViewModel)
-            }
-            else -> {
-                throw IllegalStateException("No gesture practice defined for game type $gameType")
-            }
+        val viewModel = when(gameType) {
+            GameType.WATER_RIPPLES -> waterRipplesGesturePracticeViewModel
+            GameType.FLOWER_GARDEN -> flowerGardenGesturePracticeViewModel
+            GameType.WINE_GLASSES -> wineGlassesGesturePracticeViewModel
+            GameType.FLOUR_MILL -> flourMillGesturePracticeViewModel
+            GameType.PACMAN -> pacmanGesturePracticeViewModel
+            GameType.WAVES -> wavesGesturePracticeViewModel
+            else -> throw IllegalStateException("No gesture practice defined for game type $gameType")
         }
+        done = viewModel.done.collectAsState().value
+        viewModel.RunGesturePractice()
         if(showOverlay){
             val text = when(gameType){
                 GameType.WATER_RIPPLES,GameType.FLOWER_GARDEN -> """
@@ -846,17 +828,22 @@ class MainActivity : ComponentActivity() {
                 """
                 GameType.WINE_GLASSES, GameType.FLOUR_MILL -> """
                     נסו לסובב - 
-                    הסיבוב מתבצע קרוב למסגרת של השעון
+                    הסיבוב מתבצע קרוב למסגרת
+                    של השעון
                 """
                 GameType.WAVES,GameType.PACMAN -> """
                     נסו להעיף - 
-                    פעולת ההעפה מתבצעת ממסגרת השעון פנימה
+                    פעולת ההעפה מתבצעת ממסגרת
+                    השעון פנימה
                 """
                 else -> throw IllegalStateException("Unknown game type")
             }.trimIndent()
             ButtonedPage(
                 buttonText = "המשך",
-                onClick = { showOverlay = false },
+                onClick = {
+                    showOverlay = false
+                    viewModel.start()
+                },
                 backgroundColor = Color.Black.copy(alpha = 0.8f)
             ) {
                 Box(
@@ -871,7 +858,10 @@ class MainActivity : ComponentActivity() {
         if(done){
             ButtonedPage(
                 buttonText = "המשך",
-                onClick = onComplete,
+                onClick = {
+                    viewModel.reset()
+                    onComplete()
+                },
                 backgroundColor = Color.Black.copy(alpha = 0.8f)
             ) {
                 Box(

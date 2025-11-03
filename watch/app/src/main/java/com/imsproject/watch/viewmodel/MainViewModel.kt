@@ -144,25 +144,8 @@ class MainViewModel() : ViewModel() {
 
     private var oldGameType: GameType? = null
 
-    /**
-     * Resets when queried.
-     */
-    private var gameTypeChanged = false
-        get() {
-            val value = field
-            return value
-        }
-    init {
-        viewModelScope.launch {
-            _gameType.collect { newGameType ->
-                Log.d(TAG, "gameType collector: Game type changed from $oldGameType to $newGameType")
-                if (oldGameType != null && newGameType != null) {
-                    gameTypeChanged = true
-                }
-                oldGameType = newGameType
-            }
-        }
-    }
+    var gameTypeChanged = false
+        private set
 
     private var experimentRunning = false
     private var lobbyConfigured = false
@@ -446,6 +429,9 @@ class MainViewModel() : ViewModel() {
                     _syncTolerance.value = syncTolerance
                     _countdownTimer.value = countdownTimer
                     lobbyConfigured = true
+                    Log.d(TAG, "Configure lobby: Game type changed from $oldGameType to $gameType")
+                    gameTypeChanged = oldGameType != gameType
+                    oldGameType = gameType
                 }
             }
             GameRequest.Type.START_EXPERIMENT -> {
@@ -565,6 +551,14 @@ class MainViewModel() : ViewModel() {
                 if (_expId.value != null) {
                     Log.d(TAG, "prepareNextSession: moving to AFTER_EXPERIMENT state")
                     setState(State.AFTER_EXPERIMENT)
+                } else {
+                    if(_lobbyId.value == ""){
+                        Log.d(TAG, "prepareNextSession: moving to CONNECTED_NOT_IN_LOBBY state")
+                        setState(State.CONNECTED_NOT_IN_LOBBY)
+                    } else {
+                        Log.d(TAG, "prepareNextSession: moving to CONNECTED_IN_LOBBY state")
+                        setState(State.CONNECTED_IN_LOBBY)
+                    }
                 }
                 return@launch
             }
@@ -575,7 +569,11 @@ class MainViewModel() : ViewModel() {
                 setState(State.ACTIVITY_DESCRIPTION)
             } else {
                 Log.d(TAG, "prepareNextSession: game type did not change")
-                setState(State.COUNTDOWN_TO_GAME)
+                if(_isWarmup.value){
+                    setState(State.ACTIVITY_REMINDER)
+                } else {
+                    setState(State.COUNTDOWN_TO_GAME)
+                }
             }
         }
     }

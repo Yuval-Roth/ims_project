@@ -2,6 +2,7 @@ package com.imsproject.watch.viewmodel.gesturepractice
 
 import android.media.AudioAttributes
 import android.media.SoundPool
+import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
@@ -13,6 +14,7 @@ import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
 import com.imsproject.watch.PACMAN_ROTATION_DURATION
 import com.imsproject.watch.R
 import com.imsproject.watch.utils.cartesianToPolar
+import com.imsproject.watch.view.Waves
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.ItemType
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.PacmanViewModel
@@ -24,10 +26,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class WavesGesturePracticeViewModel() :  WavesViewModel() {
+class WavesGesturePracticeViewModel() :  WavesViewModel(), GesturePracticeViewModel {
 
     private val _done = MutableStateFlow(false)
-    val done: StateFlow<Boolean> = _done
+    override val done: StateFlow<Boolean> = _done
+
+    private var running = false
 
     private var counter = 0
 
@@ -52,6 +56,8 @@ class WavesGesturePracticeViewModel() :  WavesViewModel() {
     }
 
     override fun fling(dpPerSec: Float) {
+        if (_done.value || !running) return
+
         handleFling(dpPerSec, myDirection)
 
         counter++
@@ -63,8 +69,18 @@ class WavesGesturePracticeViewModel() :  WavesViewModel() {
         }
     }
 
-    fun reset(){
+    override fun start(){
+        running = true
+    }
+
+    override fun reset(){
+        running = false
         counter = 0
         _done.value = false
+    }
+
+    @Composable
+    override fun RunGesturePractice() {
+        Waves(this)
     }
 }

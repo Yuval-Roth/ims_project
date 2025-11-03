@@ -103,7 +103,8 @@ class ExperimentOrchestrator(
                         throw IllegalStateException("Session dbId not found for session in lobby $lobbyId")
                     }
 
-                    // gesture trial ready check
+                    // We want to have a ready check at the end of the gesture trial
+                    // or at the end of the activity description if the lobby is not warmup
                     if(lobby.isWarmup || gameTypeChanged){
                         while(! lobby.isReady()){
                             delay(1000)

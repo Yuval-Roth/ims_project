@@ -298,7 +298,7 @@ class LobbyService(
         log.debug("startExperiment() successful")
     }
 
-    fun endExperiment(lobbyId: String, errorMessage: String? = null, force: Boolean = true) {
+    fun endExperiment(lobbyId: String, errorMessage: String? = null, force: Boolean = false) {
         log.debug("endExperiment() with lobbyId: {}",lobbyId)
 
         // check that the lobby exists
