@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.core.content.IntentSanitizer
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
@@ -87,7 +88,7 @@ fun Recess(viewModel: RecessViewModel) {
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val currentNumber = remember { MutableStateFlow(-1) }
+        val currentNumber = remember { MutableStateFlow( viewModel.recessLength.value) }
         var alpha by remember { mutableFloatStateOf(1f) }
         val countdown = remember { Animatable(-1f) }
         val scope = rememberCoroutineScope()
@@ -120,16 +121,19 @@ fun Recess(viewModel: RecessViewModel) {
                     easing = LinearEasing
                 )
             ) {
-                if(value <= 10){
+                if(value == 0f){
+                    currentNumber.value = 0
+                    alpha = 1f
+                } else if(value <= 5){
                     currentNumber.value = ceil(value).toInt()
-                    alpha = value - value.toInt()
+                    alpha = (1.111f*(value - value.toInt()) - 0.111f).fastCoerceAtLeast(0f)
                 } else {
                     // ceil to nearest multiple of 10 or recessLength if exceeded
-                    currentNumber.value = min((ceil(value / 10f) * 10).toInt(),recessLength)
-                    if(value % 10f < 1f){
-                        alpha = (value % 10f)
+                    currentNumber.value = recessLength
+                    alpha = if(value <= 6f){
+                        (1.111f*(value - 5f) - 0.111f).fastCoerceAtLeast(0f)
                     } else {
-                        alpha = 1f
+                        1f
                     }
                 }
             }
@@ -139,12 +143,12 @@ fun Recess(viewModel: RecessViewModel) {
             text = "הפסקה קצרה",
             style = textStyle.copy(fontSize = TEXT_SIZE * 1.25f, textDecoration = TextDecoration.Underline),
         )
-        Spacer(modifier = Modifier.fillMaxHeight(0.05f))
+        Spacer(modifier = Modifier.fillMaxHeight(0.1f))
         RTLText(
             text = "חוזרים בעוד",
             style = textStyle.copy(fontSize = TEXT_SIZE),
         )
-        Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+        Spacer(modifier = Modifier.fillMaxHeight(0.05f))
         val number = currentNumber.collectAsState().value
         if(number >= 0){
             Text(
@@ -153,5 +157,10 @@ fun Recess(viewModel: RecessViewModel) {
                 style = textStyle.copy(fontSize = TEXT_SIZE * 4f)
             )
         }
+        Spacer(modifier = Modifier.fillMaxHeight(0.05f))
+        RTLText(
+            text = "שניות",
+            style = textStyle.copy(fontSize = TEXT_SIZE),
+        )
     }
 }

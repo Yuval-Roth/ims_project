@@ -28,7 +28,7 @@ open class RecessViewModel: GameViewModel(GameType.RECESS) {
         super.onCreate(intent, context)
 
         if(ACTIVITY_DEBUG_MODE){
-            _recessLength.value = 25
+            _recessLength.value = 30
             return
         }
 
