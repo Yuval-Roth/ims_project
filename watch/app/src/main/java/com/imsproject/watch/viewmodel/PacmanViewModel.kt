@@ -22,17 +22,16 @@ import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.PACMAN_ROTATION_DURATION
 import com.imsproject.watch.PACMAN_ANGLE_STEP
 import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
-import com.imsproject.watch.PARTICLE_ANIMATION_MAX_DURATION
-import com.imsproject.watch.PARTICLE_ANIMATION_MIN_DURATION
-import com.imsproject.watch.PARTICLE_DISTANCE_FROM_CENTER
-import com.imsproject.watch.PARTICLE_RADIUS
+import com.imsproject.watch.PACMAN_PARTICLE_ANIMATION_MAX_DURATION
+import com.imsproject.watch.PACMAN_PARTICLE_ANIMATION_MIN_DURATION
+import com.imsproject.watch.PACMAN_PARTICLE_DISTANCE_FROM_CENTER
+import com.imsproject.watch.PACMAN_PARTICLE_RADIUS
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.utils.closestQuantizedAngle
 import com.imsproject.watch.utils.quantizeAngles
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -223,8 +222,8 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     protected fun createNewParticle(direction: Int): Particle {
         return Particle(
             topLeft = Offset(
-                x = SCREEN_CENTER.x - PARTICLE_RADIUS - direction * PARTICLE_DISTANCE_FROM_CENTER,
-                y = SCREEN_CENTER.y - PARTICLE_RADIUS
+                x = SCREEN_CENTER.x - PACMAN_PARTICLE_RADIUS - direction * PACMAN_PARTICLE_DISTANCE_FROM_CENTER,
+                y = SCREEN_CENTER.y - PACMAN_PARTICLE_RADIUS
             ),
             direction = direction
         )
@@ -246,12 +245,12 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     private fun mapSpeedToDuration(pxPerSec: Float): Int {
         //TODO: fine tune the mapping function
         val duration = if (pxPerSec <= 750f) {
-            PARTICLE_ANIMATION_MAX_DURATION
+            PACMAN_PARTICLE_ANIMATION_MAX_DURATION
         } else {
             val v = 750f / pxPerSec
-            PARTICLE_ANIMATION_MAX_DURATION * v.pow(1.2f)
+            PACMAN_PARTICLE_ANIMATION_MAX_DURATION * v.pow(1.2f)
         }
-        return duration.toInt().coerceIn(PARTICLE_ANIMATION_MIN_DURATION, PARTICLE_ANIMATION_MAX_DURATION)
+        return duration.toInt().coerceIn(PACMAN_PARTICLE_ANIMATION_MIN_DURATION, PACMAN_PARTICLE_ANIMATION_MAX_DURATION)
     }
 
     companion object {

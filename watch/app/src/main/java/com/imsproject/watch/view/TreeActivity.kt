@@ -36,21 +36,20 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
-import com.imsproject.watch.PACMAN_ANGLE_STEP
-import com.imsproject.watch.PACMAN_MAX_SIZE
-import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
-import com.imsproject.watch.PACMAN_ROTATION_DURATION
 import com.imsproject.watch.PACMAN_SHRINK_ANIMATION_DURATION
-import com.imsproject.watch.PARTICLE_CAGE_STROKE_WIDTH
-import com.imsproject.watch.PARTICLE_RADIUS
-import com.imsproject.watch.REWARD_SIZE_BONUS
+import com.imsproject.watch.PACMAN_PARTICLE_RADIUS
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.TREE_PARTICLE_CAGE_STROKE_WIDTH
+import com.imsproject.watch.TREE_RING_ANGLE_STEP
+import com.imsproject.watch.TREE_RING_OPENING_ANGLE
+import com.imsproject.watch.TREE_RING_ROTATION_DURATION
+import com.imsproject.watch.TREE_SUN_RADIUS
+import com.imsproject.watch.TREE_WATER_DROPLET_RADIUS
 import com.imsproject.watch.utils.FlingTracker
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.closestQuantizedAngle
@@ -90,11 +89,11 @@ class TreeActivity: GameActivity(GameType.TREE) {
 
 @Composable
 fun Tree(viewModel: TreeViewModel) {
-    val animatePacman by viewModel.animatePacman.collectAsState()
+    val animateRing by viewModel.animateRing.collectAsState()
     val showLeftSide by viewModel.showLeftSide.collectAsState()
     val showRightSide by viewModel.showRightSide.collectAsState()
     val rewardAccumulator = viewModel.rewardAccumulator
-    val pacmanAngle = viewModel.pacmanAngle.collectAsState().value
+    val ringAngle = viewModel.ringAngle.collectAsState().value
     val density =  LocalDensity.current.density
     val tracker = remember { FlingTracker() }
     val scope = rememberCoroutineScope()
@@ -102,22 +101,20 @@ fun Tree(viewModel: TreeViewModel) {
     val otherParticle by viewModel.otherParticle.collectAsState()
     var fedSuccessfully by remember { mutableStateOf(false) }
 
-    val pacmanRadius = (SCREEN_RADIUS * (0.15f + rewardAccumulator.value * REWARD_SIZE_BONUS)).fastCoerceAtMost(PACMAN_MAX_SIZE)
-
-    LaunchedEffect(animatePacman){
-        if(!animatePacman) return@LaunchedEffect
-        val pacmanAngle = viewModel.pacmanAngle
-        // rotate pacman and check for feeding events
-        val quantizedAngles = quantizeAngles(PACMAN_ANGLE_STEP)
-        val leftThreshold = closestQuantizedAngle(180f + PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
-        val rightThreshold = closestQuantizedAngle(PACMAN_MOUTH_OPENING_ANGLE+PACMAN_ANGLE_STEP, PACMAN_ANGLE_STEP, quantizedAngles)
+    LaunchedEffect(animateRing){
+        if(!animateRing) return@LaunchedEffect
+        val ringAngle = viewModel.ringAngle
+        // rotate ring and check for feeding events
+        val quantizedAngles = quantizeAngles(TREE_RING_ANGLE_STEP)
+        val leftThreshold = closestQuantizedAngle(180f + TREE_RING_OPENING_ANGLE+TREE_RING_ANGLE_STEP, TREE_RING_ANGLE_STEP, quantizedAngles)
+        val rightThreshold = closestQuantizedAngle(TREE_RING_OPENING_ANGLE+TREE_RING_ANGLE_STEP, TREE_RING_ANGLE_STEP, quantizedAngles)
         while(true){
             val currentGameTime = viewModel.getCurrentGameTime()
-            val rotationTimePassed = currentGameTime % PACMAN_ROTATION_DURATION
-            val rotationPercentage = rotationTimePassed / PACMAN_ROTATION_DURATION
+            val rotationTimePassed = currentGameTime % TREE_RING_ROTATION_DURATION
+            val rotationPercentage = rotationTimePassed / TREE_RING_ROTATION_DURATION
             val targetAngle = 360f * rotationPercentage
-            val quantizedTargetAngle = closestQuantizedAngle(targetAngle,PACMAN_ANGLE_STEP, quantizedAngles)
-            pacmanAngle.value = Angle.fromArbitraryAngle(quantizedTargetAngle)
+            val quantizedTargetAngle = closestQuantizedAngle(targetAngle,TREE_RING_ANGLE_STEP, quantizedAngles)
+            ringAngle.value = Angle.fromArbitraryAngle(quantizedTargetAngle)
 
             // check for feeding
             if(quantizedTargetAngle == leftThreshold || quantizedTargetAngle == rightThreshold){
@@ -149,7 +146,7 @@ fun Tree(viewModel: TreeViewModel) {
                         val sizeAnimation = Animatable(0f)
                         scope.launch {
                             sizeAnimation.animateTo(
-                                targetValue = PARTICLE_RADIUS * 2,
+                                targetValue = PACMAN_PARTICLE_RADIUS * 2,
                                 animationSpec = tween(
                                     durationMillis = 150,
                                     easing = LinearEasing
@@ -162,7 +159,7 @@ fun Tree(viewModel: TreeViewModel) {
                     ParticleState.STATIONARY -> {
                         if (particle.animationLength > 0) {
                             particle.state = ParticleState.MOVING
-                            val targetX = SCREEN_CENTER.x - PARTICLE_RADIUS
+                            val targetX = SCREEN_CENTER.x - PACMAN_PARTICLE_RADIUS
                             val startX = particle.topLeft.x
                             val distance = targetX - startX
                             val positionAnimation = Animatable(0f)
@@ -264,7 +261,7 @@ fun Tree(viewModel: TreeViewModel) {
                     path = path,
                     color = BLUE_COLOR,
                     style = Stroke(
-                        width = PARTICLE_CAGE_STROKE_WIDTH,
+                        width = TREE_PARTICLE_CAGE_STROKE_WIDTH,
                         cap = StrokeCap.Round
                     )
                 )
@@ -295,18 +292,18 @@ fun Tree(viewModel: TreeViewModel) {
                     path = path,
                     color = GRASS_GREEN_COLOR,
                     style = Stroke(
-                        width = PARTICLE_CAGE_STROKE_WIDTH,
+                        width = TREE_PARTICLE_CAGE_STROKE_WIDTH,
                         cap = StrokeCap.Round
                     )
                 )
             }
             drawWaterDroplet(
                 Offset(SCREEN_RADIUS * PARTICLE_RELATIVE_DISTANCE_FROM_EDGE, SCREEN_CENTER.y),
-                SCREEN_RADIUS*0.06f
+                TREE_WATER_DROPLET_RADIUS
             )
             drawSun(
                 Offset(SCREEN_RADIUS * (2 - PARTICLE_RELATIVE_DISTANCE_FROM_EDGE), SCREEN_CENTER.y),
-                SCREEN_RADIUS*0.075f
+                TREE_SUN_RADIUS
             )
             drawRing(
                 center = SCREEN_CENTER,

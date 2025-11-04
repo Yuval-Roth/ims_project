@@ -42,11 +42,10 @@ import com.imsproject.watch.PACMAN_ROTATION_DURATION
 import com.imsproject.watch.PACMAN_SHRINK_ANIMATION_DURATION
 import com.imsproject.watch.PACMAN_START_ANGLE
 import com.imsproject.watch.PACMAN_SWEEP_ANGLE
-import com.imsproject.watch.PARTICLE_CAGE_COLOR
-import com.imsproject.watch.PARTICLE_CAGE_STROKE_WIDTH
-import com.imsproject.watch.PARTICLE_COLOR
-import com.imsproject.watch.PARTICLE_RADIUS
-import com.imsproject.watch.REWARD_SIZE_BONUS
+import com.imsproject.watch.PACMAN_PARTICLE_CAGE_STROKE_WIDTH
+import com.imsproject.watch.PACMAN_PARTICLE_COLOR
+import com.imsproject.watch.PACMAN_PARTICLE_RADIUS
+import com.imsproject.watch.PACMAN_REWARD_SIZE_BONUS
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.utils.FlingTracker
@@ -100,7 +99,7 @@ fun Pacman(viewModel: PacmanViewModel) {
     val otherParticle by viewModel.otherParticle.collectAsState()
     var fedSuccessfully by remember { mutableStateOf(false) }
 
-    val pacmanRadius = (SCREEN_RADIUS * (0.15f + rewardAccumulator.value * REWARD_SIZE_BONUS)).fastCoerceAtMost(PACMAN_MAX_SIZE)
+    val pacmanRadius = (SCREEN_RADIUS * (0.15f + rewardAccumulator.value * PACMAN_REWARD_SIZE_BONUS)).fastCoerceAtMost(PACMAN_MAX_SIZE)
 
     LaunchedEffect(animatePacman){
         if(!animatePacman) return@LaunchedEffect
@@ -147,7 +146,7 @@ fun Pacman(viewModel: PacmanViewModel) {
                         val sizeAnimation = Animatable(0f)
                         scope.launch {
                             sizeAnimation.animateTo(
-                                targetValue = PARTICLE_RADIUS * 2,
+                                targetValue = PACMAN_PARTICLE_RADIUS * 2,
                                 animationSpec = tween(
                                     durationMillis = 150,
                                     easing = LinearEasing
@@ -160,7 +159,7 @@ fun Pacman(viewModel: PacmanViewModel) {
                     ParticleState.STATIONARY -> {
                         if (particle.animationLength > 0) {
                             particle.state = ParticleState.MOVING
-                            val targetX = SCREEN_CENTER.x - PARTICLE_RADIUS
+                            val targetX = SCREEN_CENTER.x - PACMAN_PARTICLE_RADIUS
                             val startX = particle.topLeft.x
                             val distance = targetX - startX
                             val positionAnimation = Animatable(0f)
@@ -243,28 +242,28 @@ fun Pacman(viewModel: PacmanViewModel) {
                     color = BLUE_COLOR,
                     start = Offset(0f , WALLS_UPPER_Y),
                     end = Offset(LEFT_INNER_X, WALLS_UPPER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = BLUE_COLOR,
                     start = Offset(LEFT_INNER_X, WALLS_UPPER_Y),
                     end = Offset(LEFT_INNER_X, OPENING_UPPER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = BLUE_COLOR,
                     start = Offset(0f, WALLS_LOWER_Y),
                     end = Offset(LEFT_INNER_X, WALLS_LOWER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = BLUE_COLOR,
                     start = Offset(LEFT_INNER_X, WALLS_LOWER_Y),
                     end = Offset(LEFT_INNER_X, OPENING_LOWER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
             }
@@ -275,28 +274,28 @@ fun Pacman(viewModel: PacmanViewModel) {
                     color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_UPPER_Y),
                     end = Offset(size.width , WALLS_UPPER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_UPPER_Y),
                     end = Offset(RIGHT_INNER_X, OPENING_UPPER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_LOWER_Y),
                     end = Offset(size.width , WALLS_LOWER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
                 drawLine(
                     color = GRASS_GREEN_COLOR,
                     start = Offset(RIGHT_INNER_X, WALLS_LOWER_Y),
                     end = Offset(RIGHT_INNER_X, OPENING_LOWER_Y),
-                    strokeWidth = PARTICLE_CAGE_STROKE_WIDTH,
+                    strokeWidth = PACMAN_PARTICLE_CAGE_STROKE_WIDTH,
                     cap = StrokeCap.Round
                 )
             }
@@ -304,7 +303,7 @@ fun Pacman(viewModel: PacmanViewModel) {
             // draw particles
             for (particle in listOfNotNull(myParticle, otherParticle)) {
                 drawRoundRect(
-                    color = PARTICLE_COLOR,
+                    color = PACMAN_PARTICLE_COLOR,
                     topLeft = particle.topLeft,
                     size = particle.size,
                     cornerRadius = CornerRadius(2f, 2f)

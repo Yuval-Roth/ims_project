@@ -19,27 +19,27 @@ import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.PACMAN_ROTATION_DURATION
-import com.imsproject.watch.PACMAN_ANGLE_STEP
-import com.imsproject.watch.PACMAN_MOUTH_OPENING_ANGLE
-import com.imsproject.watch.PARTICLE_ANIMATION_MAX_DURATION
-import com.imsproject.watch.PARTICLE_ANIMATION_MIN_DURATION
-import com.imsproject.watch.PARTICLE_DISTANCE_FROM_CENTER
-import com.imsproject.watch.PARTICLE_RADIUS
+import com.imsproject.watch.TREE_RING_ANGLE_STEP
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_CENTER
+import com.imsproject.watch.TREE_PARTICLE_ANIMATION_MAX_DURATION
+import com.imsproject.watch.TREE_PARTICLE_ANIMATION_MIN_DURATION
+import com.imsproject.watch.TREE_PARTICLE_DISTANCE_FROM_CENTER
+import com.imsproject.watch.TREE_RING_OPENING_ANGLE
+import com.imsproject.watch.TREE_RING_ROTATION_DURATION
+import com.imsproject.watch.TREE_SUN_RADIUS
+import com.imsproject.watch.TREE_WATER_DROPLET_RADIUS
 import com.imsproject.watch.utils.closestQuantizedAngle
 import com.imsproject.watch.utils.quantizeAngles
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.pow
 
-open class TreeViewModel: GameViewModel(GameType.PACMAN) {
+open class TreeViewModel: GameViewModel(GameType.TREE) {
 
     enum class ParticleState {
         NEW,
@@ -58,8 +58,8 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
         var reward by mutableStateOf(false)
     }
 
-    protected val _animatePacman = MutableStateFlow(true)
-    val animatePacman : StateFlow<Boolean> = _animatePacman
+    protected val _animateRing = MutableStateFlow(true)
+    val animateRing : StateFlow<Boolean> = _animateRing
 
     protected val _showLeftSide = MutableStateFlow(true)
     val showLeftSide : StateFlow<Boolean> = _showLeftSide
@@ -74,7 +74,7 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    var pacmanAngle = MutableStateFlow(Angle(0f))
+    var ringAngle = MutableStateFlow(Angle(0f))
     val rewardAccumulator = Animatable(0f)
     var myDirection = 1
         protected set
@@ -93,6 +93,7 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
         super.onCreate(intent, context)
 
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
+        // TODO: replace with new sound
         flingSoundId = soundPool.load(context, R.raw.pacman_eat2, 1)
 
         if(ACTIVITY_DEBUG_MODE){
@@ -101,10 +102,10 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
                 delay(1000L)
                 _myParticle.value = createNewParticle(myDirection)
                 _otherParticle.value = createNewParticle(-myDirection)
-                val quantizedAngles = quantizeAngles(PACMAN_ANGLE_STEP)
-                val flingAngle = Angle.fromArbitraryAngle(closestQuantizedAngle(360 - PACMAN_MOUTH_OPENING_ANGLE, PACMAN_ANGLE_STEP, quantizedAngles))
-                pacmanAngle.collect {
-                    if(pacmanAngle.value.floatValue == flingAngle.floatValue){
+                val quantizedAngles = quantizeAngles(TREE_RING_ANGLE_STEP)
+                val flingAngle = Angle.fromArbitraryAngle(closestQuantizedAngle(360 - TREE_RING_OPENING_ANGLE, TREE_RING_ANGLE_STEP, quantizedAngles))
+                ringAngle.collect {
+                    if(ringAngle.value.floatValue == flingAngle.floatValue){
                         handleFling(500f, -myDirection, true)
                     }
                 }
@@ -133,10 +134,10 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
         val pxPerSec = dpPerSec * screenDensity
         val animationLength = mapSpeedToDuration(pxPerSec = pxPerSec)
         // calculate reward based on expected final angle
-        val degreesPerMilliSecond = 360f / PACMAN_ROTATION_DURATION
+        val degreesPerMilliSecond = 360f / TREE_RING_ROTATION_DURATION
         val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
-        val expectedFinalAngle = pacmanAngle.value + degreesPerMilliSecond * animationLength
-        val reward = expectedFinalAngle - targetAngle <= PACMAN_MOUTH_OPENING_ANGLE
+        val expectedFinalAngle = ringAngle.value + degreesPerMilliSecond * animationLength
+        val reward = expectedFinalAngle - targetAngle <= TREE_RING_OPENING_ANGLE
 
         if(ACTIVITY_DEBUG_MODE) {
             handleFling(dpPerSec, myDirection, reward)
@@ -160,7 +161,7 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
         }
         particle.value = null
         viewModelScope.launch(Dispatchers.Main) {
-            delay((PACMAN_ROTATION_DURATION * PACMAN_MOUTH_OPENING_ANGLE / 360f).toLong())
+            delay((TREE_RING_ROTATION_DURATION * TREE_RING_OPENING_ANGLE / 360f).toLong())
             particle.value = createNewParticle(direction)
         }
     }
@@ -221,10 +222,15 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
     }
 
     protected fun createNewParticle(direction: Int): Particle {
+        val radius = when(direction){
+            1 -> TREE_WATER_DROPLET_RADIUS
+            -1 -> TREE_SUN_RADIUS
+            else -> throw IllegalArgumentException("Invalid direction: $direction")
+        }
         return Particle(
             topLeft = Offset(
-                x = SCREEN_CENTER.x - PARTICLE_RADIUS - direction * PARTICLE_DISTANCE_FROM_CENTER,
-                y = SCREEN_CENTER.y - PARTICLE_RADIUS
+                x = SCREEN_CENTER.x - radius - direction * TREE_PARTICLE_DISTANCE_FROM_CENTER,
+                y = SCREEN_CENTER.y - radius
             ),
             direction = direction
         )
@@ -246,15 +252,15 @@ open class TreeViewModel: GameViewModel(GameType.PACMAN) {
     private fun mapSpeedToDuration(pxPerSec: Float): Int {
         //TODO: fine tune the mapping function
         val duration = if (pxPerSec <= 750f) {
-            PARTICLE_ANIMATION_MAX_DURATION
+            TREE_PARTICLE_ANIMATION_MAX_DURATION
         } else {
             val v = 750f / pxPerSec
-            PARTICLE_ANIMATION_MAX_DURATION * v.pow(1.2f)
+            TREE_PARTICLE_ANIMATION_MAX_DURATION * v.pow(1.2f)
         }
-        return duration.toInt().coerceIn(PARTICLE_ANIMATION_MIN_DURATION, PARTICLE_ANIMATION_MAX_DURATION)
+        return duration.toInt().coerceIn(TREE_PARTICLE_ANIMATION_MIN_DURATION, TREE_PARTICLE_ANIMATION_MAX_DURATION)
     }
 
     companion object {
-        private const val TAG = "PacmanViewModel"
+        private const val TAG = "TreeViewModel"
     }
 }
