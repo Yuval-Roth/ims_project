@@ -19,8 +19,10 @@ import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.WAVE_LEFT_STARTING_POSITION
 import com.imsproject.watch.WAVE_MAX_ANIMATION_DURATION
 import com.imsproject.watch.WAVE_MIN_ANIMATION_DURATION
+import com.imsproject.watch.WAVE_RIGHT_STARTING_POSITION
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -38,12 +40,11 @@ open class WavesViewModel: GameViewModel(GameType.WAVES) {
     ){
         var topLeft by mutableStateOf(
             when(startingDirection){
-                1 -> Offset(-SCREEN_RADIUS * 0.7f, 0f)
-                -1 -> Offset(SCREEN_RADIUS * 1.55f, 0f)
+                1 -> WAVE_LEFT_STARTING_POSITION
+                -1 -> WAVE_RIGHT_STARTING_POSITION
                 else -> throw IllegalArgumentException("Invalid starting direction for Wave: $startingDirection")
             }
         )
-        var animationProgress by mutableFloatStateOf(0f)
         var animationLength: Int = 0
         var direction by mutableIntStateOf(0)
     }
@@ -94,6 +95,7 @@ open class WavesViewModel: GameViewModel(GameType.WAVES) {
                     }
                 }
             }
+            wave.value = Wave()
             return
         }
 
