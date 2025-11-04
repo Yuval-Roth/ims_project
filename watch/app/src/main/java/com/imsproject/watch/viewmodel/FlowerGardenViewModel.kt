@@ -147,7 +147,6 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
-    // ============================ PUBLIC METHODS ==================================== |
     // ================================================================================ |
 
     open fun click() {
@@ -177,8 +176,8 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
 
         if(ACTIVITY_DEBUG_MODE){
-//            myItemType = ItemType.WATER
-            myItemType = ItemType.PLANT
+            myItemType = ItemType.WATER
+//            myItemType = ItemType.PLANT
 
             viewModelScope.launch(Dispatchers.Default) {
                 while(true){

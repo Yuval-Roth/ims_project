@@ -74,6 +74,11 @@
             android:taskAffinity=""
             android:exported="true"
             android:theme="@style/RecessActivityTheme" />
+        <activity
+            android:name=".view.TreeActivity"
+            android:taskAffinity=""
+            android:exported="true"
+            android:theme="@style/TreeActivityTheme" />
 
     </application>
 
