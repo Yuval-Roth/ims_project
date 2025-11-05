@@ -46,7 +46,7 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         MOVING
     }
 
-    class Particle(
+    class PacmanParticle(
         topLeft: Offset,
         val direction: Int,
     ){
@@ -77,11 +77,11 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     val rewardAccumulator = Animatable(0f)
     var myDirection = 1
         protected set
-    protected val _myParticle = MutableStateFlow<Particle?>(null)
-    val myParticle: StateFlow<Particle?> = _myParticle
+    protected val _myParticle = MutableStateFlow<PacmanParticle?>(null)
+    val myParticle: StateFlow<PacmanParticle?> = _myParticle
 
-    protected val _otherParticle = MutableStateFlow<Particle?>(null)
-    val otherParticle: StateFlow<Particle?> = _otherParticle
+    protected val _otherParticle = MutableStateFlow<PacmanParticle?>(null)
+    val otherParticle: StateFlow<PacmanParticle?> = _otherParticle
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -135,7 +135,7 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         val degreesPerMilliSecond = 360f / PACMAN_ROTATION_DURATION
         val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
         val expectedFinalAngle = pacmanAngle.value + degreesPerMilliSecond * animationLength
-        val reward = expectedFinalAngle - targetAngle <= PACMAN_MOUTH_OPENING_ANGLE
+        val reward = expectedFinalAngle - targetAngle <= PACMAN_MOUTH_OPENING_ANGLE / 2f
 
         if(ACTIVITY_DEBUG_MODE) {
             handleFling(dpPerSec, myDirection, reward)
@@ -219,8 +219,8 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         }
     }
 
-    protected fun createNewParticle(direction: Int): Particle {
-        return Particle(
+    protected fun createNewParticle(direction: Int): PacmanParticle {
+        return PacmanParticle(
             topLeft = Offset(
                 x = SCREEN_CENTER.x - PACMAN_PARTICLE_RADIUS - direction * PACMAN_PARTICLE_DISTANCE_FROM_CENTER,
                 y = SCREEN_CENTER.y - PACMAN_PARTICLE_RADIUS

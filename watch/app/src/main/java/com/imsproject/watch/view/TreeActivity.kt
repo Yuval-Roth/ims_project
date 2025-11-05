@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -40,14 +41,15 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.utils.Angle
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
-import com.imsproject.watch.PACMAN_SHRINK_ANIMATION_DURATION
-import com.imsproject.watch.PACMAN_PARTICLE_RADIUS
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.TREE_PARTICLE_CAGE_STROKE_WIDTH
+import com.imsproject.watch.TREE_PARTICLE_RADIUS
 import com.imsproject.watch.TREE_RING_ANGLE_STEP
 import com.imsproject.watch.TREE_RING_OPENING_ANGLE
 import com.imsproject.watch.TREE_RING_ROTATION_DURATION
+import com.imsproject.watch.TREE_RING_START_ANGLE
+import com.imsproject.watch.TREE_RING_SWEEP_ANGLE
 import com.imsproject.watch.TREE_SUN_RADIUS
 import com.imsproject.watch.TREE_WATER_DROPLET_RADIUS
 import com.imsproject.watch.utils.FlingTracker
@@ -99,12 +101,12 @@ fun Tree(viewModel: TreeViewModel) {
     val scope = rememberCoroutineScope()
     val myParticle by viewModel.myParticle.collectAsState()
     val otherParticle by viewModel.otherParticle.collectAsState()
-    var fedSuccessfully by remember { mutableStateOf(false) }
+    var flingSuccess by remember { mutableStateOf(false) }
 
     LaunchedEffect(animateRing){
         if(!animateRing) return@LaunchedEffect
         val ringAngle = viewModel.ringAngle
-        // rotate ring and check for feeding events
+        // rotate ring and check for success events
         val quantizedAngles = quantizeAngles(TREE_RING_ANGLE_STEP)
         val leftThreshold = closestQuantizedAngle(180f + TREE_RING_OPENING_ANGLE+TREE_RING_ANGLE_STEP, TREE_RING_ANGLE_STEP, quantizedAngles)
         val rightThreshold = closestQuantizedAngle(TREE_RING_OPENING_ANGLE+TREE_RING_ANGLE_STEP, TREE_RING_ANGLE_STEP, quantizedAngles)
@@ -116,20 +118,14 @@ fun Tree(viewModel: TreeViewModel) {
             val quantizedTargetAngle = closestQuantizedAngle(targetAngle,TREE_RING_ANGLE_STEP, quantizedAngles)
             ringAngle.value = Angle.fromArbitraryAngle(quantizedTargetAngle)
 
-            // check for feeding
+            // check for success
             if(quantizedTargetAngle == leftThreshold || quantizedTargetAngle == rightThreshold){
-                if(!fedSuccessfully){
+                if(!flingSuccess){
                     scope.launch {
-                        rewardAccumulator.animateTo(
-                            targetValue = (rewardAccumulator.value - 1).coerceAtLeast(0f),
-                            animationSpec = tween(
-                                durationMillis = PACMAN_SHRINK_ANIMATION_DURATION,
-                                easing = LinearEasing
-                            )
-                        )
+                        //TODO: implement this
                     }
                 } else {
-                    fedSuccessfully = false
+                    flingSuccess = false
                 }
             }
             awaitFrame()
@@ -143,24 +139,30 @@ fun Tree(viewModel: TreeViewModel) {
                 when(particle.state){
                     ParticleState.NEW -> {
                         particle.state = ParticleState.STATIONARY
-                        val sizeAnimation = Animatable(0f)
+                        val alphaAnimation = Animatable(0f)
                         scope.launch {
-                            sizeAnimation.animateTo(
-                                targetValue = PACMAN_PARTICLE_RADIUS * 2,
+                            alphaAnimation.animateTo(
+                                targetValue = 1f,
                                 animationSpec = tween(
                                     durationMillis = 150,
                                     easing = LinearEasing
                                 )
                             ) {
-                                particle.size = Size(value, value)
+                                particle.alpha = value
                             }
                         }
                     }
                     ParticleState.STATIONARY -> {
                         if (particle.animationLength > 0) {
+                            //TODO: adjust the implementation to fit tree game
                             particle.state = ParticleState.MOVING
-                            val targetX = SCREEN_CENTER.x - PACMAN_PARTICLE_RADIUS
-                            val startX = particle.topLeft.x
+                            val radius = when(particle.direction){
+                                1 -> TREE_WATER_DROPLET_RADIUS
+                                -1 -> TREE_SUN_RADIUS
+                                else -> throw IllegalStateException("Invalid particle direction: ${particle.direction}")
+                            }
+                            val targetX = SCREEN_CENTER.x - radius
+                            val startX = particle.center.x
                             val distance = targetX - startX
                             val positionAnimation = Animatable(0f)
                             if(particle.reward){
@@ -178,11 +180,11 @@ fun Tree(viewModel: TreeViewModel) {
                                     )
                                 ) {
                                     val newX = startX + distance * value
-                                    particle.topLeft = Offset(newX, particle.topLeft.y)
+                                    particle.center = Offset(newX, particle.center.y)
                                 }
                                 if (particle.reward){
                                     rewardAccumulator.snapTo(rewardAccumulator.targetValue + 1f)
-                                    fedSuccessfully = true
+                                    flingSuccess = true
                                 }
                                 // after animation ends, reset particle
                                 viewModel.resetParticle(particle.direction)
@@ -234,7 +236,6 @@ fun Tree(viewModel: TreeViewModel) {
             val WALLS_UPPER_Y = SCREEN_CENTER.y - SCREEN_RADIUS * 0.15f
             val WALLS_LOWER_Y = SCREEN_CENTER.y + SCREEN_RADIUS * 0.15f
             val WALL_DISTANCE_FROM_EDGE = SCREEN_RADIUS * 0.06f
-            val PARTICLE_RELATIVE_DISTANCE_FROM_EDGE = 0.165f
             // left side
             if(showLeftSide){
                 val LEFT_INNER_X = SCREEN_CENTER.x - SCREEN_RADIUS * 0.72f
@@ -297,22 +298,38 @@ fun Tree(viewModel: TreeViewModel) {
                     )
                 )
             }
-            drawWaterDroplet(
-                Offset(SCREEN_RADIUS * PARTICLE_RELATIVE_DISTANCE_FROM_EDGE, SCREEN_CENTER.y),
-                TREE_WATER_DROPLET_RADIUS
-            )
-            drawSun(
-                Offset(SCREEN_RADIUS * (2 - PARTICLE_RELATIVE_DISTANCE_FROM_EDGE), SCREEN_CENTER.y),
-                TREE_SUN_RADIUS
-            )
-            drawRing(
-                center = SCREEN_CENTER,
-                outerRadius = SCREEN_RADIUS * 0.45f
-            )
-            drawTree(
-                center = SCREEN_CENTER,
-                radius = SCREEN_RADIUS * 0.15f
-            )
+            rotate(degrees = ringAngle.floatValue){
+                drawRing(
+                    center = SCREEN_CENTER,
+                    outerRadius = SCREEN_RADIUS * 0.45f
+                )
+            }
+
+            for(particle in listOfNotNull(myParticle, otherParticle)){
+                when(particle.direction){
+                    1 -> drawWaterDroplet(
+                        center = particle.center,
+                        radius = TREE_PARTICLE_RADIUS,
+                        alpha = particle.alpha
+                    )
+                    -1 -> drawSun(
+                        center = particle.center,
+                        radius = TREE_PARTICLE_RADIUS,
+                        alpha = particle.alpha
+                    )
+                    else -> throw IllegalStateException("Invalid particle direction: ${particle.direction}")
+                }
+
+            }
+
+//            drawWaterDroplet(
+//                SCREEN_CENTER,
+//                SCREEN_RADIUS * 0.5f
+//            )
+//            drawSun(
+//                Offset(SCREEN_RADIUS * (2 - PARTICLE_RELATIVE_DISTANCE_FROM_EDGE), SCREEN_CENTER.y),
+//                TREE_SUN_RADIUS
+//            )
         }
     }
 }
@@ -322,32 +339,30 @@ private fun DrawScope.drawWaterDroplet(
     radius: Float,
     alpha: Float = 1f
 ) {
-    val controlOffsetX = 1.5f * radius
-    val controlOffsetY = 1.4f * radius
-    val tipOffsetY = 2.6f * radius
+    val controlOffsetX1 = 0.7f * radius   // controls upper narrowing
+    val controlOffsetY1 = 0.8f * radius   // lower bulge
+    val controlOffsetX2 = 0.95f * radius   // controls base width
+    val controlOffsetY2 = 1.85f * radius   // vertical stretch toward tip
+
     val baseX = center.x
-    val baseY = center.y - radius * 0.33f
+    val baseY = center.y - radius         // base at bottom of circle
 
     val path = Path().apply {
-        moveTo(baseX, baseY - radius) // bottom center
+        moveTo(baseX, baseY) // bottom center
+        // Left curve up to tip
         cubicTo(
-            baseX - controlOffsetX, baseY - radius - controlOffsetY,
-            baseX - radius, baseY - radius - tipOffsetY,
-            baseX, baseY - radius - tipOffsetY
+            baseX - controlOffsetX1, baseY + controlOffsetY1,
+            baseX - controlOffsetX2, baseY + controlOffsetY2,
+            baseX, baseY + radius * 2f // top (tip)
         )
+        // Right curve (mirror of left)
         cubicTo(
-            baseX + radius, baseY - radius - tipOffsetY,
-            baseX + controlOffsetX, baseY - radius - controlOffsetY,
-            baseX, baseY - radius
+            baseX + controlOffsetX2, baseY + controlOffsetY2,
+            baseX + controlOffsetX1, baseY + controlOffsetY1,
+            baseX, baseY // back to bottom
         )
         close()
     }
-
-    path.transform(Matrix().apply {
-        translate(baseX, baseY - radius)
-        scale(1f, -1f)
-        translate(-baseX, -(baseY - radius))
-    })
 
     drawPath(path, BLUE_COLOR, style = Fill, alpha = alpha)
 }
@@ -392,7 +407,8 @@ private fun DrawScope.drawSun(
                 start = start,
                 end = end,
                 strokeWidth = rayStrokeWidth,
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
+                alpha = alpha
             )
         }
     }
@@ -404,10 +420,6 @@ private fun DrawScope.drawRing(
     center: Offset,
     outerRadius: Float
 ) {
-    val cutAngleDegrees = 56f
-    val startAngle = 0f + cutAngleDegrees / 2f
-    val sweepAngle = 360f - cutAngleDegrees
-
     // --- OUTER AQUA RING ---
     val ringWidth: Float = outerRadius * 0.08f
 
@@ -415,8 +427,8 @@ private fun DrawScope.drawRing(
         brush = Brush.linearGradient(
             listOf(Color(0xFF7AD8D3), Color(0xFF53C3BD))
         ),
-        startAngle = startAngle,
-        sweepAngle = sweepAngle,
+        startAngle = TREE_RING_START_ANGLE,
+        sweepAngle = TREE_RING_SWEEP_ANGLE,
         useCenter = false,
         style = Stroke(width = ringWidth),
         topLeft = Offset(center.x - outerRadius, center.y - outerRadius),
@@ -432,8 +444,8 @@ private fun DrawScope.drawRing(
     // inner circular rim
     drawArc(
         color = Color.Black,
-        startAngle = startAngle,
-        sweepAngle = sweepAngle,
+        startAngle = TREE_RING_START_ANGLE,
+        sweepAngle = TREE_RING_SWEEP_ANGLE,
         useCenter = false,
         style = Stroke(width = innerRingWidth),
         topLeft = Offset(center.x - innerRadius, center.y - innerRadius),
@@ -463,7 +475,6 @@ private fun DrawScope.drawRing(
     }
 }
 
-@Suppress("NAME_SHADOWING")
 private fun DrawScope.drawTree(
     center: Offset,
     radius: Float

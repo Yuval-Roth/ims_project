@@ -7,11 +7,11 @@ import android.media.SoundPool
 import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
@@ -47,12 +47,12 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         MOVING
     }
 
-    class Particle(
-        topLeft: Offset,
+    class TreeParticle(
+        center: Offset,
         val direction: Int,
     ){
-        var topLeft by mutableStateOf(topLeft)
-        var size by mutableStateOf(Size(0f, 0f))
+        var alpha by mutableFloatStateOf(0f)
+        var center by mutableStateOf(center)
         var animationLength by mutableIntStateOf(-1)
         var state by mutableStateOf(ParticleState.NEW)
         var reward by mutableStateOf(false)
@@ -78,11 +78,11 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
     val rewardAccumulator = Animatable(0f)
     var myDirection = 1
         protected set
-    protected val _myParticle = MutableStateFlow<Particle?>(null)
-    val myParticle: StateFlow<Particle?> = _myParticle
+    protected val _myParticle = MutableStateFlow<TreeParticle?>(null)
+    val myParticle: StateFlow<TreeParticle?> = _myParticle
 
-    protected val _otherParticle = MutableStateFlow<Particle?>(null)
-    val otherParticle: StateFlow<Particle?> = _otherParticle
+    protected val _otherParticle = MutableStateFlow<TreeParticle?>(null)
+    val otherParticle: StateFlow<TreeParticle?> = _otherParticle
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -94,7 +94,7 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
 
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         // TODO: replace with new sound
-        flingSoundId = soundPool.load(context, R.raw.pacman_eat2, 1)
+        flingSoundId = soundPool.load(context, R.raw.tree_pop1, 1)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -137,7 +137,7 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         val degreesPerMilliSecond = 360f / TREE_RING_ROTATION_DURATION
         val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
         val expectedFinalAngle = ringAngle.value + degreesPerMilliSecond * animationLength
-        val reward = expectedFinalAngle - targetAngle <= TREE_RING_OPENING_ANGLE
+        val reward = expectedFinalAngle - targetAngle <= TREE_RING_OPENING_ANGLE / 2f
 
         if(ACTIVITY_DEBUG_MODE) {
             handleFling(dpPerSec, myDirection, reward)
@@ -221,16 +221,16 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         }
     }
 
-    protected fun createNewParticle(direction: Int): Particle {
+    protected fun createNewParticle(direction: Int): TreeParticle {
         val radius = when(direction){
             1 -> TREE_WATER_DROPLET_RADIUS
             -1 -> TREE_SUN_RADIUS
             else -> throw IllegalArgumentException("Invalid direction: $direction")
         }
-        return Particle(
-            topLeft = Offset(
-                x = SCREEN_CENTER.x - radius - direction * TREE_PARTICLE_DISTANCE_FROM_CENTER,
-                y = SCREEN_CENTER.y - radius
+        return TreeParticle(
+            center = Offset(
+                x = SCREEN_CENTER.x - direction * TREE_PARTICLE_DISTANCE_FROM_CENTER,
+                y = SCREEN_CENTER.y
             ),
             direction = direction
         )
