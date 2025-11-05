@@ -25,10 +25,11 @@ import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.TREE_PARTICLE_ANIMATION_MAX_DURATION
 import com.imsproject.watch.TREE_PARTICLE_ANIMATION_MIN_DURATION
 import com.imsproject.watch.TREE_PARTICLE_DISTANCE_FROM_CENTER
+import com.imsproject.watch.TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.TREE_RING_OPENING_ANGLE
+import com.imsproject.watch.TREE_RING_RADIUS
+import com.imsproject.watch.TREE_RING_RELATIVE_RADIUS
 import com.imsproject.watch.TREE_RING_ROTATION_DURATION
-import com.imsproject.watch.TREE_SUN_RADIUS
-import com.imsproject.watch.TREE_WATER_DROPLET_RADIUS
 import com.imsproject.watch.utils.closestQuantizedAngle
 import com.imsproject.watch.utils.quantizeAngles
 import com.imsproject.watch.view.contracts.Result
@@ -55,7 +56,7 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         var center by mutableStateOf(center)
         var animationLength by mutableIntStateOf(-1)
         var state by mutableStateOf(ParticleState.NEW)
-        var reward by mutableStateOf(false)
+        var success by mutableStateOf(false)
     }
 
     protected val _animateRing = MutableStateFlow(true)
@@ -68,21 +69,24 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
     val showRightSide : StateFlow<Boolean> = _showRightSide
 
     protected lateinit var soundPool: SoundPool
-    protected var flingSoundId : Int = -1
+    protected var rewardSoundId : Int = -1
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    var ringAngle = MutableStateFlow(Angle(0f))
-    val rewardAccumulator = Animatable(0f)
+    val ringAngle = MutableStateFlow(0f)
     var myDirection = 1
         protected set
+
     protected val _myParticle = MutableStateFlow<TreeParticle?>(null)
     val myParticle: StateFlow<TreeParticle?> = _myParticle
 
     protected val _otherParticle = MutableStateFlow<TreeParticle?>(null)
     val otherParticle: StateFlow<TreeParticle?> = _otherParticle
+
+    val leftSuccess = Animatable(0f)
+    val rightSuccess = Animatable(0f)
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -94,7 +98,7 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
 
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         // TODO: replace with new sound
-        flingSoundId = soundPool.load(context, R.raw.tree_pop1, 1)
+        rewardSoundId = soundPool.load(context, R.raw.tree_pop1, 1)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -103,9 +107,9 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
                 _myParticle.value = createNewParticle(myDirection)
                 _otherParticle.value = createNewParticle(-myDirection)
                 val quantizedAngles = quantizeAngles(TREE_RING_ANGLE_STEP)
-                val flingAngle = Angle.fromArbitraryAngle(closestQuantizedAngle(360 - TREE_RING_OPENING_ANGLE, TREE_RING_ANGLE_STEP, quantizedAngles))
+                val flingAngle = closestQuantizedAngle(360f - TREE_RING_OPENING_ANGLE + 10f, TREE_RING_ANGLE_STEP, quantizedAngles)
                 ringAngle.collect {
-                    if(ringAngle.value.floatValue == flingAngle.floatValue){
+                    if(ringAngle.value == flingAngle){
                         handleFling(500f, -myDirection, true)
                     }
                 }
@@ -136,8 +140,17 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         // calculate reward based on expected final angle
         val degreesPerMilliSecond = 360f / TREE_RING_ROTATION_DURATION
         val targetAngle = Angle(if (myDirection > 0) 180f else 0f)
-        val expectedFinalAngle = ringAngle.value + degreesPerMilliSecond * animationLength
-        val reward = expectedFinalAngle - targetAngle <= TREE_RING_OPENING_ANGLE / 2f
+
+
+//        val ringWidth: Float = radius * 0.08f
+//        val innerRadius = radius * 0.93f
+//        val innerRingWidth = innerRadius * 0.08f
+
+        val relativeDistance = (TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER - TREE_RING_RELATIVE_RADIUS) / TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER
+
+        val delta = degreesPerMilliSecond * animationLength * relativeDistance
+        val expectedFinalAngle = (ringAngle.value + delta) % 360f
+        val reward = Angle.fromArbitraryAngle(expectedFinalAngle) - targetAngle <= TREE_RING_OPENING_ANGLE / 2f
 
         if(ACTIVITY_DEBUG_MODE) {
             handleFling(dpPerSec, myDirection, reward)
@@ -167,7 +180,7 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
     }
 
     fun playRewardSound() {
-        soundPool.play(flingSoundId, 1f, 1f, 1, 0, 1f)
+        soundPool.play(rewardSoundId, 1f, 1f, 1, 0, 1f)
     }
 
     // ================================================================================ |
@@ -222,11 +235,6 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
     }
 
     protected fun createNewParticle(direction: Int): TreeParticle {
-        val radius = when(direction){
-            1 -> TREE_WATER_DROPLET_RADIUS
-            -1 -> TREE_SUN_RADIUS
-            else -> throw IllegalArgumentException("Invalid direction: $direction")
-        }
         return TreeParticle(
             center = Offset(
                 x = SCREEN_CENTER.x - direction * TREE_PARTICLE_DISTANCE_FROM_CENTER,
@@ -246,7 +254,7 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         val animationLength = mapSpeedToDuration(pxPerSec = pxPerSec)
 
         particle.animationLength = animationLength
-        particle.reward = reward
+        particle.success = reward
     }
 
     private fun mapSpeedToDuration(pxPerSec: Float): Int {

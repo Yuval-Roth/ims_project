@@ -67,7 +67,7 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     val showRightSide : StateFlow<Boolean> = _showRightSide
 
     protected lateinit var soundPool: SoundPool
-    protected var flingSoundId : Int = -1
+    protected var rewardSoundId : Int = -1
 
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
@@ -92,7 +92,7 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
         super.onCreate(intent, context)
 
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
-        flingSoundId = soundPool.load(context, R.raw.pacman_eat2, 1)
+        rewardSoundId = soundPool.load(context, R.raw.pacman_eat2, 1)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -165,7 +165,7 @@ open class PacmanViewModel: GameViewModel(GameType.PACMAN) {
     }
 
     fun playRewardSound() {
-        soundPool.play(flingSoundId, 1f, 1f, 1, 0, 1f)
+        soundPool.play(rewardSoundId, 1f, 1f, 1, 0, 1f)
     }
 
     // ================================================================================ |
