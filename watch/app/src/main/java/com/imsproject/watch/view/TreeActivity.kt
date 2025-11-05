@@ -18,8 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -44,7 +46,6 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.utils.Angle
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.R
@@ -105,64 +106,93 @@ fun Tree(viewModel: TreeViewModel) {
     val showLeftSide by viewModel.showLeftSide.collectAsState()
     val showRightSide by viewModel.showRightSide.collectAsState()
     val ringAngle = viewModel.ringAngle.collectAsState().value
-    val density =  LocalDensity.current.density
+    val density = LocalDensity.current.density
     val tracker = remember { FlingTracker() }
     val scope = rememberCoroutineScope()
     val myParticle by viewModel.myParticle.collectAsState()
     val otherParticle by viewModel.otherParticle.collectAsState()
-    val leftSuccess = remember { viewModel.leftSuccess }
-    val rightSuccess = remember { viewModel.rightSuccess }
+    var leftFlingSuccess by remember { mutableStateOf(false) }
+    val leftAuraAlpha = remember { Animatable(0f) }
+    var rightFlingSuccess by remember { mutableStateOf(false) }
+    val rightAuraAlpha = remember { Animatable(0f) }
     var leafIndex = remember { 0 }
     var bitmapsLoaded = remember { false }
     var leavesBitmaps = remember<Array<ImageBitmap>> { arrayOf() }
-    var treeBitmap = remember { ImageBitmap(1,1) }
-    if(!bitmapsLoaded){
+    var treeBitmap = remember { ImageBitmap(1, 1) }
+    if (!bitmapsLoaded) {
         leavesBitmaps = arrayOf(
             ImageBitmap.imageResource(id = R.drawable.tree_leaves_light),
             ImageBitmap.imageResource(id = R.drawable.tree_leaves_medium),
             ImageBitmap.imageResource(id = R.drawable.tree_leaves_dark)
         )
-        .map { original -> // scale them down
-            // Scale each bitmap down to (for example) 50% of its original size
-            val scaledWidth = (original.width * 0.05f).toInt()
-            val scaledHeight = (original.height * 0.05f).toInt()
-            original.asAndroidBitmap().scale(scaledWidth, scaledHeight).asImageBitmap()
-        }.toTypedArray()
+            .map { original -> // scale them down
+                // Scale each bitmap down to (for example) 50% of its original size
+                val scaledWidth = (original.width * 0.05f).toInt()
+                val scaledHeight = (original.height * 0.05f).toInt()
+                original.asAndroidBitmap().scale(scaledWidth, scaledHeight).asImageBitmap()
+            }.toTypedArray()
         treeBitmap = ImageBitmap.imageResource(id = R.drawable.tree).asAndroidBitmap().scale(
             (SCREEN_RADIUS * 0.4f).toInt(),
             (SCREEN_RADIUS * 0.4f).toInt()
         ).asImageBitmap()
         bitmapsLoaded = true
     }
-    val leaves = remember { mutableListOf<Triple<Offset, ImageBitmap, Animatable<Float, AnimationVector1D>>>() }
+    val leaves =
+        remember { mutableListOf<Triple<Offset, ImageBitmap, Animatable<Float, AnimationVector1D>>>() }
+    val animateAuraAlpha = remember(Unit) {
+        { successAnimation: Animatable<Float, AnimationVector1D>, targetValue: Float ->
+            scope.launch {
+                successAnimation.animateTo(
+                    targetValue = targetValue,
+                    animationSpec = tween(
+                        durationMillis = 150,
+                        easing = LinearEasing
+                    )
+                )
+            }
+        }
+    }
 
-    LaunchedEffect(animateRing){
-        if(!animateRing) return@LaunchedEffect
+    LaunchedEffect(animateRing) {
+        if (!animateRing) return@LaunchedEffect
         val ringAngle = viewModel.ringAngle
         // rotate ring and check for success events
         val quantizedAngles = quantizeAngles(TREE_RING_ANGLE_STEP)
-        val leftThreshold = closestQuantizedAngle(180f + TREE_RING_OPENING_ANGLE+TREE_RING_ANGLE_STEP, TREE_RING_ANGLE_STEP, quantizedAngles)
-        val rightThreshold = closestQuantizedAngle(TREE_RING_OPENING_ANGLE+TREE_RING_ANGLE_STEP, TREE_RING_ANGLE_STEP, quantizedAngles)
-        while(true){
+        val leftThreshold = closestQuantizedAngle(
+            180f + TREE_RING_OPENING_ANGLE + TREE_RING_ANGLE_STEP,
+            TREE_RING_ANGLE_STEP,
+            quantizedAngles
+        )
+        val rightThreshold = closestQuantizedAngle(
+            TREE_RING_OPENING_ANGLE + TREE_RING_ANGLE_STEP,
+            TREE_RING_ANGLE_STEP,
+            quantizedAngles
+        )
+        while (true) {
             val currentGameTime = viewModel.getCurrentGameTime()
             val rotationTimePassed = currentGameTime % TREE_RING_ROTATION_DURATION
             val rotationPercentage = rotationTimePassed / TREE_RING_ROTATION_DURATION
             val targetAngle = 360f * rotationPercentage
-            val quantizedTargetAngle = closestQuantizedAngle(targetAngle,TREE_RING_ANGLE_STEP, quantizedAngles)
+            val quantizedTargetAngle =
+                closestQuantizedAngle(targetAngle, TREE_RING_ANGLE_STEP, quantizedAngles)
             ringAngle.value = quantizedTargetAngle
 
             // reset success auras at the thresholds
-            when(quantizedTargetAngle){
+            when (quantizedTargetAngle) {
                 leftThreshold -> {
-                    if(leftSuccess.targetValue == 0f){
-                        resetSuccessAura(rightSuccess, scope)
+                    if (rightFlingSuccess && !leftFlingSuccess) {
+                        animateAuraAlpha(rightAuraAlpha, 0f)
+                        rightFlingSuccess = false
                     }
                 }
+
                 rightThreshold -> {
-                    if(rightSuccess.targetValue == 0f){
-                        resetSuccessAura(leftSuccess, scope)
+                    if (leftFlingSuccess && !rightFlingSuccess) {
+                        animateAuraAlpha(leftAuraAlpha, 0f)
+                        leftFlingSuccess = false
                     }
                 }
+
                 else -> {}
             }
             awaitFrame()
@@ -171,9 +201,9 @@ fun Tree(viewModel: TreeViewModel) {
 
     // animate new particles
     LaunchedEffect(Unit) {
-        while(true){
+        while (true) {
             for (particle in listOfNotNull(myParticle, otherParticle)) {
-                when(particle.state){
+                when (particle.state) {
                     ParticleState.NEW -> {
                         particle.state = ParticleState.STATIONARY
                         val alphaAnimation = Animatable(0f)
@@ -189,6 +219,7 @@ fun Tree(viewModel: TreeViewModel) {
                             }
                         }
                     }
+
                     ParticleState.STATIONARY -> {
                         if (particle.animationLength > 0) {
                             particle.state = ParticleState.MOVING
@@ -197,7 +228,7 @@ fun Tree(viewModel: TreeViewModel) {
                             val startX = particle.center.x
                             val distance = targetX - startX
                             val positionAnimation = Animatable(0f)
-                            val targetValue = if(particle.success) 1f else ((TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER - TREE_RING_RELATIVE_RADIUS) / TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER)
+                            val targetValue = if (particle.success) 1f else ((TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER - TREE_RING_RELATIVE_RADIUS) / TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER)
                             scope.launch {
                                 positionAnimation.animateTo(
                                     targetValue = targetValue,
@@ -210,17 +241,31 @@ fun Tree(viewModel: TreeViewModel) {
                                     particle.center = Offset(newX, particle.center.y)
                                 }
 
-                                if(particle.success){
-                                    val (thisSuccess, otherSuccess) = when(particle.direction){
-                                        1 -> viewModel.leftSuccess to viewModel.rightSuccess
-                                        -1 -> viewModel.rightSuccess to viewModel.leftSuccess
-                                        else -> throw IllegalStateException("Invalid particle direction: ${particle.direction}")
-                                    }
-                                    if (otherSuccess.targetValue == 1f){
-                                        // both sides succeeded
-                                        resetSuccessAura(thisSuccess, scope)
-                                        resetSuccessAura(otherSuccess, scope)
+                                if (particle.success) {
+                                    val otherFlingSuccess: Boolean
+                                    val thisAuraAlpha: Animatable<Float, AnimationVector1D>
+                                    val otherAuraAlpha: Animatable<Float, AnimationVector1D>
+                                    when (particle.direction) {
+                                        1 -> {
+                                            leftFlingSuccess = true
+                                            otherFlingSuccess = rightFlingSuccess
+                                            thisAuraAlpha = leftAuraAlpha
+                                            otherAuraAlpha = rightAuraAlpha
+                                        }
+                                        -1 -> {
+                                            rightFlingSuccess = true
+                                            otherFlingSuccess = leftFlingSuccess
+                                            thisAuraAlpha = rightAuraAlpha
+                                            otherAuraAlpha = leftAuraAlpha
+                                        }
 
+                                        else -> {
+                                            throw IllegalStateException("Invalid particle direction: ${particle.direction}")
+                                        }
+                                    }
+                                    animateAuraAlpha(thisAuraAlpha, 1f)
+                                    if (otherFlingSuccess) {
+                                        // both sides succeeded
                                         scope.launch(Dispatchers.Default) {
                                             delay(particle.animationLength - 250L)
                                             viewModel.playRewardSound()
@@ -233,8 +278,13 @@ fun Tree(viewModel: TreeViewModel) {
                                             y = SCREEN_CENTER.y - (-SCREEN_RADIUS * 0.05f..SCREEN_RADIUS * 0.175f).random() - image.height / 2f
                                         )
                                         val sizeAnimation = Animatable(0f)
-                                        leaves.add(Triple(topLeft, image,sizeAnimation))
+                                        leaves.add(Triple(topLeft, image, sizeAnimation))
                                         scope.launch {
+                                            scope.launch {
+                                                delay(500L)
+                                                animateAuraAlpha(thisAuraAlpha, 0f)
+                                                animateAuraAlpha(otherAuraAlpha, 0f)
+                                            }
                                             sizeAnimation.animateTo(
                                                 targetValue = 1f,
                                                 animationSpec = spring(
@@ -242,10 +292,12 @@ fun Tree(viewModel: TreeViewModel) {
                                                     stiffness = Spring.StiffnessLow
                                                 )
                                             )
+                                            leftFlingSuccess = false
+                                            rightFlingSuccess = false
                                         }
                                     } else {
                                         // only one side succeeded
-                                        animateSuccessAura(thisSuccess, scope)
+                                        animateAuraAlpha(thisAuraAlpha, 1f)
                                     }
                                 }
 
@@ -254,7 +306,9 @@ fun Tree(viewModel: TreeViewModel) {
                             }
                         }
                     }
-                    ParticleState.MOVING -> { /* do nothing, animation is already running */ }
+
+                    ParticleState.MOVING -> { /* do nothing, animation is already running */
+                    }
                 }
             }
             awaitFrame()
@@ -300,7 +354,7 @@ fun Tree(viewModel: TreeViewModel) {
             val WALLS_LOWER_Y = SCREEN_CENTER.y + SCREEN_RADIUS * 0.15f
             val WALL_DISTANCE_FROM_EDGE = SCREEN_RADIUS * 0.06f
             // left side
-            if(showLeftSide){
+            if (showLeftSide) {
                 val LEFT_INNER_X = SCREEN_CENTER.x - SCREEN_RADIUS * 0.72f
                 val path = Path().apply {
                     // upper line
@@ -331,7 +385,7 @@ fun Tree(viewModel: TreeViewModel) {
                 )
             }
             // right side
-            if(showRightSide){
+            if (showRightSide) {
                 val RIGHT_INNER_X = SCREEN_CENTER.x + SCREEN_RADIUS * 0.72f
                 val path = Path().apply {
                     // upper right line
@@ -361,26 +415,62 @@ fun Tree(viewModel: TreeViewModel) {
                     )
                 )
             }
-            rotate(degrees = ringAngle){
+            rotate(degrees = ringAngle) {
                 drawRing(
                     center = SCREEN_CENTER,
                     radius = TREE_RING_RADIUS
                 )
             }
 
-            // draw success auras
-            drawCircle(
-                color = Color(0xffe0ebfb),
-                radius = SCREEN_RADIUS * 0.3f,
-                center = SCREEN_CENTER,
-                alpha = leftSuccess.value
-            )
-            drawCircle(
-                color = Color(0xfffcf4db),
-                radius = SCREEN_RADIUS * 0.3f,
-                center = SCREEN_CENTER,
-                alpha = rightSuccess.value
-            )
+            // --- draw success auras ---
+            val leftColor = Color(0xffe0ebfb)   // blueish
+            val rightColor = Color(0xfffcf4db)  // yellowish
+            val radius = SCREEN_RADIUS * 0.3f
+
+            val leftAlpha = leftAuraAlpha.value
+            val rightAlpha = rightAuraAlpha.value
+
+            when {
+                // only left aura active
+                leftAlpha > 0f && rightAlpha <= 0f -> {
+                    drawCircle(
+                        color = leftColor,
+                        radius = radius,
+                        center = SCREEN_CENTER,
+                        alpha = leftAlpha
+                    )
+                }
+
+                // only right aura active
+                rightAlpha > 0f && leftAlpha <= 0f -> {
+                    drawCircle(
+                        color = rightColor,
+                        radius = radius,
+                        center = SCREEN_CENTER,
+                        alpha = rightAlpha
+                    )
+                }
+
+                // both active → gradient blend
+                leftAlpha > 0f && rightAlpha > 0f -> {
+                    val avgAlpha = (leftAlpha + rightAlpha) / 2f
+
+                    // --- if you prefer horizontal transition (blue → yellow left→right), use this instead ---
+                    val brush = Brush.linearGradient(
+                        colors = listOf(Color(0xFFBFD8FF), Color(0xFFFFE89F)),
+                        start = Offset(SCREEN_CENTER.x - radius, SCREEN_CENTER.y),
+                        end = Offset(SCREEN_CENTER.x + radius, SCREEN_CENTER.y)
+                    )
+
+                    drawCircle(
+                        brush = brush,
+                        radius = radius,
+                        center = SCREEN_CENTER,
+                        alpha = avgAlpha
+                    )
+                }
+            }
+
 
             // draw tree
             drawImage(
@@ -392,18 +482,20 @@ fun Tree(viewModel: TreeViewModel) {
             )
 
             // draw particles
-            for(particle in listOfNotNull(myParticle, otherParticle)){
-                when(particle.direction){
+            for (particle in listOfNotNull(myParticle, otherParticle)) {
+                when (particle.direction) {
                     1 -> drawWaterDroplet(
                         center = particle.center,
                         radius = TREE_PARTICLE_RADIUS,
                         alpha = particle.alpha
                     )
+
                     -1 -> drawSun(
                         center = particle.center,
                         radius = TREE_PARTICLE_RADIUS,
                         alpha = particle.alpha
                     )
+
                     else -> throw IllegalStateException("Invalid particle direction: ${particle.direction}")
                 }
             }
@@ -428,36 +520,6 @@ fun Tree(viewModel: TreeViewModel) {
                 )
             }
         }
-    }
-}
-
-fun resetSuccessAura(
-    animation: Animatable<Float, AnimationVector1D>,
-    scope: kotlinx.coroutines.CoroutineScope
-) {
-    scope.launch {
-        animation.animateTo(
-            targetValue = 0f,
-            animationSpec = tween(
-                durationMillis = 150,
-                easing = LinearEasing
-            )
-        )
-    }
-}
-
-fun animateSuccessAura(
-    successAnimation: Animatable<Float, AnimationVector1D>,
-    scope: kotlinx.coroutines.CoroutineScope
-) {
-    scope.launch {
-        successAnimation.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = 150,
-                easing = LinearEasing
-            )
-        )
     }
 }
 

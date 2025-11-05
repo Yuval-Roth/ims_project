@@ -27,7 +27,6 @@ import com.imsproject.watch.TREE_PARTICLE_ANIMATION_MIN_DURATION
 import com.imsproject.watch.TREE_PARTICLE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.TREE_RING_OPENING_ANGLE
-import com.imsproject.watch.TREE_RING_RADIUS
 import com.imsproject.watch.TREE_RING_RELATIVE_RADIUS
 import com.imsproject.watch.TREE_RING_ROTATION_DURATION
 import com.imsproject.watch.utils.closestQuantizedAngle
@@ -84,9 +83,6 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
 
     protected val _otherParticle = MutableStateFlow<TreeParticle?>(null)
     val otherParticle: StateFlow<TreeParticle?> = _otherParticle
-
-    val leftSuccess = Animatable(0f)
-    val rightSuccess = Animatable(0f)
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
