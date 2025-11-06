@@ -102,6 +102,7 @@ import com.imsproject.watch.view.contracts.FlowerGardenResultContract
 import com.imsproject.watch.view.contracts.PacmanResultContract
 import com.imsproject.watch.view.contracts.RecessResultContract
 import com.imsproject.watch.view.contracts.Result
+import com.imsproject.watch.view.contracts.TreeResultContract
 import com.imsproject.watch.view.contracts.WaterRipplesResultContract
 import com.imsproject.watch.view.contracts.WavesResultContract
 import com.imsproject.watch.view.contracts.WineGlassesResultContract
@@ -110,6 +111,7 @@ import com.imsproject.watch.viewmodel.MainViewModel.State
 import com.imsproject.watch.viewmodel.gesturepractice.FlourMillGesturePracticeViewModel
 import com.imsproject.watch.viewmodel.gesturepractice.FlowerGardenGesturePracticeViewModel
 import com.imsproject.watch.viewmodel.gesturepractice.PacmanGesturePracticeViewModel
+import com.imsproject.watch.viewmodel.gesturepractice.TreeGesturePracticeViewModel
 import com.imsproject.watch.viewmodel.gesturepractice.WaterRipplesGesturePracticeViewModel
 import com.imsproject.watch.viewmodel.gesturepractice.WavesGesturePracticeViewModel
 import com.imsproject.watch.viewmodel.gesturepractice.WineGlassesGesturePracticeViewModel
@@ -133,6 +135,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var pacman: ActivityResultLauncher<Map<String,Any>>
     private lateinit var waves: ActivityResultLauncher<Map<String,Any>>
     private lateinit var recess: ActivityResultLauncher<Map<String,Any>>
+    private lateinit var tree: ActivityResultLauncher<Map<String,Any>>
     private lateinit var wifiLock: WifiManager.WifiLock
     private val idsList = listOf("0","1","2","3","4","5","6","7","8","9")
     private var viewModelsInitialized = false
@@ -145,6 +148,7 @@ class MainActivity : ComponentActivity() {
     private val flourMillGesturePracticeViewModel by viewModels<FlourMillGesturePracticeViewModel>()
     private val pacmanGesturePracticeViewModel by viewModels<PacmanGesturePracticeViewModel>()
     private val wavesGesturePracticeViewModel by viewModels<WavesGesturePracticeViewModel>()
+    private val treeGesturePracticeViewModel by viewModels<TreeGesturePracticeViewModel>()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -191,6 +195,7 @@ class MainActivity : ComponentActivity() {
             flourMillGesturePracticeViewModel.reset()
             pacmanGesturePracticeViewModel.reset()
             wavesGesturePracticeViewModel.reset()
+            treeGesturePracticeViewModel.reset()
         }
     }
 
@@ -232,6 +237,7 @@ class MainActivity : ComponentActivity() {
         pacman = registerForActivityResult(PacmanResultContract()) { afterGame(it) }
         waves = registerForActivityResult(WavesResultContract()) { afterGame(it) }
         recess = registerForActivityResult(RecessResultContract()) { afterGame(it) }
+        tree = registerForActivityResult(TreeResultContract()) { afterGame(it) }
     }
 
     private fun setupSensorsPermission() {
@@ -276,13 +282,6 @@ class MainActivity : ComponentActivity() {
             State.CONNECTED_IN_LOBBY -> {
                 val userId = viewModel.playerId.collectAsState().value
                 val lobbyId = viewModel.lobbyId.collectAsState().value
-                val gameType = viewModel.gameType.collectAsState().value?.hebrewName() ?: ""
-                val gameDuration = (viewModel.gameDuration.collectAsState().value ?: "").toString()
-                val ready = viewModel.ready.collectAsState().value
-                val sensorHandler = viewModel.heartRateSensorHandler
-                val hr = sensorHandler.heartRate.collectAsState().value
-//                val ibi = sensorHandler.ibi.collectAsState().value
-                val hrSensorReady = hr != 0
                 ConnectedInLobbyScreen(userId, lobbyId)
             }
 
@@ -321,6 +320,7 @@ class MainActivity : ComponentActivity() {
                         flourMillGesturePracticeViewModel.init(applicationContext, playerColor)
                         pacmanGesturePracticeViewModel.init(applicationContext, playerColor)
                         wavesGesturePracticeViewModel.init(applicationContext, playerColor)
+                        treeGesturePracticeViewModel.init(applicationContext, playerColor)
                         viewModelsInitialized = true
                     }
                     viewModel.setState(State.ACTIVITY_DESCRIPTION)
@@ -408,6 +408,7 @@ class MainActivity : ComponentActivity() {
                         GameType.PACMAN -> pacman.launch(input)
                         GameType.WAVES -> waves.launch(input)
                         GameType.RECESS -> recess.launch(input)
+                        GameType.TREE -> tree.launch(input)
                         else -> {
                             viewModel.fatalError("Unknown game type")
                             ErrorReporter.report(null,"Unknown game type\n${gameType}")
@@ -792,10 +793,13 @@ class MainActivity : ComponentActivity() {
                     בפעילות זו נמסור גלים
                     מצד לצד לסירוגין
                 """
-                GameType.PACMAN -> """
+                GameType.TREE -> """
                     בפעילות זו הכנסת שמש
                     ומים לסירוגין יצמיחו עץ
                 """
+                GameType.PACMAN -> """
+                    להשלים אם צריך
+                """.trimIndent()
                 else -> throw IllegalStateException("Unknown game type")
             }.trimIndent()
             Column(
@@ -824,6 +828,7 @@ class MainActivity : ComponentActivity() {
             GameType.FLOUR_MILL -> flourMillGesturePracticeViewModel
             GameType.PACMAN -> pacmanGesturePracticeViewModel
             GameType.WAVES -> wavesGesturePracticeViewModel
+            GameType.TREE -> treeGesturePracticeViewModel
             else -> throw IllegalStateException("No gesture practice defined for game type $gameType")
         }
         done = viewModel.done.collectAsState().value
@@ -839,7 +844,7 @@ class MainActivity : ComponentActivity() {
                     הסיבוב מתבצע קרוב למסגרת
                     של השעון
                 """
-                GameType.WAVES,GameType.PACMAN -> """
+                GameType.WAVES,GameType.TREE, GameType.PACMAN -> """
                     נסו להעיף - 
                     פעולת ההעפה מתבצעת ממסגרת
                     השעון פנימה
