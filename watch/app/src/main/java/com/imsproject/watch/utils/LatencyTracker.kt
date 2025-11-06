@@ -4,7 +4,6 @@ import android.os.SystemClock
 import com.imsproject.common.networking.UdpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -20,16 +19,11 @@ import kotlin.math.sqrt
 class LatencyTracker(
     private val scope: CoroutineScope,
     private val pingMessage: String,
-    remoteAddress: String,
-    remotePort: Int,
-    initialTimeout: Int = 500
+    private val remoteAddress: String,
+    private val remotePort: Int,
+    private val initialTimeout: Int = 500
 ) {
-    private val udpClient = UdpClient().apply {
-        this.remotePort = remotePort
-        this.remoteAddress = remoteAddress
-        init()
-        setTimeout(initialTimeout)
-    }
+    private var udpClient = getUdpClient()
 
     // Constants for minimum timeout and smoothing
     private companion object {
@@ -56,34 +50,39 @@ class LatencyTracker(
         job = scope.launch(Dispatchers.IO) {
             try {
                 while (isActive) {
-                    val sentTime = SystemClock.elapsedRealtimeNanos()
-                    udpClient.send(pingMessage)
+                    try{
+                        val sentTime = SystemClock.elapsedRealtimeNanos()
+                        udpClient.send(pingMessage, remoteAddress, remotePort)
 
-                    try {
-                        udpClient.receive()
-                    } catch (_: SocketTimeoutException) {
+                        try {
+                            udpClient.receive()
+                        } catch (_: SocketTimeoutException) {
+                            val latency = (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000.0
+                            onTimeout(latency)
+                            dataLock.withLock {
+                                timeoutsCount++
+                                lastLatency?.let { jitterSum += abs(latency - it) }
+                                lastLatency = latency
+                                latencies.add(latency)
+                            }
+                            continue
+                        }
                         val latency = (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000.0
-                        onTimeout(latency)
+                        onReceive(latency)
+
+                        // Update statistics
                         dataLock.withLock {
-                            timeoutsCount++
                             lastLatency?.let { jitterSum += abs(latency - it) }
                             lastLatency = latency
                             latencies.add(latency)
                         }
-                        continue
-                    }
-                    val latency = (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000.0
-                    onReceive(latency)
 
-                    // Update statistics
-                    dataLock.withLock {
-                        lastLatency?.let { jitterSum += abs(latency - it) }
-                        lastLatency = latency
-                        latencies.add(latency)
+                        // try to get 20 samples per second
+                        delay(45 - (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000)
+                    } catch (_: Exception) {
+                        // in case udpClient is closed, recreate it
+                        resetUdpClient()
                     }
-
-                    // try to get 20 samples per second
-                    delay(45 - (SystemClock.elapsedRealtimeNanos() - sentTime) / 1_000_000)
                 }
             } finally {
                 udpClient.close()
@@ -154,8 +153,17 @@ class LatencyTracker(
         val desiredTimeout = ceil(averageLatency + standardDeviation * 4).toInt()
         val coercedTimeout = desiredTimeout.fastCoerceAtLeast(MIN_TIMEOUT_MS)
         val smoothedTimeoutThreshold = (currentTimeoutThreshold * SMOOTHING_FACTOR + coercedTimeout * (1 - SMOOTHING_FACTOR)).toInt()
-        udpClient.setTimeout(smoothedTimeoutThreshold)
         currentTimeoutThreshold = smoothedTimeoutThreshold
+        do {
+            try{
+                udpClient.setTimeout(smoothedTimeoutThreshold)
+            } catch (_: Exception){
+                // in case udpClient is closed, recreate it
+                resetUdpClient()
+                continue
+            }
+            break
+        } while (true)
     }
 
     private fun computeMedian(sortedLatencies: List<Double>): Double {
@@ -174,5 +182,14 @@ class LatencyTracker(
     private fun computeStandardDeviation(latencies: List<Double>, mean: Double): Double {
         val variance = latencies.sumOf { (it - mean).pow(2) } / latencies.size
         return sqrt(variance)
+    }
+
+    private fun resetUdpClient(){
+        udpClient = getUdpClient()
+    }
+
+    private fun getUdpClient() = UdpClient().apply {
+        init()
+        setTimeout(initialTimeout)
     }
 }
