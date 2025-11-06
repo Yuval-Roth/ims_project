@@ -3,7 +3,7 @@ package com.imsproject.watch.viewmodel.gesturepractice
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.utils.Angle
+import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.INNER_TOUCH_POINT
@@ -12,9 +12,7 @@ import com.imsproject.watch.utils.FrequencyTracker
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.view.WineGlasses
-import com.imsproject.watch.viewmodel.FlowerGardenViewModel.ItemType
 import com.imsproject.watch.viewmodel.MainViewModel
-import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import com.imsproject.watch.viewmodel.WineGlassesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

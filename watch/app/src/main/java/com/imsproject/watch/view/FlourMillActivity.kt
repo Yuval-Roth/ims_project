@@ -46,12 +46,10 @@ import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
-import com.imsproject.common.utils.Angle
-import com.imsproject.common.utils.UNDEFINED_ANGLE
-import com.imsproject.watch.CYAN_COLOR
+import com.imsproject.watch.utils.Angle
+import com.imsproject.watch.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.DARK_ORANGE_COLOR
 import com.imsproject.watch.DEEP_BLUE_COLOR
-import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.LIGHT_BROWN_COLOR
 import com.imsproject.watch.LIGHT_ORANGE_COLOR
 import com.imsproject.watch.MILL_SOUND_TRACK

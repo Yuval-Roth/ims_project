@@ -5,7 +5,6 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.util.Log
-import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -16,7 +15,7 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
-import com.imsproject.common.utils.Angle
+import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.TREE_RING_ANGLE_STEP

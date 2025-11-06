@@ -1,6 +1,5 @@
 package com.imsproject.watch.utils
 
-import com.imsproject.common.utils.Angle
 import com.imsproject.watch.SCREEN_CENTER
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -75,7 +74,7 @@ inline fun ClosedFloatingPointRange<Float>.random() = Random.nextFloat() * (endI
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun closestQuantizedAngle(targetAngle:Float, step:Float, quantizedAngles: Array<Float>) : Float {
-    return quantizedAngles[(targetAngle / step).roundToInt()]
+    return quantizedAngles[((targetAngle / step).roundToInt()) % quantizedAngles.size]
 }
 
 /**

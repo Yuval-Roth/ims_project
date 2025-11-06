@@ -8,8 +8,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastCoerceIn
-import com.imsproject.common.utils.Angle
-import com.imsproject.common.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.ARC_DEFAULT_ALPHA
 import com.imsproject.watch.FLOUR_MILL_SYNC_FREQUENCY_THRESHOLD
 import com.imsproject.watch.MARKER_FADE_DURATION

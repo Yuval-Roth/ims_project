@@ -5,7 +5,7 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewModelScope
-import com.imsproject.common.utils.Angle
+import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.R
 import com.imsproject.watch.view.Pacman
 import com.imsproject.watch.viewmodel.MainViewModel

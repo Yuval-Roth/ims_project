@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
-import com.imsproject.common.utils.UNDEFINED_ANGLE
+import com.imsproject.watch.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.FREQUENCY_HISTORY_MILLISECONDS
@@ -25,7 +25,6 @@ import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.toAngle
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

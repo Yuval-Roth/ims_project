@@ -32,7 +32,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.utils.Angle
+import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.PACMAN_ANGLE_STEP

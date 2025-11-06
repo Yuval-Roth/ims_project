@@ -1,4 +1,4 @@
-package com.imsproject.common.utils
+package com.imsproject.watch.utils
 
 import kotlin.math.absoluteValue
 
@@ -48,27 +48,9 @@ class Angle(
      * @return a new angle that is the sum of this angle and the other angle
      */
     operator fun plus(other: Float): Angle {
-        var added = this.floatValue + other
-
-        //handle the gap between 2nd and 3rd quadrants
-        added = if(this.isInQuadrant(2) && other > 0){
-            if (added > 180){
-                added - 360
-            } else {
-                added
-            }
-        } else if(this.isInQuadrant(3) && other < 0){
-            if (added <= -180){
-                added + 360
-            } else {
-                added
-            }
-        }
-        // simple case
-        else {
-            added
-        }
-        return Angle(added)
+        var sum = (floatValue + other + 180f) % 360f
+        if (sum < 0) sum += 360f
+        return Angle(sum - 180f)
     }
 
     /**

@@ -148,7 +148,7 @@ var PACMAN_MAX_SIZE = 0f
 
 // ===================== Tree ===================== |
 
-const val TREE_RING_ROTATION_DURATION = 2800f
+const val TREE_RING_ROTATION_DURATION = 4650f
 const val TREE_RING_OPENING_ANGLE = 56f
 const val TREE_RING_ANGLE_STEP = 360f / (TREE_RING_ROTATION_DURATION / 16f)
 const val TREE_RING_START_ANGLE = 0f + TREE_RING_OPENING_ANGLE / 2f

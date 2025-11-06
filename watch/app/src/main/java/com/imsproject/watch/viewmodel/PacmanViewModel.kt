@@ -16,7 +16,7 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
-import com.imsproject.common.utils.Angle
+import com.imsproject.watch.utils.Angle
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.PACMAN_ROTATION_DURATION

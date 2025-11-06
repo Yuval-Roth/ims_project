@@ -799,7 +799,7 @@ class MainActivity : ComponentActivity() {
                 """
                 GameType.PACMAN -> """
                     להשלים אם צריך
-                """.trimIndent()
+                """
                 else -> throw IllegalStateException("Unknown game type")
             }.trimIndent()
             Column(

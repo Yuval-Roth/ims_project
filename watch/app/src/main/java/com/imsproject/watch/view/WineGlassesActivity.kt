@@ -1,6 +1,5 @@
 package com.imsproject.watch.view
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.compose.setContent
@@ -34,10 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.common.utils.UNDEFINED_ANGLE
-import com.imsproject.watch.CYAN_COLOR
+import com.imsproject.watch.utils.UNDEFINED_ANGLE
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
-import com.imsproject.watch.GLOWING_YELLOW_COLOR
 import com.imsproject.watch.MY_ARC_SIZE
 import com.imsproject.watch.MY_ARC_TOP_LEFT
 import com.imsproject.watch.MY_STROKE_WIDTH
