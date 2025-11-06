@@ -437,6 +437,8 @@ class MainActivity : ComponentActivity() {
                     viewModel.clearError()
                 }
             }
+
+            State.CONNECTION_LOST -> ConnectionLost()
         }
 
         if(loading) FloatingLoading()
@@ -1090,6 +1092,30 @@ class MainActivity : ComponentActivity() {
             ) {
                 Spacer(Modifier.fillMaxHeight(0.4f))
                 RTLText("תודה על השתתפותך בניסוי ! ")
+                Spacer(Modifier.fillMaxHeight(0.1f))
+                RTLText("נא להחזיר את השעון לנסיין")
+            }
+        }
+    }
+
+    @Composable
+    fun ConnectionLost(){
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DARK_BACKGROUND_COLOR),
+            contentAlignment = Alignment.Center
+        ){
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    start = COLUMN_PADDING,
+                    end = COLUMN_PADDING
+                ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(Modifier.fillMaxHeight(0.4f))
+                RTLText("אבד החיבור לשרת")
                 Spacer(Modifier.fillMaxHeight(0.1f))
                 RTLText("נא להחזיר את השעון לנסיין")
             }

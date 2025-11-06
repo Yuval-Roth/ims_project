@@ -17,7 +17,6 @@ import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,7 +56,8 @@ class MainViewModel() : ViewModel() {
         THANKS_FOR_PARTICIPATING,
         // error states
         ALREADY_CONNECTED,
-        ERROR
+        ERROR,
+        CONNECTION_LOST
 
     }
 
@@ -616,11 +616,32 @@ class MainViewModel() : ViewModel() {
         }
     }
 
+    private fun reconnect(onFailure: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val timeout = System.currentTimeMillis() + 10000
+            var reconnected = false
+            while(!reconnected && System.currentTimeMillis() < timeout){
+                model.closeAllResources()
+                if(model.connectToServer(2) && model.reconnect()){
+                    reconnected = true
+                }
+                Log.d(TAG, "reconnect: reconnected = $reconnected")
+            }
+            if(reconnected){
+                setupListeners()
+            } else {
+                onFailure()
+            }
+        }
+    }
+
     private fun setupListeners() {
         model.onTcpMessage({ handleGameRequest(it) }) {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
-                fatalError("Connection lost")
+                reconnect {
+                    connectionLost()
+                }
             } else {
                 showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
             }
@@ -641,7 +662,12 @@ class MainViewModel() : ViewModel() {
         model.onUdpMessage(null)
     }
 
-    fun fatalError(message: String) {
+    fun connectionLost(){
+        fatalError("Connection lost", false)
+        setState(State.CONNECTION_LOST)
+    }
+
+    fun fatalError(message: String, showError: Boolean = true) {
         val oldModel = model
         _playerId.value = ""
         _lobbyId.value = ""
