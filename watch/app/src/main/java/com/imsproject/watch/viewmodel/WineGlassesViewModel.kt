@@ -131,7 +131,9 @@ open class WineGlassesViewModel : GameViewModel(GameType.WINE_GLASSES) {
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
         Log.d(TAG, "my color: $myColor")
-        model.sessionSetupComplete()
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sessionSetupComplete()
+        }
     }
 
     open fun setTouchPoint(x: Float, y: Float) {

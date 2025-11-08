@@ -199,7 +199,9 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
         }
         FLOWER_GARDEN_SYNC_TIME_THRESHOLD = syncTolerance.toInt()
         Log.d(TAG, "syncTolerance: $syncTolerance")
-        model.sessionSetupComplete()
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sessionSetupComplete()
+        }
     }
 
     // ================================================================================ |

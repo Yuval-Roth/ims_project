@@ -2,13 +2,16 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.view.contracts.Result
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 open class RecessViewModel: GameViewModel(GameType.RECESS) {
 
@@ -40,7 +43,9 @@ open class RecessViewModel: GameViewModel(GameType.RECESS) {
         }
         _recessLength.value = gameDuration
 
-        model.sessionSetupComplete()
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sessionSetupComplete()
+        }
     }
 
     // ================================================================================ |

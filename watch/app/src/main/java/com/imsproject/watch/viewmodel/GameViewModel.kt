@@ -304,7 +304,12 @@ abstract class GameViewModel(
     }
 
     private fun setupListeners() {
-        model.onTcpMessage({ handleGameRequest(it) }) {
+        //TODO: add callbacks for onRecoveringConnection and onConnectionRecovered
+        // and update the existing ones
+
+        // TCP
+        model.onTcpMessage { handleGameRequest(it) }
+        model.onTcpException {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
                 addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),"Connection lost"))
@@ -327,7 +332,10 @@ abstract class GameViewModel(
                 exitWithError(errorMessage, Result.Code.TCP_ERROR)
             }
         }
-        model.onUdpMessage({ handleGameAction(it) }) {
+
+        // UDP
+        model.onUdpMessage { handleGameAction(it) }
+        model.onUdpException {
             Log.e(TAG, "udp exception", it)
             val errorMessage = it.message ?: it.cause?.message ?: "unknown udp exception"
             addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))

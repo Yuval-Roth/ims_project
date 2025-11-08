@@ -636,11 +636,16 @@ class MainViewModel() : ViewModel() {
     }
 
     private fun setupListeners() {
-        model.onTcpMessage({ handleGameRequest(it) }) {
+        //TODO: add callbacks for onRecoveringConnection and onConnectionRecovered
+        // and update the existing ones
+
+        // TCP
+        model.onTcpMessage { handleGameRequest(it) }
+        model.onTcpException {
             Log.e(TAG, "tcp exception", it)
             if(it is WebsocketNotConnectedException){
                 reconnect {
-                    connectionLost()
+                    connectionLost() // TODO: remove this and turn it into a never ending reconnect loop
                 }
             } else {
                 showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
@@ -650,7 +655,10 @@ class MainViewModel() : ViewModel() {
             Log.e(TAG, "tcp error", it)
             showError(it.message ?: it.cause?.message ?: "unknown tcp error")
         }
-        model.onUdpMessage({ handleGameAction(it) }) {
+
+        // UDP
+        model.onUdpMessage { handleGameAction(it) }
+        model.onUdpException {
             Log.e(TAG, "udp exception", it)
             showError(it.message ?: it.cause?.message ?: "unknown udp exception")
         }

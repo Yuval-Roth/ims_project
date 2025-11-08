@@ -110,7 +110,9 @@ open class WavesViewModel: GameViewModel(GameType.WAVES) {
             }
         }
         Log.d(TAG, "myDirection = $myDirection")
-        model.sessionSetupComplete()
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sessionSetupComplete()
+        }
     }
 
     fun handleFling(dpPerSec: Float, direction: Int){

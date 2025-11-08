@@ -15,7 +15,6 @@ import com.imsproject.watch.utils.RestApiClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
@@ -24,7 +23,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
@@ -59,8 +57,8 @@ class MainModel (private val scope : CoroutineScope) {
 
     private class CallbackNotSetException : Exception("Listener not set",null,true,false)
 
-    private var ws: WebSocketClient? = null
-    private var udp : UdpClient? = null
+    private lateinit var ws: WebSocketClient
+    private lateinit var udp : UdpClient
     private var clientsClosed = true
 
     init{
@@ -76,7 +74,7 @@ class MainModel (private val scope : CoroutineScope) {
 
     var playerId : String? = null
         private set
-    var connected = false
+    var connectionReady = false
         private set
 
     private val cachedException = CallbackNotSetException()
@@ -86,6 +84,8 @@ class MainModel (private val scope : CoroutineScope) {
     private var udpOnMessageCallback : suspend (GameAction) -> Unit = { defaultCallback() }
     private var udpOnExceptionCallback : suspend (Exception) -> Unit = { defaultCallback() }
     private var tcpOnErrorCallback : suspend (Exception) -> Unit = { defaultCallback() }
+    private var onRecoveringConnectionCallback : suspend () -> Unit = { defaultCallback() }
+    private var onConnectionRecoveredCallback : suspend () -> Unit = { defaultCallback() }
 
     private var tcpMessageListener : Job? = null
     private var udpMessageListener : Job? = null
@@ -103,17 +103,17 @@ class MainModel (private val scope : CoroutineScope) {
     // ======================== Public Methods =============================== |
     // ======================================================================= |
 
-    suspend fun connectToServer(timeout: Long = 10) : Boolean {
+    fun connectToServer(timeout: Long = 10) : Boolean {
         Log.d(TAG, "connectToServer: Connecting to server")
 
-        val _ws = this.ws
-        if(_ws != null){
-            if(! _ws.isOpen || _ws.isClosing || _ws.isClosed){
+        if(this::ws.isInitialized){
+            if(! ws.isOpen || ws.isClosing || ws.isClosed){
                 clientsClosed = true
             }
         }
 
         if (clientsClosed) {
+            Log.d(TAG, "connectToServer: clients are closed, creating new clients")
             val (ws, udp) = try{
                 getNewClients()
             } catch(_ : UnknownHostException){
@@ -124,15 +124,14 @@ class MainModel (private val scope : CoroutineScope) {
             clientsClosed = false
         }
 
-        withWs {
-            if(!isOpen){
-                if(!connectBlocking(timeout, TimeUnit.SECONDS)){
-                    Log.e(TAG, "connectToServer: WebSocket connection timeout")
-                    return false // timeout
-                }
-                startListeners()
-                startHeartBeat()
+        if(!ws.isOpen){
+            Log.d(TAG, "connectToServer: WebSocket is not open, connecting...")
+            if(!ws.connectBlocking(timeout, TimeUnit.SECONDS)){
+                Log.e(TAG, "connectToServer: WebSocket connection timeout")
+                return false // timeout
             }
+            startListeners()
+            startHeartBeat()
         }
 
         return true
@@ -158,7 +157,7 @@ class MainModel (private val scope : CoroutineScope) {
 
         // connection established
         this.playerId = selectedId
-        connected = true
+        connectionReady = true
 
         Log.d(TAG, "enter: Connection established")
         return playerId
@@ -178,14 +177,14 @@ class MainModel (private val scope : CoroutineScope) {
         if(! udpSetup(udpEnterCode)) return false
 
         // connection established
-        connected = true
+        connectionReady = true
 
         Log.d(TAG, "reconnect: Connection established")
         return true
     }
 
     suspend fun exit() {
-        connected = false
+        connectionReady = false
         sendTcp(GameRequest.builder(GameRequest.Type.EXIT).build().toJson())
     }
 
@@ -195,36 +194,64 @@ class MainModel (private val scope : CoroutineScope) {
      *
      * @param callback If set to **null**, the callback is removed and no messages will be received.
      */
-    fun onUdpMessage(callback: (suspend (GameAction) -> Unit)?,  onException: suspend (Exception) -> Unit = {}) {
+    fun onUdpMessage(callback: (suspend (GameAction) -> Unit)?) {
         if(callback == null){
-            udpOnMessageCallback = {defaultCallback()}
-            udpOnExceptionCallback = {}
+            udpOnMessageCallback = { defaultCallback() }
             Log.d(TAG, "onUdpMessage: callback removed")
         } else {
             udpOnMessageCallback = callback
-            udpOnExceptionCallback = onException
+            Log.d(TAG, "onUdpMessage: callback set")
+        }
+    }
+
+    /**
+     * Sets or removes the callback for UDP message and exception events.
+     *
+     * @param callback If set to **null**, the callback is removed and no messages will be received.
+     */
+    fun onUdpException(callback: (suspend (Exception) -> Unit)?) {
+        if(callback == null){
+            udpOnExceptionCallback = { defaultCallback() }
+            Log.d(TAG, "onUdpException: callback removed")
+        } else {
+            udpOnExceptionCallback = callback
             Log.d(TAG, "onUdpMessage: callback set")
         }
     }
 
     /**
      * Sets or removes the callback for TCP message and exception events.
-     * By default, the exception callback is set to an empty function.
      *
      * @param callback If set to **null**, the callback is removed and no messages will be received.
      */
-    fun onTcpMessage(callback:  (suspend (GameRequest) -> Unit)?, onException: suspend (Exception) -> Unit = {}) {
+    fun onTcpMessage(callback:  (suspend (GameRequest) -> Unit)?) {
 
         if(callback == null){
-            tcpOnMessageCallback = {defaultCallback()}
-            tcpOnExceptionCallback = {}
+            tcpOnMessageCallback = { defaultCallback() }
             Log.d(TAG, "onTcpMessage: callback removed")
         } else {
             tcpOnMessageCallback = callback
-            tcpOnExceptionCallback = onException
             Log.d(TAG, "onTcpMessage: callback set")
         }
     }
+
+    /**
+     * Sets or removes the callback for TCP exception events.
+     *
+     * @param callback If set to **null**, the callback is removed and no messages will be received.
+     */
+    fun onTcpException(callback: (suspend (Exception) -> Unit)?) {
+
+        if(callback == null){
+            tcpOnExceptionCallback = { defaultCallback() }
+            Log.d(TAG, "onTcpException: callback removed")
+        } else {
+            tcpOnExceptionCallback = callback
+            Log.d(TAG, "onTcpException: callback set")
+        }
+    }
+
+
 
     /**
      * Sets or removes the callback for TCP error events.
@@ -234,7 +261,7 @@ class MainModel (private val scope : CoroutineScope) {
     fun onTcpError(callback: (suspend (Exception) -> Unit)?) {
 
         if(callback == null){
-            tcpOnErrorCallback = {defaultCallback()}
+            tcpOnErrorCallback = { defaultCallback() }
             Log.d(TAG, "onTcpError: callback removed")
         } else {
             tcpOnErrorCallback = callback
@@ -409,11 +436,11 @@ class MainModel (private val scope : CoroutineScope) {
     suspend fun closeAllResources(){
         Log.d(TAG, "Closing all resources")
         try{
-            connected = false
+            connectionReady = false
             stopListeners()
             stopHeartBeat()
-            ws?.close()
-            udp?.close()
+            if(this::ws.isInitialized){ ws.close() }
+            if (this::udp.isInitialized){ udp.close() }
             clientsClosed = true
             Log.d(TAG, "All resources closed")
         } catch(e: Exception){
@@ -475,7 +502,13 @@ class MainModel (private val scope : CoroutineScope) {
         val enterRequest = GameRequest.builder(connectType)
             .playerId(id)
             .build().toJson()
-        sendTcp(enterRequest)
+
+        try {
+            ws.send(enterRequest)
+        } catch (e: WebsocketNotConnectedException) {
+            Log.e(TAG, "wsSetup: WebSocket not connected", e)
+            return null
+        }
 
         val enterResponse = withTimeoutOrNull(TIMEOUT_MS){
             wsChannel.receive()
@@ -512,9 +545,15 @@ class MainModel (private val scope : CoroutineScope) {
     ): Boolean {
 
         // send ENTER request with the code
-        sendUdp(GameAction.builder(GameAction.Type.ENTER)
-                .data(udpEnterCode)
-                .build().toString())
+        val enterRequest = GameAction.builder(GameAction.Type.ENTER)
+            .data(udpEnterCode)
+            .build().toString()
+        try {
+            udp.send(enterRequest)
+        } catch (e: Exception) {
+            Log.e(TAG, "udpSetup: Failed to send UDP ENTER request", e)
+            return false
+        }
 
         // === wait for confirmation === |
         val enterResponse = withTimeoutOrNull(TIMEOUT_MS){
@@ -556,10 +595,9 @@ class MainModel (private val scope : CoroutineScope) {
                 }
                 if (received == null){
                     failedTries++
-                    if(failedTries > 3){
-                        attemptConnectionRecovery {
-                            executeCallback { tcpOnExceptionCallback(WebsocketNotConnectedException()) }
-                        }
+                    if(failedTries == 10){
+                        recoverConnection()
+                        delay(100)
                     }
                     continue
                 }
@@ -605,10 +643,8 @@ class MainModel (private val scope : CoroutineScope) {
                     handleGameAction(action)
                 } catch (e: IOException) {
                     Log.e(TAG, "Failed to receive UDP message", e)
-                    attemptConnectionRecovery {
-                        executeCallback { udpOnExceptionCallback(e) }
-                    }
-                    return@launch
+                    recoverConnection()
+                    delay(100)
                 } catch (e: JsonParseException) {
                     Log.e(TAG, "Failed to parse UDP message", e)
                     executeCallback { udpOnExceptionCallback(e) }
@@ -648,9 +684,9 @@ class MainModel (private val scope : CoroutineScope) {
         Log.d(TAG, "Stopping listeners")
         udpMessageListener?.cancel()
         tcpMessageListener?.cancel()
-        ws?.onErrorListener = {}
-        ws?.interrupt()
-        udp?.interrupt()
+        ws.onErrorListener = {}
+        ws.interrupt()
+        udp.interrupt()
         tcpMessageListener?.join()
         udpMessageListener?.join()
         tcpMessageListener = null
@@ -658,11 +694,16 @@ class MainModel (private val scope : CoroutineScope) {
     }
 
     private suspend fun sendTcp(message: String){
-        try{
-            withWs { send(message) }
-        } catch(e: WebsocketNotConnectedException) {
-            Log.e(TAG, "sendTcp: sending message failed", e)
-            attemptConnectionRecovery {
+        while(true){
+            try{
+                withWs { send(message) }
+                break
+            } catch (e : WebsocketNotConnectedException){
+                Log.e(TAG, "sendTcp: WebSocket not connected", e)
+                recoverConnection()
+                delay(100)
+            } catch (e : Exception){
+                Log.e(TAG, "sendTcp: Failed to send TCP message", e)
                 executeCallback { tcpOnExceptionCallback(e) }
             }
         }
@@ -675,71 +716,51 @@ class MainModel (private val scope : CoroutineScope) {
                 break
             } catch (e : Exception){
                 Log.e(TAG, "Failed to send UDP message", e)
-                val retry = attemptConnectionRecovery {
-                    executeCallback { udpOnExceptionCallback(e) }
-                }
-                if(retry){
-                    delay(100)
-                } else {
-                    break
-                }
+                recoverConnection()
+                delay(100)
             }
         }
     }
 
-    /**
-     * return true if the caller should retry sending the message
-     */
-    private suspend fun attemptConnectionRecovery(onFailure: suspend () -> Unit): Boolean {
-
+    private fun recoverConnection() {
         if(connectionRecoveryLock.tryLock()){
-            return withContext(Dispatchers.IO) {
-                try{
-                    Log.d(TAG, "Attempting connection recovery")
-                    val success = if(!connected){
-                        withWs {
-                            reset()
-                            connectBlocking(TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            connectionReady = false
+            scope.launch(Dispatchers.IO) {
+                executeCallback { onRecoveringConnectionCallback() }
+                try {
+                    while(true){
+                        try{
+                            Log.d(TAG, "Attempting connection recovery")
+                            closeAllResources()
+                            val success = connectToServer(2) && reconnect()
+                            if(success){
+                                Log.d(TAG, "Connection recovery successful")
+                                executeCallback { onConnectionRecoveredCallback() }
+                                return@launch
+                            } else {
+                                Log.e(TAG, "Connection recovery failed, retrying...")
+                            }
+                        } catch(e: Exception){
+                            Log.e(TAG, "Connection recovery failed with exception, retrying...",e)
                         }
-                    } else {
-                        closeAllResources()
-                        connectToServer(2) && reconnect()
                     }
-                    if(success){
-                        Log.d(TAG, "Connection recovery successful")
-                        return@withContext true
-                    } else {
-                        Log.e(TAG, "Connection recovery failed")
-                        onFailure()
-                        return@withContext false
-                    }
-                } catch(e: Exception){
-                    Log.e(TAG, "Connection recovery failed",e)
-                    onFailure()
-                    return@withContext false
                 } finally {
                     connectionRecoveryLock.unlock()
                 }
             }
-        } else {
-            return true
         }
     }
 
     private suspend inline fun <T> withWs(action: WebSocketClient.() -> T): T {
-        var ws: WebSocketClient? = this.ws
-        while(ws == null){
+        while(! connectionReady){
             delay(100)
-            ws = this.ws
         }
         return action(ws)
     }
 
     private suspend inline fun <T> withUdp(action: UdpClient.() -> T): T {
-        var udp: UdpClient? = this.udp
-        while(udp == null){
+        while(! connectionReady){
             delay(100)
-            udp = this.udp
         }
         return action(udp)
     }

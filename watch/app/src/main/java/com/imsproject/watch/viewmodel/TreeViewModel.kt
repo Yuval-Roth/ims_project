@@ -122,7 +122,9 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
             }
         }
         Log.d(TAG, "myDirection = $myDirection")
-        model.sessionSetupComplete()
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sessionSetupComplete()
+        }
     }
 
     open fun fling(dpPerSec: Float) {

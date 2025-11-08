@@ -154,7 +154,9 @@ open class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         Log.d(TAG, "syncTolerance: $syncTolerance")
         Log.d(TAG, "syncWindowLength: $syncWindowLength")
         Log.d(TAG, "My color: $myColor")
-        model.sessionSetupComplete()
+        viewModelScope.launch(Dispatchers.IO) {
+            model.sessionSetupComplete()
+        }
     }
 
     open fun setTouchPoint(x: Float, y: Float) {
