@@ -3,27 +3,12 @@ package com.imsproject.watch.view
 import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.core.content.IntentSanitizer
-import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.MaterialTheme
 import com.imsproject.common.gameserver.GameType
-import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
-import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
@@ -58,12 +43,10 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
     @Composable
     protected open fun Main(){
         val state by viewModel.state.collectAsState()
+        val reconnecting by viewModel.reconnecting.collectAsState()
         when(state){
             GameViewModel.State.LOADING -> {
-                LoadingScreen("טוען פעילות...")
-            }
-            GameViewModel.State.TRYING_TO_RECONNECT -> {
-                LoadingScreen("מנסה להתחבר מחדש....")
+                LoadingScreen("טוען...")
             }
             GameViewModel.State.ERROR -> {
                 val error = viewModel.error.collectAsState().value ?: "Unknown error"
@@ -86,6 +69,11 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
             else -> {
                 Log.e(TAG, "unexpected state $state")
                 finish()
+            }
+        }
+        if(reconnecting) {
+            ReconnectingOverlay {
+                viewModel.exitWithError("Disconnected from server", Result.Code.CONNECTION_LOST)
             }
         }
     }

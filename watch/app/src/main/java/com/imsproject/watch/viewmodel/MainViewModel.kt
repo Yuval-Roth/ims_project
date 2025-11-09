@@ -17,13 +17,13 @@ import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 private const val TAG = "MainViewModel"
 
@@ -140,6 +140,9 @@ class MainViewModel() : ViewModel() {
     private val _countdownTimer = MutableStateFlow(-1)
     val countdownTimer : StateFlow<Int> = _countdownTimer
 
+    private val _reconnecting = MutableStateFlow(false)
+    val reconnecting : StateFlow<Boolean> = _reconnecting
+
     private var _sessionId = -1
     var temporaryPlayerId = ""
 
@@ -150,6 +153,8 @@ class MainViewModel() : ViewModel() {
 
     private var experimentRunning = false
     private var lobbyConfigured = false
+
+    private var connectionRecoveryJob: Job? =  null
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -206,7 +211,7 @@ class MainViewModel() : ViewModel() {
                     _playerId.value = playerId
                     _loading.value = false
                     setState(State.CONNECTED_NOT_IN_LOBBY)
-                    setupListeners() // setup the listeners to start receiving messages
+                    setupCallbacks() // setup the listeners to start receiving messages
                     return@launch
                 }
             }
@@ -232,10 +237,22 @@ class MainViewModel() : ViewModel() {
         _timeServerStartTime.value = -1
         _gameDuration.value = null
         val isWarmup = _isWarmup.value
-        setupListeners()
+        setupCallbacks()
         viewModelScope.launch(Dispatchers.IO) {
             when (result.code) {
-                Result.Code.OK -> {
+                Result.Code.OK, Result.Code.CONNECTION_LOST -> {
+                    if(result.code == Result.Code.CONNECTION_LOST){
+                        if(! model.connectionReady){
+                            _reconnecting.value = true
+                        }
+                        while(! model.connectionReady){
+                            delay(100)
+                            if(_state.value == State.CONNECTION_LOST){
+                                return@launch
+                            }
+                        }
+                        _reconnecting.value = false
+                    }
                     if(result.uploadEvents){
                         setState(State.UPLOADING_EVENTS)
                     }
@@ -616,26 +633,7 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    private fun reconnect(onFailure: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val timeout = System.currentTimeMillis() + 10000
-            var reconnected = false
-            while(!reconnected && System.currentTimeMillis() < timeout){
-                model.closeAllResources()
-                if(model.connectToServer(2) && model.reconnect()){
-                    reconnected = true
-                }
-                Log.d(TAG, "reconnect: reconnected = $reconnected")
-            }
-            if(reconnected){
-                setupListeners()
-            } else {
-                onFailure()
-            }
-        }
-    }
-
-    private fun setupListeners() {
+    private fun setupCallbacks() {
         //TODO: add callbacks for onRecoveringConnection and onConnectionRecovered
         // and update the existing ones
 
@@ -643,17 +641,13 @@ class MainViewModel() : ViewModel() {
         model.onTcpMessage { handleGameRequest(it) }
         model.onTcpException {
             Log.e(TAG, "tcp exception", it)
-            if(it is WebsocketNotConnectedException){
-                reconnect {
-                    connectionLost() // TODO: remove this and turn it into a never ending reconnect loop
-                }
-            } else {
-                showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
-            }
+            showError(it.message ?: it.cause?.message ?: "unknown tcp exception")
+            ErrorReporter.report(it)
         }
         model.onTcpError {
             Log.e(TAG, "tcp error", it)
             showError(it.message ?: it.cause?.message ?: "unknown tcp error")
+            ErrorReporter.report(it)
         }
 
         // UDP
@@ -661,13 +655,40 @@ class MainViewModel() : ViewModel() {
         model.onUdpException {
             Log.e(TAG, "udp exception", it)
             showError(it.message ?: it.cause?.message ?: "unknown udp exception")
+            ErrorReporter.report(it)
+        }
+
+        model.onRecoveringConnection {
+            withContext(Dispatchers.Main){
+                if(connectionRecoveryJob == null){
+                    connectionRecoveryJob = viewModelScope.launch(Dispatchers.IO) {
+                        delay(5000) // wait for 5 seconds before showing reconnecting overlay
+                        _reconnecting.value = true
+                    }
+                }
+            }
+        }
+        model.onConnectionRecovered {
+            withContext(Dispatchers.Main){
+                val job = connectionRecoveryJob
+                withContext(Dispatchers.IO){
+                    job?.cancel()
+                    connectionRecoveryJob = null
+                    _reconnecting.value = false
+                    setupCallbacks()
+                }
+            }
         }
     }
 
-    fun clearListeners() {
+    fun clearCallbacks(){
         model.onTcpMessage(null)
         model.onTcpError(null)
+        model.onTcpException(null)
         model.onUdpMessage(null)
+        model.onUdpException(null)
+        model.onRecoveringConnection(null)
+        model.onConnectionRecovered(null)
     }
 
     fun connectionLost(){

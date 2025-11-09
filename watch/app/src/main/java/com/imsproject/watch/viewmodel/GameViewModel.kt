@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Vibrator
 import android.util.Log
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imsproject.common.gameserver.GameAction
@@ -12,8 +11,6 @@ import com.imsproject.common.gameserver.GameRequest
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.common.gameserver.SessionEvent
 import com.imsproject.watch.ACTIVITY_DEBUG_MODE
-import com.imsproject.watch.BLUE_COLOR
-import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.SERVER_IP
@@ -22,18 +19,18 @@ import com.imsproject.watch.model.SessionEventCollector
 import com.imsproject.watch.model.SessionEventCollectorImpl
 import com.imsproject.watch.sensors.HeartRateSensorHandler
 import com.imsproject.watch.sensors.LocationSensorsHandler
+import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.utils.LatencyTracker
 import com.imsproject.watch.utils.PacketTracker
 import com.imsproject.watch.utils.WavPlayer
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.java_websocket.exceptions.WebsocketNotConnectedException
 
 
 abstract class GameViewModel(
@@ -43,7 +40,6 @@ abstract class GameViewModel(
     enum class State {
         LOADING,
         PLAYING,
-        TRYING_TO_RECONNECT,
         ERROR,
         TERMINATED
     }
@@ -79,8 +75,14 @@ abstract class GameViewModel(
     private val _resultCode = MutableStateFlow(Result.Code.OK)
     val resultCode : StateFlow<Result.Code> = _resultCode
 
+    private val _reconnecting = MutableStateFlow(false)
+    val reconnecting : StateFlow<Boolean> = _reconnecting
+
+    private var gameDuration = 1000000000
+
     private var timeServerDelta = 0L
     protected var myStartTime = 0L
+    private var connectionRecoveryJob: Job? = null
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -114,13 +116,21 @@ abstract class GameViewModel(
             }
             myStartTime = timeServerStartTime + timeServerDelta
 
+            val gameDuration = intent.getIntExtra("$PACKAGE_PREFIX.gameDuration", -1).also {
+                if (it <= 0) {
+                    exitWithError("Missing or invalid game duration", Result.Code.BAD_REQUEST)
+                    return@launch
+                }
+            }
+            this@GameViewModel.gameDuration = gameDuration
+
             // log clock metadata
             val timestamp = getCurrentGameTime()
             addEvent(SessionEvent.serverStartTime(playerId, timestamp,timeServerStartTime.toString()))
             addEvent(SessionEvent.timeServerDelta(playerId,timestamp,timeServerDelta.toString()))
             addEvent(SessionEvent.clientStartTime(playerId,timestamp,myStartTime.toString()))
 
-            setupListeners() // start listening for messages
+            setupCallbacks() // start listening for messages
 
             // packet tracker setup
             packetTracker.onOutOfOrderPacket = {
@@ -160,10 +170,15 @@ abstract class GameViewModel(
                 }
             }
 
-            // =================== start tracking sensors =================== |
-
+            // start tracking sensors
             locationSensorsHandler.startTracking(this@GameViewModel)
             heartRateSensorHandler.startTracking(this@GameViewModel)
+
+            // failsafe end of session job - in case END_GAME request is lost due to network issues
+            viewModelScope.launch {
+                delay(gameDuration + 5000L) // add 5 seconds buffer
+                exitOk()
+            }
         }
     }
 
@@ -255,7 +270,7 @@ abstract class GameViewModel(
     }
 
     protected open fun onExit(){
-        clearListeners() // clear the listeners to prevent any further messages from being processed.
+        clearCallbacks() // clear the listeners to prevent any further messages from being processed.
         if(locationSensorsHandler.tracking){
             locationSensorsHandler.stopTracking()
         }
@@ -281,29 +296,7 @@ abstract class GameViewModel(
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
 
-    private fun reconnect(onFailure: () -> Unit) {
-        setState(State.TRYING_TO_RECONNECT)
-        viewModelScope.launch(Dispatchers.IO) {
-            val timeout = System.currentTimeMillis() + 10000
-            var reconnected = false
-            while(!reconnected && System.currentTimeMillis() < timeout){
-                model.closeAllResources()
-                if(model.connectToServer(2) && model.reconnect()){
-                    reconnected = true
-                }
-                Log.d(TAG, "reconnect: reconnected = $reconnected")
-            }
-            if(reconnected){
-                addEvent(SessionEvent.reconnected(playerId,getCurrentGameTime()))
-                setupListeners()
-                setState(State.PLAYING)
-            } else {
-                onFailure()
-            }
-        }
-    }
-
-    private fun setupListeners() {
+    private fun setupCallbacks() {
         //TODO: add callbacks for onRecoveringConnection and onConnectionRecovered
         // and update the existing ones
 
@@ -311,26 +304,17 @@ abstract class GameViewModel(
         model.onTcpMessage { handleGameRequest(it) }
         model.onTcpException {
             Log.e(TAG, "tcp exception", it)
-            if(it is WebsocketNotConnectedException){
-                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),"Connection lost"))
-                reconnect {
-                    exitWithError("Connection lost", Result.Code.CONNECTION_LOST)
-                }
-            } else {
-                val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp exception"
-                addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
-                reconnect {
-                    exitWithError(errorMessage, Result.Code.TCP_EXCEPTION)
-                }
-            }
+            val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp exception"
+            addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
+            ErrorReporter.report(it)
+            exitWithError(errorMessage, Result.Code.TCP_EXCEPTION)
         }
         model.onTcpError {
             Log.e(TAG, "tcp error", it)
             val errorMessage = it.message ?: it.cause?.message ?: "unknown tcp error"
             addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
-            reconnect {
-                exitWithError(errorMessage, Result.Code.TCP_ERROR)
-            }
+            ErrorReporter.report(it)
+            exitWithError(errorMessage, Result.Code.TCP_ERROR)
         }
 
         // UDP
@@ -339,8 +323,32 @@ abstract class GameViewModel(
             Log.e(TAG, "udp exception", it)
             val errorMessage = it.message ?: it.cause?.message ?: "unknown udp exception"
             addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),errorMessage))
-            reconnect {
-                exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
+            ErrorReporter.report(it)
+            exitWithError(errorMessage, Result.Code.UDP_EXCEPTION)
+        }
+
+        model.onRecoveringConnection {
+            withContext(Dispatchers.Main){
+                if(connectionRecoveryJob == null){
+                    connectionRecoveryJob = viewModelScope.launch(Dispatchers.IO) {
+                        addEvent(SessionEvent.networkError(playerId,getCurrentGameTime(),"Connection lost"))
+                        delay(5000) // wait for 5 seconds before showing reconnecting overlay
+                        _reconnecting.value = true
+                    }
+                }
+            }
+        }
+
+        model.onConnectionRecovered {
+            withContext(Dispatchers.Main){
+                val job = connectionRecoveryJob
+                withContext(Dispatchers.IO){
+                    job?.cancel()
+                    connectionRecoveryJob = null
+                    _reconnecting.value = false
+                    setupCallbacks()
+                    addEvent(SessionEvent.reconnected(playerId,getCurrentGameTime()))
+                }
             }
         }
     }
@@ -350,10 +358,14 @@ abstract class GameViewModel(
         Log.d(TAG, "set new state: $newState")
     }
 
-    private fun clearListeners(){
+    private fun clearCallbacks(){
         model.onTcpMessage(null)
         model.onTcpError(null)
+        model.onTcpException(null)
         model.onUdpMessage(null)
+        model.onUdpException(null)
+        model.onRecoveringConnection(null)
+        model.onConnectionRecovered(null)
     }
 
     companion object {

@@ -33,9 +33,9 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
 // set these values to run the app locally
-private const val RUNNING_LOCAL : Boolean = false
+private const val RUNNING_LOCAL : Boolean = true
 private const val RUNNING_ON_EMULATOR : Boolean = false
-private const val COMPUTER_NETWORK_IP = "192.168.165.126"
+private const val COMPUTER_NETWORK_IP = "30.30.1.108"
 
 // ========== Constants ===========|
 private const val TIMEOUT_MS = 2000L
@@ -116,7 +116,8 @@ class MainModel (private val scope : CoroutineScope) {
             Log.d(TAG, "connectToServer: clients are closed, creating new clients")
             val (ws, udp) = try{
                 getNewClients()
-            } catch(_ : UnknownHostException){
+            } catch(e : UnknownHostException){
+                Log.e(TAG, "connectToServer: Unknown host exception", e)
                 return false
             }
             this.ws = ws
@@ -251,8 +252,6 @@ class MainModel (private val scope : CoroutineScope) {
         }
     }
 
-
-
     /**
      * Sets or removes the callback for TCP error events.
      *
@@ -266,6 +265,38 @@ class MainModel (private val scope : CoroutineScope) {
         } else {
             tcpOnErrorCallback = callback
             Log.d(TAG, "onTcpError: callback set")
+        }
+    }
+
+    /**
+     * Sets or removes the callback for connection recovering events.
+     *
+     * @param callback If set to **null**, the callback is removed and no messages will be received.
+     */
+    fun onRecoveringConnection(callback: (suspend () -> Unit)?) {
+
+        if(callback == null){
+            onRecoveringConnectionCallback = { defaultCallback() }
+            Log.d(TAG, "onRecoveringConnection: callback removed")
+        } else {
+            onRecoveringConnectionCallback = callback
+            Log.d(TAG, "onRecoveringConnection: callback set")
+        }
+    }
+
+    /**
+     * Sets or removes the callback for connection recovered events.
+     *
+     * @param callback If set to **null**, the callback is removed and no messages will be received.
+     */
+    fun onConnectionRecovered(callback: (suspend () -> Unit)?) {
+
+        if(callback == null){
+            onConnectionRecoveredCallback = { defaultCallback() }
+            Log.d(TAG, "onConnectionRecovered: callback removed")
+        } else {
+            onConnectionRecoveredCallback = callback
+            Log.d(TAG, "onConnectionRecovered: callback set")
         }
     }
 
@@ -453,6 +484,7 @@ class MainModel (private val scope : CoroutineScope) {
     // ======================================================================= |
 
     private suspend fun handleGameRequest(request: GameRequest){
+        println("request received: \n$request")
         when(request.type){
             GameRequest.Type.HEARTBEAT -> wsHeartBeatChannel.send(request)
             GameRequest.Type.PING -> {}
@@ -507,6 +539,7 @@ class MainModel (private val scope : CoroutineScope) {
             ws.send(enterRequest)
         } catch (e: WebsocketNotConnectedException) {
             Log.e(TAG, "wsSetup: WebSocket not connected", e)
+            recoverConnection()
             return null
         }
 

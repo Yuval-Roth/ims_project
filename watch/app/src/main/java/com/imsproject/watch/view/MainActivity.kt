@@ -85,7 +85,6 @@ import com.imsproject.watch.COLUMN_PADDING
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.FIRST_QUESTION
 import com.imsproject.watch.GRASS_GREEN_COLOR
-import com.imsproject.watch.GREEN_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
@@ -160,7 +159,7 @@ class MainActivity : ComponentActivity() {
         setupSensorsPermission()
         setupWifi()
         setupUncaughtExceptionHandler()
-        viewModel.onCreate(applicationContext) //TODO: uncomment
+        viewModel.onCreate(applicationContext)
         setContent {
             MaterialTheme {
 //                viewModel.setState(State.SENSOR_CHECK)
@@ -249,8 +248,9 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun Main(){
 
-        val state = viewModel.state.collectAsState().value
-        val loading = viewModel.loading.collectAsState().value
+        val state by viewModel.state.collectAsState()
+        val loading by viewModel.loading.collectAsState()
+        val reconnecting by viewModel.reconnecting.collectAsState()
 
         when(state) {
 
@@ -365,33 +365,39 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            State.LOADING_GAME -> LoadingScreen("טוען פעילות...")
+            State.LOADING_GAME -> LoadingScreen("טוען...")
 
             State.IN_GAME -> {
                 BlankScreen()
                 LaunchedEffect(Unit) {
-                    var gameType = viewModel.gameType.value
-                    if(gameType == null){
-                        Log.e(TAG,"gameType is null, requesting lobby reconfiguration")
+                    var requiredParams = listOf(
+                        viewModel.gameType.value,
+                        viewModel.gameDuration.value,
+                    )
+                    if(requiredParams.any { it == null }){
+                        Log.e(TAG,"Missing session data, requesting lobby reconfiguration")
                     }
                     var tries = 0
-                    while(gameType == null && tries < 50) { // try for 5 seconds
+                    while(requiredParams.any { it == null } && tries < 50) { // try for 5 seconds
                         viewModel.requestLobbyReconfiguration()
                         delay(100)
-                        gameType = viewModel.gameType.value
-                        if(gameType != null){
+                        requiredParams = listOf(
+                            viewModel.gameType.value,
+                            viewModel.gameDuration.value,
+                        )
+                        if(! requiredParams.any { it == null }){
                             Log.d(TAG,"Successfully reconfigured lobby")
                         } else {
                             tries++
                             Log.e(TAG,"Lobby reconfiguration failed, retrying")
                         }
                     }
-                    if(gameType == null){
-                        viewModel.fatalError("gameType is null and failed to reconfigure lobby")
+                    if(requiredParams.any { it == null }){
+                        viewModel.fatalError("Failed to reconfigure lobby")
                         return@LaunchedEffect
                     }
 
-                    viewModel.clearListeners()
+                    viewModel.clearCallbacks()
 
                     val input = mutableMapOf<String,Any>(
                         "gameDuration" to (viewModel.gameDuration.value ?: -1),
@@ -400,7 +406,7 @@ class MainActivity : ComponentActivity() {
                         "syncTolerance" to (viewModel.syncTolerance.value ?: -1L),
                         "syncWindowLength" to (viewModel.syncWindowLength.value ?: -1L)
                     )
-                    when(gameType) {
+                    when(val gameType = viewModel.gameType.value) {
                         GameType.WATER_RIPPLES -> waterRipples.launch(input)
                         GameType.WINE_GLASSES -> wineGlasses.launch(input)
                         GameType.FLOUR_MILL -> flourMill.launch(input)
@@ -410,14 +416,14 @@ class MainActivity : ComponentActivity() {
                         GameType.RECESS -> recess.launch(input)
                         GameType.TREE -> tree.launch(input)
                         else -> {
-                            viewModel.fatalError("Unknown game type")
+                            viewModel.fatalError("Unknown game type: $gameType")
                             ErrorReporter.report(null,"Unknown game type\n${gameType}")
                         }
                     }
                 }
             }
 
-            State.UPLOADING_EVENTS -> LoadingScreen("מעלה אירועים....")
+            State.UPLOADING_EVENTS -> LoadingScreen("שומר נתונים....")
 
             State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()
 
@@ -441,7 +447,12 @@ class MainActivity : ComponentActivity() {
             State.CONNECTION_LOST -> ConnectionLost()
         }
 
-        if(loading) FloatingLoading()
+        if(loading) { FloatingLoading() }
+        if(reconnecting) {
+            ReconnectingOverlay {
+                viewModel.connectionLost()
+            }
+        }
     }
 
     @Composable
