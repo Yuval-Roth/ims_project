@@ -33,6 +33,7 @@ import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.PACKAGE_PREFIX
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.textStyle
+import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.RecessViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,6 +74,7 @@ class RecessActivity: GameActivity(GameType.RECESS) {
             }
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 
     companion object {

@@ -47,6 +47,7 @@ import com.imsproject.watch.GRASS_WATER_VISIBILITY_THRESHOLD
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_BLUE_COLOR
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
+import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
 import com.imsproject.watch.viewmodel.GameViewModel
@@ -77,6 +78,7 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
             GameViewModel.State.PLAYING -> FlowerGarden(viewModel)
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 
     companion object {

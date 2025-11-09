@@ -176,8 +176,15 @@ abstract class GameViewModel(
 
             // failsafe end of session job - in case END_GAME request is lost due to network issues
             viewModelScope.launch {
-                delay(gameDuration + 5000L) // add 5 seconds buffer
-                exitOk()
+                delay(gameDuration*1000 + 5000L) // add 5 seconds buffer
+                Log.d(TAG, "Failsafe end of session triggered")
+                if(! model.connectionReady){
+                    Log.d(TAG, "failsafe end of session: still reconnecting, exiting with error")
+                    exitWithError("Failsafe end of session: still reconnecting", Result.Code.CONNECTION_LOST)
+                } else {
+                    Log.d(TAG, "Failsafe end of session: exiting with ok")
+                    exitOk()
+                }
             }
         }
     }

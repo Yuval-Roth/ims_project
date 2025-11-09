@@ -269,13 +269,14 @@ fun ReconnectingOverlay(
                     targetValue = 360f,
                     animationSpec = tween(durationMillis = timeout, easing = LinearEasing)
                 )
+                onTimeout()
             }
         }
     }
 
     Column(
         modifier = Modifier
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(Color.Black.copy(alpha = 0.8f))
             .fillMaxSize()
             .clickable(
                 indication = null,

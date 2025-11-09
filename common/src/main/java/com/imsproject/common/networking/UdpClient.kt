@@ -142,7 +142,11 @@ class UdpClient {
     }
 
     fun interrupt(){
-        send(INTERRUPT_MESSAGE, "127.0.0.1",localPort)
+        try{
+            send(INTERRUPT_MESSAGE, "127.0.0.1",localPort)
+        } catch(_: SocketException){
+            // socket is closed, nothing to interrupt
+        }
     }
 
     fun clearPendingMessages(): Int {

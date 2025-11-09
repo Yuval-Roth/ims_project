@@ -52,6 +52,7 @@ import com.imsproject.watch.utils.FlingTracker
 import com.imsproject.watch.utils.cartesianToPolar
 import com.imsproject.watch.utils.closestQuantizedAngle
 import com.imsproject.watch.utils.quantizeAngles
+import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.PacmanViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.PacmanViewModel.ParticleState
@@ -82,6 +83,7 @@ class PacmanActivity: GameActivity(GameType.PACMAN) {
             GameViewModel.State.PLAYING -> Pacman(viewModel)
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 }
 

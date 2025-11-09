@@ -256,7 +256,7 @@ class MainViewModel() : ViewModel() {
                     if(result.uploadEvents){
                         setState(State.UPLOADING_EVENTS)
                     }
-                    val uploadSuccess = !result.uploadEvents || model.uploadSessionEvents(_sessionId)
+                    val uploadSuccess = !result.uploadEvents || model.uploadSessionEvents(_sessionId,30_000)
                     if (uploadSuccess) {
                         if(!isWarmup && result.uploadEvents){
                             setState(State.AFTER_GAME_QUESTIONS)
@@ -264,7 +264,8 @@ class MainViewModel() : ViewModel() {
                             prepareNextSession()
                         }
                     } else {
-                        fatalError("Failed to upload session events")
+                        Log.e(TAG,"Failed to upload session events")
+                        connectionLost()
                     }
                 }
                 else -> {
@@ -579,7 +580,11 @@ class MainViewModel() : ViewModel() {
         setState(State.AFTER_GAME_WAITING)
         viewModelScope.launch(Dispatchers.Main){
             Log.d(TAG, "prepareNextSession: listener started")
+            val waitStartTime = System.currentTimeMillis()
             while(!lobbyConfigured && experimentRunning){
+                if(System.currentTimeMillis() - waitStartTime > 3000){
+                    requestLobbyReconfiguration()
+                }
                 delay(100)
             }
             if (! experimentRunning) {
@@ -692,6 +697,7 @@ class MainViewModel() : ViewModel() {
     }
 
     fun connectionLost(){
+        _reconnecting.value = false
         fatalError("Connection lost", false)
         setState(State.CONNECTION_LOST)
     }

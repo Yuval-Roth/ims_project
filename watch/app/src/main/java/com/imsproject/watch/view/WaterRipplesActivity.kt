@@ -34,6 +34,7 @@ import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
+import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
@@ -57,6 +58,7 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
             GameViewModel.State.PLAYING -> WaterRipples(viewModel)
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 
     companion object {

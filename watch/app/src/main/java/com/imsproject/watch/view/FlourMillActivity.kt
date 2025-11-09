@@ -69,6 +69,7 @@ import com.imsproject.watch.utils.FlourPile
 import com.imsproject.watch.utils.WavPlayerException
 import com.imsproject.watch.utils.polarToCartesian
 import com.imsproject.watch.view.FlourMillActivity.Companion.TAG
+import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.FlourMillViewModel
 import com.imsproject.watch.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
@@ -92,6 +93,7 @@ class FlourMillActivity : GameActivity(GameType.FLOUR_MILL) {
             GameViewModel.State.PLAYING -> FlourMill(viewModel)
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 
     companion object {

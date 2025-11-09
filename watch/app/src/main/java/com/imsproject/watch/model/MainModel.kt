@@ -12,10 +12,12 @@ import com.imsproject.common.utils.Response
 import com.imsproject.common.utils.fromJson
 import com.imsproject.common.utils.toJson
 import com.imsproject.watch.utils.RestApiClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
@@ -23,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
@@ -33,7 +36,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
 // set these values to run the app locally
-private const val RUNNING_LOCAL : Boolean = true
+private const val RUNNING_LOCAL : Boolean = false
 private const val RUNNING_ON_EMULATOR : Boolean = false
 private const val COMPUTER_NETWORK_IP = "30.30.1.108"
 
@@ -103,7 +106,7 @@ class MainModel (private val scope : CoroutineScope) {
     // ======================== Public Methods =============================== |
     // ======================================================================= |
 
-    fun connectToServer(timeout: Long = 10) : Boolean {
+    fun connectToServer(timeoutMillis: Long = 5_000) : Boolean {
         Log.d(TAG, "connectToServer: Connecting to server")
 
         if(this::ws.isInitialized){
@@ -127,7 +130,7 @@ class MainModel (private val scope : CoroutineScope) {
 
         if(!ws.isOpen){
             Log.d(TAG, "connectToServer: WebSocket is not open, connecting...")
-            if(!ws.connectBlocking(timeout, TimeUnit.SECONDS)){
+            if(!ws.connectBlocking(timeoutMillis, TimeUnit.MILLISECONDS)){
                 Log.e(TAG, "connectToServer: WebSocket connection timeout")
                 return false // timeout
             }
@@ -352,7 +355,7 @@ class MainModel (private val scope : CoroutineScope) {
         return data.average().roundToLong()
     }
 
-    suspend fun uploadSessionEvents(sessionId: Int): Boolean {
+    suspend fun uploadSessionEvents(sessionId: Int, timeoutMs: Long): Boolean {
         Log.d(TAG, "Uploading session events")
         val eventCollector = SessionEventCollectorImpl.getInstance()
 
@@ -376,13 +379,19 @@ class MainModel (private val scope : CoroutineScope) {
                     val events = eventList
                 }.toJson()
 
-                var tries = 0
-                while(tries < 5){
-                    val returned = RestApiClient()
-                        .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/events")
-                        .withBody(body)
-                        .withPost()
-                        .send()
+                val startTime = System.currentTimeMillis()
+                while(System.currentTimeMillis() - startTime < timeoutMs){
+                    val returned = try{
+                        RestApiClient()
+                            .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/events")
+                            .withBody(body)
+                            .withPost()
+                            .withTimeout(5000L)
+                            .send()
+                    } catch(e: IOException){
+                        Log.e(TAG, "uploadSessionEvents: Part ${part+1} failed to send request", e)
+                        continue
+                    }
 
                     val response: Response
                     try{
@@ -397,7 +406,6 @@ class MainModel (private val scope : CoroutineScope) {
                         return@async true
                     } else {
                         Log.e(TAG, "uploadSessionEvents: Part ${part+1} Failed to upload events\n${response.message}")
-                        tries++
                     }
                 }
                 return@async false
@@ -484,7 +492,6 @@ class MainModel (private val scope : CoroutineScope) {
     // ======================================================================= |
 
     private suspend fun handleGameRequest(request: GameRequest){
-        println("request received: \n$request")
         when(request.type){
             GameRequest.Type.HEARTBEAT -> wsHeartBeatChannel.send(request)
             GameRequest.Type.PING -> {}
@@ -628,7 +635,8 @@ class MainModel (private val scope : CoroutineScope) {
                 }
                 if (received == null){
                     failedTries++
-                    if(failedTries == 10){
+                    if(failedTries == 5){
+                        Log.d(TAG, "WebSocket heartbeat failed 5 times, recovering connection")
                         recoverConnection()
                         delay(100)
                     }
@@ -735,6 +743,8 @@ class MainModel (private val scope : CoroutineScope) {
                 Log.e(TAG, "sendTcp: WebSocket not connected", e)
                 recoverConnection()
                 delay(100)
+            } catch(e: CancellationException) {
+                throw e
             } catch (e : Exception){
                 Log.e(TAG, "sendTcp: Failed to send TCP message", e)
                 executeCallback { tcpOnExceptionCallback(e) }
@@ -747,6 +757,8 @@ class MainModel (private val scope : CoroutineScope) {
             try{
                 withUdp { send(message) }
                 break
+            } catch(e: CancellationException) {
+                throw e
             } catch (e : Exception){
                 Log.e(TAG, "Failed to send UDP message", e)
                 recoverConnection()
@@ -765,7 +777,7 @@ class MainModel (private val scope : CoroutineScope) {
                         try{
                             Log.d(TAG, "Attempting connection recovery")
                             closeAllResources()
-                            val success = connectToServer(2) && reconnect()
+                            val success = connectToServer(2000) && reconnect()
                             if(success){
                                 Log.d(TAG, "Connection recovery successful")
                                 executeCallback { onConnectionRecoveredCallback() }
@@ -773,6 +785,8 @@ class MainModel (private val scope : CoroutineScope) {
                             } else {
                                 Log.e(TAG, "Connection recovery failed, retrying...")
                             }
+                        } catch(e: CancellationException) {
+                            throw e
                         } catch(e: Exception){
                             Log.e(TAG, "Connection recovery failed with exception, retrying...",e)
                         }

@@ -2,6 +2,7 @@
 
 package com.imsproject.common.networking
 
+import org.java_websocket.drafts.Draft_6455
 import org.java_websocket.handshake.ServerHandshake
 import java.net.URI
 import java.util.concurrent.Executors
@@ -13,7 +14,10 @@ import java.util.concurrent.Executors
  * The client automatically saves the messages received from the server in a queue
  * that can be accessed using the [nextMessage] or [nextMessageBlocking] methods
  */
-class WebSocketClient (serverUri: URI) : org.java_websocket.client.WebSocketClient(serverUri) {
+class WebSocketClient (
+    serverUri: URI,
+    connectTimeout: Int = 0
+) : org.java_websocket.client.WebSocketClient(serverUri, Draft_6455(), null, connectTimeout) {
 
     private val messagesQueue : MutableList<String> = mutableListOf()
     private val lock = Object()

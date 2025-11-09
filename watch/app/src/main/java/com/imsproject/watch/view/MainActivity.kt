@@ -223,7 +223,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun afterGame(result: Result) {
-        viewModel.setState(State.UPLOADING_EVENTS)
         setupUncaughtExceptionHandler()
         viewModel.afterGame(result)
     }

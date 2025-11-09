@@ -71,6 +71,7 @@ class WavesActivity: GameActivity(GameType.WAVES) {
             GameViewModel.State.PLAYING -> Waves(viewModel)
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 }
 

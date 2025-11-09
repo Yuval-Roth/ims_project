@@ -14,6 +14,7 @@ class RestApiClient {
     private val params: MutableMap<String, String> = HashMap()
     private var body: String = ""
     private var isPost = false
+    private var timeoutMs = 0L
 
     @Throws(IOException::class, IllegalStateException::class)
     fun send(): String {
@@ -39,10 +40,10 @@ class RestApiClient {
         }
 
         val client = OkHttpClient().newBuilder()
-            .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-            .callTimeout(60, java.util.concurrent.TimeUnit.MINUTES)
-            .readTimeout(60, java.util.concurrent.TimeUnit.MINUTES)
-            .writeTimeout(60, java.util.concurrent.TimeUnit.MINUTES)
+            .connectTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .callTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .readTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+            .writeTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
             .build()
         val response = client.newCall(requestBuilder.build()).execute()
         return response.body?.string() ?: throw IOException("Empty response")
@@ -76,5 +77,10 @@ class RestApiClient {
 
     fun withParams(params: Map<String, String>) = apply {
         params.forEach { (key, value) -> this.withParam(key, value) }
+    }
+
+    fun withTimeout(timeoutMs: Long) = apply {
+        require(timeoutMs >= 0) { "Timeout must be non-negative" }
+        this.timeoutMs = timeoutMs
     }
 }

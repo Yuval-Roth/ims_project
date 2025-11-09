@@ -43,7 +43,6 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
     @Composable
     protected open fun Main(){
         val state by viewModel.state.collectAsState()
-        val reconnecting by viewModel.reconnecting.collectAsState()
         when(state){
             GameViewModel.State.LOADING -> {
                 LoadingScreen("טוען...")
@@ -71,8 +70,14 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
                 finish()
             }
         }
+    }
+
+    @Composable
+    fun CheckConnection() {
+        val reconnecting by viewModel.reconnecting.collectAsState()
         if(reconnecting) {
             ReconnectingOverlay {
+                Log.e(TAG, "ReconnectingOverlay: timed out, exiting game")
                 viewModel.exitWithError("Disconnected from server", Result.Code.CONNECTION_LOST)
             }
         }

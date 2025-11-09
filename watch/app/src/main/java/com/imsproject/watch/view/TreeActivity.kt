@@ -76,6 +76,7 @@ import com.imsproject.watch.TREE_PARTICLE_RELATIVE_DISTANCE_FROM_CENTER
 import com.imsproject.watch.TREE_RING_RADIUS
 import com.imsproject.watch.TREE_RING_RELATIVE_RADIUS
 import com.imsproject.watch.utils.random
+import com.imsproject.watch.view.contracts.Result
 
 class TreeActivity: GameActivity(GameType.TREE) {
 
@@ -97,6 +98,7 @@ class TreeActivity: GameActivity(GameType.TREE) {
             GameViewModel.State.PLAYING -> Tree(viewModel)
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 }
 

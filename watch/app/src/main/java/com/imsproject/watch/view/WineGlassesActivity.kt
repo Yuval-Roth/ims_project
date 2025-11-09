@@ -73,6 +73,7 @@ class WineGlassesActivity : GameActivity(GameType.WINE_GLASSES) {
             GameViewModel.State.PLAYING -> WineGlasses(viewModel)
             else -> super.Main()
         }
+        super.CheckConnection()
     }
 
     companion object {
