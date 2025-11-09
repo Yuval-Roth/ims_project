@@ -17,6 +17,8 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     private var isWarmup: Boolean? = null
     private var countdownTimer: Int? = null
     private var force: Boolean? = null
+    private var experimentRunning: Boolean? = null
+    private var experimentId: String? = null
 
     fun playerId(playerId: String) = apply { this.playerId = playerId }
     fun lobbyId(lobbyId: String) = apply { this.lobbyId = lobbyId }
@@ -33,7 +35,10 @@ class GameRequestBuilder internal constructor(private val type: GameRequest.Type
     fun isWarmup(isWarmup: Boolean) = apply { this.isWarmup = isWarmup }
     fun countdownTimer(countdownTimer: Int) = apply { this.countdownTimer = countdownTimer }
     fun force(force: Boolean) = apply { this.force = force }
+    fun experimentRunning(experimentRunning: Boolean) = apply { this.experimentRunning = experimentRunning }
+    fun experimentId(experimentId: String) = apply { this.experimentId = experimentId }
 
 
-    fun build() = GameRequest(type,playerId,lobbyId,gameType,success,message,duration,sessionId,sessionIds,data,timestamp,syncWindowLength,syncTolerance,isWarmup,countdownTimer,force)
+
+    fun build() = GameRequest(type,playerId,lobbyId,gameType,success,message,duration,sessionId,sessionIds,data,timestamp,syncWindowLength,syncTolerance,isWarmup,countdownTimer,force,experimentRunning,experimentId)
 }

@@ -436,6 +436,16 @@ class MainViewModel() : ViewModel() {
                     showError("Failed to configure lobby")
                     return
                 }
+                val experimentId = request.experimentId ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing experimentId")
+                    showError("Failed to configure lobby")
+                    return
+                }
+                val experimentRunning = request.experimentRunning ?: run {
+                    Log.e(TAG, "handleGameRequest: CONFIGURE_LOBBY request missing experimentRunning")
+                    showError("Failed to configure lobby")
+                    return
+                }
 
                 withContext(Dispatchers.Main){
                     Log.d(TAG, """
@@ -452,6 +462,8 @@ class MainViewModel() : ViewModel() {
                     _syncWindowLength.value = syncWindowLength
                     _syncTolerance.value = syncTolerance
                     _countdownTimer.value = countdownTimer
+                    _expId.value = experimentId
+                    this@MainViewModel.experimentRunning = experimentRunning
                     lobbyConfigured = true
 
                     // Implementation of gameTypeChanged must be kept in sync with the implementation
@@ -488,7 +500,7 @@ class MainViewModel() : ViewModel() {
                 }
             }
             GameRequest.Type.END_EXPERIMENT -> {
-                val expId = request.data?.firstOrNull() ?: run {
+                val expId = request.experimentId ?: run {
                     Log.e(TAG, "handleGameRequest: END_EXPERIMENT request missing expId data")
                     showError("Failed to end experiment, missing experiment id")
                     return

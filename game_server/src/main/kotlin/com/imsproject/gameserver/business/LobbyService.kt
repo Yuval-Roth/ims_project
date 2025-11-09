@@ -275,6 +275,8 @@ class LobbyService(
                 .syncTolerance(lobby.syncTolerance)
                 .isWarmup(lobby.isWarmup)
                 .countdownTimer(lobby.countdownTimer)
+                .experimentRunning(lobby.experimentRunning)
+                .experimentId(lobby.expId.toString())
                 .build().toJson()
         )
         log.debug("sendLobbyConfiguration() successful")
@@ -313,7 +315,7 @@ class LobbyService(
             .map {clients.getByClientId(it)}
             .forEach {
                 it?.sendTcp(GameRequest.builder(Type.END_EXPERIMENT)
-                    .data(listOf(lobby.expId.toString()))
+                    .experimentId(lobby.expId.toString())
                     .force(force)
                     .also { req -> errorMessage?.let { msg -> req.message(msg) } }
                     .build().toJson())
