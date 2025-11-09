@@ -671,7 +671,7 @@ class MainModel (private val scope : CoroutineScope) {
         udpMessageListener = scope.launch(Dispatchers.IO) {
             while (isActive) {
                 try {
-                    val message = withUdp { receive() }
+                    val message = udp.receive()
                     val action = GameAction.fromString(message)
                     handleGameAction(action)
                 } catch (e: IOException) {
@@ -692,7 +692,7 @@ class MainModel (private val scope : CoroutineScope) {
         tcpMessageListener = scope.launch(Dispatchers.IO){
             while(isActive){
                 try{
-                    val message = withWs { nextMessageBlocking() }
+                    val message = ws.nextMessageBlocking()
                     val request = fromJson<GameRequest>(message)
                     handleGameRequest(request)
                 } catch(e: JsonParseException){
