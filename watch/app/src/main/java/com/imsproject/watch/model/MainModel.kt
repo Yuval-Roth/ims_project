@@ -386,7 +386,7 @@ class MainModel (private val scope : CoroutineScope) {
                             .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/events")
                             .withBody(body)
                             .withPost()
-                            .withTimeout(5000L)
+                            .withTimeout(2000L)
                             .send()
                     } catch(e: IOException){
                         Log.e(TAG, "uploadSessionEvents: Part ${part+1} failed to send request", e)
@@ -419,7 +419,7 @@ class MainModel (private val scope : CoroutineScope) {
         return success
     }
 
-    fun uploadAfterGameQuestions(sessionId: Int, vararg QnAs: Pair<String,String>): Boolean {
+    fun uploadAfterGameQuestions(sessionId: Int, timeoutMs: Long, vararg QnAs: Pair<String,String>): Boolean {
         Log.d(TAG, "Uploading after game questions")
         val playerId = this.playerId ?: run {
             Log.e(TAG, "uploadAfterGameQuestions: Missing player id")
@@ -435,13 +435,19 @@ class MainModel (private val scope : CoroutineScope) {
                 }
             }.toList()
         }.toJson()
-        var tries = 0
-        while(tries < 5){
-            val returned = RestApiClient()
-                .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/feedback")
-                .withBody(body)
-                .withPost()
-                .send()
+        val startTime = System.currentTimeMillis()
+        while(System.currentTimeMillis() - startTime < timeoutMs){
+            val returned = try{
+                RestApiClient()
+                    .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/feedback")
+                    .withBody(body)
+                    .withPost()
+                    .withTimeout(2000L)
+                    .send()
+            } catch(e: IOException){
+                Log.e(TAG, "uploadAfterGameQuestions: failed to send request", e)
+                continue
+            }
 
             val response: Response
             try{
@@ -456,7 +462,6 @@ class MainModel (private val scope : CoroutineScope) {
                 return true
             } else {
                 Log.e(TAG, "uploadAfterGameQuestions: Failed to upload events\n${response.message}")
-                tries++
             }
         }
         return false

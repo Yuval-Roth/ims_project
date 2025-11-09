@@ -341,12 +341,13 @@ class MainViewModel() : ViewModel() {
     fun uploadAnswers(vararg QnAs: Pair<String,String>) {
         _loading.value = true
         viewModelScope.launch(Dispatchers.IO) {
-            if(model.uploadAfterGameQuestions(_sessionId, *QnAs)){
+            if(model.uploadAfterGameQuestions(_sessionId,30_000, *QnAs)){
                 _sessionId = -1
                 prepareNextSession()
                 _loading.value = false
             } else {
-                fatalError("Failed to upload answers")
+                Log.e(TAG,"Failed to upload post-session answers")
+                connectionLost()
             }
         }
     }
