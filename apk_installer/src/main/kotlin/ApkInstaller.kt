@@ -19,7 +19,19 @@ class ApkInstaller {
 
     // The APK is NOT inside the JAR — it's external.
     private val apkFile: File by lazy {
-        resolveApkPath()
+        val apkFile = apkFile()
+        if (!apkFile.exists()) {
+            throw FileNotFoundException("Could not find APK at: ${apkFile.absolutePath}")
+        }
+        apkFile
+    }
+
+    fun verifyApkExists(): Boolean {
+        return apkFile().exists()
+    }
+
+    fun getApkPath(): String {
+        return apkFile().absolutePath
     }
 
     fun connectDevice() {
@@ -122,8 +134,8 @@ class ApkInstaller {
 
     private fun handleConnecting(): String? {
         val pairedHost = try { handlePairing() } catch (_: PairingFailedException) { return null }
-        val hostIp = pairedHost ?: readLineSafe("Device host address")
-        val debugPort = readLineSafe("Wireless debugging port")
+        val hostIp = pairedHost ?: readLineSafe("Device host address", hostRegex, hostHint)
+        val debugPort = readLineSafe("Wireless debugging port", portRegex, portHint)
         val target = "$hostIp:$debugPort"
 
         println("Connecting to device...")
@@ -140,11 +152,11 @@ class ApkInstaller {
     }
 
     private fun handlePairing(): String? {
-        val response = readLineSafe("Is the device already paired? (Y/N)").lowercase()
-        return if (response != "y") {
-            val hostIp = readLineSafe("Device IP address")
-            val pairingPort = readLineSafe("Wireless pairing port")
-            val pairingCode = readLineSafe("Pairing code")
+        val response = readLineSafe("Is the device already paired? (y/n)", Regex("^[yYnN]$")).lowercase()
+        return if (response == "n") {
+            val hostIp = readLineSafe("Device IP address", hostRegex, hostHint)
+            val pairingPort = readLineSafe("Wireless pairing port", portRegex, portHint)
+            val pairingCode = readLineSafe("Pairing code", pairingCodeRegex, pairingCodeHint)
 
             println("Pairing device...")
             val pairOutput = runCommand(listOf(adbFile.absolutePath, "pair", "$hostIp:$pairingPort", pairingCode))
@@ -174,15 +186,20 @@ class ApkInstaller {
             process.waitFor()
             output
         } catch (e: Exception) {
-            println(" Error running command: ${args.joinToString(" ")}")
+            println("Error running command: ${args.joinToString(" ")}")
             println(e.message)
             emptyList()
         }
     }
 
-    private fun readLineSafe(prompt: String): String {
+    private fun readLineSafe(prompt: String, matching: Regex? = null, hint: String? = null): String {
         print("$prompt: ")
-        return readlnOrNull()?.trim().takeUnless { it.isNullOrEmpty() } ?: readLineSafe(prompt)
+        val response = readlnOrNull()?.trim().takeUnless { it.isNullOrEmpty() } ?: readLineSafe(prompt)
+        if (matching != null && !matching.matches(response)) {
+            println("Invalid input format. Please try again.${hint?.let { " Expected format: $it" } ?: ""}")
+            return readLineSafe(prompt, matching, hint)
+        }
+        return response
     }
 
     private fun printInstructions() {
@@ -192,7 +209,7 @@ class ApkInstaller {
                 lines.forEach(::println)
             }
         } else {
-            println(" Instructions file not found in resources at $instructionsResource")
+            println("Instructions file not found in resources at $instructionsResource")
         }
     }
 
@@ -239,19 +256,25 @@ class ApkInstaller {
         return dir
     }
 
-    private fun resolveApkPath(): File {
+    private fun apkFile(): File {
         // Detect where the jar itself is running from
         val jarDir = File(ApkInstaller::class.java.protectionDomain.codeSource.location.toURI()).parentFile
-        val apkPath = File(jarDir.parentFile, "apk/ims.apk")
-        if (!apkPath.exists()) {
-            throw FileNotFoundException("Could not find APK at: ${apkPath.absolutePath}")
-        }
-        return apkPath
+        val apkFile = File(jarDir.parentFile, "apk/ims.apk")
+        return apkFile
     }
 
     private fun println(msg: String) {
         synchronized(terminalLock) {
             kotlin.io.println(msg)
         }
+    }
+
+    companion object {
+        private val portRegex = Regex("^[0-9]{5}$")
+        private val portHint = "5-digit number"
+        private val hostRegex = Regex("^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$")
+        private val hostHint = "IPv4, e.g. 192.168.1.101"
+        private val pairingCodeRegex = Regex("^[0-9]{6}$")
+        private val pairingCodeHint = "6-digit number"
     }
 }
