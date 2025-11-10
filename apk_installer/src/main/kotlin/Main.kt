@@ -13,7 +13,11 @@ fun main() {
             println("=== APK Installer ===")
             println()
             println("Connected Devices:")
-            println(connectedDevices.joinToString("\n"))
+            if(connectedDevices.isEmpty()) {
+                println("No devices connected.")
+            } else {
+                println(connectedDevices.joinToString("\n"))
+            }
             println()
             println("1. Connect a new device")
             println("2. Install APK on all connected devices")
