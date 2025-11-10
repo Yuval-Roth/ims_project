@@ -19,8 +19,6 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GestureP
     private val _done = MutableStateFlow(false)
     override val done: StateFlow<Boolean> = _done
 
-    private var running = false
-
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         when(playerColor) {
             MainViewModel.PlayerColor.BLUE -> {
@@ -35,7 +33,6 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GestureP
     }
 
     override fun click() {
-        if(_done.value || !running) return
         val ripple = Ripple(myColor,System.currentTimeMillis(),playerId)
         ripples.addFirst(ripple)
         _counter.value++
@@ -48,12 +45,7 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GestureP
         }
     }
 
-    override fun start(){
-        running = true
-    }
-
     override fun reset(){
-        running = false
         _done.value = false
         _counter.value = 0
         ripples.clear()

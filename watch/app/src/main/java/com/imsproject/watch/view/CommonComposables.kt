@@ -42,6 +42,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -52,6 +54,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -323,4 +326,12 @@ fun ReconnectingOverlay(
             style = Stroke(width = (SCREEN_RADIUS * 0.1f).dp.toPx()),
         )
     }
+}
+
+@Composable
+fun Modifier.disableClicks(): Modifier {
+    return this.clickable(
+        indication = null,
+        interactionSource = remember { MutableInteractionSource() }
+    ) { /* consume clicks */ }
 }

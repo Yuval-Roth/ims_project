@@ -21,8 +21,6 @@ class PacmanGesturePracticeViewModel() : PacmanViewModel(), GesturePracticeViewM
     private val _done = MutableStateFlow(false)
     override val done: StateFlow<Boolean> = _done
 
-    private var running = false
-
     private var counter = 0
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
@@ -49,7 +47,6 @@ class PacmanGesturePracticeViewModel() : PacmanViewModel(), GesturePracticeViewM
     }
 
     override fun fling(dpPerSec: Float) {
-        if(_done.value || !running) return
         if (_myParticle.value == null) {
             return
         }
@@ -64,12 +61,7 @@ class PacmanGesturePracticeViewModel() : PacmanViewModel(), GesturePracticeViewM
         }
     }
 
-    override fun start(){
-        running = true
-    }
-
     override fun reset(){
-        running = false
         _done.value = false
         counter = 0
     }

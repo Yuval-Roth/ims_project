@@ -26,7 +26,6 @@ class WineGlassesGesturePracticeViewModel() : WineGlassesViewModel(), GesturePra
     private var lastAngle = Angle.undefined
     private var accumulator: Float = 0f
     private var doneTriggered = false
-    private var running = false
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         wavPlayer = WavPlayer(context, viewModelScope)
@@ -47,7 +46,12 @@ class WineGlassesGesturePracticeViewModel() : WineGlassesViewModel(), GesturePra
     }
 
     override fun setTouchPoint(x: Float, y: Float) {
-        if(_done.value || !running) return
+        var x = x
+        var y = y
+        if(_done.value) {
+            x = -1.0f
+            y = -1.0f
+        }
         val (distance,rawAngle) = cartesianToPolar(x, y)
         val inBounds = if(x != -1.0f && y != -1.0f){
             distance in INNER_TOUCH_POINT..OUTER_TOUCH_POINT
@@ -78,12 +82,7 @@ class WineGlassesGesturePracticeViewModel() : WineGlassesViewModel(), GesturePra
         }
     }
 
-    override fun start(){
-        running = true
-    }
-
     override fun reset() {
-        running = false
         _done.value = false
         lastAngle = Angle.undefined
         accumulator = 0f

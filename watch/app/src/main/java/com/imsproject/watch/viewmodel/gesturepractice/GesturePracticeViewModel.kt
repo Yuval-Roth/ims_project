@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.StateFlow
 
 interface GesturePracticeViewModel {
     val done: StateFlow<Boolean>
-    fun start()
     fun reset()
     @Composable
     fun RunGesturePractice()

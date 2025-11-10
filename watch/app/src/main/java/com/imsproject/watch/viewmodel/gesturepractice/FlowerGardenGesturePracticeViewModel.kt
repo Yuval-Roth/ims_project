@@ -19,8 +19,6 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
     private val _done = MutableStateFlow(false)
     override val done: StateFlow<Boolean> = _done
 
-    private var running = false
-
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         myItemType = when(playerColor) {
             MainViewModel.PlayerColor.BLUE -> ItemType.WATER
@@ -29,7 +27,6 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
     }
 
     override fun click() {
-        if(_done.value || !running) return
         if(myItemType == ItemType.WATER) {
             waterDropletSets.addLast(WaterDroplet(System.currentTimeMillis(), myItemType))
         } else {
@@ -45,12 +42,7 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
         }
     }
 
-    override fun start(){
-        running = true
-    }
-
     override fun reset(){
-        running = false
         _done.value = false
         _counter.value = 0
         waterDropletSets.clear()

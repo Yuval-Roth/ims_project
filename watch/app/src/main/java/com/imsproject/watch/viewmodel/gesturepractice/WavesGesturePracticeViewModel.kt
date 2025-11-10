@@ -18,8 +18,6 @@ class WavesGesturePracticeViewModel() :  WavesViewModel(), GesturePracticeViewMo
     private val _done = MutableStateFlow(false)
     override val done: StateFlow<Boolean> = _done
 
-    private var running = false
-
     private var counter = 0
 
     fun init(context: android.content.Context, playerColor: MainViewModel.PlayerColor) {
@@ -43,8 +41,6 @@ class WavesGesturePracticeViewModel() :  WavesViewModel(), GesturePracticeViewMo
     }
 
     override fun fling(dpPerSec: Float) {
-        if (_done.value || !running) return
-
         handleFling(dpPerSec, myDirection)
 
         counter++
@@ -56,12 +52,7 @@ class WavesGesturePracticeViewModel() :  WavesViewModel(), GesturePracticeViewMo
         }
     }
 
-    override fun start(){
-        running = true
-    }
-
     override fun reset(){
-        running = false
         counter = 0
         _done.value = false
     }

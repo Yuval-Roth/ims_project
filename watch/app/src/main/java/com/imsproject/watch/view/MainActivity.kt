@@ -179,8 +179,10 @@ class MainActivity : ComponentActivity() {
 //                    fieldValue.value = "exp123"
 //                }
 //                Main()
+                initGesturePracticeViewModels(MainViewModel.PlayerColor.BLUE)
+                GesturePractice(GameType.WINE_GLASSES) { }
 //                AfterExperiment("exp123","123")
-                ActivityReminder(GameType.WATER_RIPPLES) { }
+//                ActivityReminder(GameType.WATER_RIPPLES) { }
 //                CountdownToGame(true,5) { }
 //                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
@@ -196,6 +198,19 @@ class MainActivity : ComponentActivity() {
             pacmanGesturePracticeViewModel.reset()
             wavesGesturePracticeViewModel.reset()
             treeGesturePracticeViewModel.reset()
+        }
+    }
+
+    private fun initGesturePracticeViewModels(playerColor: MainViewModel.PlayerColor) {
+        if (!viewModelsInitialized) {
+            waterRipplesGesturePracticeViewModel.init(applicationContext, playerColor)
+            flowerGardenGesturePracticeViewModel.init(applicationContext, playerColor)
+            wineGlassesGesturePracticeViewModel.init(applicationContext, playerColor)
+            flourMillGesturePracticeViewModel.init(applicationContext, playerColor)
+            pacmanGesturePracticeViewModel.init(applicationContext, playerColor)
+            wavesGesturePracticeViewModel.init(applicationContext, playerColor)
+            treeGesturePracticeViewModel.init(applicationContext, playerColor)
+            viewModelsInitialized = true
         }
     }
 
@@ -246,17 +261,17 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun Main(){
+    private fun Main() {
 
         val state by viewModel.state.collectAsState()
         val loading by viewModel.loading.collectAsState()
         val reconnecting by viewModel.reconnecting.collectAsState()
 
-        when(state) {
+        when (state) {
 
             // ====================== PRE-EXPERIMENT FLOW STATES ====================== |
 
-            State.DISCONNECTED ->{
+            State.DISCONNECTED -> {
                 BlankScreen()
                 viewModel.connect()
             }
@@ -266,8 +281,8 @@ class MainActivity : ComponentActivity() {
             }
 
             State.ALREADY_CONNECTED -> {
-                AlreadyConnectedScreen (
-                    onConfirm = { viewModel.enter(viewModel.temporaryPlayerId,true) },
+                AlreadyConnectedScreen(
+                    onConfirm = { viewModel.enter(viewModel.temporaryPlayerId, true) },
                     onReject = { viewModel.setState(State.SELECTING_ID) }
                 )
             }
@@ -297,7 +312,7 @@ class MainActivity : ComponentActivity() {
                 val hr = sensorHandler.heartRate.collectAsState().value
 //                val ibi = sensorHandler.ibi.collectAsState().value
                 val hrSensorReady = hr != 0
-                SensorCheck(hrSensorReady){
+                SensorCheck(hrSensorReady) {
                     viewModel.setState(State.WAITING_FOR_WELCOME_SCREEN_NEXT)
                     viewModel.toggleReady()
                 }
@@ -313,26 +328,18 @@ class MainActivity : ComponentActivity() {
             State.COLOR_CONFIRMATION -> {
                 val playerColor = viewModel.myColor.collectAsState().value
                 ColorConfirmationScreen(playerColor) {
-                    if(!viewModelsInitialized) {
-                        waterRipplesGesturePracticeViewModel.init(applicationContext, playerColor)
-                        flowerGardenGesturePracticeViewModel.init(applicationContext, playerColor)
-                        wineGlassesGesturePracticeViewModel.init(applicationContext, playerColor)
-                        flourMillGesturePracticeViewModel.init(applicationContext, playerColor)
-                        pacmanGesturePracticeViewModel.init(applicationContext, playerColor)
-                        wavesGesturePracticeViewModel.init(applicationContext, playerColor)
-                        treeGesturePracticeViewModel.init(applicationContext, playerColor)
-                        viewModelsInitialized = true
-                    }
+                    initGesturePracticeViewModels(playerColor)
                     viewModel.setState(State.ACTIVITY_DESCRIPTION)
                 }
             }
 
             State.ACTIVITY_DESCRIPTION -> {
                 val index = viewModel.activityIndex.collectAsState().value
-                val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
+                val gameType = viewModel.gameType.collectAsState().value
+                    ?: throw IllegalStateException("gameType is null")
                 val warmup = viewModel.isWarmup.collectAsState().value
-                ActivityDescription(gameType,index) {
-                    if(warmup){
+                ActivityDescription(gameType, index) {
+                    if (warmup) {
                         viewModel.setState(State.ACTIVITY_REMINDER)
                     } else {
                         viewModel.setState(State.WAITING_FOR_ACTIVITY_DESCRIPTION_CONFIRMATION)
@@ -342,14 +349,16 @@ class MainActivity : ComponentActivity() {
             }
 
             State.ACTIVITY_REMINDER -> {
-                val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
+                val gameType = viewModel.gameType.collectAsState().value
+                    ?: throw IllegalStateException("gameType is null")
                 ActivityReminder(gameType) {
                     viewModel.setState(State.GESTURE_PRACTICE)
                 }
             }
 
             State.GESTURE_PRACTICE -> {
-                val gameType = viewModel.gameType.collectAsState().value ?: throw IllegalStateException("gameType is null")
+                val gameType = viewModel.gameType.collectAsState().value
+                    ?: throw IllegalStateException("gameType is null")
                 GesturePractice(gameType) {
                     viewModel.setState(State.WAITING_FOR_GESTURE_PRACTICE_FINISH)
                     viewModel.toggleReady()
@@ -359,7 +368,7 @@ class MainActivity : ComponentActivity() {
             State.COUNTDOWN_TO_GAME -> {
                 val warmup = viewModel.isWarmup.collectAsState().value
                 val countdownTimer = viewModel.countdownTimer.collectAsState().value
-                CountdownToGame(warmup,countdownTimer) {
+                CountdownToGame(warmup, countdownTimer) {
                     viewModel.setState(State.LOADING_GAME)
                     viewModel.toggleReady()
                 }
@@ -374,39 +383,39 @@ class MainActivity : ComponentActivity() {
                         viewModel.gameType.value,
                         viewModel.gameDuration.value,
                     )
-                    if(requiredParams.any { it == null }){
-                        Log.e(TAG,"Missing session data, requesting lobby reconfiguration")
+                    if (requiredParams.any { it == null }) {
+                        Log.e(TAG, "Missing session data, requesting lobby reconfiguration")
                     }
                     var tries = 0
-                    while(requiredParams.any { it == null } && tries < 50) { // try for 5 seconds
+                    while (requiredParams.any { it == null } && tries < 50) { // try for 5 seconds
                         viewModel.requestLobbyReconfiguration()
                         delay(100)
                         requiredParams = listOf(
                             viewModel.gameType.value,
                             viewModel.gameDuration.value,
                         )
-                        if(! requiredParams.any { it == null }){
-                            Log.d(TAG,"Successfully reconfigured lobby")
+                        if (!requiredParams.any { it == null }) {
+                            Log.d(TAG, "Successfully reconfigured lobby")
                         } else {
                             tries++
-                            Log.e(TAG,"Lobby reconfiguration failed, retrying")
+                            Log.e(TAG, "Lobby reconfiguration failed, retrying")
                         }
                     }
-                    if(requiredParams.any { it == null }){
+                    if (requiredParams.any { it == null }) {
                         viewModel.fatalError("Failed to reconfigure lobby")
                         return@LaunchedEffect
                     }
 
                     viewModel.clearCallbacks()
 
-                    val input = mutableMapOf<String,Any>(
+                    val input = mutableMapOf<String, Any>(
                         "gameDuration" to (viewModel.gameDuration.value ?: -1),
                         "timeServerStartTime" to viewModel.gameStartTime.value,
                         "additionalData" to viewModel.additionalData.value,
                         "syncTolerance" to (viewModel.syncTolerance.value ?: -1L),
                         "syncWindowLength" to (viewModel.syncWindowLength.value ?: -1L)
                     )
-                    when(val gameType = viewModel.gameType.value) {
+                    when (val gameType = viewModel.gameType.value) {
                         GameType.WATER_RIPPLES -> waterRipples.launch(input)
                         GameType.WINE_GLASSES -> wineGlasses.launch(input)
                         GameType.FLOUR_MILL -> flourMill.launch(input)
@@ -417,7 +426,7 @@ class MainActivity : ComponentActivity() {
                         GameType.TREE -> tree.launch(input)
                         else -> {
                             viewModel.fatalError("Unknown game type: $gameType")
-                            ErrorReporter.report(null,"Unknown game type\n${gameType}")
+                            ErrorReporter.report(null, "Unknown game type\n${gameType}")
                         }
                     }
                 }
@@ -431,8 +440,9 @@ class MainActivity : ComponentActivity() {
 
             State.AFTER_EXPERIMENT -> {
                 val userId = viewModel.playerId.collectAsState().value
-                val expId = viewModel.expId.collectAsState().value ?: throw IllegalStateException("expId is null")
-                AfterExperiment(expId,userId)
+                val expId = viewModel.expId.collectAsState().value
+                    ?: throw IllegalStateException("expId is null")
+                AfterExperiment(expId, userId)
             }
 
             State.THANKS_FOR_PARTICIPATING -> ThanksForParticipating()
@@ -447,8 +457,10 @@ class MainActivity : ComponentActivity() {
             State.CONNECTION_LOST -> ConnectionLost()
         }
 
-        if(loading) { FloatingLoading() }
-        if(reconnecting) {
+        if (loading) {
+            FloatingLoading()
+        }
+        if (reconnecting) {
             ReconnectingOverlay {
                 viewModel.connectionLost()
             }
@@ -865,11 +877,9 @@ class MainActivity : ComponentActivity() {
                 else -> throw IllegalStateException("Unknown game type")
             }.trimIndent()
             ButtonedPage(
+                modifier = Modifier.disableClicks(),
                 buttonText = "המשך",
-                onClick = {
-                    showOverlay = false
-                    viewModel.start()
-                },
+                onClick = { showOverlay = false },
                 backgroundColor = Color.Black.copy(alpha = 0.8f)
             ) {
                 Box(
@@ -883,6 +893,7 @@ class MainActivity : ComponentActivity() {
         }
         if(done){
             ButtonedPage(
+                modifier = Modifier.disableClicks(),
                 buttonText = "המשך",
                 onClick = {
                     viewModel.reset()
@@ -1243,6 +1254,7 @@ class MainActivity : ComponentActivity() {
     fun ButtonedPage(
         buttonText: String,
         onClick: () -> Unit,
+        modifier: Modifier = Modifier,
         textModifier: Modifier = Modifier,
         textStyle: TextStyle = com.imsproject.watch.textStyle,
         backgroundColor: Color = DARK_BACKGROUND_COLOR,
@@ -1254,6 +1266,7 @@ class MainActivity : ComponentActivity() {
                 .fillMaxSize()
                 .background(color = backgroundColor)
                 .padding(bottom = (SCREEN_RADIUS * 0.08f).dp)
+                .then(modifier)
             ,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
