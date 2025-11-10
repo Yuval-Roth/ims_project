@@ -96,7 +96,7 @@
                 </executions>
             </plugin>
         </plugins>
-        <finalName>adb-installer</finalName>
+	<finalName>apk-installer</finalName>
     </build>
 
     <dependencies>

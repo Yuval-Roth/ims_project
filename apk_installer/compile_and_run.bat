@@ -1,2 +1,2 @@
 call mvn clean package
-java -jar target\adb-installer-jar-with-dependencies.jar
+java -jar target\apk-installer-jar-with-dependencies.jar
