@@ -1,6 +1,5 @@
 package com.imsproject.watch.view
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -20,7 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.toRect
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -119,22 +121,29 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
             // empty button content
         }
 
-        // Draw the ripples
         Canvas(
             modifier = Modifier.fillMaxSize()
         ) {
-            for(ripple in ripples){
-                val color = ripple.color
+            // Create an offscreen layer so blend modes apply only within this block
+            drawContext.canvas.saveLayer(bounds = size.toRect(), paint = Paint())
+
+            for (ripple in ripples) {
+                val color = ripple.color.copy(alpha = 0.7f)
                 val size = ripple.size
                 val alpha = ripple.currentAlpha
 
                 drawCircle(
                     color = color.copy(alpha = alpha),
                     radius = size,
-                    style = Stroke(width = 4.dp.toPx())
+                    style = Stroke(width = 6.dp.toPx()),
+                    blendMode = BlendMode.Plus
                 )
             }
+
+            // Restore the layer to actually draw it to the main canvas
+            drawContext.canvas.restore()
         }
+
     }
 
     // Ripple animation loop

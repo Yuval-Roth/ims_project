@@ -181,13 +181,13 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         // Synced click
         if (rippleToCheck != null && (rippleToCheck.timestamp - timestamp)
                                             .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
-            rippleToCheck.color = Color(0xFFF9C429)
-            if (rippleToCheck.actor != playerId) {
-                // update the ripple's alpha to make it seem like it started from 1.0f and not from 0.5f
-                val newAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
-                rippleToCheck.currentAlpha = newAlpha
-                rippleToCheck.alphaStep = newAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-            }
+//            rippleToCheck.color = Color(0xFFF9C429)
+//            if (rippleToCheck.actor != playerId) {
+//                // update the ripple's alpha to make it seem like it started from 1.0f and not from 0.5f
+//                val newAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
+//                rippleToCheck.currentAlpha = newAlpha
+//                rippleToCheck.alphaStep = newAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+//            }
             viewModelScope.launch(Dispatchers.IO) {
                 soundPool.play(waterDropSoundId, 1f, 1f, 0, 0, 1f)
                 delay(100)
@@ -195,8 +195,8 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             }
             addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
-        // not synced click
-        else {
+//        // not synced click
+//        else {
             val ripple = if (actor == playerId) {
                 // My click
                 Ripple(myColor,timestamp,actor)
@@ -205,7 +205,7 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
                 Ripple(opponentColor, timestamp, actor, 0.5f)
             }
             ripples.addFirst(ripple)
-        }
+//        }
         _counter.value++ // used to trigger recomposition
     }
 
