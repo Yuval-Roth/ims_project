@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.imsproject.watch.BLUE_COLOR
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.view.WaterRipples
-import com.imsproject.watch.viewmodel.FlowerGardenViewModel.ItemType
 import com.imsproject.watch.viewmodel.MainViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
@@ -18,6 +17,8 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GestureP
 
     private val _done = MutableStateFlow(false)
     override val done: StateFlow<Boolean> = _done
+
+    private var timeout = 0L
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         when(playerColor) {
@@ -39,7 +40,7 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GestureP
 
         if(_counter.value == 3){
             viewModelScope.launch {
-                delay(1000)
+                delay(timeout)
                 _done.value = true
             }
         }
@@ -52,7 +53,8 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GestureP
     }
 
     @Composable
-    override fun RunGesturePractice() {
+    override fun RunGesturePractice(targetReachedTimeout: Long) {
+        timeout = targetReachedTimeout
         WaterRipples(this)
     }
 

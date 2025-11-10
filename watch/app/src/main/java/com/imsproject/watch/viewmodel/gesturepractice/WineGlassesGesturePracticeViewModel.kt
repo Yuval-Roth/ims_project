@@ -26,6 +26,7 @@ class WineGlassesGesturePracticeViewModel() : WineGlassesViewModel(), GesturePra
     private var lastAngle = Angle.undefined
     private var accumulator: Float = 0f
     private var doneTriggered = false
+    private var timeout = 0L
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         wavPlayer = WavPlayer(context, viewModelScope)
@@ -68,7 +69,7 @@ class WineGlassesGesturePracticeViewModel() : WineGlassesViewModel(), GesturePra
                     if(doneTriggered) return
                     doneTriggered = true
                     viewModelScope.launch {
-                        delay(1000)
+                        delay(timeout)
                         _done.value = true
                     }
                 } else {
@@ -93,7 +94,8 @@ class WineGlassesGesturePracticeViewModel() : WineGlassesViewModel(), GesturePra
     }
 
     @Composable
-    override fun RunGesturePractice() {
+    override fun RunGesturePractice(targetReachedTimeout: Long) {
+        timeout = targetReachedTimeout
         WineGlasses(this)
     }
 }

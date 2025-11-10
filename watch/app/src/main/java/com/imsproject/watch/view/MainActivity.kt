@@ -41,6 +41,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -62,6 +64,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -72,8 +76,10 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Picker
@@ -86,9 +92,12 @@ import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.FIRST_QUESTION
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
+import com.imsproject.watch.LIGHT_GRAY_COLOR
+import com.imsproject.watch.MENU_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SECOND_QUESTION
+import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.TEXT_SIZE
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.model.REST_SCHEME
@@ -178,11 +187,14 @@ class MainActivity : ComponentActivity() {
 //                    val fieldValue = get(viewModel) as MutableStateFlow<String?>
 //                    fieldValue.value = "exp123"
 //                }
-//                Main()
+                Main()
+//                ColorConfirmationScreen(
+//                    MainViewModel.PlayerColor.BLUE
+//                ) { }
 //                initGesturePracticeViewModels(MainViewModel.PlayerColor.BLUE)
 //                GesturePractice(GameType.WINE_GLASSES) { }
 //                AfterExperiment("exp123","123")
-                ActivityReminder(GameType.WATER_RIPPLES) { }
+//                ActivityReminder(GameType.WATER_RIPPLES) { }
 //                CountdownToGame(true,5) { }
 //                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
@@ -723,45 +735,69 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                val ellipseShape = GenericShape { size, _ ->
+                    addOval(Rect(0f, 0f, size.width, size.height))
+                }
                 val myText = buildAnnotatedString {
-                    append("במהלך הניסוי,\n את/ה תהיה השחקן ")
                     when(myColor) {
                         MainViewModel.PlayerColor.BLUE ->
-                            withStyle(style = SpanStyle(color = BLUE_COLOR, textDecoration = TextDecoration.Underline)) {
-                                append("הכחול")
+                            withStyle(style = SpanStyle(color = Color(0xff0e44c1))) {
+                                append("את/ה תהיה בצבע כחול")
                             }
                         MainViewModel.PlayerColor.GREEN ->
-                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR, textDecoration = TextDecoration.Underline)) {
-                                append("הירוק")
+                            withStyle(style = SpanStyle(color = Color(0xff335f36))) {
+                                append("את/ה תהיה בצבע ירוק")
                             }
                     }
                 }
                 val otherText = buildAnnotatedString {
-                    append("והשותף יהיה ")
                     when(myColor) {
                         MainViewModel.PlayerColor.BLUE ->
-                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR, textDecoration = TextDecoration.Underline)) {
-                                append("ירוק")
+                            withStyle(style = SpanStyle(color = GRASS_GREEN_COLOR)) {
+                                append("והשותף יהיה בצבע ירוק")
                             }
                         MainViewModel.PlayerColor.GREEN ->
-                            withStyle(style = SpanStyle(color = BLUE_COLOR, textDecoration = TextDecoration.Underline)) {
-                                append("כחול")
+                            withStyle(style = SpanStyle(color = BLUE_COLOR)) {
+                                append("והשותף יהיה בצבע כחול")
                             }
                     }
                 }
-                Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height((SCREEN_RADIUS * 0.16f).dp)
+                        .background(color = MENU_COLOR),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ){
+                    Spacer(modifier = Modifier.fillMaxHeight(0.42f))
+                    RTLText(
+                        text = "שותף מרוחק מחובר",
+                        style = textStyle.copy(color = Color.Black),
+                    )
+                }
+                Spacer(modifier = Modifier.fillMaxHeight(0.05f))
                 RTLText(
-                    text = "שותף מרוחק מחובר",
-                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f, textDecoration = TextDecoration.Underline),
+                    text = "בכל הניסוי,",
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1f),
                 )
-                Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-                RTLText(
-                    text = myText,
-                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f),
-                )
+                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .fillMaxHeight(0.6f)
+                        .clip(ellipseShape)
+                        .background(color = if (myColor == MainViewModel.PlayerColor.BLUE) BLUE_COLOR else GRASS_GREEN_COLOR),
+                    contentAlignment = Alignment.Center
+                ){
+                    RTLText(
+                        text = myText,
+                        style = textStyle.copy(fontSize = TEXT_SIZE * 1f),
+                    )
+                }
+                Spacer(modifier = Modifier.fillMaxHeight(0.1f))
                 RTLText(
                     text = otherText,
-                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f),
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1f),
                 )
             }
         }
@@ -780,7 +816,7 @@ class MainActivity : ComponentActivity() {
                 Spacer(modifier = Modifier.fillMaxHeight(0.3f))
                 RTLText(
                     text = "פעילות #$activityIndex",
-                    style = textStyle.copy(fontSize = TEXT_SIZE * 2f, textDecoration = TextDecoration.Underline),
+                    style = textStyle.copy(fontSize = TEXT_SIZE * 1.2f, textDecoration = TextDecoration.Underline),
                 )
                 Spacer(modifier = Modifier.fillMaxHeight(0.2f))
                 RTLText(
@@ -799,7 +835,7 @@ class MainActivity : ComponentActivity() {
         ) {
             val text = when(gameType){
                 GameType.WATER_RIPPLES -> """
-                    בפעילות זו לחיצות משותפות
+                    בפעילות זו הקשות משותפות
                     יצרו אדוות מים וצליל
                 """
                 GameType.WINE_GLASSES -> """
@@ -811,7 +847,7 @@ class MainActivity : ComponentActivity() {
                     של ציר המטחנה יצור קמח
                 """
                 GameType.FLOWER_GARDEN -> """
-                    בפעילות זו לחיצות משותפות
+                    בפעילות זו הקשות משותפות
                     ישתלו פרחים
                 """
                 GameType.WAVES -> """
@@ -819,7 +855,7 @@ class MainActivity : ComponentActivity() {
                     מצד לצד לסירוגין
                 """
                 GameType.TREE -> """
-                    בפעילות זו הכנסת שמש
+                    בפעילות זו מסירת שמש
                     ומים לסירוגין יצמיחו עץ
                 """
                 GameType.PACMAN -> """
@@ -857,21 +893,21 @@ class MainActivity : ComponentActivity() {
             else -> throw IllegalStateException("No gesture practice defined for game type $gameType")
         }
         done = viewModel.done.collectAsState().value
-        viewModel.RunGesturePractice()
+        viewModel.RunGesturePractice(3000)
         if(showOverlay){
             val (headline, body) = when(gameType){
-                GameType.WATER_RIPPLES,GameType.FLOWER_GARDEN -> "תרגול הקשה" to """"
-                    נסו ללחוץ - 
+                GameType.WATER_RIPPLES,GameType.FLOWER_GARDEN -> "תרגול הקשה" to """
+                    במסך הבא נתרגל הקשה.
                     ההקשה מתבצעת במרכז המסך
                 """.trimIndent()
                 GameType.WINE_GLASSES, GameType.FLOUR_MILL -> "תרגול סיבוב" to """
-                    נסו לסובב - 
+                    במסך הבא נתרגל סיבוב.
                     הסיבוב מתבצע קרוב למסגרת
                     של השעון
                 """.trimIndent()
-                GameType.WAVES,GameType.TREE, GameType.PACMAN ->"תרגול העפה" to """
-                    נסו להעיף - 
-                    פעולת ההעפה מתבצעת ממסגרת
+                GameType.WAVES,GameType.TREE, GameType.PACMAN ->"תרגול מסירה" to """
+                    במסך הבא נתרגל מסירה.
+                    פעולת המסירה מתבצעת ממסגרת
                     השעון פנימה
                 """.trimIndent()
                 else -> throw IllegalStateException("Unknown game type")
@@ -886,8 +922,8 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ){
-                    Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-                    RTLText(headline, style = textStyle.copy(textDecoration = TextDecoration.Underline))
+                    Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+                    RTLText(gameType.hebrewName(), style = textStyle.copy(textDecoration = TextDecoration.Underline))
                     Spacer(modifier = Modifier.fillMaxHeight(0.2f))
                     RTLText(body)
                 }
@@ -1284,7 +1320,11 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(0.55f),
-                enabled = !disableButton
+                enabled = !disableButton,
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = SILVER_COLOR,
+                    contentColor = Color.Black
+                )
             ){
                 RTLText(
                     buttonText,

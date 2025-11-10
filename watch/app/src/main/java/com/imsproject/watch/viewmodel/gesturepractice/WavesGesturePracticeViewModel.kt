@@ -19,6 +19,7 @@ class WavesGesturePracticeViewModel() :  WavesViewModel(), GesturePracticeViewMo
     override val done: StateFlow<Boolean> = _done
 
     private var counter = 0
+    private var timeout = 0L
 
     fun init(context: android.content.Context, playerColor: MainViewModel.PlayerColor) {
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
@@ -46,7 +47,7 @@ class WavesGesturePracticeViewModel() :  WavesViewModel(), GesturePracticeViewMo
         counter++
         if(counter == 3){
             viewModelScope.launch {
-                delay(1000)
+                delay(timeout)
                 _done.value = true
             }
         }
@@ -58,7 +59,8 @@ class WavesGesturePracticeViewModel() :  WavesViewModel(), GesturePracticeViewMo
     }
 
     @Composable
-    override fun RunGesturePractice() {
+    override fun RunGesturePractice(targetReachedTimeout: Long) {
+        timeout = targetReachedTimeout
         Waves(this)
     }
 }

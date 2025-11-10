@@ -7,5 +7,5 @@ interface GesturePracticeViewModel {
     val done: StateFlow<Boolean>
     fun reset()
     @Composable
-    fun RunGesturePractice()
+    fun RunGesturePractice(targetReachedTimeout: Long)
 }

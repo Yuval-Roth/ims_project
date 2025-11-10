@@ -27,6 +27,7 @@ class FlourMillGesturePracticeViewModel() : FlourMillViewModel(), GesturePractic
     private var lastAngle = Angle.undefined
     private var accumulator: Float = 0f
     private var doneTriggered = false
+    private var timeout = 0L
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         wavPlayer = WavPlayer(context, viewModelScope)
@@ -69,7 +70,7 @@ class FlourMillGesturePracticeViewModel() : FlourMillViewModel(), GesturePractic
                     if(doneTriggered) return
                     doneTriggered = true
                     viewModelScope.launch {
-                        delay(1000)
+                        delay(timeout)
                         _done.value = true
                     }
                 } else {
@@ -94,7 +95,8 @@ class FlourMillGesturePracticeViewModel() : FlourMillViewModel(), GesturePractic
     }
 
     @Composable
-    override fun RunGesturePractice() {
+    override fun RunGesturePractice(targetReachedTimeout: Long) {
+        timeout = targetReachedTimeout
         FlourMill(this)
     }
 }

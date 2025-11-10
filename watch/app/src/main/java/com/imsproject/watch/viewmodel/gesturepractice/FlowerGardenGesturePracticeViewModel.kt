@@ -3,12 +3,9 @@ package com.imsproject.watch.viewmodel.gesturepractice
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewModelScope
-import com.imsproject.watch.BLUE_COLOR
-import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.view.FlowerGarden
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.MainViewModel
-import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +15,8 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
 
     private val _done = MutableStateFlow(false)
     override val done: StateFlow<Boolean> = _done
+
+    private var timeout = 0L
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         myItemType = when(playerColor) {
@@ -36,7 +35,7 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
 
         if(_counter.value == 3){
             viewModelScope.launch {
-                delay(1000)
+                delay(timeout)
                 _done.value = true
             }
         }
@@ -50,7 +49,8 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
     }
 
     @Composable
-    override fun RunGesturePractice() {
+    override fun RunGesturePractice(targetReachedTimeout: Long) {
+        timeout = targetReachedTimeout
         FlowerGarden(this)
     }
 
