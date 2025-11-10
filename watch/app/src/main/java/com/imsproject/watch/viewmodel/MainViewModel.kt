@@ -213,6 +213,9 @@ class MainViewModel() : ViewModel() {
                     setState(State.CONNECTED_NOT_IN_LOBBY)
                     setupCallbacks() // setup the listeners to start receiving messages
                     return@launch
+                } else {
+                    Log.d(TAG, "enter: retrying to enter with id $selectedId")
+                    delay(100)
                 }
             }
         }
