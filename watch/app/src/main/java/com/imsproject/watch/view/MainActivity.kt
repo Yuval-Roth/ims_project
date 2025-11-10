@@ -179,10 +179,10 @@ class MainActivity : ComponentActivity() {
 //                    fieldValue.value = "exp123"
 //                }
 //                Main()
-                initGesturePracticeViewModels(MainViewModel.PlayerColor.BLUE)
-                GesturePractice(GameType.WINE_GLASSES) { }
+//                initGesturePracticeViewModels(MainViewModel.PlayerColor.BLUE)
+//                GesturePractice(GameType.WINE_GLASSES) { }
 //                AfterExperiment("exp123","123")
-//                ActivityReminder(GameType.WATER_RIPPLES) { }
+                ActivityReminder(GameType.WATER_RIPPLES) { }
 //                CountdownToGame(true,5) { }
 //                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
@@ -833,11 +833,11 @@ class MainActivity : ComponentActivity() {
             ) {
                 Spacer(modifier = Modifier.fillMaxHeight(0.1f))
                 RTLText(
-                    text = "תזכורת פעילות",
+                    text = gameType.hebrewName(),
                     style = textStyle.copy(fontSize = TEXT_SIZE, textDecoration = TextDecoration.Underline),
                 )
                 Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-                RTLText(text = text)
+                RTLText(text = "תזכורת:\n$text")
             }
         }
     }
@@ -859,35 +859,37 @@ class MainActivity : ComponentActivity() {
         done = viewModel.done.collectAsState().value
         viewModel.RunGesturePractice()
         if(showOverlay){
-            val text = when(gameType){
-                GameType.WATER_RIPPLES,GameType.FLOWER_GARDEN -> """
+            val (headline, body) = when(gameType){
+                GameType.WATER_RIPPLES,GameType.FLOWER_GARDEN -> "תרגול הקשה" to """"
                     נסו ללחוץ - 
                     ההקשה מתבצעת במרכז המסך
-                """
-                GameType.WINE_GLASSES, GameType.FLOUR_MILL -> """
+                """.trimIndent()
+                GameType.WINE_GLASSES, GameType.FLOUR_MILL -> "תרגול סיבוב" to """
                     נסו לסובב - 
                     הסיבוב מתבצע קרוב למסגרת
                     של השעון
-                """
-                GameType.WAVES,GameType.TREE, GameType.PACMAN -> """
+                """.trimIndent()
+                GameType.WAVES,GameType.TREE, GameType.PACMAN ->"תרגול העפה" to """
                     נסו להעיף - 
                     פעולת ההעפה מתבצעת ממסגרת
                     השעון פנימה
-                """
+                """.trimIndent()
                 else -> throw IllegalStateException("Unknown game type")
-            }.trimIndent()
+            }
             ButtonedPage(
                 modifier = Modifier.disableClicks(),
                 buttonText = "המשך",
                 onClick = { showOverlay = false },
-                backgroundColor = Color.Black.copy(alpha = 0.8f)
+                backgroundColor = DARK_BACKGROUND_COLOR
             ) {
-                Box(
+                Column(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ){
                     Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-                    RTLText(text)
+                    RTLText(headline, style = textStyle.copy(textDecoration = TextDecoration.Underline))
+                    Spacer(modifier = Modifier.fillMaxHeight(0.2f))
+                    RTLText(body)
                 }
             }
         }
@@ -899,7 +901,7 @@ class MainActivity : ComponentActivity() {
                     viewModel.reset()
                     onComplete()
                 },
-                backgroundColor = Color.Black.copy(alpha = 0.8f)
+                backgroundColor = DARK_BACKGROUND_COLOR
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
