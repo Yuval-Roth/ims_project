@@ -10,7 +10,7 @@ class ApkInstaller {
 
     private val adbResource = "/tools/adb.exe"
     private val instructionsResource = "/instructions.txt"
-    private val tempDir = createTempDir("adb-installer")
+    private val tempDir = createTempDir("apk-installer")
 
     // Extract adb.exe from inside the JAR to temp
     private val adbFile: File by lazy {
