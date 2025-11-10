@@ -1,0 +1,29 @@
+------------------------
+
+[before you start]
+In the developer options menu:
+1) Enable 'ADB Debugging'
+2) Enable 'Wireless debugging'
+
+If your device is already paired, you can skip the pairing step.
+
+[pairing step]
+In the wireless debugging menu, click on pair new device
+It will say "Pair with device" at the top and you will see
+an IP address that is something like xyz.xyz.xyz.xyz:ddddd
+
+>  'xyz.xyz.xyz.xyz' is the device host address
+>  'ddddd' is the pairing port
+
+after inserting the required information and pairing successfully
+you are required to find the debug port.
+
+[connection step]
+In the wireless debugging menu it will show you an ip address
+with a port **different** to the one you used to pair - that is the debug port
+
+If the device is already paired you will be prompted to insert the host address too.
+
+after entering the required information, the apk should install successfully
+
+------------------------
