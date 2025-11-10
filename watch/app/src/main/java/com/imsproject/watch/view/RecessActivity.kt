@@ -147,7 +147,7 @@ fun Recess(viewModel: RecessViewModel) {
         )
         Spacer(modifier = Modifier.fillMaxHeight(0.1f))
         RTLText(
-            text = "חוזרים בעוד",
+            text = "הפעילות הבאה תחל בעוד",
             style = textStyle.copy(fontSize = TEXT_SIZE),
         )
         Spacer(modifier = Modifier.fillMaxHeight(0.05f))

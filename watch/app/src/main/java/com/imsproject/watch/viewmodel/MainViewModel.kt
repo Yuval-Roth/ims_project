@@ -525,6 +525,7 @@ class MainViewModel() : ViewModel() {
                         Log.d(TAG,"Experiment ended forcefully by server")
                         setState(State.CONNECTED_IN_LOBBY)
                         experimentRunning = false
+                        _expId.value = null
                         return@withContext
                     } else if(errorMessage != null) {
                         fatalError("Experiment ended with error: $errorMessage")

@@ -178,8 +178,9 @@ class MainActivity : ComponentActivity() {
 //                    val fieldValue = get(viewModel) as MutableStateFlow<String?>
 //                    fieldValue.value = "exp123"
 //                }
-                Main()
+//                Main()
 //                AfterExperiment("exp123","123")
+                ActivityReminder(GameType.WATER_RIPPLES) { }
 //                CountdownToGame(true,5) { }
 //                ColorConfirmationScreen(MainViewModel.PlayerColor.BLUE){}
             }
@@ -820,7 +821,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 Spacer(modifier = Modifier.fillMaxHeight(0.1f))
                 RTLText(
-                    text = "תזכורת",
+                    text = "תזכורת פעילות",
                     style = textStyle.copy(fontSize = TEXT_SIZE, textDecoration = TextDecoration.Underline),
                 )
                 Spacer(modifier = Modifier.fillMaxHeight(0.2f))
@@ -1049,10 +1050,13 @@ class MainActivity : ComponentActivity() {
                             .padding(
                                 start = COLUMN_PADDING,
                                 end = COLUMN_PADDING
-                            )
+                            ),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ){
-                            Spacer(Modifier.fillMaxHeight(0.4f))
-                            RTLText("נשמח שתענה/י על סקר קצר ע\"י סריקת הברקוד בדף הבא")
+                            Spacer(Modifier.fillMaxHeight(0.2f))
+                            RTLText("שאלון סיום", style = textStyle.copy(textDecoration = TextDecoration.Underline))
+                            Spacer(Modifier.fillMaxHeight(0.2f))
+                            RTLText("סרקו עם הטלפון את הברקוד\nבמסך הבא כדי להציג את\nהשאלון ")
                         }
                     }
                     1 -> {
@@ -1103,7 +1107,7 @@ class MainActivity : ComponentActivity() {
                 Spacer(Modifier.fillMaxHeight(0.4f))
                 RTLText("תודה על השתתפותך בניסוי ! ")
                 Spacer(Modifier.fillMaxHeight(0.1f))
-                RTLText("נא להחזיר את השעון לנסיין")
+                RTLText("נא להחזיר את השעון לנסיינים")
             }
         }
     }
