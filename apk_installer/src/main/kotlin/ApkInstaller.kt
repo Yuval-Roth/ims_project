@@ -64,7 +64,6 @@ class ApkInstaller {
         }
 
         println("=== Install on All Devices ===\n")
-        println("Installing APK from: ${apkFile.absolutePath}\n")
 
         val statuses = devices.associateWith { "WAIT" }.toMutableMap()
 

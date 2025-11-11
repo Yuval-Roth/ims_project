@@ -22,7 +22,8 @@ fun main() {
             println("1. Connect a new device")
             println("2. Install APK on all connected devices")
             println("3. One-time APK install")
-            println("4. Exit")
+            println("4. Refresh")
+            println("5. Exit")
             println()
             print("Select option: ")
             when (readlnOrNull()?.trim()) {
@@ -41,6 +42,9 @@ fun main() {
                     installer.oneTimeInstall()
                 }
                 "4" -> {
+                    // Just refreshes the menu
+                }
+                "5" -> {
                     println("\nExiting...")
                     break
                 }
