@@ -157,13 +157,13 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
                 val ripple = ripples[index]
                 drawPath(
                     path = path,
-                    color = ripple.color.copy(alpha = ripple.currentAlpha),
-                    blendMode = BlendMode.Plus
+                    color = ripple.color.copy(alpha = ripple.currentAlpha)
                 )
             }
 
             // --- Draw overlaps ---
             for (i in 0 until ripplePaths.size - 1) {
+                if(ripples[i].actor == ripples[i+1].actor) continue // skip same-actor ripples
                 val path1 = ripplePaths[i]
                 val path2 = ripplePaths[i+1]
                 val intersection = Path()
@@ -172,11 +172,11 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
                     // Mix the two colors toward white to emphasize brightness
                     val c1 = ripples[i].color
                     val c2 = ripples[i+1].color
-                    val blend = c1.lerpTo(c2, 0.5f).lerpTo(Color.White, 0.8f)
+                    val blend = c1.lerpTo(c2, 0.5f).lerpTo(Color.White, 0.5f)
 
                     drawPath(
                         path = intersection,
-                        color = blend.copy(alpha = (ripples[i].currentAlpha + ripples[i+1].currentAlpha) / 2f),
+                        color = blend.copy(alpha = (ripples[i].currentAlpha + ripples[i+1].currentAlpha)),
                         blendMode = BlendMode.Plus
                     )
                 }
