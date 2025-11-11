@@ -14,17 +14,22 @@ const val UNDEFINED_ANGLE = 600f
  * 2. [minus] allows calculating the absolute difference between two angles
  */
 class Angle(
-    val floatValue: Float
+    floatValue: Float
 ) {
-
-    init {
-        if(floatValue != UNDEFINED_ANGLE && (floatValue <= -180 || floatValue > 180)){
-            throw IllegalArgumentException("Invalid angle value: $floatValue")
-        }
-    }
-
+    val floatValue: Float
     val doubleValue: Double
         get() = floatValue.toDouble()
+
+    init {
+        if(floatValue != UNDEFINED_ANGLE && (floatValue < -180f || floatValue > 180f)){
+            throw IllegalArgumentException("Invalid angle value: $floatValue")
+        }
+        if(floatValue == -180f) {
+            this.floatValue = 180f
+        } else {
+            this.floatValue = floatValue
+        }
+    }
 
     /**
      * @return absolute difference between this angle and the other angle
