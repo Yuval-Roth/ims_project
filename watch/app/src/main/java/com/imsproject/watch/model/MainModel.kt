@@ -405,6 +405,12 @@ class MainModel (private val scope : CoroutineScope) {
                         Log.d(TAG, "uploadSessionEvents: Part ${part+1} success")
                         return@async true
                     } else {
+                        response.message?.also {
+                            if(it.contains("Feedback already submitted",true)){
+                                Log.d(TAG, "uploadSessionEvents: Part ${part+1} success - feedback already submitted")
+                                return@async true
+                            }
+                        }
                         Log.e(TAG, "uploadSessionEvents: Part ${part+1} Failed to upload events\n${response.message}")
                     }
                 }
@@ -461,6 +467,12 @@ class MainModel (private val scope : CoroutineScope) {
                 Log.d(TAG, "uploadAfterGameQuestions: success")
                 return true
             } else {
+                response.message?.also {
+                    if(it.contains("Feedback already submitted",true)){
+                        Log.d(TAG, "uploadAfterGameQuestions: success - feedback already submitted")
+                        return true
+                    }
+                }
                 Log.e(TAG, "uploadAfterGameQuestions: Failed to upload events\n${response.message}")
             }
         }
