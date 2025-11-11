@@ -81,7 +81,7 @@ fun Waves(viewModel: WavesViewModel) {
     val tracker = remember { FlingTracker() }
     val wave by viewModel.wave.collectAsState()
     val turn by viewModel.turn.collectAsState()
-    val turnMarkerAlpha = remember { Animatable(1f) }
+    val turnMarkerAlpha = remember { Animatable(0f) }
 
     LaunchedEffect(wave.direction) {
         if(turn == 0){

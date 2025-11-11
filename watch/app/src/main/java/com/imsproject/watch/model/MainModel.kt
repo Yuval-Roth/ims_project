@@ -188,8 +188,8 @@ class MainModel (private val scope : CoroutineScope) {
     }
 
     suspend fun exit() {
-        connectionReady = false
         sendTcp(GameRequest.builder(GameRequest.Type.EXIT).build().toJson())
+        connectionReady = false
     }
 
     /**
