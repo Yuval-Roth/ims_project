@@ -199,10 +199,10 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 //        else {
             val ripple = if (actor == playerId) {
                 // My click
-                Ripple(myColor,timestamp,actor)
+                Ripple(myColor,timestamp,actor,0.35f)
             } else {
                 // Other player's click
-                Ripple(opponentColor, timestamp, actor, 0.5f)
+                Ripple(opponentColor, timestamp, actor, 0.35f)
             }
             ripples.addFirst(ripple)
 //        }

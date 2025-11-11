@@ -19,10 +19,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.toRect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -34,6 +37,7 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.RIPPLE_MAX_SIZE
+import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.view.contracts.Result
@@ -121,26 +125,63 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
             // empty button content
         }
 
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // Create an offscreen layer so blend modes apply only within this block
+        Canvas(modifier = Modifier.fillMaxSize()) {
+
             drawContext.canvas.saveLayer(bounds = size.toRect(), paint = Paint())
+            // Precompute all ripple paths
+            val ripples = ripples.toTypedArray()
+            val ripplePaths = ripples.map { ripple ->
+                val outer = Path().apply {
+                    addOval(
+                        Rect(
+                            center = SCREEN_CENTER,
+                            radius = ripple.size + SCREEN_RADIUS * 0.035f
+                        )
+                    )
+                }
+                val inner = Path().apply {
+                    addOval(
+                        Rect(
+                            center = SCREEN_CENTER,
+                            radius = ripple.size - SCREEN_RADIUS * 0.035f
+                        )
+                    )
+                }
+                outer.apply {
+                    op(this,inner, PathOperation.Difference)
+                }
+            }
 
-            for (ripple in ripples) {
-                val color = ripple.color.copy(alpha = 0.7f)
-                val size = ripple.size
-                val alpha = ripple.currentAlpha
-
-                drawCircle(
-                    color = color.copy(alpha = alpha),
-                    radius = size,
-                    style = Stroke(width = 6.dp.toPx()),
+            // --- Draw all base rings ---
+            ripplePaths.forEachIndexed { index, path ->
+                val ripple = ripples[index]
+                drawPath(
+                    path = path,
+                    color = ripple.color.copy(alpha = ripple.currentAlpha),
                     blendMode = BlendMode.Plus
                 )
             }
 
-            // Restore the layer to actually draw it to the main canvas
+            // --- Draw overlaps ---
+            for (i in 0 until ripplePaths.size - 1) {
+                val path1 = ripplePaths[i]
+                val path2 = ripplePaths[i+1]
+                val intersection = Path()
+
+                if (intersection.op(path1, path2, PathOperation.Intersect)) {
+                    // Mix the two colors toward white to emphasize brightness
+                    val c1 = ripples[i].color
+                    val c2 = ripples[i+1].color
+                    val blend = c1.lerpTo(c2, 0.5f).lerpTo(Color.White, 0.8f)
+
+                    drawPath(
+                        path = intersection,
+                        color = blend.copy(alpha = (ripples[i].currentAlpha + ripples[i+1].currentAlpha) / 2f),
+                        blendMode = BlendMode.Plus
+                    )
+                }
+            }
+
             drawContext.canvas.restore()
         }
 
@@ -173,5 +214,15 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
             delay(16)
         }
     }
+}
+
+fun Color.lerpTo(target: Color, t: Float): Color {
+    val clampedT = t.coerceIn(0f, 1f)
+    return Color(
+        red = red + (target.red - red) * clampedT,
+        green = green + (target.green - green) * clampedT,
+        blue = blue + (target.blue - blue) * clampedT,
+        alpha = alpha + (target.alpha - alpha) * clampedT
+    )
 }
 
