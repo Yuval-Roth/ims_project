@@ -22,6 +22,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,7 +43,6 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -50,7 +50,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -65,8 +64,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -76,7 +80,6 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
@@ -92,7 +95,6 @@ import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.FIRST_QUESTION
 import com.imsproject.watch.GRASS_GREEN_COLOR
 import com.imsproject.watch.LIGHT_BLUE_COLOR
-import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.MENU_COLOR
 import com.imsproject.watch.R
 import com.imsproject.watch.SCREEN_RADIUS
@@ -187,7 +189,8 @@ class MainActivity : ComponentActivity() {
 //                    val fieldValue = get(viewModel) as MutableStateFlow<String?>
 //                    fieldValue.value = "exp123"
 //                }
-                Main()
+                AfterGameQuestions()
+//                Main()
 //                ColorConfirmationScreen(
 //                    MainViewModel.PlayerColor.BLUE
 //                ) { }
@@ -1011,9 +1014,10 @@ class MainActivity : ComponentActivity() {
     fun AfterGameQuestions() {
         val pageCount = remember { 2 }
         val scope = rememberCoroutineScope()
-        var firstSliderValue by remember { mutableFloatStateOf(1f) }
-        var secondSliderValue by remember { mutableFloatStateOf(1f) }
+        var firstSliderValue by remember { mutableFloatStateOf(-1f) }
+        var secondSliderValue by remember { mutableFloatStateOf(-1f) }
         val pagerState = rememberPagerState(pageCount = { pageCount })
+        var buttonDisabled by remember { mutableStateOf(true) }
 
         ButtonedPage(
             buttonText = "המשך",
@@ -1021,6 +1025,7 @@ class MainActivity : ComponentActivity() {
                 scope.launch {
                     val nextPage = pagerState.currentPage + 1
                     if(nextPage < pageCount){
+                        buttonDisabled = true
                         pagerState.animateScrollToPage(nextPage)
                     } else {
                         viewModel.uploadAnswers(
@@ -1029,7 +1034,8 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-            }
+            },
+            disableButton = buttonDisabled
         ) {
             VerticalPager(
                 state = pagerState,
@@ -1048,7 +1054,10 @@ class MainActivity : ComponentActivity() {
                             SliderQuestion(
                                 FIRST_QUESTION,
                                 firstSliderValue,
-                            ) { firstSliderValue = it }
+                            ) {
+                                firstSliderValue = it
+                                buttonDisabled = false
+                            }
                         }
                     }
                     1 -> {
@@ -1060,7 +1069,10 @@ class MainActivity : ComponentActivity() {
                             )
                         ) {
                             Spacer(Modifier.fillMaxHeight(0.35f))
-                            SliderQuestion(SECOND_QUESTION,secondSliderValue) { secondSliderValue = it }
+                            SliderQuestion(SECOND_QUESTION,secondSliderValue) {
+                                secondSliderValue = it
+                                buttonDisabled = false
+                            }
                         }
                     }
                 }
@@ -1196,20 +1208,33 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier.fillMaxWidth(),
                 text = question
             )
-            Slider(
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+            SimpleSlider(
                 value = sliderValue,
                 onValueChange = onValueChanged,
                 valueRange = 1f..7f,
-                steps = 5,
+                hasThumb = sliderValue > 0f
             )
-            BasicText(
-                modifier = Modifier.fillMaxWidth(0.2f),
-                text = "${sliderValue.roundToInt()}",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = TEXT_SIZE*1.5,
-                    textAlign = TextAlign.Center),
-            )
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+            if(sliderValue > 0f){
+                BasicText(
+                    modifier = Modifier.fillMaxWidth(0.2f),
+                    text = "${sliderValue.roundToInt()}",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = TEXT_SIZE*1.5,
+                        textAlign = TextAlign.Center),
+                )
+            } else {
+                RTLText(
+                    modifier = Modifier.fillMaxWidth(0.6f),
+                    text = "נא לבחור ערך",
+                    style = TextStyle(
+                        color = Color.Gray,
+                        fontSize = TEXT_SIZE,
+                        textAlign = TextAlign.Center),
+                )
+            }
         }
     }
 
@@ -1249,6 +1274,64 @@ class MainActivity : ComponentActivity() {
             )
         }
     }
+
+    @Composable
+    fun SimpleSlider(
+        value: Float,
+        onValueChange: (Float) -> Unit,
+        valueRange: ClosedFloatingPointRange<Float>,
+        hasThumb: Boolean = true
+    ) {
+        val emptyBarColor = Color(0xFFE5DEEA)
+        val dotsUncoveredColor = Color(0xFFAAA9AB)
+        val dotsCoveredColor = Color(0xFF8468D7)
+        val barColor = Color(0xFF654FA3)
+        val thumbColor = Color(0xFFA585FF)
+        val progress = if(value > 0f) (value - valueRange.start) / (valueRange.endInclusive - valueRange.start) else 0f
+        fun DrawScope.drawDots() {
+            val y = size.height / 2f
+            val dotSpacing = size.width / (valueRange.endInclusive - 1)
+            for (i in 0..< valueRange.endInclusive.toInt()) {
+                val x = i * dotSpacing
+                val color = if (value > 0f && i / (valueRange.endInclusive.toInt() - 1f) <= progress) dotsCoveredColor else dotsUncoveredColor
+                drawCircle(color, radius = (size.height / 32f).dp.toPx(), center = Offset(x, y))
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val pointerEvent = awaitPointerEvent()
+                            val inputChange = pointerEvent.changes.first()
+                            inputChange.consume()
+                            when (pointerEvent.type) {
+                                PointerEventType.Press, PointerEventType.Move -> {
+                                    val newValue = valueRange.start + (inputChange.position.x / size.width) * (valueRange.endInclusive - valueRange.start)
+                                    onValueChange(newValue.coerceIn(valueRange).roundToInt().toFloat())
+                                }
+                                PointerEventType.Release -> {}
+                            }
+                        }
+                    }
+                }
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                val y = size.height / 2f
+                drawLine(emptyBarColor, Offset(0f, y), Offset(size.width, y), strokeWidth = (size.height/4f).dp.toPx(), cap = StrokeCap.Round)
+                if (hasThumb){
+                    drawLine(barColor, Offset(0f, y), Offset(size.width * progress, y), strokeWidth = (size.height/4f).dp.toPx(), cap = StrokeCap.Round)
+                    drawDots()
+                    drawCircle(thumbColor, radius = (size.height/4.5f).dp.toPx(), center = Offset(size.width * progress, y))
+                } else {
+                    drawDots()
+                }
+            }
+        }
+    }
+
 
     @Composable
     fun ScrollHintArrow(show: Boolean = true,backwards: Boolean = false) {
