@@ -50,7 +50,7 @@ class TreeGesturePracticeViewModel() : TreeViewModel(), GesturePracticeViewModel
         if (_myParticle.value == null) {
             return
         }
-        handleFling(dpPerSec, myDirection, false)
+        handleFling(dpPerSec, myDirection, true)
 
         counter++
         if(counter == 3){

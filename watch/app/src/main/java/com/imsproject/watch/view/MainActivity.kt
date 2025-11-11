@@ -189,8 +189,8 @@ class MainActivity : ComponentActivity() {
 //                    val fieldValue = get(viewModel) as MutableStateFlow<String?>
 //                    fieldValue.value = "exp123"
 //                }
-                AfterGameQuestions()
-//                Main()
+//                AfterGameQuestions()
+                Main()
 //                ColorConfirmationScreen(
 //                    MainViewModel.PlayerColor.BLUE
 //                ) { }
