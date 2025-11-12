@@ -24,6 +24,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
 import org.java_websocket.exceptions.WebsocketNotConnectedException
@@ -383,12 +384,8 @@ class MainModel (private val scope : CoroutineScope) {
 
         var totalBytesToSend = 0L
         jsons.forEach { totalBytesToSend += it.toByteArray().size }
-        val bytesWrittenArray = LongArray(jsons.size)
+        val bytesWrittenArray = LongArray(jsons.size) { 0L }
 
-        val progressJob = scope.launch(Dispatchers.IO) {
-            delay(200L)
-            onProgress(bytesWrittenArray.sum(),totalBytesToSend)
-        }
         val deferreds = mutableListOf<Deferred<Boolean>>()
         jsons.forEachIndexed { i, json ->
             deferreds.add(scope.async(Dispatchers.IO) {
@@ -399,8 +396,12 @@ class MainModel (private val scope : CoroutineScope) {
                             .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/events")
                             .withBody(json)
                             .withPost()
-                            .withProgress { bytesWritten, _, _ ->
+                            .withProgress { bytesWritten, _ ->
                                 bytesWrittenArray[i] = bytesWritten
+                                @Suppress("RunBlockingInSuspendFunction") // this is needed to call the suspend onProgress from a non-suspend lambda
+                                runBlocking {
+                                    onProgress(bytesWrittenArray.sum(),totalBytesToSend)
+                                }
                             }
                             .send()
                     } catch(e: IOException){
@@ -435,13 +436,12 @@ class MainModel (private val scope : CoroutineScope) {
 
         // check if all api calls succeeded
         val success = deferreds.all { it.await() }
-        progressJob.cancelAndJoin()
 
         eventCollector.clearEvents()
         return success
     }
 
-    suspend fun uploadAfterGameQuestions(
+    fun uploadAfterGameQuestions(
         sessionId: Int,
         timeoutMs: Long,
         QnAs: Map<String, String>,
@@ -463,12 +463,6 @@ class MainModel (private val scope : CoroutineScope) {
             }.toList()
         }.toJson()
 
-        val totalBytesToSend = body.toByteArray().size.toLong()
-        var bytesWritten = 0L
-        val progressJob = scope.launch(Dispatchers.IO) {
-            delay(200L)
-            onProgress(bytesWritten,totalBytesToSend)
-        }
         val startTime = System.currentTimeMillis()
         while(System.currentTimeMillis() - startTime < timeoutMs){
             val returned = try{
@@ -476,8 +470,10 @@ class MainModel (private val scope : CoroutineScope) {
                     .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/feedback")
                     .withBody(body)
                     .withPost()
-                    .withProgress { bw, _, _ ->
-                        bytesWritten = bw
+                    .withProgress { bytesWritten, totalBytes ->
+                        runBlocking {
+                            onProgress(bytesWritten,totalBytes)
+                        }
                     }
                     .send()
             } catch(e: IOException){
@@ -506,7 +502,6 @@ class MainModel (private val scope : CoroutineScope) {
                 Log.e(TAG, "uploadAfterGameQuestions: Failed to upload events\n${response.message}")
             }
         }
-        progressJob.cancelAndJoin()
         return false
     }
 

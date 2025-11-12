@@ -20,7 +20,7 @@ class RestApiClient {
     private val params: MutableMap<String, String> = HashMap()
     private var body: String = ""
     private var isPost = false
-    private var onProgress: ((bytesWritten: Long, totalBytes: Long, uploadRateBps: Double) -> Unit)? = null
+    private var onProgress: ((bytesWritten: Long, totalBytes: Long) -> Unit)? = null
 
     companion object {
         private val defaultClient: OkHttpClient = OkHttpClient.Builder()
@@ -90,7 +90,7 @@ class RestApiClient {
         params.forEach { (key, value) -> this.withParam(key, value) }
     }
 
-    fun withProgress(onProgress: (bytesWritten: Long, totalBytes: Long, uploadRateBps: Double) -> Unit) = apply {
+    fun withProgress(onProgress: (bytesWritten: Long, totalBytes: Long) -> Unit) = apply {
         this.onProgress = onProgress
     }
 
@@ -98,7 +98,7 @@ class RestApiClient {
 
     private class ProgressRequestBody(
         private val delegate: RequestBody,
-        private val onProgress: (bytesWritten: Long, totalBytes: Long, uploadRateBps: Double) -> Unit
+        private val onProgress: (bytesWritten: Long, totalBytes: Long) -> Unit
     ) : RequestBody() {
 
         override fun contentType() = delegate.contentType()
@@ -108,21 +108,15 @@ class RestApiClient {
         override fun writeTo(sink: BufferedSink) {
             val totalBytes = contentLength()
             var bytesWritten = 0L
-            var lastUpdateTime = System.nanoTime()
-            val startTime = lastUpdateTime
-
             val countingSink = object : ForwardingSink(sink) {
                 override fun write(source: Buffer, byteCount: Long) {
-                    super.write(source, byteCount)
-                    bytesWritten += byteCount
-
-                    val now = System.nanoTime()
-                    // Limit callback rate to ~5 updates per second
-                    if (now - lastUpdateTime > 200_000_000L) {
-                        val elapsedSec = (now - startTime) / 1e9
-                        val rateBps = if (elapsedSec > 0) bytesWritten / elapsedSec else 0.0
-                        onProgress(bytesWritten, totalBytes, rateBps)
-                        lastUpdateTime = now
+                    var bytesLeft = byteCount
+                    while( bytesLeft > 0) {
+                        val chunkSize = minOf(bytesLeft, 8 * 1024L)
+                        super.write(source, chunkSize)
+                        bytesWritten += chunkSize
+                        bytesLeft -= chunkSize
+                        onProgress(bytesWritten, totalBytes)
                     }
                 }
             }
@@ -130,11 +124,6 @@ class RestApiClient {
             val bufferedCountingSink = countingSink.buffer()
             delegate.writeTo(bufferedCountingSink)
             bufferedCountingSink.flush()
-
-            // final update
-            val elapsedSec = (System.nanoTime() - startTime) / 1e9
-            val rateBps = if (elapsedSec > 0) bytesWritten / elapsedSec else 0.0
-            onProgress(bytesWritten, totalBytes, rateBps)
         }
     }
 }

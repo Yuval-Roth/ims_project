@@ -666,6 +666,8 @@ class MainViewModel() : ViewModel() {
 
     private suspend fun updateUploadProgress(bytesSent: Long, totalBytes: Long){
         withContext(Dispatchers.Main){
+            if(_bytesSent.value >= bytesSent) return@withContext // avoid going backwards
+
             Log.d(TAG, "upload progress: $bytesSent / $totalBytes (${(bytesSent / totalBytes.toFloat()) * 100f}%)")
             _bytesSent.value = bytesSent
             _totalBytes.value = totalBytes
