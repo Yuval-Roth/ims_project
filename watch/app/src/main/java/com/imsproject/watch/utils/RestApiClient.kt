@@ -3,10 +3,16 @@ package com.imsproject.watch.utils
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.Buffer
+import okio.BufferedSink
+import okio.ForwardingSink
+import okio.buffer
 import java.io.IOException
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
 
 class RestApiClient {
     private var uri: String? = null
@@ -14,7 +20,14 @@ class RestApiClient {
     private val params: MutableMap<String, String> = HashMap()
     private var body: String = ""
     private var isPost = false
-    private var timeoutMs = 0L
+    private var onProgress: ((bytesWritten: Long, totalBytes: Long, uploadRateBps: Double) -> Unit)? = null
+
+    companion object {
+        private val defaultClient: OkHttpClient = OkHttpClient.Builder()
+            .writeTimeout(0L, TimeUnit.MILLISECONDS)
+            .retryOnConnectionFailure(true)
+            .build()
+    }
 
     @Throws(IOException::class, IllegalStateException::class)
     fun send(): String {
@@ -30,32 +43,30 @@ class RestApiClient {
 
         // Build OkHttp request
         val requestBuilder = Request.Builder().url(fullUri)
-        if(! headers.contains("Content-Type")){
-            headers.put("Content-Type", "application/json")
+
+        if (!headers.containsKey("Content-Type")) {
+            headers["Content-Type"] = "application/json"
         }
         headers.forEach { (name, value) -> requestBuilder.addHeader(name, value) }
 
         if (isPost) {
-            requestBuilder.post(body.toRequestBody("application/json".toMediaType()))
+            val baseBody = body.toRequestBody("application/json".toMediaType())
+            val requestBody = if (onProgress != null) {
+                ProgressRequestBody(baseBody, onProgress!!)
+            } else baseBody
+            requestBuilder.post(requestBody)
         }
 
-        val client = OkHttpClient().newBuilder()
-            .connectTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-            .callTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-            .readTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-            .writeTimeout(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-            .build()
-        val response = client.newCall(requestBuilder.build()).execute()
-        return response.body?.string() ?: throw IOException("Empty response")
+        return defaultClient.newCall(requestBuilder.build()).execute().use { response ->
+            response.body?.string() ?: throw IOException("Empty response")
+        }
     }
 
-    fun withBody(body: String) = apply {
-        this.body = body
-    }
+    // ------------------ Builder-style modifiers ------------------
 
-    fun withPost() = apply {
-        isPost = true
-    }
+    fun withBody(body: String) = apply { this.body = body }
+
+    fun withPost() = apply { isPost = true }
 
     fun withUri(uri: String) = apply {
         require(uri.isNotBlank()) { "URI should not be blank" }
@@ -79,8 +90,51 @@ class RestApiClient {
         params.forEach { (key, value) -> this.withParam(key, value) }
     }
 
-    fun withTimeout(timeoutMs: Long) = apply {
-        require(timeoutMs >= 0) { "Timeout must be non-negative" }
-        this.timeoutMs = timeoutMs
+    fun withProgress(onProgress: (bytesWritten: Long, totalBytes: Long, uploadRateBps: Double) -> Unit) = apply {
+        this.onProgress = onProgress
+    }
+
+    // ------------------ Internal helper ------------------
+
+    private class ProgressRequestBody(
+        private val delegate: RequestBody,
+        private val onProgress: (bytesWritten: Long, totalBytes: Long, uploadRateBps: Double) -> Unit
+    ) : RequestBody() {
+
+        override fun contentType() = delegate.contentType()
+
+        override fun contentLength() = delegate.contentLength()
+
+        override fun writeTo(sink: BufferedSink) {
+            val totalBytes = contentLength()
+            var bytesWritten = 0L
+            var lastUpdateTime = System.nanoTime()
+            val startTime = lastUpdateTime
+
+            val countingSink = object : ForwardingSink(sink) {
+                override fun write(source: Buffer, byteCount: Long) {
+                    super.write(source, byteCount)
+                    bytesWritten += byteCount
+
+                    val now = System.nanoTime()
+                    // Limit callback rate to ~5 updates per second
+                    if (now - lastUpdateTime > 200_000_000L) {
+                        val elapsedSec = (now - startTime) / 1e9
+                        val rateBps = if (elapsedSec > 0) bytesWritten / elapsedSec else 0.0
+                        onProgress(bytesWritten, totalBytes, rateBps)
+                        lastUpdateTime = now
+                    }
+                }
+            }
+
+            val bufferedCountingSink = countingSink.buffer()
+            delegate.writeTo(bufferedCountingSink)
+            bufferedCountingSink.flush()
+
+            // final update
+            val elapsedSec = (System.nanoTime() - startTime) / 1e9
+            val rateBps = if (elapsedSec > 0) bytesWritten / elapsedSec else 0.0
+            onProgress(bytesWritten, totalBytes, rateBps)
+        }
     }
 }

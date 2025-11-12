@@ -17,22 +17,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.URI
 import java.net.UnknownHostException
+import java.util.Arrays
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLongArray
 import kotlin.math.roundToLong
 
 // set these values to run the app locally
@@ -355,7 +356,11 @@ class MainModel (private val scope : CoroutineScope) {
         return data.average().roundToLong()
     }
 
-    suspend fun uploadSessionEvents(sessionId: Int, timeoutMs: Long): Boolean {
+    suspend fun uploadSessionEvents(
+        sessionId: Int,
+        timeoutMs: Long,
+        onProgress: suspend (bytesWritten: Long, totalBytes: Long) -> Unit
+    ): Boolean {
         Log.d(TAG, "Uploading session events")
         val eventCollector = SessionEventCollectorImpl.getInstance()
 
@@ -369,27 +374,37 @@ class MainModel (private val scope : CoroutineScope) {
                 eventLists.last().add(compressedEvent)
             }
         }
+        val jsons = eventLists.map { eventList ->
+            object {
+                val sessionId = sessionId
+                val events = eventList
+            }.toJson()
+        }
 
+        var totalBytesToSend = 0L
+        jsons.forEach { totalBytesToSend += it.toByteArray().size }
+        val bytesWrittenArray = LongArray(jsons.size)
+
+        val progressJob = scope.launch(Dispatchers.IO) {
+            delay(200L)
+            onProgress(bytesWrittenArray.sum(),totalBytesToSend)
+        }
         val deferreds = mutableListOf<Deferred<Boolean>>()
-
-        eventLists.forEachIndexed { part, eventList ->
+        jsons.forEachIndexed { i, json ->
             deferreds.add(scope.async(Dispatchers.IO) {
-                val body = object {
-                    val sessionId = sessionId
-                    val events = eventList
-                }.toJson()
-
                 val startTime = System.currentTimeMillis()
                 while(System.currentTimeMillis() - startTime < timeoutMs){
                     val returned = try{
                         RestApiClient()
                             .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/events")
-                            .withBody(body)
+                            .withBody(json)
                             .withPost()
-                            .withTimeout(2000L)
+                            .withProgress { bytesWritten, _, _ ->
+                                bytesWrittenArray[i] = bytesWritten
+                            }
                             .send()
                     } catch(e: IOException){
-                        Log.e(TAG, "uploadSessionEvents: Part ${part+1} failed to send request", e)
+                        Log.e(TAG, "uploadSessionEvents: Part ${i+1} failed to send request", e)
                         continue
                     }
 
@@ -397,21 +412,21 @@ class MainModel (private val scope : CoroutineScope) {
                     try{
                         response = fromJson<Response>(returned)
                     } catch(e: JsonSyntaxException){
-                        Log.e(TAG, "uploadSessionEvents: Part ${part+1} failed to parse response: $returned", e)
-                        throw RuntimeException("uploadSessionEvents: Part ${part+1} failed to parse response: $returned",e)
+                        Log.e(TAG, "uploadSessionEvents: Part ${i+1} failed to parse response: $returned", e)
+                        throw RuntimeException("uploadSessionEvents: Part ${i+1} failed to parse response: $returned",e)
                     }
 
                     if(response.success){
-                        Log.d(TAG, "uploadSessionEvents: Part ${part+1} success")
+                        Log.d(TAG, "uploadSessionEvents: Part ${i+1} success")
                         return@async true
                     } else {
                         response.message?.also {
                             if(it.contains("Feedback already submitted",true)){
-                                Log.d(TAG, "uploadSessionEvents: Part ${part+1} success - feedback already submitted")
+                                Log.d(TAG, "uploadSessionEvents: Part ${i+1} success - feedback already submitted")
                                 return@async true
                             }
                         }
-                        Log.e(TAG, "uploadSessionEvents: Part ${part+1} Failed to upload events\n${response.message}")
+                        Log.e(TAG, "uploadSessionEvents: Part ${i+1} Failed to upload events\n${response.message}")
                     }
                 }
                 return@async false
@@ -420,12 +435,18 @@ class MainModel (private val scope : CoroutineScope) {
 
         // check if all api calls succeeded
         val success = deferreds.all { it.await() }
+        progressJob.cancelAndJoin()
 
         eventCollector.clearEvents()
         return success
     }
 
-    fun uploadAfterGameQuestions(sessionId: Int, timeoutMs: Long, vararg QnAs: Pair<String,String>): Boolean {
+    suspend fun uploadAfterGameQuestions(
+        sessionId: Int,
+        timeoutMs: Long,
+        QnAs: Map<String, String>,
+        onProgress: suspend (bytesWritten: Long, totalBytes: Long) -> Unit
+    ): Boolean {
         Log.d(TAG, "Uploading after game questions")
         val playerId = this.playerId ?: run {
             Log.e(TAG, "uploadAfterGameQuestions: Missing player id")
@@ -434,13 +455,20 @@ class MainModel (private val scope : CoroutineScope) {
         val body = object {
             val pid = playerId
             val sessionId = sessionId
-            val qnas = QnAs.map {
+            val qnas = QnAs.map { qna ->
                 object {
-                    val question = it.first
-                    val answer = it.second
+                    val question = qna.key
+                    val answer = qna.value
                 }
             }.toList()
         }.toJson()
+
+        val totalBytesToSend = body.toByteArray().size.toLong()
+        var bytesWritten = 0L
+        val progressJob = scope.launch(Dispatchers.IO) {
+            delay(200L)
+            onProgress(bytesWritten,totalBytesToSend)
+        }
         val startTime = System.currentTimeMillis()
         while(System.currentTimeMillis() - startTime < timeoutMs){
             val returned = try{
@@ -448,7 +476,9 @@ class MainModel (private val scope : CoroutineScope) {
                     .withUri("$REST_SCHEME://$SERVER_IP:$SERVER_HTTP_PORT/data/session/insert/feedback")
                     .withBody(body)
                     .withPost()
-                    .withTimeout(2000L)
+                    .withProgress { bw, _, _ ->
+                        bytesWritten = bw
+                    }
                     .send()
             } catch(e: IOException){
                 Log.e(TAG, "uploadAfterGameQuestions: failed to send request", e)
@@ -476,6 +506,7 @@ class MainModel (private val scope : CoroutineScope) {
                 Log.e(TAG, "uploadAfterGameQuestions: Failed to upload events\n${response.message}")
             }
         }
+        progressJob.cancelAndJoin()
         return false
     }
 

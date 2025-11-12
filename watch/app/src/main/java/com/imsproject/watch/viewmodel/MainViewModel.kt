@@ -143,6 +143,12 @@ class MainViewModel() : ViewModel() {
     private val _reconnecting = MutableStateFlow(false)
     val reconnecting : StateFlow<Boolean> = _reconnecting
 
+    private val _bytesSent = MutableStateFlow(0L)
+    val bytesSent : StateFlow<Long> = _bytesSent
+
+    private val _totalBytes = MutableStateFlow(0L)
+    val totalBytes : StateFlow<Long> = _totalBytes
+
     private var _sessionId = -1
     var temporaryPlayerId = ""
 
@@ -259,7 +265,9 @@ class MainViewModel() : ViewModel() {
                     if(result.uploadEvents){
                         setState(State.UPLOADING_EVENTS)
                     }
-                    val uploadSuccess = !result.uploadEvents || model.uploadSessionEvents(_sessionId,30_000)
+                    _bytesSent.value = 0L
+                    _totalBytes.value = 0L
+                    val uploadSuccess = !result.uploadEvents || model.uploadSessionEvents(_sessionId,30_000, ::updateUploadProgress)
                     if (uploadSuccess) {
                         if(!isWarmup && result.uploadEvents){
                             setState(State.AFTER_GAME_QUESTIONS)
@@ -341,13 +349,14 @@ class MainViewModel() : ViewModel() {
         Log.d(TAG, "set new state: $newState")
     }
 
-    fun uploadAnswers(vararg QnAs: Pair<String,String>) {
-        _loading.value = true
+    fun uploadAnswers(QnAs: Map<String,String>) {
+        setState(State.UPLOADING_EVENTS)
+        _bytesSent.value = 0L
+        _totalBytes.value = 0L
         viewModelScope.launch(Dispatchers.IO) {
-            if(model.uploadAfterGameQuestions(_sessionId,30_000, *QnAs)){
+            if(model.uploadAfterGameQuestions(_sessionId,30_000, QnAs,::updateUploadProgress)){
                 _sessionId = -1
                 prepareNextSession()
-                _loading.value = false
             } else {
                 Log.e(TAG,"Failed to upload post-session answers")
                 connectionLost()
@@ -652,6 +661,14 @@ class MainViewModel() : ViewModel() {
                         "request content:\n$action"
                 showError(errorMsg)
             }
+        }
+    }
+
+    private suspend fun updateUploadProgress(bytesSent: Long, totalBytes: Long){
+        withContext(Dispatchers.Main){
+            Log.d(TAG, "upload progress: $bytesSent / $totalBytes (${(bytesSent / totalBytes.toFloat()) * 100f}%)")
+            _bytesSent.value = bytesSent
+            _totalBytes.value = totalBytes
         }
     }
 

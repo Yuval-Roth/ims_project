@@ -235,6 +235,38 @@ fun LoadingScreen(text: String) {
 }
 
 @Composable
+fun UploadingScreen(text: String, bytesSent: Long, totalBytes: Long) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(DARK_BACKGROUND_COLOR),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            CircularProgressIndicator(
+                strokeWidth = (SCREEN_RADIUS * 0.04f).dp,
+                modifier = Modifier.fillMaxSize(0.4f)
+            )
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+            RTLText(text)
+            Spacer(modifier = Modifier.fillMaxHeight(0.1f))
+            val progressPercent = if (totalBytes > 0) {
+                (bytesSent.toFloat() / totalBytes.toFloat() * 100).toInt()
+            } else {
+                0
+            }
+            Text(
+                text = "$progressPercent%",
+                style = textStyle
+            )
+        }
+    }
+}
+
+@Composable
 fun FloatingLoading() {
     Box(
         modifier = Modifier

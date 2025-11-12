@@ -190,6 +190,7 @@ class MainActivity : ComponentActivity() {
 //                    fieldValue.value = "exp123"
 //                }
 //                AfterGameQuestions()
+//                UploadingScreen("שומר נתונים....", 500, 1000)
                 Main()
 //                ColorConfirmationScreen(
 //                    MainViewModel.PlayerColor.BLUE
@@ -447,7 +448,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            State.UPLOADING_EVENTS -> LoadingScreen("שומר נתונים....")
+            State.UPLOADING_EVENTS -> {
+                val bytesSent = viewModel.bytesSent.collectAsState().value
+                    val totalBytes = viewModel.totalBytes.collectAsState().value
+                UploadingScreen("שומר נתונים....", bytesSent, totalBytes)
+            }
 
             State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()
 
@@ -1028,10 +1033,10 @@ class MainActivity : ComponentActivity() {
                         buttonDisabled = true
                         pagerState.animateScrollToPage(nextPage)
                     } else {
-                        viewModel.uploadAnswers(
+                        viewModel.uploadAnswers(mapOf(
                             FIRST_QUESTION to firstSliderValue.toString(),
                             SECOND_QUESTION to secondSliderValue.toString()
-                        )
+                        ))
                     }
                 }
             },
