@@ -3,6 +3,9 @@ package com.imsproject.watch.view
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -39,11 +42,13 @@ import com.imsproject.watch.LIGHT_GRAY_COLOR
 import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
+import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
 import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.asFlow
 
 class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 
@@ -75,9 +80,21 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 @Composable
 fun WaterRipples(viewModel: WaterRipplesViewModel) {
     val ripples = remember { viewModel.ripples }
+    LaunchedEffect(ripples.size) {
+        val lastAdded = ripples.lastOrNull() ?: return@LaunchedEffect
+        val animation = Animatable(0f)
+        animation.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = WATER_RIPPLES_ANIMATION_DURATION,
+                easing = LinearEasing
+            )
+        ) {
+            lastAdded.size = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) * value + WATER_RIPPLES_BUTTON_SIZE
+            lastAdded.currentAlpha *= (1f - value)
+        }
 
-    // this is used only to to trigger recomposition when new ripples are added
-    viewModel.counter.collectAsState().value
+    }
 
     // Box to draw the background
     Box(
@@ -187,33 +204,33 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
 
     }
 
-    // Ripple animation loop
-    // We set the parameter to Unit because we continuously iterate over the ripples
-    // and we don't need to cancel the LaunchedEffect ever
-    LaunchedEffect(Unit){
-        while(true){
-            val rippleIterator = ripples.iterator()
-            while (rippleIterator.hasNext()) {
-                val ripple = rippleIterator.next()
-
-                // remove ripples that are done animating
-                if(ripple.size >= RIPPLE_MAX_SIZE){
-                    rippleIterator.remove()
-                    continue
-                }
-
-                // animation step
-                ripple.size += ripple.sizeStep
-                ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
-                    0f
-                } else {
-                    // Sometimes the step can make the alpha drop below 0 so we coerce it to at least 0
-                    (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
-                }
-            }
-            delay(16)
-        }
-    }
+//    // Ripple animation loop
+//    // We set the parameter to Unit because we continuously iterate over the ripples
+//    // and we don't need to cancel the LaunchedEffect ever
+//    LaunchedEffect(Unit){
+//        while(true){
+//            val rippleIterator = ripples.iterator()
+//            while (rippleIterator.hasNext()) {
+//                val ripple = rippleIterator.next()
+//
+//                // remove ripples that are done animating
+//                if(ripple.size >= RIPPLE_MAX_SIZE){
+//                    rippleIterator.remove()
+//                    continue
+//                }
+//
+//                // animation step
+//                ripple.size += ripple.sizeStep
+//                ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
+//                    0f
+//                } else {
+//                    // Sometimes the step can make the alpha drop below 0 so we coerce it to at least 0
+//                    (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
+//                }
+//            }
+//            delay(16)
+//        }
+//    }
 }
 
 fun Color.lerpTo(target: Color, t: Float): Color {

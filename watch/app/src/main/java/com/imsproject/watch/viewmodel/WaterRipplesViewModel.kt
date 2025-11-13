@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.lifecycle.viewModelScope
@@ -58,7 +59,7 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    val ripples = ConcurrentLinkedDeque<Ripple>()
+    val ripples = mutableListOf<Ripple>()
 
     protected var _counter = MutableStateFlow(0)
 
@@ -93,7 +94,7 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             -1
         )
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
-        waterDropSoundId = soundPool.load(context, R.raw.water_drop, 1)
+        waterDropSoundId = soundPool.load(context, R.raw.rip_note_longer, 1)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -181,13 +182,6 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         // Synced click
         if (rippleToCheck != null && (rippleToCheck.timestamp - timestamp)
                                             .absoluteValue <= WATER_RIPPLES_SYNC_TIME_THRESHOLD) {
-//            rippleToCheck.color = Color(0xFFF9C429)
-//            if (rippleToCheck.actor != playerId) {
-//                // update the ripple's alpha to make it seem like it started from 1.0f and not from 0.5f
-//                val newAlpha = (rippleToCheck.currentAlpha * 2).fastCoerceAtMost(1.0f)
-//                rippleToCheck.currentAlpha = newAlpha
-//                rippleToCheck.alphaStep = newAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-//            }
             viewModelScope.launch(Dispatchers.IO) {
                 soundPool.play(waterDropSoundId, 1f, 1f, 0, 0, 1f)
                 delay(100)
@@ -195,18 +189,15 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             }
             addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
-//        // not synced click
-//        else {
-            val ripple = if (actor == playerId) {
-                // My click
-                Ripple(myColor,timestamp,actor,0.35f)
-            } else {
-                // Other player's click
-                Ripple(opponentColor, timestamp, actor, 0.35f)
-            }
-            ripples.addFirst(ripple)
-//        }
-        _counter.value++ // used to trigger recomposition
+
+        val ripple = if (actor == playerId) {
+            // My click
+            Ripple(myColor,timestamp,actor,0.35f)
+        } else {
+            // Other player's click
+            Ripple(opponentColor, timestamp, actor, 0.35f)
+        }
+        ripples.add(ripple)
     }
 
     companion object {
