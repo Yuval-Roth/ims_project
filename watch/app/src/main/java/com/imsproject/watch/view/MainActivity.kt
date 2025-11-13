@@ -56,6 +56,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -713,7 +714,7 @@ class MainActivity : ComponentActivity() {
         ButtonedPage(
             buttonText = "המשך",
             onClick = onConfirm,
-            disableButton = !ready
+            disableButton = false // !ready //TODO: uncomment to enforce sensor check
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -1019,8 +1020,8 @@ class MainActivity : ComponentActivity() {
     fun AfterGameQuestions() {
         val pageCount = remember { 2 }
         val scope = rememberCoroutineScope()
-        var firstSliderValue by remember { mutableFloatStateOf(-1f) }
-        var secondSliderValue by remember { mutableFloatStateOf(-1f) }
+        var firstSliderValue by remember { mutableIntStateOf(-1) }
+        var secondSliderValue by remember { mutableIntStateOf(-1) }
         val pagerState = rememberPagerState(pageCount = { pageCount })
         var buttonDisabled by remember { mutableStateOf(true) }
 
@@ -1204,7 +1205,7 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun SliderQuestion(question: String, sliderValue: Float, modifier: Modifier = Modifier, onValueChanged: (Float) -> Unit) {
+    fun SliderQuestion(question: String, sliderValue: Int, modifier: Modifier = Modifier, onValueChanged: (Int) -> Unit) {
         Column(
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -1215,7 +1216,7 @@ class MainActivity : ComponentActivity() {
             )
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
             SimpleSlider(
-                value = sliderValue,
+                startingValue = sliderValue,
                 onValueChange = onValueChanged,
                 valueRange = 1f..7f,
                 hasThumb = sliderValue > 0f
@@ -1224,7 +1225,7 @@ class MainActivity : ComponentActivity() {
             if(sliderValue > 0f){
                 BasicText(
                     modifier = Modifier.fillMaxWidth(0.2f),
-                    text = "${sliderValue.roundToInt()}",
+                    text = "$sliderValue",
                     style = TextStyle(
                         color = Color.White,
                         fontSize = TEXT_SIZE*1.5,
@@ -1282,23 +1283,25 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun SimpleSlider(
-        value: Float,
-        onValueChange: (Float) -> Unit,
+        startingValue: Int,
+        onValueChange: (Int) -> Unit,
         valueRange: ClosedFloatingPointRange<Float>,
         hasThumb: Boolean = true
     ) {
+        val scope = rememberCoroutineScope()
+        val currentValue = remember { Animatable(startingValue.toFloat())}
         val emptyBarColor = Color(0xFFE5DEEA)
         val dotsUncoveredColor = Color(0xFFAAA9AB)
         val dotsCoveredColor = Color(0xFF8468D7)
         val barColor = Color(0xFF654FA3)
         val thumbColor = Color(0xFFA585FF)
-        val progress = if(value > 0f) (value - valueRange.start) / (valueRange.endInclusive - valueRange.start) else 0f
+        val progress = if(currentValue.value > 0f) (currentValue.value - valueRange.start) / (valueRange.endInclusive - valueRange.start) else 0f
         fun DrawScope.drawDots() {
             val y = size.height / 2f
             val dotSpacing = size.width / (valueRange.endInclusive - 1)
             for (i in 0..< valueRange.endInclusive.toInt()) {
                 val x = i * dotSpacing
-                val color = if (value > 0f && i / (valueRange.endInclusive.toInt() - 1f) <= progress) dotsCoveredColor else dotsUncoveredColor
+                val color = if (startingValue > 0f && i / (valueRange.endInclusive.toInt() - 1f) <= progress) dotsCoveredColor else dotsUncoveredColor
                 drawCircle(color, radius = (size.height / 32f).dp.toPx(), center = Offset(x, y))
             }
         }
@@ -1315,7 +1318,21 @@ class MainActivity : ComponentActivity() {
                             when (pointerEvent.type) {
                                 PointerEventType.Press, PointerEventType.Move -> {
                                     val newValue = valueRange.start + (inputChange.position.x / size.width) * (valueRange.endInclusive - valueRange.start)
-                                    onValueChange(newValue.coerceIn(valueRange).roundToInt().toFloat())
+                                    val coercedValue = newValue.coerceIn(valueRange).roundToInt()
+                                    scope.launch {
+                                        if(currentValue.value < 0f){
+                                            currentValue.snapTo(coercedValue.toFloat())
+                                        } else {
+                                            currentValue.animateTo(
+                                                targetValue = coercedValue.toFloat(),
+                                                animationSpec = tween(
+                                                    durationMillis = 100,
+                                                    easing = LinearEasing
+                                                )
+                                            )
+                                        }
+                                    }
+                                    onValueChange(coercedValue)
                                 }
                                 PointerEventType.Release -> {}
                             }

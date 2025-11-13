@@ -75,7 +75,7 @@ class ApkInstaller {
         }
         println()
 
-        val tableStartLine = 5 + devices.size // header + spacing (adjust if layout changes)
+        val tableStartLine = 4 + devices.size // header + spacing (adjust if layout changes)
 
         fun updateStatusLine(index: Int, status: String) {
             synchronized(terminalLock) {
