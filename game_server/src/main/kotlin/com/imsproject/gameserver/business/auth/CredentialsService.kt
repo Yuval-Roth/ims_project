@@ -9,18 +9,22 @@ import java.util.concurrent.ConcurrentHashMap
 @Service
 class CredentialsService(private val credentialsDAO: CredentialsDAO) {
 
-    val credentials = ConcurrentHashMap<String,String>()
+    val credentials = ConcurrentHashMap<String,List<String>>()
 
     init {
-        credentials.put("admin", "\$2a\$10\$3Dw.gqCvW3tbdHc7qGSLr.4ry49vTMebhTKxu/J5zcNrEBKi4BuGG")
+        credentials["admin"] = listOf<String>(
+            "\$2a\$10\$MxScQ5Kx9so7.sk47wiZlOsDPyWBWRFba/hsbf7AyA7.EYBX.RC3O",
+            "\$2a\$10\$HsDtOVDqjrHfFWmuxVuhWeZk/ObxAC8uEbzdKqkClMGCnsUXUppRO"
+        )
     }
 
-    operator fun get(userId: String): String? {
+    operator fun get(userId: String): List<String>? {
         if(!contains(userId)) return null
         return credentials[userId] ?: let {
             val selected = credentialsDAO.select(CredentialsPK(userId))
-            credentials[userId] = selected.password
-            selected.password
+            val pwList = listOf(selected.password)
+            credentials[userId] = pwList
+            pwList
         }
     }
 
@@ -29,14 +33,18 @@ class CredentialsService(private val credentialsDAO: CredentialsDAO) {
     }
 
     operator fun set(userId: String, password: String) {
+        if(userId == "admin") {
+            throw IllegalArgumentException("Cannot update admin user")
+        }
+
         if(contains(userId)) throw UnsupportedOperationException("Updating credentials is not supported. Use remove() and set() instead.")
         credentialsDAO.insert(Credentials(userId,password))
-        this.credentials[userId] = password
+        this.credentials[userId] = listOf(password)
     }
 
-    fun getAllUserIds(): List<String>{
+    fun getAllUserIds(): List<String> {
         val allCredentials = credentialsDAO.selectAll()
-        allCredentials.forEach { credentials[it.userId] = it.password }
+        allCredentials.forEach { credentials[it.userId] = listOf(it.password) }
         return credentials.keys.toList().filter { it != "admin" }
     }
 

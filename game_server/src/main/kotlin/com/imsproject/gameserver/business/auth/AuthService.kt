@@ -81,7 +81,7 @@ class AuthService(
         log.trace("User {} exists", userId)
 
         // check if the password is correct
-        if (!isPasswordsMatch(password, hashedPassword)) {
+        if (! hashedPassword.any{ isPasswordsMatch(password, it) } ) {
             log.debug("Incorrect password for user {}", userId)
             return false
         }

@@ -51,7 +51,8 @@ class SecurityConfig(
         val configuration = CorsConfiguration()
         configuration.allowedOrigins = listOf(
             "http://localhost:5000",
-            "https://ims-project.cs.bgu.ac.il"
+            "https://ims-project.cs.bgu.ac.il",
+            "https://ims-project.cs.bgu.ac.il:8640"
         )
         configuration.allowedMethods = listOf("GET", "POST")
         configuration.allowedHeaders = listOf("*")
