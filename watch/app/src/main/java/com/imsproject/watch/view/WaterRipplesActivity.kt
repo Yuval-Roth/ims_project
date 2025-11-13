@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -49,6 +50,7 @@ import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.launch
 
 class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 
@@ -80,18 +82,25 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 @Composable
 fun WaterRipples(viewModel: WaterRipplesViewModel) {
     val ripples = remember { viewModel.ripples }
-    LaunchedEffect(ripples.size) {
-        val lastAdded = ripples.lastOrNull() ?: return@LaunchedEffect
-        val animation = Animatable(0f)
-        animation.animateTo(
-            targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = WATER_RIPPLES_ANIMATION_DURATION,
-                easing = LinearEasing
-            )
-        ) {
-            lastAdded.size = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) * value + WATER_RIPPLES_BUTTON_SIZE
-            lastAdded.currentAlpha *= (1f - value)
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(viewModel.counter.collectAsState().value) {
+        val toAnimate = ripples.takeWhile { it.animationStarted.not() }
+        toAnimate.forEach {
+            it.animationStarted = true
+            val animation = Animatable(0f)
+            scope.launch {
+                animation.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(
+                        durationMillis = WATER_RIPPLES_ANIMATION_DURATION,
+                        easing = LinearEasing
+                    )
+                ) {
+                    it.size = (SCREEN_RADIUS - WATER_RIPPLES_BUTTON_SIZE) * value + WATER_RIPPLES_BUTTON_SIZE
+                    it.currentAlpha = it.startingAlpha * (1f - value)
+                }
+                ripples.remove(it)
+            }
         }
 
     }
@@ -203,34 +212,6 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
         }
 
     }
-
-//    // Ripple animation loop
-//    // We set the parameter to Unit because we continuously iterate over the ripples
-//    // and we don't need to cancel the LaunchedEffect ever
-//    LaunchedEffect(Unit){
-//        while(true){
-//            val rippleIterator = ripples.iterator()
-//            while (rippleIterator.hasNext()) {
-//                val ripple = rippleIterator.next()
-//
-//                // remove ripples that are done animating
-//                if(ripple.size >= RIPPLE_MAX_SIZE){
-//                    rippleIterator.remove()
-//                    continue
-//                }
-//
-//                // animation step
-//                ripple.size += ripple.sizeStep
-//                ripple.currentAlpha = if(ripple.size >= RIPPLE_MAX_SIZE){
-//                    0f
-//                } else {
-//                    // Sometimes the step can make the alpha drop below 0 so we coerce it to at least 0
-//                    (ripple.currentAlpha - ripple.alphaStep).fastCoerceAtLeast(0f)
-//                }
-//            }
-//            delay(16)
-//        }
-//    }
 }
 
 fun Color.lerpTo(target: Color, t: Float): Color {

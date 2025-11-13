@@ -34,7 +34,7 @@ class WaterRipplesGesturePracticeViewModel() : WaterRipplesViewModel(), GestureP
     }
 
     override fun click() {
-        val ripple = Ripple(myColor,System.currentTimeMillis(),playerId)
+        val ripple = Ripple(myColor,System.currentTimeMillis(),playerId, 0.35f)
         ripples.addFirst(ripple)
         _counter.value++
 

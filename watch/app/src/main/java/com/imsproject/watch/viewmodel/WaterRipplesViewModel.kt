@@ -33,6 +33,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.LinkedList
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.math.absoluteValue
 
@@ -43,12 +45,11 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
         var color: Color,
         val timestamp: Long,
         val actor: String,
-        startingAlpha: Float = 1f
+        val startingAlpha: Float
     ) {
         var size by mutableFloatStateOf(WATER_RIPPLES_BUTTON_SIZE.toFloat())
         var currentAlpha by mutableFloatStateOf(startingAlpha)
-        val sizeStep = (RIPPLE_MAX_SIZE - WATER_RIPPLES_BUTTON_SIZE) / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
-        var alphaStep = startingAlpha / (WATER_RIPPLES_ANIMATION_DURATION / 16f)
+        var animationStarted = false
     }
 
     private lateinit var clickVibration : VibrationEffect
@@ -59,7 +60,7 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
 
-    val ripples = mutableListOf<Ripple>()
+    val ripples = ConcurrentLinkedDeque<Ripple>()
 
     protected var _counter = MutableStateFlow(0)
 
@@ -94,7 +95,7 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             -1
         )
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
-        waterDropSoundId = soundPool.load(context, R.raw.rip_note_longer, 1)
+        waterDropSoundId = soundPool.load(context, R.raw.rip_note, 1)
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -158,7 +159,7 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
                 val arrivedTimestamp = getCurrentGameTime()
                 showRipple(actor, timestamp)
-                
+
                 if(actor == playerId){
                     packetTracker.receivedMyPacket(sequenceNumber)
                 } else {
@@ -189,7 +190,6 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             }
             addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
-
         val ripple = if (actor == playerId) {
             // My click
             Ripple(myColor,timestamp,actor,0.35f)
@@ -197,7 +197,8 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             // Other player's click
             Ripple(opponentColor, timestamp, actor, 0.35f)
         }
-        ripples.add(ripple)
+        ripples.addFirst(ripple)
+        _counter.value++
     }
 
     companion object {
