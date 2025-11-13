@@ -7,7 +7,7 @@ SELECT unnest(ARRAY[
 -- \/ ids list separated by commas \/
 --     for example: 1,2,3,4,5,6
 
-143,144,145,146
+1,2,3,4,5,6
 
 -------------------------------------
 ]) as exp_id;
@@ -28,7 +28,7 @@ DELETE FROM sessions
 WHERE session_id IN (SELECT session_id FROM sids);
 
 DELETE FROM experimentsfeedback
-WHERE exp_id IN (SELECT session_id FROM sids);
+WHERE exp_id IN (SELECT exp_id FROM expids);
 
 DELETE FROM experiments
 WHERE exp_id IN (SELECT exp_id FROM expids);
