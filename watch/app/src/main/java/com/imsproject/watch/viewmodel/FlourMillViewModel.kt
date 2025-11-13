@@ -2,6 +2,7 @@ package com.imsproject.watch.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.viewModelScope
@@ -58,6 +59,8 @@ open class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     private val _targetWheelAngle = MutableStateFlow(Angle(0f))
     val targetWheelAngle: StateFlow<Angle> = _targetWheelAngle
 
+    private lateinit var clickVibration : VibrationEffect
+
     @Volatile
     var inSync = false
         private set
@@ -71,6 +74,10 @@ open class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
 
         setupWavPlayer()
         myFrequencyTracker = FrequencyTracker()
+        clickVibration = VibrationEffect.createOneShot(
+            100, // duration in milliseconds
+            255  // amplitude (0–255); 255 = strongest
+        )
 
         // sync checking loop
         viewModelScope.launch(Dispatchers.Default){
@@ -157,6 +164,10 @@ open class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
         viewModelScope.launch(Dispatchers.IO) {
             model.sessionSetupComplete()
         }
+    }
+
+    fun vibrateClick(){
+        vibrator.vibrate(clickVibration)
     }
 
     open fun setTouchPoint(x: Float, y: Float) {

@@ -123,19 +123,22 @@ fun Tree(viewModel: TreeViewModel) {
     var treeBitmap = remember { ImageBitmap(1, 1) }
     if (!bitmapsLoaded) {
         leavesBitmaps = arrayOf(
-            ImageBitmap.imageResource(id = R.drawable.tree_leaves_light),
-            ImageBitmap.imageResource(id = R.drawable.tree_leaves_medium),
-            ImageBitmap.imageResource(id = R.drawable.tree_leaves_dark)
+            ImageBitmap.imageResource(id = R.drawable.tree_leaves1),
+            ImageBitmap.imageResource(id = R.drawable.tree_leaves2),
+            ImageBitmap.imageResource(id = R.drawable.tree_leaves3),
+            ImageBitmap.imageResource(id = R.drawable.tree_leaves4),
+            ImageBitmap.imageResource(id = R.drawable.tree_leaves5),
+            ImageBitmap.imageResource(id = R.drawable.tree_leaves6)
         )
             .map { original -> // scale them down
                 // Scale each bitmap down to (for example) 50% of its original size
-                val scaledWidth = (original.width * 0.05f).toInt()
-                val scaledHeight = (original.height * 0.05f).toInt()
+                val scaledWidth = (original.width * 0.08f).toInt()
+                val scaledHeight = (original.height * 0.08f).toInt()
                 original.asAndroidBitmap().scale(scaledWidth, scaledHeight).asImageBitmap()
             }.toTypedArray()
         treeBitmap = ImageBitmap.imageResource(id = R.drawable.tree).asAndroidBitmap().scale(
-            (SCREEN_RADIUS * 0.4f).toInt(),
-            (SCREEN_RADIUS * 0.4f).toInt()
+            (SCREEN_RADIUS * 0.5f).toInt(),
+            (SCREEN_RADIUS * 0.5f).toInt()
         ).asImageBitmap()
         bitmapsLoaded = true
     }

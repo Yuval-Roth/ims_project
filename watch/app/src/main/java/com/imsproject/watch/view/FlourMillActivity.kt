@@ -265,6 +265,7 @@ fun FlourMill(viewModel: FlourMillViewModel) {
                     if(angleChangeSum > 360f) {
                         angleChangeSum -= 360f
                         fallingFlour.add(mutableFloatStateOf(0.46f))
+                        viewModel.vibrateClick()
                         viewModel.addEvent(SessionEvent.flourDropped(viewModel.playerId, viewModel.getCurrentGameTime()))
                     }
                 }

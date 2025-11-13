@@ -75,12 +75,12 @@ class ApkInstaller {
         }
         println()
 
-        val tableStartLine = 4 + devices.size // header + spacing (adjust if layout changes)
+        val tableStartLine = 4 //+ devices.size // header + spacing (adjust if layout changes)
 
         fun updateStatusLine(index: Int, status: String) {
             synchronized(terminalLock) {
                 statuses[devices[index]] = status
-                val line = tableStartLine + index
+                val line = tableStartLine + index + 1
                 // Move cursor to specific table line and overwrite
                 print("\u001B7") // save cursor
                 print("\u001B[${line};1H") // move to start of that table line
