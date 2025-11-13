@@ -42,8 +42,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -54,7 +52,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
@@ -235,7 +232,7 @@ fun LoadingScreen(text: String) {
 }
 
 @Composable
-fun UploadingScreen(text: String, bytesSent: Long, totalBytes: Long) {
+fun LoadingScreenWithProgress(text: String, current: Long, total: Long) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -253,8 +250,8 @@ fun UploadingScreen(text: String, bytesSent: Long, totalBytes: Long) {
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
             RTLText(text)
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-            val progressPercent = if (totalBytes > 0) {
-                (bytesSent.toFloat() / totalBytes.toFloat() * 100).toInt()
+            val progressPercent = if (total > 0) {
+                (current.toFloat() / total.toFloat() * 100).toInt()
             } else {
                 0
             }

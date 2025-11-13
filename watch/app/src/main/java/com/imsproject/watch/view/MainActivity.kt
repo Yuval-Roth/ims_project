@@ -391,7 +391,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            State.LOADING_GAME -> LoadingScreen("טוען...")
+            State.LOADING_GAME -> LoadingScreen("מסנכרן שעונים...")
 
             State.IN_GAME -> {
                 BlankScreen()
@@ -451,8 +451,8 @@ class MainActivity : ComponentActivity() {
 
             State.UPLOADING_EVENTS -> {
                 val bytesSent = viewModel.bytesSent.collectAsState().value
-                    val totalBytes = viewModel.totalBytes.collectAsState().value
-                UploadingScreen("שומר נתונים....", bytesSent, totalBytes)
+                val totalBytes = viewModel.totalBytes.collectAsState().value
+                LoadingScreenWithProgress("שומר נתונים....", bytesSent, totalBytes)
             }
 
             State.AFTER_GAME_QUESTIONS -> AfterGameQuestions()

@@ -325,7 +325,7 @@ class MainModel (private val scope : CoroutineScope) {
         sendUdp(request)
     }
 
-    fun calculateTimeServerDelta(): Long {
+    fun calculateTimeServerDelta(onProgress: (Int) -> Unit): Long {
         val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
         val timeServerUdp = UdpClient().apply{ init(); setTimeout(100) }
         var count = 0
@@ -340,6 +340,7 @@ class MainModel (private val scope : CoroutineScope) {
                 val currentServerTime = timeResponse.time!! - timeDelta / 2 // approximation
                 data.add(currentLocalTime-currentServerTime)
                 count++
+                onProgress(count)
             } catch (e: SocketTimeoutException) {
                 Log.e(TAG, "Time request timeout", e)
             } catch (e: JsonParseException) {

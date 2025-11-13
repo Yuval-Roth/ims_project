@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.SoundPool
+import android.os.VibrationEffect
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -69,6 +70,8 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
     protected lateinit var soundPool: SoundPool
     protected var rewardSoundId : Int = -1
 
+    private lateinit var clickVibration : VibrationEffect
+
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
@@ -94,6 +97,12 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         soundPool = SoundPool.Builder().setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).build()).setMaxStreams(1).build()
         // TODO: replace with new sound
         rewardSoundId = soundPool.load(context, R.raw.tree_pop1, 1)
+
+        clickVibration = VibrationEffect.createWaveform(
+            longArrayOf(0, 20,10,10,10),
+            intArrayOf(0, 200,120,100,80),
+            -1
+        )
 
         if(ACTIVITY_DEBUG_MODE){
             viewModelScope.launch(Dispatchers.Default) {
@@ -125,6 +134,10 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
         viewModelScope.launch(Dispatchers.IO) {
             model.sessionSetupComplete()
         }
+    }
+
+    fun vibrateClick(){
+        vibrator.vibrate(clickVibration)
     }
 
     open fun fling(dpPerSec: Float) {

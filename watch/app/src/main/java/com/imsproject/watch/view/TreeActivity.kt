@@ -1,6 +1,7 @@
 package com.imsproject.watch.view
 
 import android.os.Bundle
+import android.os.VibrationEffect
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.Animatable
@@ -290,6 +291,7 @@ fun Tree(viewModel: TreeViewModel) {
                                                 animateAuraAlpha(thisAuraAlpha, 0f)
                                                 animateAuraAlpha(otherAuraAlpha, 0f)
                                             }
+                                            viewModel.vibrateClick()
                                             sizeAnimation.animateTo(
                                                 targetValue = 1f,
                                                 animationSpec = spring(

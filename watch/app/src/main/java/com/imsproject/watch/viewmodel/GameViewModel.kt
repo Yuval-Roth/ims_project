@@ -78,6 +78,9 @@ abstract class GameViewModel(
     private val _reconnecting = MutableStateFlow(false)
     val reconnecting : StateFlow<Boolean> = _reconnecting
 
+    private val _successfulTimeRequests = MutableStateFlow(0)
+    val successfulTimeRequests : StateFlow<Int> = _successfulTimeRequests
+
     private var gameDuration = 1000000000
 
     private var timeServerDelta = 0L
@@ -112,7 +115,9 @@ abstract class GameViewModel(
                 }
             }
             withContext(Dispatchers.IO){
-                timeServerDelta = model.calculateTimeServerDelta()
+                timeServerDelta = model.calculateTimeServerDelta {
+                    _successfulTimeRequests.value = it
+                }
             }
             myStartTime = timeServerStartTime + timeServerDelta
 
