@@ -103,29 +103,20 @@ def main_menu():
 
 @app.route('/get_participants', methods=['GET'])
 def get_parts():
-    online_participants_ids = get_participants()  # Replace with your function to fetch participants
+    online_participants_ids = get_participants()
     all_participants = get_participants_for_view()
 
+    online_participants = []
     if len(online_participants_ids) > 0 and all_participants:
-        # make every id in the list, from a '003' to '3'
+        # remove leading zeros
         online_participants_ids = [int(x) for x in online_participants_ids]
-
-        online_participants = []
         for part in all_participants:
             part = json.loads(part)
             if part['pid'] in online_participants_ids:
-                part['id'] = str(part['pid']).zfill(3)
+                part['id'] = str(part['pid']).zfill(3) # add leading zeros for display
                 online_participants.append(part)
         print(f"online_participants: {online_participants}")
-        return jsonify(online_participants)
-    elif all_participants:
-        all = []
-        for part in all_participants:
-            part = json.loads(part)
-            part['id'] = str(part['pid']).zfill(3)
-            all.append(part)
-        return jsonify(all)
-    return jsonify(all_participants)
+    return jsonify(online_participants)
 
 
 @app.route('/lobbies', methods=['GET'])
