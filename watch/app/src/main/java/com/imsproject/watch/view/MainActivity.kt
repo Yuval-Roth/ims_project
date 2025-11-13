@@ -714,7 +714,7 @@ class MainActivity : ComponentActivity() {
         ButtonedPage(
             buttonText = "המשך",
             onClick = onConfirm,
-            disableButton = false // !ready //TODO: uncomment to enforce sensor check
+            disableButton = !ready
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),

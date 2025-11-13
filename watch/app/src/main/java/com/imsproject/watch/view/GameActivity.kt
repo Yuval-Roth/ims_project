@@ -45,7 +45,7 @@ abstract class GameActivity(gameType: GameType) : ComponentActivity() {
         val state by viewModel.state.collectAsState()
         when(state){
             GameViewModel.State.LOADING -> {
-                val successfulTimeRequests = viewModel.successfulTimeRequests.collectAsState().value.toLong()
+                val successfulTimeRequests = viewModel.progress.collectAsState().value.toLong()
                 LoadingScreenWithProgress("טוען...", successfulTimeRequests,120)
             }
             GameViewModel.State.ERROR -> {

@@ -26,6 +26,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.java_websocket.exceptions.WebsocketNotConnectedException
 import java.io.IOException
@@ -325,37 +326,39 @@ class MainModel (private val scope : CoroutineScope) {
         sendUdp(request)
     }
 
-    fun calculateTimeServerDelta(onProgress: (Int) -> Unit): Long {
-        val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
-        val timeServerUdp = UdpClient().apply{ init(); setTimeout(100) }
-        var count = 0
-        val data = mutableListOf<Long>()
-        while(count < 120){
-            try {
-                val currentLocalTime = System.currentTimeMillis()
-                timeServerUdp.send(request, SERVER_IP, TIME_SERVER_PORT)
-                val response = timeServerUdp.receive()
-                val timeDelta = System.currentTimeMillis() - currentLocalTime
-                val timeResponse = fromJson<TimeRequest>(response)
-                val currentServerTime = timeResponse.time!! - timeDelta / 2 // approximation
-                data.add(currentLocalTime-currentServerTime)
-                count++
-                onProgress(count)
-            } catch (e: SocketTimeoutException) {
-                Log.e(TAG, "Time request timeout", e)
-            } catch (e: JsonParseException) {
-                Log.e(TAG, "Failed to parse time response", e)
-            } catch (e: IOException) {
-                Log.e(TAG, "Failed to fetch time", e)
+    suspend fun calculateTimeServerDelta(onProgress: (Int) -> Unit): Long {
+        return withContext(Dispatchers.IO){
+            val request = TimeRequest.request(TimeRequest.Type.CURRENT_TIME_MILLIS).toJson()
+            val timeServerUdp = UdpClient().apply{ init(); setTimeout(100) }
+            var count = 0
+            val data = mutableListOf<Long>()
+            while(count < 120){
+                try {
+                    val currentLocalTime = System.currentTimeMillis()
+                    timeServerUdp.send(request, SERVER_IP, TIME_SERVER_PORT)
+                    val response = timeServerUdp.receive()
+                    val timeDelta = System.currentTimeMillis() - currentLocalTime
+                    val timeResponse = fromJson<TimeRequest>(response)
+                    val currentServerTime = timeResponse.time!! - timeDelta / 2 // approximation
+                    data.add(currentLocalTime-currentServerTime)
+                    count++
+                    onProgress(count)
+                } catch (e: SocketTimeoutException) {
+                    Log.e(TAG, "Time request timeout", e)
+                } catch (e: JsonParseException) {
+                    Log.e(TAG, "Failed to parse time response", e)
+                } catch (e: IOException) {
+                    Log.e(TAG, "Failed to fetch time", e)
+                }
             }
-        }
-        timeServerUdp.close()
+            timeServerUdp.close()
 
-        // remove the first and last 10 values (outliers)
-        data.sort()
-        data.subList(0, 10).clear()
-        data.subList(data.size - 10, data.size).clear()
-        return data.average().roundToLong()
+            // remove the first and last 10 values (outliers)
+            data.sort()
+            data.subList(0, 10).clear()
+            data.subList(data.size - 10, data.size).clear()
+            return@withContext data.average().roundToLong()
+        }
     }
 
     suspend fun uploadSessionEvents(

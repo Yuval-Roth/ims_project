@@ -78,8 +78,8 @@ abstract class GameViewModel(
     private val _reconnecting = MutableStateFlow(false)
     val reconnecting : StateFlow<Boolean> = _reconnecting
 
-    private val _successfulTimeRequests = MutableStateFlow(0)
-    val successfulTimeRequests : StateFlow<Int> = _successfulTimeRequests
+    private val _progress = MutableStateFlow(0)
+    val progress : StateFlow<Int> = _progress
 
     private var gameDuration = 1000000000
 
@@ -114,11 +114,7 @@ abstract class GameViewModel(
                     return@launch
                 }
             }
-            withContext(Dispatchers.IO){
-                timeServerDelta = model.calculateTimeServerDelta {
-                    _successfulTimeRequests.value = it
-                }
-            }
+            timeServerDelta = model.calculateTimeServerDelta(::updateSuccessfulTimeRequests)
             myStartTime = timeServerStartTime + timeServerDelta
 
             val gameDuration = intent.getIntExtra("$PACKAGE_PREFIX.gameDuration", -1).also {
@@ -307,6 +303,10 @@ abstract class GameViewModel(
     // ================================================================================ |
     // ============================ PRIVATE METHODS =================================== |
     // ================================================================================ |
+
+    private fun updateSuccessfulTimeRequests(count: Int){
+        _progress.value = count
+    }
 
     private fun setupCallbacks() {
         //TODO: add callbacks for onRecoveringConnection and onConnectionRecovered
