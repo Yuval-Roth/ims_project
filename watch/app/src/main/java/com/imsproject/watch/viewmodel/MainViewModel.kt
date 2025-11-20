@@ -12,12 +12,14 @@ import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.model.AlreadyConnectedException
 import com.imsproject.watch.model.MainModel
 import com.imsproject.watch.model.ParticipantNotFoundException
+import com.imsproject.watch.model.SessionEventCollectorImpl
 import com.imsproject.watch.sensors.HeartRateSensorHandler
 import com.imsproject.watch.sensors.LocationSensorsHandler
 import com.imsproject.watch.utils.ErrorReporter
 import com.imsproject.watch.view.contracts.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -161,6 +163,8 @@ class MainViewModel() : ViewModel() {
     private var lobbyConfigured = false
 
     private var connectionRecoveryJob: Job? =  null
+    private var prepareNextSessionJob: Job? = null
+    private var experimentForceEnded = false
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -247,6 +251,10 @@ class MainViewModel() : ViewModel() {
         _gameDuration.value = null
         val isWarmup = _isWarmup.value
         setupCallbacks()
+        if(experimentForceEnded) {
+            SessionEventCollectorImpl.getInstance().clearEvents()
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
             when (result.code) {
                 Result.Code.OK, Result.Code.CONNECTION_LOST -> {
@@ -292,18 +300,6 @@ class MainViewModel() : ViewModel() {
         }
     }
 
-    fun endExperiment() {
-        _expId.value = null
-        _gameType.value = null
-        _activityIndex.value = 1
-        val nextState = if(_lobbyId.value == ""){
-            State.CONNECTED_NOT_IN_LOBBY
-        } else {
-            State.CONNECTED_IN_LOBBY
-        }
-        setState(nextState)
-    }
-
     fun clearError() {
         _error.value = null
 
@@ -345,6 +341,20 @@ class MainViewModel() : ViewModel() {
     }
 
     fun setState(newState: State){
+        if(experimentForceEnded){
+            when(newState){
+                State.CONNECTED_IN_LOBBY -> {} // allow going back to lobby
+                // reset the flag when going back to disconnected or not in lobby
+                State.DISCONNECTED,
+                State.CONNECTED_NOT_IN_LOBBY -> {
+                    experimentForceEnded = false
+                }
+                else -> {
+                    Log.d(TAG, "setState: experiment force ended, ignoring state change to $newState")
+                    return
+                }
+            }
+        }
         _state.value = newState
         Log.d(TAG, "set new state: $newState")
     }
@@ -401,6 +411,8 @@ class MainViewModel() : ViewModel() {
                     _ready.value = false
                     _isWarmup.value = false
                     _gameType.value = null
+
+                    experimentForceEnded = false
 
                     _lobbyId.value = lobbyId
                     if(_state.value == State.CONNECTED_NOT_IN_LOBBY){
@@ -508,6 +520,7 @@ class MainViewModel() : ViewModel() {
                     _myColor.value = PlayerColor.fromString(color)
                     _expId.value = null
                     _activityIndex.value = 1
+                    experimentForceEnded = false
                     setState(State.WELCOME_SCREEN)
                 }
             }
@@ -532,9 +545,12 @@ class MainViewModel() : ViewModel() {
 
                     if (force) {
                         Log.d(TAG,"Experiment ended forcefully by server")
-                        setState(State.CONNECTED_IN_LOBBY)
+                        prepareNextSessionJob?.cancelAndJoin()
+                        prepareNextSessionJob = null
+                        experimentForceEnded = true
                         experimentRunning = false
                         _expId.value = null
+                        setState(State.CONNECTED_IN_LOBBY)
                         return@withContext
                     } else if(errorMessage != null) {
                         fatalError("Experiment ended with error: $errorMessage")
@@ -604,7 +620,7 @@ class MainViewModel() : ViewModel() {
 
     private fun prepareNextSession(){
         setState(State.AFTER_GAME_WAITING)
-        viewModelScope.launch(Dispatchers.Main){
+        prepareNextSessionJob = viewModelScope.launch(Dispatchers.Main){
             Log.d(TAG, "prepareNextSession: listener started")
             val waitStartTime = System.currentTimeMillis()
             while(!lobbyConfigured && experimentRunning){
@@ -745,7 +761,9 @@ class MainViewModel() : ViewModel() {
         _gameType.value = null
         _timeServerStartTime.value = -1
         _sessionId = -1
-        showError(message)
+        if(showError){
+            showError(message)
+        }
         viewModelScope.launch(Dispatchers.IO) {
             oldModel.closeAllResources()
             ErrorReporter.report(null, message)
