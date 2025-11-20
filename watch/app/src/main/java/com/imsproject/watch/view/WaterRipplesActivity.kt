@@ -1,6 +1,7 @@
 package com.imsproject.watch.view
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.Animatable
@@ -18,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -30,26 +33,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import com.imsproject.common.gameserver.GameType
 import com.imsproject.watch.DARK_BACKGROUND_COLOR
 import com.imsproject.watch.LIGHT_GRAY_COLOR
-import com.imsproject.watch.RIPPLE_MAX_SIZE
 import com.imsproject.watch.SCREEN_CENTER
 import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.WATER_RIPPLES_ANIMATION_DURATION
 import com.imsproject.watch.WATER_RIPPLES_BUTTON_SIZE
-import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.GameViewModel
 import com.imsproject.watch.viewmodel.WaterRipplesViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.launch
 
 class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
@@ -81,28 +79,32 @@ class WaterRipplesActivity : GameActivity(GameType.WATER_RIPPLES) {
 
 @Composable
 fun WaterRipples(viewModel: WaterRipplesViewModel) {
-    val ripples = remember { viewModel.ripples }
+    val ripplesToShow = remember { mutableStateListOf<WaterRipplesViewModel.Ripple>() }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(viewModel.counter.collectAsState().value) {
-        val toAnimate = ripples.takeWhile { it.animationStarted.not() }
-        toAnimate.forEach {
-            it.animationStarted = true
-            val animation = Animatable(0f)
-            scope.launch {
-                animation.animateTo(
-                    targetValue = 1f,
-                    animationSpec = tween(
-                        durationMillis = WATER_RIPPLES_ANIMATION_DURATION,
-                        easing = LinearEasing
-                    )
-                ) {
-                    it.size = (SCREEN_RADIUS - WATER_RIPPLES_BUTTON_SIZE) * value + WATER_RIPPLES_BUTTON_SIZE
-                    it.currentAlpha = it.startingAlpha * (1f - value)
+    LaunchedEffect(Unit) {
+        while(true)  {
+            awaitFrame()
+            viewModel.ripples.forEach { ripple ->
+                if (ripple.animationStarted) return@forEach
+                ripple.animationStarted = true
+                ripplesToShow.add(ripple)
+                val animation = Animatable(0f)
+                scope.launch {
+                    animation.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = WATER_RIPPLES_ANIMATION_DURATION,
+                            easing = LinearEasing
+                        )
+                    ) {
+                        ripple.size = (SCREEN_RADIUS - WATER_RIPPLES_BUTTON_SIZE) * value + WATER_RIPPLES_BUTTON_SIZE
+                        ripple.currentAlpha = ripple.startingAlpha * (1f - value)
+                    }
+                    ripplesToShow.remove(ripple)
+                    viewModel.ripples.remove(ripple)
                 }
-                ripples.remove(it)
             }
         }
-
     }
 
     // Box to draw the background
@@ -152,10 +154,9 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
         }
 
         Canvas(modifier = Modifier.fillMaxSize()) {
-
             drawContext.canvas.saveLayer(bounds = size.toRect(), paint = Paint())
             // Precompute all ripple paths
-            val ripples = ripples.toTypedArray()
+            val ripples = ripplesToShow.toTypedArray()
             val ripplePaths = ripples.map { ripple ->
                 val outer = Path().apply {
                     addOval(
@@ -207,10 +208,8 @@ fun WaterRipples(viewModel: WaterRipplesViewModel) {
                     )
                 }
             }
-
             drawContext.canvas.restore()
         }
-
     }
 }
 

@@ -62,12 +62,9 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
 
     val ripples = ConcurrentLinkedDeque<Ripple>()
 
-    protected var _counter = MutableStateFlow(0)
-
     var myColor: Color = BLUE_COLOR
     var opponentColor: Color = GRASS_GREEN_COLOR
 
-    val counter: StateFlow<Int> = _counter
 
     // ================================================================================ |
     // ============================ PUBLIC METHODS ==================================== |
@@ -198,7 +195,6 @@ open class WaterRipplesViewModel() : GameViewModel(GameType.WATER_RIPPLES) {
             Ripple(opponentColor, timestamp, actor, 0.35f)
         }
         ripples.addFirst(ripple)
-        _counter.value++
     }
 
     companion object {

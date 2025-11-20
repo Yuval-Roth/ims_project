@@ -4,6 +4,9 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -17,7 +20,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -51,7 +56,9 @@ import com.imsproject.watch.view.contracts.Result
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel
 import com.imsproject.watch.viewmodel.FlowerGardenViewModel.Flower
 import com.imsproject.watch.viewmodel.GameViewModel
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
@@ -88,12 +95,67 @@ class FlowerGardenActivity : GameActivity(GameType.FLOWER_GARDEN) {
 
 @Composable
 fun FlowerGarden(viewModel: FlowerGardenViewModel) {
-    // this is used only to to trigger recomposition when new ripples are added
-    viewModel.counter.collectAsState().value
+    val scope = rememberCoroutineScope()
 
     // flowers
-    val flowerAnimationRadius = remember { mutableFloatStateOf(0f) }
+    val flowerAnimationRadius = remember { Animatable(0f) }
     val shouldAnimateFlower = viewModel.currFlowerIndex.collectAsState().value
+
+    // sets
+    val grassPlantSetsToShow = remember { mutableStateListOf<FlowerGardenViewModel.Plant>() }
+    val waterDropletSetsToShow = remember { mutableStateListOf<FlowerGardenViewModel.WaterDroplet>() }
+    val flowerPointsToShow = remember { mutableStateListOf<FlowerGardenViewModel.Flower>() }
+
+    LaunchedEffect(Unit){
+        while(true){
+            awaitFrame()
+            viewModel.waterDropletSets.forEach { waterDropletSet ->
+                if(waterDropletSet.animationStarted) return@forEach
+                waterDropletSet.animationStarted = true
+
+                waterDropletSetsToShow.add(waterDropletSet)
+                scope.launch {
+                    delay(GRASS_WATER_VISIBILITY_THRESHOLD.toLong())
+                    waterDropletSetsToShow.remove(waterDropletSet)
+                    viewModel.waterDropletSets.remove(waterDropletSet)
+                }
+            }
+            viewModel.grassPlantSets.forEach { grassPlantSet ->
+                if(grassPlantSet.animationStarted) return@forEach
+                grassPlantSet.animationStarted = true
+
+                grassPlantSetsToShow.add(grassPlantSet)
+                scope.launch {
+                    delay(GRASS_WATER_VISIBILITY_THRESHOLD.toLong())
+                    grassPlantSetsToShow.remove(grassPlantSet)
+                    viewModel.grassPlantSets.remove(grassPlantSet)
+                }
+            }
+            while(viewModel.activeFlowerPoints.isNotEmpty()){
+                val flowerPoint = viewModel.activeFlowerPoints.removeFirst()
+                flowerPointsToShow.add(flowerPoint)
+            }
+        }
+    }
+
+    // Only trigger animation when a new flower is added
+    LaunchedEffect(shouldAnimateFlower) {
+        flowerAnimationRadius.animateTo(
+            targetValue = 10f,
+            animationSpec = tween(
+                durationMillis = 150,
+                easing = LinearEasing
+            )
+        )
+        flowerAnimationRadius.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(
+                durationMillis = 150,
+                easing = LinearEasing
+            )
+        )
+    }
+
 
     // Box to draw the background
     Box(
@@ -156,17 +218,17 @@ fun FlowerGarden(viewModel: FlowerGardenViewModel) {
             val h = SCREEN_RADIUS * 2f
 
             // draw active flowers with animation to the latest
-            for ((i, flower) in viewModel.activeFlowerPoints.withIndex()) {
+            for ((i, flower) in flowerPointsToShow.withIndex()) {
 //                    val toDrawBigger = i == viewModel._currFlowerIndex.value
-                val toDrawBigger = i == (viewModel.activeFlowerPoints.size - 1)
+                val toDrawBigger = i == (flowerPointsToShow.size - 1)
 
-                val radius = if (toDrawBigger) h / 20f + flowerAnimationRadius.floatValue else h / 20f
+                val radius = if (toDrawBigger) h / 20f + flowerAnimationRadius.value else h / 20f
 
                 drawFlower(flower, radius = radius)
             }
 
             // draw water droplets - actual water droplets
-            for(waterDropletSet in viewModel.waterDropletSets) {
+            for(waterDropletSet in waterDropletSetsToShow) {
                 for(center in waterDropletSet.centers) {
                     val centerX = center.first
                     val centerY = center.second
@@ -176,7 +238,7 @@ fun FlowerGarden(viewModel: FlowerGardenViewModel) {
             }
 
             // draw plant - shaped like grass
-            for(grassPlantSet in viewModel.grassPlantSets) {
+            for(grassPlantSet in grassPlantSetsToShow) {
                 for(center in grassPlantSet.centers) {
                     val baseX = center.first
                     val baseY = center.second + GRASS_PLANT_BASE_HEIGHT / 2
@@ -184,82 +246,6 @@ fun FlowerGarden(viewModel: FlowerGardenViewModel) {
                     drawGrassStroke(baseX, baseY, GRASS_PLANT_BASE_HEIGHT, GRASS_PLANT_BASE_WIDTH, grassPlantSet.color,)
                 }
             }
-        }
-    }
-
-
-    // Only trigger animation when a new flower is added
-    LaunchedEffect(shouldAnimateFlower) {
-        shouldAnimateFlower.let {
-            // pulse size up
-            repeat(10) {
-                flowerAnimationRadius.floatValue = min(flowerAnimationRadius.floatValue + 1f, 10f)
-                delay(16)
-            }
-            // pulse size down
-            repeat(10) {
-                flowerAnimationRadius.floatValue = max(flowerAnimationRadius.floatValue - 1f, 0f)
-                delay(16)
-            }
-            flowerAnimationRadius.floatValue = 0f
-        }
-    }
-
-    LaunchedEffect(Unit){
-        while(true) {
-            // animate water droplets
-            val it = viewModel.waterDropletSets.iterator()
-            while (it.hasNext()) {
-                val waterDropletSet = it.next()
-                val currTimestamp = viewModel.getCurrentGameTime()
-
-                //remove done water droplets after 250ms, no fade
-                if(abs(waterDropletSet.timestamp - currTimestamp) >= GRASS_WATER_VISIBILITY_THRESHOLD) {
-                    waterDropletSet.color = waterDropletSet.color.copy(alpha=0f) //trigger redraw
-                    it.remove()
-                    continue
-                }
-
-                // fade effect
-//                    val currDropletColor = waterDropletSet.color
-//                    val nextAlpha = currDropletColor.alpha * exp(WATER_DROPLET_FADE_COEFFICIENT
-//                            * waterDropletSet.time)
-//                    waterDropletSet.time++
-//                    waterDropletSet.color = currDropletColor.copy(nextAlpha)
-//
-//                    //remove done water droplets
-//                    if(waterDropletSet.color.alpha <= WATER_DROPLET_FADE_THRESHOLD) {
-//                        it.remove()
-//                        continue
-//                    }
-            }
-
-            // animate plant grass
-            val it2 = viewModel.grassPlantSets.iterator()
-            while (it2.hasNext()) {
-                val grassPlantSet = it2.next()
-                val currTimestamp = viewModel.getCurrentGameTime()
-
-                //remove done water droplets after 250ms, no fade
-                if(abs(grassPlantSet.timestamp - currTimestamp) >= GRASS_WATER_VISIBILITY_THRESHOLD) {
-                    grassPlantSet.color = grassPlantSet.color.copy(alpha=0f) //trigger redraw
-                    it2.remove()
-                    continue
-                }
-                // fade effect
-//                    val currPlantColor = grassPlantSet.color
-//                    val nextAlpha = currPlantColor.alpha * exp(GRASS_PLANT_FADE_COEFFICIENT
-//                            * grassPlantSet.time)
-//                    grassPlantSet.time++
-//                    grassPlantSet.color = currPlantColor.copy(nextAlpha)
-//
-//                    //remove done water droplets
-//                    if(grassPlantSet.color.alpha <= GRASS_PLANT_FADE_THRESHOLD) {
-//                        it2.remove()
-//                        continue
-//                    }
-            }
-            delay(16)
         }
     }
 }

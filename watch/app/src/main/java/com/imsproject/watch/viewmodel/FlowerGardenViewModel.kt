@@ -68,7 +68,7 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
     // ======================================
     class WaterDroplet(
         var timestamp: Long = 0,
-        var playerItemType: ItemType
+        playerItemType: ItemType
     ) {
         var color by mutableStateOf(WATER_BLUE_COLOR.copy(alpha = if (playerItemType == ItemType.WATER) CURRENT_PLAYER_ITEM_ALPHA else OPPONENT_PLAYER_ITEM_ALPHA))
         val centers : List<Pair<Float, Float>> =
@@ -78,7 +78,7 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
                     polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * -GRASS_WATER_ANGLE),
                     polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * GRASS_WATER_ANGLE)
             )
-        var time = 0
+        var animationStarted = false
     }
     val waterDropletSets = ConcurrentLinkedDeque<WaterDroplet>()
 
@@ -88,7 +88,7 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
 
     class Plant(
         var timestamp: Long = 0,
-        var playerItemType: ItemType
+        playerItemType: ItemType
     ) {
         val centers : List<Pair<Float, Float>> =
             listOf(polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 0 * -GRASS_WATER_ANGLE),
@@ -98,7 +98,7 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
                 polarToCartesian(GRASS_WATER_RADIUS, -90.0 + 4 * -GRASS_WATER_ANGLE)
             )
         var color by mutableStateOf(GRASS_GREEN_COLOR.copy(alpha = if (playerItemType == ItemType.PLANT) CURRENT_PLAYER_ITEM_ALPHA else OPPONENT_PLAYER_ITEM_ALPHA))
-        var time = 0
+        var animationStarted = false
     }
 
     val grassPlantSets = ConcurrentLinkedDeque<Plant>()
@@ -121,7 +121,8 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
     private lateinit var flowerPoints : List<Flower>
     private var _currFlowerIndex = MutableStateFlow(-1)
     val currFlowerIndex: StateFlow<Int> = _currFlowerIndex
-    var activeFlowerPoints : ConcurrentLinkedDeque<Flower> = ConcurrentLinkedDeque()
+    val activeFlowerPoints = ConcurrentLinkedDeque<Flower>()
+    var activeFlowerPointsCount = 0
 
     private lateinit var clickVibration : VibrationEffect
     private lateinit var soundPool: SoundPool
@@ -139,10 +140,6 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
     // ================================================================================ |
     // ================================ STATE FIELDS ================================== |
     // ================================================================================ |
-
-    //tracks the new taps
-    protected var _counter = MutableStateFlow(0)
-    val counter: StateFlow<Int> = _counter
 
 
     // ================================================================================ |
@@ -258,8 +255,8 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
             _currFlowerIndex.value = (_currFlowerIndex.value + 1) % amountOfFlowers
 
             //generate next dozen of flowers
-            if(activeFlowerPoints.size % amountOfFlowers == 0) {
-                val iter = (activeFlowerPoints.size / amountOfFlowers)
+            if(activeFlowerPointsCount % amountOfFlowers == 0) {
+                val iter = (activeFlowerPointsCount / amountOfFlowers)
                 flowerPoints = buildFlowers(
                     petalColor = colorsList[colorsListIndex].first,
                     centerColor = colorsList[colorsListIndex].second,
@@ -268,6 +265,7 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
             }
             //add new active flower
             activeFlowerPoints.add(flowerPoints[_currFlowerIndex.value])
+            activeFlowerPointsCount++
 
             //sound and vibration in sync
             viewModelScope.launch(Dispatchers.IO) {
@@ -277,7 +275,6 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
             }
             addEvent(SessionEvent.syncedAtTime(playerId, timestamp))
         }
-        _counter.value++ // used to trigger recomposition
     }
 
     private fun buildFlowers(petalColor: Color, centerColor: Color, angleOffset: Double): List<Flower> {

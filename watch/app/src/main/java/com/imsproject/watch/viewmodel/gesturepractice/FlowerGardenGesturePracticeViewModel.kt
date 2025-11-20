@@ -17,6 +17,7 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
     override val done: StateFlow<Boolean> = _done
 
     private var timeout = 0L
+    private var counter = 0
 
     fun init(context: Context, playerColor: MainViewModel.PlayerColor) {
         myItemType = when(playerColor) {
@@ -31,9 +32,9 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
         } else {
             grassPlantSets.addLast(Plant(System.currentTimeMillis(), myItemType))
         }
-        _counter.value++
+        counter++
 
-        if(_counter.value == 3){
+        if(counter == 3){
             viewModelScope.launch {
                 delay(timeout)
                 _done.value = true
@@ -43,7 +44,7 @@ class FlowerGardenGesturePracticeViewModel() : FlowerGardenViewModel(), GestureP
 
     override fun reset(){
         _done.value = false
-        _counter.value = 0
+        counter = 0
         waterDropletSets.clear()
         grassPlantSets.clear()
     }
