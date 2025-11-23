@@ -111,7 +111,7 @@ open class TreeViewModel: GameViewModel(GameType.TREE) {
                 _myParticle.value = createNewParticle(myDirection)
                 _otherParticle.value = createNewParticle(-myDirection)
                 val quantizedAngles = quantizeAngles(TREE_RING_ANGLE_STEP)
-                val flingAngle = closestQuantizedAngle(360f - TREE_RING_OPENING_ANGLE + 10f, TREE_RING_ANGLE_STEP, quantizedAngles)
+                val flingAngle = closestQuantizedAngle(360f - TREE_RING_OPENING_ANGLE*0.5f, TREE_RING_ANGLE_STEP, quantizedAngles)
                 ringAngle.collect {
                     if(ringAngle.value == flingAngle){
                         handleFling(500f, -myDirection, true)
