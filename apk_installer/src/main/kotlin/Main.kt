@@ -62,10 +62,13 @@ fun main() {
                 
                 ********** STACK TRACE **********
                  \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/
-                  
-                ${e.printStackTrace()}
                 """.trimIndent())
+            e.printStackTrace()
             println()
+            println()
+            System.out.flush()
+            System.err.flush()
+            Thread.sleep(1000)
             installer.waitForEnter()
         }
     }

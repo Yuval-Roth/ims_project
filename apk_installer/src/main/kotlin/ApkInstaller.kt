@@ -14,6 +14,18 @@ class ApkInstaller {
 
     // Extract adb.exe from inside the JAR to temp
     private val adbFile: File by lazy {
+        extractResource("/tools/adbWinApi.dll", "adbWinApi.dll")
+        extractResource("/tools/adbWinUsbApi.dll", "adbWinUsbApi.dll")
+        extractResource("/tools/etc1tool.exe","etc1tool.exe")
+        extractResource("/tools/fastboot.exe","fastboot.exe")
+        extractResource("/tools/hprof-conv.exe","hprof-conv.exe")
+        extractResource("/tools/libwinpthread-1.dll","libwinpthread-1.dll")
+        extractResource("/tools/make_f2fs.exe","make_f2fs.exe")
+        extractResource("/tools/make_f2fs_casefold.exe","make_f2fs_casefold.exe")
+        extractResource("/tools/mke2fs.conf","mke2fs.conf")
+        extractResource("/tools/mke2fs.exe","mke2fs.exe")
+        extractResource("/tools/source.properties","source.properties")
+        extractResource("/tools/sqlite3.exe","sqlite3.exe")
         extractResource(adbResource, "adb.exe")
     }
 
