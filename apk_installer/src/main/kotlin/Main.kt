@@ -55,7 +55,16 @@ fun main() {
                 }
             }
         } catch (e: Exception) {
-            println("An error occurred: ${e.message}")
+            println("""
+                An error occurred.
+                
+                Error message: ${e.message}
+                
+                ********** STACK TRACE **********
+                 \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/
+                  
+                ${e.printStackTrace()}
+                """.trimIndent())
             println()
             installer.waitForEnter()
         }

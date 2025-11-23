@@ -49,7 +49,10 @@ class ApkInstaller {
         printInstructions()
         println()
 
-        val target = handleConnecting() ?: return
+        val target = handleConnecting() ?: run {
+            waitForEnter()
+            return
+        }
         println("Installing the app from ${apkFile.absolutePath} ...")
         installOnDevice(target)
         waitForEnter()
@@ -145,7 +148,6 @@ class ApkInstaller {
         } else {
             println("\nFailed to connect to $target")
             println("Please check the IP and port.")
-            waitForEnter()
             null
         }
     }
@@ -164,7 +166,6 @@ class ApkInstaller {
                 hostIp
             } else {
                 println("\nPairing failed. Check IP, port, and pairing code.\n")
-                waitForEnter()
                 throw PairingFailedException()
             }
         } else {
