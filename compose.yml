@@ -20,6 +20,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file: /home/admin/env_files/db_credentials.env
+    restart: always
 
   ims-manager:
     image: yuvalroth123/imsproject_manager:latest
@@ -30,6 +31,7 @@ services:
       - "5000:5000"
     volumes:
       - /home/admin/volumes/manager:/app/data
+    restart: always
 
   ims-db:
     image: postgres:17.6
@@ -47,3 +49,4 @@ services:
       - /home/admin/volumes/db/certs/server.crt:/var/lib/postgresql/server.crt:ro
       - /home/admin/volumes/db/certs/server.key:/var/lib/postgresql/server.key:ro
     env_file: /home/admin/env_files/db_credentials.env
+    restart: always
