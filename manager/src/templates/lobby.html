@@ -52,6 +52,21 @@
                         </select>
 
                         <button id="apply-preset-btn" class="primary-button" disabled>Apply Preset</button>
+                        <div class="balanced-permutation-controls">
+                            <label for="balanced-permutation-index">Balanced Permutation</label>
+                            <div class="balanced-permutation-input-row">
+                                <input
+                                    type="number"
+                                    id="balanced-permutation-index"
+                                    min="1"
+                                    max="36"
+                                    step="1"
+                                    placeholder="Index"
+                                    aria-label="Balanced permutation index"
+                                >
+                                <button id="apply-balanced-permutation-btn" class="primary-button" disabled>Apply</button>
+                            </div>
+                        </div>
                 </section>
             </div>
 
@@ -173,6 +188,8 @@
         const cancelModalBtn = document.getElementById('cancel-modal-btn');
         const addSessionForm = document.getElementById('add-session-form');
         const contentContainer = document.getElementById('content-container');
+        const balancedPermutationInput = document.getElementById('balanced-permutation-index');
+        const applyBalancedPermutationBtn = document.getElementById('apply-balanced-permutation-btn');
 
         let sessionsDragged = false;
         let experimentRunning = false;
@@ -221,6 +238,54 @@
         // Handle form submission for adding a session
         addSessionForm.addEventListener('submit', handleAddSession);
 
+        const balancedPermutations = [
+            [2,    5,    4,    6,    1,    3],
+            [5,    6,    2,    3,    4,    1],
+            [6,    3,    5,    1,    2,    4],
+            [3,    1,    6,    4,    5,    2],
+            [1,    4,    3,    2,    6,    5],
+            [4,    2,    1,    5,    3,    6],
+            [5,    2,    1,    4,    3,    6],
+            [2,    4,    5,    6,    1,    3],
+            [4,    6,    2,    3,    5,    1],
+            [6,    3,    4,    1,    2,    5],
+            [3,    1,    6,    5,    4,    2],
+            [1,    5,    3,    2,    6,    4],
+            [3,    6,    5,    2,    1,    4],
+            [6,    2,    3,    4,    5,    1],
+            [2,    4,    6,    1,    3,    5],
+            [4,    1,    2,    5,    6,    3],
+            [1,    5,    4,    3,    2,    6],
+            [5,    3,    1,    6,    4,    2],
+            [4,    1,    5,    2,    3,    6],
+            [1,    2,    4,    6,    5,    3],
+            [2,    6,    1,    3,    4,    5],
+            [6,    3,    2,    5,    1,    4],
+            [3,    5,    6,    4,    2,    1],
+            [5,    4,    3,    1,    6,    2],
+            [5,    3,    2,    1,    6,    4],
+            [3,    1,    5,    4,    2,    6],
+            [1,    4,    3,    6,    5,    2],
+            [4,    6,    1,    2,    3,    5],
+            [6,    2,    4,    5,    1,    3],
+            [2,    5,    6,    3,    4,    1],
+            [6,    2,    4,    3,    5,    1],
+            [2,    3,    6,    1,    4,    5],
+            [3,    1,    2,    5,    6,    4],
+            [1,    5,    3,    4,    2,    6],
+            [5,    4,    1,    6,    3,    2],
+            [4,    6,    5,    2,    1,    3]
+        ];
+
+        balancedPermutationInput.addEventListener('input', updateBalancedPermutationButtonState);
+        balancedPermutationInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleBalancedPermutationActivation();
+            }
+        });
+        applyBalancedPermutationBtn.addEventListener('click', handleBalancedPermutationActivation);
+
         // Fetch and populate sessions on page load
         fetchSessions();
 
@@ -240,6 +305,91 @@
             animation: 150,
             onEnd: updateSessionOrder
         });
+
+        function getBalancedPermutationDisplayIndex() {
+            const rawValue = balancedPermutationInput.value.trim();
+
+            if (!/^\d+$/.test(rawValue)) {
+                return null;
+            }
+
+            const displayIndex = Number(rawValue);
+
+            if (displayIndex < 1) {
+                return null;
+            }
+
+            return displayIndex;
+        }
+
+        function updateBalancedPermutationButtonState() {
+            applyBalancedPermutationBtn.disabled = getBalancedPermutationDisplayIndex() === null;
+        }
+
+        function handleBalancedPermutationActivation() {
+            const displayIndex = getBalancedPermutationDisplayIndex();
+
+            if (experimentRunning === true) {
+                alert('Cannot apply a permutation while the experiment is running.');
+                return;
+            }
+
+            if (displayIndex === null) {
+                alert('Please enter a positive whole number for the permutation index.');
+                return;
+            }
+
+            if(displayIndex < 1 || displayIndex > balancedPermutations.length) {
+                alert('Invalid permutation index. Please enter a number between 1 and ' + balancedPermutations.length);
+            }
+
+            applyBalancedPermutation(displayIndex - 1);
+        }
+
+        function applyBalancedPermutation(permutationIndex) {
+            const permutation = balancedPermutations[permutationIndex];
+
+            // extract the sessions from the table without the Recess sessions
+            // also, group consecutive sessions from the same type so they will be moved together
+            // this is so [practice -> experiment] sessions will be moved together
+            const batchedSessions = [];
+            let lastGameType = null;
+            let currBatchedIndex = -1;
+            for(const row of sessionTableBody.children) {
+                const gameType = row.children[0].textContent;
+                if(gameType === 'Recess') {
+                    continue;
+                }
+                if(gameType !== lastGameType) {
+                    lastGameType = gameType;
+                    batchedSessions.push([]);
+                    currBatchedIndex++;
+                }
+                const currBatch = batchedSessions[currBatchedIndex];
+                currBatch.push(row);
+            }
+
+            // build the new session order based on the permutation
+            const newSessionOrder = [];
+            let currPermutationIndex = 0;
+            for(let i = 0; i < sessionTableBody.children.length;) {
+                const row =  sessionTableBody.children[i];
+                const gameType = row.children[0].textContent;
+                if(gameType === 'Recess') {
+                    newSessionOrder.push(row);
+                    i++;
+                } else {
+                    const nextIndex = permutation[currPermutationIndex] - 1; // permutation indices are 1-based
+                    const nextBatch = batchedSessions[nextIndex];
+                    newSessionOrder.push(...nextBatch);
+                    currPermutationIndex++;
+                    i += nextBatch.length;
+                }
+            }
+            sessionTableBody.innerHTML = '';
+            newSessionOrder.forEach(row => sessionTableBody.appendChild(row));
+            updateSessionOrder();
+        }
 
         // Show modal and reset form
         function showModal() {

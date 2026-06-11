@@ -267,8 +267,51 @@ button:hover {
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
 }
 
+.balanced-permutation-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+    width: 220px;
+}
+
+.balanced-permutation-controls label {
+    color: #555;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.balanced-permutation-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.balanced-permutation-input-row input {
+    margin: 0;
+    min-width: 0;
+    width: 90px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.balanced-permutation-input-row input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
+}
+
+.balanced-permutation-input-row button {
+    flex: 1;
+    white-space: nowrap;
+}
+
 /* Disabled button look */
-#apply-preset-btn:disabled {
+#apply-preset-btn:disabled,
+#apply-balanced-permutation-btn:disabled {
     background-color: #bcd0ef;
     cursor: not-allowed;
     transform: none;
