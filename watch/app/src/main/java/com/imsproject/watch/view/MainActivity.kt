@@ -1250,7 +1250,7 @@ class MainActivity : ComponentActivity() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ){
-                RTLText(modifier = Modifier.offset(y = -(SCREEN_RADIUS * 0.03).dp) ,text = "קצת")
+                RTLText(modifier = Modifier.offset(y = -(SCREEN_RADIUS * 0.03).dp) ,text = "מאד")
                 if(sliderValue > 0f){
                     BasicText(
                         modifier = Modifier.fillMaxWidth(0.2f),
@@ -1270,7 +1270,7 @@ class MainActivity : ComponentActivity() {
                             textAlign = TextAlign.Center),
                     )
                 }
-                RTLText(modifier = Modifier.offset(y = -(SCREEN_RADIUS * 0.03).dp) ,text = "מאד")
+                RTLText(modifier = Modifier.offset(y = -(SCREEN_RADIUS * 0.03).dp) ,text = "קצת")
             }
         }
     }
@@ -1331,7 +1331,7 @@ class MainActivity : ComponentActivity() {
             val y = size.height / 2f
             val dotSpacing = size.width / (valueRange.endInclusive - 1)
             for (i in 0..< valueRange.endInclusive.toInt()) {
-                val x = i * dotSpacing
+                val x = size.width - (i * dotSpacing)
                 val color = if (startingValue > 0f && i / (valueRange.endInclusive.toInt() - 1f) <= progress) dotsCoveredColor else dotsUncoveredColor
                 drawCircle(color, radius = (size.height / 32f).dp.toPx(), center = Offset(x, y))
             }
@@ -1348,7 +1348,7 @@ class MainActivity : ComponentActivity() {
                             inputChange.consume()
                             when (pointerEvent.type) {
                                 PointerEventType.Press, PointerEventType.Move -> {
-                                    val newValue = valueRange.start + (inputChange.position.x / size.width) * (valueRange.endInclusive - valueRange.start)
+                                    val newValue = valueRange.start + ((size.width - inputChange.position.x) / size.width) * (valueRange.endInclusive - valueRange.start)
                                     val coercedValue = newValue.coerceIn(valueRange).roundToInt()
                                     scope.launch {
                                         if(currentValue.value < 0f){
@@ -1373,11 +1373,12 @@ class MainActivity : ComponentActivity() {
         ) {
             Canvas(Modifier.fillMaxSize()) {
                 val y = size.height / 2f
+                val thumbX = size.width * (1f - progress)
                 drawLine(emptyBarColor, Offset(0f, y), Offset(size.width, y), strokeWidth = (size.height/4f).dp.toPx(), cap = StrokeCap.Round)
                 if (hasThumb){
-                    drawLine(barColor, Offset(0f, y), Offset(size.width * progress, y), strokeWidth = (size.height/4f).dp.toPx(), cap = StrokeCap.Round)
+                    drawLine(barColor, Offset(size.width, y), Offset(thumbX, y), strokeWidth = (size.height/4f).dp.toPx(), cap = StrokeCap.Round)
                     drawDots()
-                    drawCircle(thumbColor, radius = (size.height/4.5f).dp.toPx(), center = Offset(size.width * progress, y))
+                    drawCircle(thumbColor, radius = (size.height/4.5f).dp.toPx(), center = Offset(thumbX, y))
                 } else {
                     drawDots()
                 }
