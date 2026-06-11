@@ -192,6 +192,7 @@ const syncIntervals = {{ data.sync_intervals|tojson }};
 const angleData     = {{ data.angle_data|tojson }};
 const wavesData  = {{ data.waves_data  | tojson | safe }};
 const pacmanData = {{ data.pacman_data | tojson | safe }};
+const treeData   = {{ data.tree_data | tojson | safe }};
 
 
 /**** ---------- HELPERS ---------- ****/
@@ -652,14 +653,20 @@ else if (wavesData && Object.keys(wavesData).length) {
   addResetZoomButton(gameChart, gameCtx.parentElement);
 }
 
-else if (pacmanData && Object.keys(pacmanData).length) {
-  titleEl.textContent = 'Pacman – Speed (Rewards Highlighted)';
+else if (
+  (pacmanData && Object.keys(pacmanData).length) ||
+  (treeData && Object.keys(treeData).length)
+) {
+  const rewardSpeedData = treeData && Object.keys(treeData).length ? treeData : pacmanData;
+  titleEl.textContent = rewardSpeedData === treeData
+    ? 'Tree - Speed (Rewards Highlighted)'
+    : 'Pacman - Speed (Rewards Highlighted)';
 
   const COLORS = ['#007bff', '#e74c3c', '#28a745', '#f1c40f']; // fallback palette
 
   // ─────────────── Build datasets ───────────────
-  const datasets = Object.keys(pacmanData).map((actor, idx) => {
-    const base = pacmanData[actor];
+  const datasets = Object.keys(rewardSpeedData).map((actor, idx) => {
+    const base = rewardSpeedData[actor];
     const baseColor = COLORS[idx % COLORS.length];
     const borderColor = baseColor.replace(')', ', 0.9)').replace('rgb', 'rgba'); // for glow edges if rgb
 
@@ -740,7 +747,7 @@ else if (pacmanData && Object.keys(pacmanData).length) {
           callbacks: {
             label: ctx => {
               const actor = ctx.dataset.label;
-              const reward = pacmanData[actor].reward[ctx.dataIndex];
+              const reward = rewardSpeedData[actor].reward[ctx.dataIndex];
               const speed = ctx.parsed.y.toFixed(1);
               return reward
                 ? `${actor}: ${speed} dp/s ★`

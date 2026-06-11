@@ -476,6 +476,7 @@ def single_session_data():
 
     sid          = request.args.get('session_id')
     game_type    = request.args.get('game_type', '')
+    game_type_key = game_type.replace(' ', '_').upper()
     participants = request.args.get('participants', '')
     duration     = request.args.get('duration', '')
     tolerance   = request.args.get('tolerance', '')
@@ -490,16 +491,19 @@ def single_session_data():
     frequency_data = sync_intervals = None
     waves_data = None
     pacman_data = None
+    tree_data = None
     angle_data = None
 
-    if game_type in ("WATER_RIPPLES", "FLOWER_GARDEN"):
+    if game_type_key in ("WATER_RIPPLES", "FLOWER_GARDEN"):
         click_events, sync_events = get_click_game_sync(sid)
-    elif game_type in ("WINE_GLASSES", "FLOUR_MILL"):
+    elif game_type_key in ("WINE_GLASSES", "FLOUR_MILL"):
         frequency_data, angle_data, sync_intervals = get_swipe_game_frequency(sid)
-    elif game_type == "WAVES":
+    elif game_type_key == "WAVES":
         waves_data = get_waves(sid)
-    elif game_type == "PACMAN":
+    elif game_type_key == "PACMAN":
         pacman_data = get_pacman(sid)
+    elif game_type_key == "TREE":
+        tree_data = get_tree(sid)
     else:
         Logger.log_error(f"Unknown game type in single_session_data: {game_type}")
 
@@ -523,7 +527,8 @@ def single_session_data():
         "sync_intervals" : sync_intervals,
         "angle_data"     : angle_data,
         "waves_data"     : waves_data,
-        "pacman_data"    : pacman_data
+        "pacman_data"    : pacman_data,
+        "tree_data"      : tree_data
     }
 
     return render_template("single_session_data.html",

@@ -328,6 +328,48 @@ def get_pacman(session_id: str):
 
 
 
+def get_tree(session_id: str):
+    try:
+        fling_events = get_event_data(session_id, type_="USER_INPUT", subtype="FLING")
+        if not fling_events:
+            Logger.log_error(f"Session {session_id}: No FLING events found")
+            return None
+
+        fling_events.sort(key=lambda x: x["timestamp"])
+
+        tree_data = defaultdict(lambda: {"timestamps": [], "speed": [], "reward": []})
+
+        for ev in fling_events:
+            try:
+                parts = ev["data"].split(",")
+                if len(parts) < 3:
+                    raise ValueError("Incomplete TREE data")
+
+                speed = float(parts[0].strip())
+                int(parts[1].strip())  # direction is only validated for Tree session data
+                reward = parts[2].strip().lower() == "true"
+
+                timestamp_sec = (ev["timestamp"]) / 1000.0
+
+                actor_data = tree_data[ev["actor"]]
+                actor_data["timestamps"].append(f"{timestamp_sec:.3f}")
+                actor_data["speed"].append(speed)
+                actor_data["reward"].append(reward)
+
+            except Exception as e:
+                Logger.log_error(f"Invalid TREE data: {ev.get('data')}  error={e}")
+
+        if not tree_data:
+            Logger.log_error(f"Session {session_id}: Parsed no valid TREE data")
+            return None
+
+        return dict(tree_data) if tree_data else None
+
+    except Exception as e:
+        Logger.log_error(f"get_tree - {e}")
+        return None
+
+
 def get_lobbies_data() -> list[dict]:
     try:
         res = server_response(

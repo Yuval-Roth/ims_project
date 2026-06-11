@@ -144,6 +144,7 @@
       <option value="FLOUR_MILL">Flour Mill</option>
       <option value="WAVES">Waves</option>
       <option value="PACMAN">Pacman</option>
+      <option value="TREE">Tree</option>
     </select>
     <button onclick="applyFilters()">Filter</button>
   </div>
@@ -196,6 +197,10 @@
   // Convert any JSON‐string into JS object
   const allSessions = rawSessions.map(s => typeof s === 'string' ? JSON.parse(s) : s);
 
+  function normalizeSessionType(value) {
+    return (value || '').replace(/ /g, '_').toUpperCase();
+  }
+
   // ───────────────────────────────────────── table rendering
   function renderTable(rows) {
     const tbody = document.querySelector('#sessionTable tbody');
@@ -220,7 +225,7 @@
   function applyFilters() {
     const type = document.getElementById('typeFilter').value;
     const filtered = type
-      ? allSessions.filter(s => s.sessionType === type)
+      ? allSessions.filter(s => normalizeSessionType(s.sessionType) === type)
       : allSessions;
     renderTable(filtered);
   }
