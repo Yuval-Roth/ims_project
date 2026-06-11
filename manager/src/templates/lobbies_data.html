@@ -32,12 +32,36 @@
             {{ lobby.participant1Name }}
             {% if lobby.participant2Name %}, {{ lobby.participant2Name }}{% endif %}
           </td>
-          <td>{{ lobby.created_at if lobby.created_at is defined else '' }}</td>
+          <td class="created-at" data-created-at="{{ lobby.dateTime | default('', true) }}">
+            {{ lobby.dateTime | default('', true) }}
+          </td>
         </tr>
       {% endfor %}
       </tbody>
   </table>
 </div>
+
+<script>
+  function formatCreatedAt(rawValue) {
+    const raw = (rawValue || '').trim();
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+
+    if (!match) {
+      return raw;
+    }
+
+    const [, year, month, day, hour, minute] = match;
+    return `${day}/${month}/${year} ${hour}:${minute}`;
+  }
+
+  document.querySelectorAll('.created-at').forEach(cell => {
+    const raw = cell.dataset.createdAt;
+    cell.textContent = formatCreatedAt(raw);
+    if (raw) {
+      cell.title = raw;
+    }
+  });
+</script>
 
 </body>
 </html>
