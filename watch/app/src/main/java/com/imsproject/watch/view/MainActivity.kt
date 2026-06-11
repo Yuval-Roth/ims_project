@@ -1047,6 +1047,7 @@ class MainActivity : ComponentActivity() {
             disableButton = buttonDisabled
         ) {
             VerticalPager(
+                modifier = Modifier.fillMaxWidth(),
                 state = pagerState,
                 userScrollEnabled = false
             ){ page ->
@@ -1054,12 +1055,10 @@ class MainActivity : ComponentActivity() {
                     0 -> {
                         Column(modifier = Modifier
                             .fillMaxSize()
-                            .padding(
-                                start = COLUMN_PADDING,
-                                end = COLUMN_PADDING
-                            )
+                            ,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ){
-                            Spacer(Modifier.fillMaxHeight(0.25f))
+                            Spacer(Modifier.fillMaxHeight(0.3f))
                             SliderQuestion(
                                 FIRST_QUESTION,
                                 firstSliderValue,
@@ -1072,12 +1071,10 @@ class MainActivity : ComponentActivity() {
                     1 -> {
                         Column(modifier = Modifier
                             .fillMaxSize()
-                            .padding(
-                                start = COLUMN_PADDING * 0.75f,
-                                end = COLUMN_PADDING * 0.75f
-                            )
+                            ,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Spacer(Modifier.fillMaxHeight(0.35f))
+                            Spacer(Modifier.fillMaxHeight(0.375f))
                             SliderQuestion(SECOND_QUESTION,secondSliderValue) {
                                 secondSliderValue = it
                                 buttonDisabled = false
@@ -1087,12 +1084,10 @@ class MainActivity : ComponentActivity() {
                     2 -> {
                         Column(modifier = Modifier
                             .fillMaxSize()
-                            .padding(
-                                start = COLUMN_PADDING * 0.75f,
-                                end = COLUMN_PADDING * 0.75f
-                            )
+                            ,
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Spacer(Modifier.fillMaxHeight(0.35f))
+                            Spacer(Modifier.fillMaxHeight(0.275f))
                             SliderQuestion(THIRD_QUESTION,thirdSliderValue) {
                                 thirdSliderValue = it
                                 buttonDisabled = false
@@ -1229,16 +1224,27 @@ class MainActivity : ComponentActivity() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             RTLText(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(0.8f),
                 text = question
             )
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-            SimpleSlider(
-                startingValue = sliderValue,
-                onValueChange = onValueChanged,
-                valueRange = 1f..7f,
-                hasThumb = sliderValue > 0f
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(0.95f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RTLText(text = "מעט")
+                Box(modifier = Modifier.fillMaxWidth(0.7f)){
+                    SimpleSlider(
+                        startingValue = sliderValue,
+                        onValueChange = onValueChanged,
+                        valueRange = 1f..7f,
+                        hasThumb = sliderValue > 0f
+                    )
+                }
+                RTLText(text = "מאד")
+            }
+
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
             if(sliderValue > 0f){
                 BasicText(
