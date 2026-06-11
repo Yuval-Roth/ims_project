@@ -102,6 +102,7 @@ import com.imsproject.watch.SCREEN_RADIUS
 import com.imsproject.watch.SECOND_QUESTION
 import com.imsproject.watch.SILVER_COLOR
 import com.imsproject.watch.TEXT_SIZE
+import com.imsproject.watch.THIRD_QUESTION
 import com.imsproject.watch.initProperties
 import com.imsproject.watch.model.REST_SCHEME
 import com.imsproject.watch.model.SERVER_IP
@@ -1018,10 +1019,11 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun AfterGameQuestions() {
-        val pageCount = remember { 2 }
+        val pageCount = remember { 3 }
         val scope = rememberCoroutineScope()
         var firstSliderValue by remember { mutableIntStateOf(-1) }
         var secondSliderValue by remember { mutableIntStateOf(-1) }
+        var thirdSliderValue by remember { mutableIntStateOf(-1) }
         val pagerState = rememberPagerState(pageCount = { pageCount })
         var buttonDisabled by remember { mutableStateOf(true) }
 
@@ -1036,7 +1038,8 @@ class MainActivity : ComponentActivity() {
                     } else {
                         viewModel.uploadAnswers(mapOf(
                             FIRST_QUESTION to firstSliderValue.toString(),
-                            SECOND_QUESTION to secondSliderValue.toString()
+                            SECOND_QUESTION to secondSliderValue.toString(),
+                            THIRD_QUESTION to thirdSliderValue.toString()
                         ))
                     }
                 }
@@ -1077,6 +1080,21 @@ class MainActivity : ComponentActivity() {
                             Spacer(Modifier.fillMaxHeight(0.35f))
                             SliderQuestion(SECOND_QUESTION,secondSliderValue) {
                                 secondSliderValue = it
+                                buttonDisabled = false
+                            }
+                        }
+                    }
+                    2 -> {
+                        Column(modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                start = COLUMN_PADDING * 0.75f,
+                                end = COLUMN_PADDING * 0.75f
+                            )
+                        ) {
+                            Spacer(Modifier.fillMaxHeight(0.35f))
+                            SliderQuestion(THIRD_QUESTION,thirdSliderValue) {
+                                thirdSliderValue = it
                                 buttonDisabled = false
                             }
                         }

@@ -178,6 +178,7 @@ var WAVE_OUTER_WIDTH = 0f
 
 const val FIRST_QUESTION = "עד כמה חשת תחושת \"ביחד\" עם השותפ/ה במשחקון הזה?"
 const val SECOND_QUESTION = "עד כמה הצלחתם לפעול ביחד?"
+const val THIRD_QUESTION = "עד כמה מצאה חן בעיניך הפעילות הזו?"
 
 
 // =================== initProperties =================== |
