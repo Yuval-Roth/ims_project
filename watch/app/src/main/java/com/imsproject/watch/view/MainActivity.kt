@@ -191,9 +191,9 @@ class MainActivity : ComponentActivity() {
 //                    val fieldValue = get(viewModel) as MutableStateFlow<String?>
 //                    fieldValue.value = "exp123"
 //                }
-//                AfterGameQuestions()
+                AfterGameQuestions()
 //                UploadingScreen("שומר נתונים....", 500, 1000)
-                Main()
+//                Main()
 //                ColorConfirmationScreen(
 //                    MainViewModel.PlayerColor.BLUE
 //                ) { }
@@ -1229,41 +1229,48 @@ class MainActivity : ComponentActivity() {
             )
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
             Row(
-                modifier = Modifier.fillMaxWidth(0.95f),
+                modifier = Modifier.fillMaxWidth(0.8f),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                RTLText(text = "מעט")
-                Box(modifier = Modifier.fillMaxWidth(0.7f)){
-                    SimpleSlider(
-                        startingValue = sliderValue,
-                        onValueChange = onValueChanged,
-                        valueRange = 1f..7f,
-                        hasThumb = sliderValue > 0f
-                    )
-                }
-                RTLText(text = "מאד")
+                SimpleSlider(
+                    startingValue = sliderValue,
+                    onValueChange = onValueChanged,
+                    valueRange = 1f..7f,
+                    hasThumb = sliderValue > 0f
+                )
             }
 
             Spacer(modifier = Modifier.fillMaxHeight(0.1f))
-            if(sliderValue > 0f){
-                BasicText(
-                    modifier = Modifier.fillMaxWidth(0.2f),
-                    text = "$sliderValue",
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = TEXT_SIZE*1.5,
-                        textAlign = TextAlign.Center),
-                )
-            } else {
-                RTLText(
-                    modifier = Modifier.fillMaxWidth(0.6f),
-                    text = "נא לבחור ערך",
-                    style = TextStyle(
-                        color = Color.Gray,
-                        fontSize = TEXT_SIZE,
-                        textAlign = TextAlign.Center),
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .fillMaxHeight()
+                ,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ){
+                RTLText(modifier = Modifier.offset(y = -(SCREEN_RADIUS * 0.03).dp) ,text = "קצת")
+                if(sliderValue > 0f){
+                    BasicText(
+                        modifier = Modifier.fillMaxWidth(0.2f),
+                        text = "$sliderValue",
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = TEXT_SIZE*1.5,
+                            textAlign = TextAlign.Center),
+                    )
+                } else {
+                    RTLText(
+                        modifier = Modifier.fillMaxWidth(0.6f),
+                        text = "נא לבחור ערך",
+                        style = TextStyle(
+                            color = Color.Gray,
+                            fontSize = TEXT_SIZE,
+                            textAlign = TextAlign.Center),
+                    )
+                }
+                RTLText(modifier = Modifier.offset(y = -(SCREEN_RADIUS * 0.03).dp) ,text = "מאד")
             }
         }
     }
