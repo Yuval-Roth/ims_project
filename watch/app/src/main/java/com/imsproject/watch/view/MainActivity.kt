@@ -191,9 +191,9 @@ class MainActivity : ComponentActivity() {
 //                    val fieldValue = get(viewModel) as MutableStateFlow<String?>
 //                    fieldValue.value = "exp123"
 //                }
-                AfterGameQuestions()
+//                AfterGameQuestions()
 //                UploadingScreen("שומר נתונים....", 500, 1000)
-//                Main()
+                Main()
 //                ColorConfirmationScreen(
 //                    MainViewModel.PlayerColor.BLUE
 //                ) { }
