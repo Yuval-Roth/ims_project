@@ -206,6 +206,8 @@
     const tbody = document.querySelector('#sessionTable tbody');
     tbody.innerHTML = '';
 
+    rows.sort((a, b) => +a.sessionId - +b.sessionId);
+
     rows.forEach(s => {
       const tr = document.createElement('tr');
       tr.onclick = () =>
