@@ -328,6 +328,7 @@
 
         function handleBalancedPermutationActivation() {
             const displayIndex = getBalancedPermutationDisplayIndex();
+            const presetName = presetDropdown.value;
 
             if (experimentRunning === true) {
                 alert('Cannot apply a permutation while the experiment is running.');
@@ -339,11 +340,20 @@
                 return;
             }
 
-            if(displayIndex < 1 || displayIndex > balancedPermutations.length) {
-                alert('Invalid permutation index. Please enter a number between 1 and ' + balancedPermutations.length);
+            if(!presetName){
+                alert("No preset selected. Please select a preset");
+                return;
             }
 
-            applyBalancedPermutation(displayIndex - 1);
+            if(displayIndex < 1 || displayIndex > balancedPermutations.length) {
+                alert('Invalid permutation index. Please enter a number between 1 and ' + balancedPermutations.length);
+                return;
+            }
+
+            runPreset(presetName).then(()=>{
+                applyBalancedPermutation(displayIndex - 1);
+                balancedPermutationInput.value = null;
+            });
         }
 
         function applyBalancedPermutation(permutationIndex) {
