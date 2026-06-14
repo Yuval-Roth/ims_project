@@ -883,7 +883,7 @@ class MainActivity : ComponentActivity() {
                     style = textStyle.copy(fontSize = TEXT_SIZE, textDecoration = TextDecoration.Underline),
                 )
                 Spacer(modifier = Modifier.fillMaxHeight(0.2f))
-                RTLText(text = "תזכורת:\n$text")
+                RTLText(text)
             }
         }
     }
@@ -913,7 +913,7 @@ class MainActivity : ComponentActivity() {
                 GameType.WINE_GLASSES, GameType.FLOUR_MILL -> "תרגול סיבוב" to """
                     במסך הבא נתרגל סיבוב.
                     הסיבוב מתבצע קרוב למסגרת
-                    של השעון
+                    השעון, על הפס הלבן
                 """.trimIndent()
                 GameType.WAVES,GameType.TREE, GameType.PACMAN ->"תרגול מסירה" to """
                     במסך הבא נתרגל מסירה.

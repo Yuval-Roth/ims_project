@@ -34,8 +34,8 @@ enum class GameType {
         WINE_GLASSES -> "כוסות יין"
         FLOUR_MILL -> "מטחנת קמח"
         FLOWER_GARDEN -> "גינת פרחים"
-        WAVES -> "גלים"
+        WAVES -> "גל עובר"
         PACMAN -> "פאקמן"
-        TREE -> "עץ"
+        TREE -> "עץ ועלים"
     }
 }

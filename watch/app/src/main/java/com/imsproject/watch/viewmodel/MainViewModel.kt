@@ -632,8 +632,10 @@ class MainViewModel() : ViewModel() {
             if (! experimentRunning) {
                 Log.d(TAG, "prepareNextSession: experiment ended")
                 if (_expId.value != null) {
-                    Log.d(TAG, "prepareNextSession: moving to AFTER_EXPERIMENT state")
-                    setState(State.AFTER_EXPERIMENT)
+//                    Log.d(TAG, "prepareNextSession: moving to AFTER_EXPERIMENT state")
+//                    setState(State.AFTER_EXPERIMENT)
+                    Log.d(TAG, "prepareNextSession: moving to THANKS_FOR_PARTICIPATING state")
+                    setState(State.THANKS_FOR_PARTICIPATING)
                 } else {
                     if(_lobbyId.value == ""){
                         Log.d(TAG, "prepareNextSession: moving to CONNECTED_NOT_IN_LOBBY state")
