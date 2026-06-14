@@ -96,7 +96,11 @@ class WavPlayer(private val context: Context, private val scope: CoroutineScope)
     }
 
     fun pause(@IntRange(0,31) trackNumber: Int) {
-        tracks[trackNumber]?.pause()
+        try{
+            tracks[trackNumber]?.pause()
+        } catch(e: Exception){
+            throw WavPlayerException("pause failed", e)
+        }
     }
 
     fun release(@IntRange(0,31) trackNumber: Int) {

@@ -155,28 +155,33 @@ fun WineGlasses(viewModel: WineGlassesViewModel) {
 
         // play high sound when in sync
         LaunchedEffect(myReleased){
-            val wavPlayer = viewModel.wavPlayer
-            if(! myReleased) {
-                var playing = false
-                var inSync: Boolean
-                while (true) {
-                    try{
-                        inSync = viewModel.inSync()
-                        if (!playing && inSync) {
-                            wavPlayer.playLooped(RUB_LOOP_TRACK)
-                            playing = true
-                        } else if (playing && !inSync) {
-                            wavPlayer.pause(RUB_LOOP_TRACK)
-                            playing = false
+            try{
+                val wavPlayer = viewModel.wavPlayer
+                if(! myReleased) {
+                    var playing = false
+                    var inSync: Boolean
+                    while (true) {
+                        try{
+                            inSync = viewModel.inSync()
+                            if (!playing && inSync) {
+                                wavPlayer.playLooped(RUB_LOOP_TRACK)
+                                playing = true
+                            } else if (playing && !inSync) {
+                                wavPlayer.pause(RUB_LOOP_TRACK)
+                                playing = false
+                            }
+                            delay(16)
+                        } catch(e: WavPlayerException){
+                            Log.e(TAG, "WavPlayer Exception",e)
+                            viewModel.onWavPlayerException()
                         }
-                        delay(16)
-                    } catch(e: WavPlayerException){
-                        Log.e(TAG, "WavPlayer Exception",e)
-                        viewModel.onWavPlayerException()
                     }
+                } else if(wavPlayer.isPlaying(RUB_LOOP_TRACK)) {
+                    wavPlayer.stopFadeOut(RUB_LOOP_TRACK, 20)
                 }
-            } else if(wavPlayer.isPlaying(RUB_LOOP_TRACK)) {
-                wavPlayer.stopFadeOut(RUB_LOOP_TRACK, 20)
+            } catch(e: Exception){
+                Log.e(TAG, "WavPlayer Exception",e)
+                viewModel.onWavPlayerException()
             }
         }
 

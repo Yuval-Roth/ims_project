@@ -191,28 +191,33 @@ fun FlourMill(viewModel: FlourMillViewModel) {
 
         // play high sound when in sync
         LaunchedEffect(myReleased){
-            val sound = viewModel.wavPlayer
-            if(! myReleased) {
-                var playing = false
-                var inSync: Boolean
-                while (true) {
-                    try{
-                        inSync = viewModel.inSync
-                        if (!playing && inSync) {
-                            sound.playLooped(MILL_SOUND_TRACK)
-                            playing = true
-                        } else if (playing && !inSync) {
-                            sound.pause(MILL_SOUND_TRACK)
-                            playing = false
+            try{
+                val sound = viewModel.wavPlayer
+                if(! myReleased) {
+                    var playing = false
+                    var inSync: Boolean
+                    while (true) {
+                        try{
+                            inSync = viewModel.inSync
+                            if (!playing && inSync) {
+                                sound.playLooped(MILL_SOUND_TRACK)
+                                playing = true
+                            } else if (playing && !inSync) {
+                                sound.pause(MILL_SOUND_TRACK)
+                                playing = false
+                            }
+                            delay(16)
+                        } catch(e: WavPlayerException){
+                            Log.e(TAG, "WavPlayer Exception",e)
+                            viewModel.onWavPlayerException()
                         }
-                        delay(16)
-                    } catch(e: WavPlayerException){
-                        Log.e(TAG, "WavPlayer Exception",e)
-                        viewModel.onWavPlayerException()
                     }
+                } else if(sound.isPlaying(MILL_SOUND_TRACK)) {
+                    sound.stopFadeOut(MILL_SOUND_TRACK, 20)
                 }
-            } else if(sound.isPlaying(MILL_SOUND_TRACK)) {
-                sound.stopFadeOut(MILL_SOUND_TRACK, 20)
+            } catch(e: Exception){
+                Log.e(TAG, "WavPlayer Exception",e)
+                viewModel.onWavPlayerException()
             }
         }
 
