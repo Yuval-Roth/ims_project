@@ -243,10 +243,10 @@ open class FlowerGardenViewModel : GameViewModel(GameType.FLOWER_GARDEN) {
         val opponentsLatestTimestamp =
             if((actor == playerId) == (myItemType == ItemType.WATER)) {
                 waterDropletSets.addLast(WaterDroplet(timestamp, myItemType))
-                if(grassPlantSets.isEmpty()) 0 else grassPlantSets.last().timestamp
+                grassPlantSets.lastOrNull().timestamp ?: 0
             } else {
                 grassPlantSets.addLast(Plant(timestamp, myItemType))
-                if(waterDropletSets.isEmpty()) 0 else waterDropletSets.last().timestamp
+                waterDropletSets.lastOrNull().timestamp ?: 0
             }
 
         // synced click
