@@ -255,6 +255,7 @@ open class FlourMillViewModel : GameViewModel(GameType.FLOUR_MILL) {
     override fun setupWavPlayer(){
         try{
             wavPlayer.load(MILL_SOUND_TRACK, R.raw.mill_sound)
+            wavPlayer.setVolume(MILL_SOUND_TRACK,0.75f)
         } catch (e: IllegalArgumentException){
             val msg = e.message ?: "Unknown error"
             exitWithError(msg, Result.Code.BAD_RESOURCE)

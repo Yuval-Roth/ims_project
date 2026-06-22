@@ -134,7 +134,15 @@ class WavPlayer(private val context: Context, private val scope: CoroutineScope)
         @IntRange(0, 31) trackNumber: Int,
         @FloatRange(from = 0.0, to = 1.0) volume: Float
     ) {
-        tracks[trackNumber]?.setVolume(volume) ?: throw IllegalArgumentException("Track not loaded")
+        val result: Int
+        try{
+            result = tracks[trackNumber]?.setVolume(volume) ?: throw IllegalArgumentException("Track not loaded")
+        } catch(e: Exception) {
+            throw IllegalArgumentException(e)
+        }
+        if(result != 0){
+            throw IllegalArgumentException("setVolume result != 0")
+        }
     }
 
     fun isPlaying(@IntRange(0,31) trackNumber: Int) : Boolean {
